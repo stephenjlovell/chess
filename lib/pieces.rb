@@ -10,7 +10,7 @@ module Application
       def initialize(color, x, y) # :b or :w
         @color = color
         @symbol = (@color.to_s + self.class.type.to_s).to_sym if self.class.type
-        @position = PiecePosition.new(x,y)
+        @position = Position::PiecePosition.new(x,y)
       end
 
     end
@@ -27,7 +27,6 @@ module Application
     end
 
     class Knight < Piece
-
       def self.value
         3.2
       end
@@ -36,6 +35,13 @@ module Application
         :N
       end
 
+      def generate_legal_moves
+        options = [[2,1], [1,2], [-2,1], [-1,2], [-2,-1], [-1,-2], [2,-1], [1,-2]]
+        board = Application::current_game.board
+        moves = options.map { |pair| [ pair[0]+ @position.x, pair[1]+ @position.y ] }
+        moves.select { |pair| board.is_legal?(@color, pair[0], pair[1]) } 
+        # may want to create a separate MoveGenerator module...
+      end
     end
 
     class Bishop < Piece
