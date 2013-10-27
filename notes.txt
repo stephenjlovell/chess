@@ -1,8 +1,7 @@
 
 BOARD STATE
 
-  Bitboard representation
-  
+  Hybrid approach: Piece list for move generation with separate board square representation for lookups.  
 
 DATA STRUCTURE
 
@@ -12,12 +11,11 @@ DATA STRUCTURE
   SEARCHING / TRAVERSAL ----
 
     Alpha-Beta Pruning
-
     Iterative Deepening Depth-First Search
 
   MEMOIZATION
 
-    Transposition table with Zobrist hashing algorithm
+    Transposition table with Zobrist hashing algorithm?
 
 
 EVALUATION ----
