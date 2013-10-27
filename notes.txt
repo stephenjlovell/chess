@@ -1,0 +1,27 @@
+
+BOARD STATE
+
+  Bitboard representation
+  
+
+DATA STRUCTURE
+
+  Directed Acyclic Graph
+    what is stored at each location in the graph?
+
+  SEARCHING / TRAVERSAL ----
+
+    Alpha-Beta Pruning
+
+    Iterative Deepening Depth-First Search
+
+  MEMOIZATION
+
+    Transposition table with Zobrist hashing algorithm
+
+
+EVALUATION ----
+
+  ? This is going to be the toughest part...
+
+
