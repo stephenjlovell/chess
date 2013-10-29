@@ -4,24 +4,37 @@ module Application
 
     class Piece
       # this class will define aspects common to all chess pieces.
-      attr_reader :color
-      attr_reader :symbol
+      attr_reader :color, :symbol, :position
 
-      def initialize(color, x, y) # :b or :w
+      def initialize(row, column, color) # :b or :w
         @color = color
         @symbol = (@color.to_s + self.class.type.to_s).to_sym if self.class.type
-        @position = Position::PiecePosition.new(x,y)
+        @position = Position::PiecePosition.new(row,column)
       end
 
+      private
+        def generate_moves(board)  # though elegant, this may not work for all pieces...
+          moves = self.class.directions.map do |pair| 
+            [ pair[0] + @position.row, pair[1] + @position.column ]
+          end
+          yield(moves)
+        end
     end
 
     class Pawn < Piece
+      #   PAWN_ATTACK = [[1,1],[1,-1]]
+      #   PAWN_ADVANCE = [[1,0]]
+      #   PAWN_INITIAL_ADVANCE = [[1,0],[2,0]]
       def self.value
         1.0
       end
 
       def self.type
         :P
+      end
+
+      def self.directions
+        [[1,0],[1,1][1,-1]]
       end
 
     end
@@ -35,17 +48,20 @@ module Application
         :N
       end
 
-      def generate_legal_moves
-        options = [[2,1], [1,2], [-2,1], [-1,2], [-2,-1], [-1,-2], [2,-1], [1,-2]]
-        board = Application::current_game.board
-        moves = options.map { |pair| [ pair[0]+ @position.x, pair[1]+ @position.y ] }
-        moves.select { |pair| board.is_legal?(@color, pair[0], pair[1]) } 
-        # may want to create a separate MoveGenerator module...
+      def pseudolegal_moves(board) 
+        generate_moves(board) do |moves|
+          moves.select { |pair| Movement::pseudo_legal?(pair[0], pair[1], color, board) } 
+        end
       end
+
+      def self.directions
+        [[2,1], [1,2], [-2,1], [-1,2], [-2,-1], [-1,-2], [2,-1], [1,-2]]
+      end
+
     end
 
     class Bishop < Piece
-      
+      #   DIAGONALS = [[1,1],[1,-1],[-1,1],[-1,-1]]
       VALUE = 10.0/3.0
       def self.value
         VALUE
@@ -58,7 +74,7 @@ module Application
     end
 
     class Rook < Piece
-
+      #  SQUARES = [[1,0],[-1,0],[0,1],[0,-1]]
       def self.value
         5.1
       end
@@ -70,7 +86,8 @@ module Application
     end
 
     class Queen < Piece
-
+      #   DIAGONALS = [[1,1],[1,-1],[-1,1],[-1,-1]]
+      #   SQUARES = [[1,0],[-1,0],[0,1],[0,-1]]
       def self.value
         8.8
       end
@@ -82,7 +99,8 @@ module Application
     end
 
     class King < Piece
-
+    #   DIAGONALS = [[1,1],[1,-1],[-1,1],[-1,-1]]
+    #   SQUARES = [[1,0],[-1,0],[0,1],[0,-1]]
       def self.value
         1000.0
       end
@@ -93,28 +111,22 @@ module Application
 
     end
 
-    def self.create_piece_by_sym(sym, x, y)
-      color, type = split_symbol(sym)
+    def self.create_piece_by_sym(row, column, sym)
+      color, type = sym[0].to_sym, sym[1].to_sym
       case type
       when :P
-        return Pawn.new(color, x,y)
+        return Pawn.new(row, column, color)
       when :R
-        return Rook.new(color, x,y)
+        return Rook.new(row, column, color)
       when :N
-        return Knight.new(color, x,y)
+        return Knight.new(row, column, color)
       when :B
-        return Bishop.new(color, x,y)
+        return Bishop.new(row, column, color)
       when :Q
-        return Queen.new(color, x,y)
+        return Queen.new(row, column, color)
       when :K
-        return King.new(color, x,y)
+        return King.new(row, column, color)
       end
-    end
-
-    def self.split_symbol(sym)
-      color = sym[0].to_sym
-      type = sym[1].to_sym
-      return color, type
     end
 
   end
