@@ -1,3 +1,4 @@
+require './initialize.rb'
 
 module Application
 
@@ -44,21 +45,19 @@ module Application
       @squares[row][column] == :XX
     end
 
-    def enemy?(row,column,color)
+    def occupied?(row,column)
       sym = @squares[row][column]
-      if sym != nil && sym != :XX
-        return true if sym[0].to_sym != color
+      sym != nil && sym != :XX
+    end
+
+    def enemy?(row,column,color)
+      if occupied?(row,column)
+        return true if @squares[row][column][0].to_sym != color
       end
       return false
     end
 
-    # def color?(sym)
-    #   return nil if sym == nil || sym == :XX
-    #   sym[0].to_sym
-    # end
-    
   end
-
 end
 
 
