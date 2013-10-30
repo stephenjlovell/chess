@@ -1,4 +1,3 @@
-require './initialize.rb'
 
 module Application
 
@@ -14,7 +13,7 @@ module Application
     def initialize # sets the chessboard to its initial configuration
                    # at the start of the game.                                      # row  board #
       @squares = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
-                   [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1 
+                   [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
                    [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, :wB, :wN, :wR, :XX, :XX ],  # 2    1
                    [ :XX, :XX, :wP, :wP, :wP, :wP, :wP, :wP, :wP, :wP, :XX, :XX ],  # 3    2
                    [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 4    3
@@ -23,8 +22,8 @@ module Application
                    [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7    6
                    [ :XX, :XX, :bP, :bP, :bP, :bP, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
                    [ :XX, :XX, :bR, :bN, :bB, :bQ, :bK, :bB, :bK, :bR, :XX, :XX ],  # 9    8
-                   [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10
-                   [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11
+                   [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
+                   [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
             # column  0    1    2    3    4    5    6    7    8    9    10   11
             # letter            A    B    C    D    E    F    G    H
     end
@@ -35,6 +34,10 @@ module Application
 
     def []=(row,column, value)
       @squares[row][column] = value
+    end
+
+    def dup
+      # return a new Board
     end
 
     def empty?(row,column)
@@ -55,6 +58,14 @@ module Application
         return true if @squares[row][column][0].to_sym != color
       end
       return false
+    end
+
+    def pseudo_legal?(row, column, color)
+      if empty?(row, column) || enemy?(row, column, color)
+        true
+      else
+        false
+      end
     end
 
   end

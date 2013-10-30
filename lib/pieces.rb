@@ -3,27 +3,58 @@ module Application
   module Pieces
 
     class Piece  # this class defines the common behavior of chess pieces.
-      attr_reader :color, :symbol, :position
+      attr_reader :color 
+      attr_accessor :position
 
       def initialize(row, column, color) # :b or :w
         @color = color
-        @symbol = (@color.to_s + self.class.type.to_s).to_sym if self.class.type
-        @position = Position::PiecePosition.new(row,column)
+        @position = [row, column]
       end
 
-      def get_moves
+      def symbol
+        (@color.to_s + self.class.type.to_s).to_sym
+      end
+
+      def get_sorted_moves(board)
+        get_moves(board).sort { |x,y| y[2] <=> x[2] }
+      end
+
+      def get_moves(board)
         moves = []
-        directions.each do |direction|
-          moves += Movement::explore_direction(start,direction,color,board)
+        self.class.directions.each do |direction|
+          target = explore_direction(@position, direction, board)
+          moves += target unless target.empty?
         end
         return moves
-      end      
+      end
+
+      private 
+      
+        def explore_direction(start, direction, board, moves = [] )
+          move = [ start[0] + direction[0], start[1] + direction[1], 0.0 ]
+
+          if board.pseudo_legal?(move[0],move[1], @color)
+            if board.enemy?(move[0],move[1], @color)
+              move[2] = Pieces::get_value_by_sym(board[move[0],move[1]])
+            end
+
+            moves << move
+          
+            if self.class.move_until_blocked? && board.empty?(move[0], move[1])
+              explore_direction(move, direction, board, moves) 
+            end
+          end
+          return moves
+        end
     end
 
     class Pawn < Piece
       #   PAWN_ATTACK = [[1,1],[1,-1]]
       #   PAWN_ADVANCE = [[1,0]]
       #   PAWN_INITIAL_ADVANCE = [[1,0],[2,0]]
+
+      # pawn advance also depends on side to move.
+
       def self.value
         1.0
       end
@@ -40,8 +71,8 @@ module Application
         [[1,0],[1,1][1,-1]]
       end
 
-      def get_moves # overload the generic get_moves function provided by the Piece class.
-
+      def get_moves(board) # override the generic get_moves function provided by the Piece class.
+        [[1,0,0],[2,0,0]]  # this will take some work.
       end
 
     end
@@ -66,7 +97,6 @@ module Application
     end
 
     class Bishop < Piece
-      #   DIAGONALS = [[1,1],[1,-1],[-1,1],[-1,-1]]
       VALUE = 10.0/3.0
       def self.value
         VALUE
@@ -80,10 +110,13 @@ module Application
         true
       end
 
+      def self.directions
+        [[1,1],[1,-1],[-1,1],[-1,-1]]
+      end
+
     end
 
     class Rook < Piece
-      #  SQUARES = [[1,0],[-1,0],[0,1],[0,-1]]
       def self.value
         5.1
       end
@@ -96,11 +129,12 @@ module Application
         true
       end
 
+      def self.directions
+        [[1,0],[-1,0],[0,1],[0,-1]]
+      end
     end
 
     class Queen < Piece
-      #   DIAGONALS = [[1,1],[1,-1],[-1,1],[-1,-1]]
-      #   SQUARES = [[1,0],[-1,0],[0,1],[0,-1]]
       def self.value
         8.8
       end
@@ -113,11 +147,12 @@ module Application
         true
       end
 
+      def self.directions
+        [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
+      end
     end
 
     class King < Piece
-    #   DIAGONALS = [[1,1],[1,-1],[-1,1],[-1,-1]]
-    #   SQUARES = [[1,0],[-1,0],[0,1],[0,-1]]
       def self.value
         1000.0
       end
@@ -130,6 +165,9 @@ module Application
         false
       end
 
+      def self.directions
+        [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
+      end
     end
 
     def self.create_piece_by_sym(row, column, sym)
@@ -148,6 +186,38 @@ module Application
       when :K
         return King.new(row, column, color)
       end
+    end
+
+    def self.get_value_by_sym(sym)
+      type = sym[1].to_sym
+      case type
+      when :P
+        return Pawn.value
+      when :R
+        return Rook.value
+      when :N
+        return Knight.value
+      when :B
+        return Bishop.value
+      when :Q
+        return Queen.value
+      when :K
+        return King.value
+      end
+    end
+
+    def self.setup_pieces(board)  
+      # returns an array of new chess piece objects corresponding to the 
+      # board representation specified in board.
+      pieces = []
+      board.each_with_index do |row, row_index|
+        row.each_with_index do |sym, column|
+          unless sym == nil || sym == :XX
+            pieces << Pieces::create_piece_by_sym(row_index, column, sym) 
+          end
+        end
+      end
+      return pieces
     end
 
   end

@@ -1,7 +1,6 @@
 require './lib/board.rb'
 require './lib/position.rb'
 require './lib/pieces.rb'
-require './lib/move.rb'
 
 module Application
   # define application-level behavior here.
@@ -27,8 +26,8 @@ module Application
     def initialize
       @board = Board.new
       @current_position = Position::ChessPosition.new
-      @current_position.pieces = Position::setup_pieces(@board)
-    end
+      @current_position.pieces = Pieces::setup_pieces(@board)
+    end 
   end
 
 end

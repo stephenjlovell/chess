@@ -40,7 +40,5 @@ describe Application::Board do
     end
   end
 
-
-
 end
 
