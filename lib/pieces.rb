@@ -2,8 +2,7 @@
 module Application
   module Pieces
 
-    class Piece
-      # this class will define aspects common to all chess pieces.
+    class Piece  # this class defines the common behavior of chess pieces.
       attr_reader :color, :symbol, :position
 
       def initialize(row, column, color) # :b or :w
@@ -12,13 +11,13 @@ module Application
         @position = Position::PiecePosition.new(row,column)
       end
 
-      private
-        def generate_moves(board)  # though elegant, this may not work for all pieces...
-          moves = self.class.directions.map do |pair| 
-            [ pair[0] + @position.row, pair[1] + @position.column ]
-          end
-          yield(moves)
+      def get_moves
+        moves = []
+        directions.each do |direction|
+          moves += Movement::explore_direction(start,direction,color,board)
         end
+        return moves
+      end      
     end
 
     class Pawn < Piece
@@ -33,8 +32,16 @@ module Application
         :P
       end
 
+      def self.move_until_blocked?
+        false
+      end
+
       def self.directions
         [[1,0],[1,1][1,-1]]
+      end
+
+      def get_moves # overload the generic get_moves function provided by the Piece class.
+
       end
 
     end
@@ -48,10 +55,8 @@ module Application
         :N
       end
 
-      def pseudolegal_moves(board) 
-        generate_moves(board) do |moves|
-          moves.select { |pair| Movement::pseudo_legal?(pair[0], pair[1], color, board) } 
-        end
+      def self.move_until_blocked?
+        false
       end
 
       def self.directions
@@ -71,6 +76,10 @@ module Application
         :B
       end
 
+      def self.move_until_blocked?
+        true
+      end
+
     end
 
     class Rook < Piece
@@ -81,6 +90,10 @@ module Application
 
       def self.type
         :R
+      end
+
+      def self.move_until_blocked?
+        true
       end
 
     end
@@ -96,6 +109,10 @@ module Application
         :Q
       end
 
+      def self.move_until_blocked?
+        true
+      end
+
     end
 
     class King < Piece
@@ -107,6 +124,10 @@ module Application
 
       def self.type
         :K
+      end
+
+      def self.move_until_blocked?
+        false
       end
 
     end
