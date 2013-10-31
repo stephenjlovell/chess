@@ -8,8 +8,10 @@ require './lib/application.rb'
   # pieces = g.current_position.pieces
   # pieces.each { |p| print p.symbol, ' ', p.position, ' => ', p.get_moves(g.board), "\n" }
 
-  b = Application::Board.new
-  b.print
+# test printing feature
+  # b = Application::Board.new
+  # b.print
+  # b.setup
+  # b.print
 
-  b.setup
-  b.print
+  

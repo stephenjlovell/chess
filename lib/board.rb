@@ -82,6 +82,11 @@ module Application
       end
     end
 
+    def move!(row, column, move)
+      @squares[row + move[0]][column + move[1]] = @squares[row][column]
+      @squares[row][column] = nil
+    end
+
     def place_pieces(pieces) #place all pieces specified onto the board.
       pieces.each do |piece|
         @squares[piece.position[0]][piece.position[1]] = piece.symbol

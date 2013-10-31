@@ -20,7 +20,7 @@ module Application
   end
 
   class Game
-    attr_accessor :board, :current_position  
+    attr_accessor :board, :position  
     # current_position represents the root node in current search tree.
     
     def initialize
