@@ -29,7 +29,7 @@ module Application
       end
 
       private 
-      
+
         def explore_direction(start, direction, board, moves = [] )
           move = [ start[0] + direction[0], start[1] + direction[1], 0.0 ]
 
@@ -49,11 +49,6 @@ module Application
     end
 
     class Pawn < Piece
-      #   PAWN_ATTACK = [[1,1],[1,-1]]
-      #   PAWN_ADVANCE = [[1,0]]
-      #   PAWN_INITIAL_ADVANCE = [[1,0],[2,0]]
-
-      # pawn advance also depends on side to move.
 
       def self.value
         1.0
@@ -73,6 +68,11 @@ module Application
 
       def get_moves(board) # override the generic get_moves function provided by the Piece class.
         [[1,0,0],[2,0,0]]  # this will take some work.
+        #   PAWN_ATTACK = [[1,1],[1,-1]]
+        #   PAWN_ADVANCE = [[1,0]]
+        #   PAWN_INITIAL_ADVANCE = [[1,0],[2,0]]
+
+        # pawn advance also depends on side to move.
       end
 
     end

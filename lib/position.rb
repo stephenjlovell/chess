@@ -3,7 +3,7 @@ module Application
   module Position
 
     # ChessPosition describes the game state as of a specific turn. Should describe the following:
-      # Piece placement 
+      # Piece placement
       # Side to move
       # Castling rights
       # En passant target square
@@ -24,7 +24,6 @@ module Application
       end
 
     end
-
 
 
   end
