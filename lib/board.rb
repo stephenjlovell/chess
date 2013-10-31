@@ -1,4 +1,4 @@
-
+ 
 module Application
 
   class Board
@@ -39,7 +39,7 @@ module Application
                    [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
                    [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7    6
                    [ :XX, :XX, :bP, :bP, :bP, :bP, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
-                   [ :XX, :XX, :bR, :bN, :bB, :bQ, :bK, :bB, :bK, :bR, :XX, :XX ],  # 9    8
+                   [ :XX, :XX, :bR, :bN, :bB, :bQ, :bK, :bB, :bN, :bR, :XX, :XX ],  # 9    8
                    [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
                    [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
             # column  0    1    2    3    4    5    6    7    8    9    10   11
@@ -82,6 +82,10 @@ module Application
       end
     end
 
+    def en_passant_target?(row, column) # determine if square is a valid en-passant capture target
+      false
+    end
+
     def move!(row, column, move)
       @squares[row + move[0]][column + move[1]] = @squares[row][column]
       @squares[row][column] = nil
@@ -109,6 +113,6 @@ module Application
       end
       puts "\n"
     end
-
+    
   end
 end

@@ -11,19 +11,21 @@ module Application
         @position = [row, column]
       end
 
+      def copy # return a deep copy of the piece
+        self.class.new(@position[0],@position[1],@color)
+      end
+
       def symbol
         (@color.to_s + self.class.type.to_s).to_sym
       end
 
-      def get_sorted_moves(board)
-        get_moves(board).sort { |x,y| y[2] <=> x[2] }
-      end
-
       def get_moves(board)
+        # returns a collection of all pseudo-legal moves for the current piece.
+        # each move contains the initial piece position, target square, and capture value.
         moves = []
         self.class.directions.each do |direction|
-          target = explore_direction(@position, direction, board)
-          moves += target unless target.empty?
+          move = explore_direction(@position, direction, board)
+          moves += move unless move.empty?
         end
         return moves
       end
@@ -31,17 +33,17 @@ module Application
       private 
 
         def explore_direction(start, direction, board, moves = [] )
-          move = [ start[0] + direction[0], start[1] + direction[1], 0.0 ]
-
-          if board.pseudo_legal?(move[0],move[1], @color)
-            if board.enemy?(move[0],move[1], @color)
-              move[2] = Pieces::get_value_by_sym(board[move[0],move[1]])
+          target = [ start[0] + direction[0], start[1] + direction[1]]
+          value = 0.0
+          if board.pseudo_legal?(target[0],target[1], @color)
+            if board.enemy?(target[0],target[1], @color)
+              value = Pieces::get_value_by_sym(board[target[0],target[1]])
             end
 
-            moves << move
+            moves << [@position, target, value]
           
-            if self.class.move_until_blocked? && board.empty?(move[0], move[1])
-              explore_direction(move, direction, board, moves) 
+            if self.class.move_until_blocked? && board.empty?(target[0], target[1])
+              explore_direction(target, direction, board, moves) 
             end
           end
           return moves
@@ -50,162 +52,219 @@ module Application
 
     class Pawn < Piece
 
-      def self.value
-        1.0
+      DIRECTIONS = { w: { attack: [[1,1],[1,-1]],
+                          advance: [1,0],
+                          initial: [2,0],
+                          enp_offset: [1,0], 
+                          start_row: 2 },
+                     b: { attack: [[-1,-1],[-1,1]],
+                          advance: [-1,0],                               
+                          initial: [-2,0],
+                          enp_offset: [-1,0],  
+                          start_row: 7 }, 
+                     en_passant: [[0,1],[0,-1]] }
+
+      class << self
+        def value
+          1.0
+        end
+
+        def type
+          :P
+        end
+
+        def move_until_blocked?
+          false
+        end
       end
 
-      def self.type
-        :P
+      def get_moves(board) # supercedes the generic get_moves function provided by the Piece class.
+        moves = []
+        get_attacks(board,moves)
+        get_en_passant(board,moves)
+        get_advances(board,moves)
+        return moves
       end
 
-      def self.move_until_blocked?
-        false
+      def get_attacks(board, moves)
+        attacks = DIRECTIONS[@color][:attack]
+        attacks.each do |pair|  # normal attacks
+          target = [ @position[0] + pair[0], @position[1] + pair[1]]
+          if board.enemy?(target[0], target[1], @color)
+            value = Pieces::get_value_by_sym(board[target[0],target[1]])
+            moves << [ @position, target, value ]
+          end
+        end
       end
 
-      def self.directions
-        [[1,0],[1,1][1,-1]]
+      def get_en_passant(board, moves)
+        DIRECTIONS[:en_passant].each do |pair|
+          target = [ @position[0] + pair[0], @position[1] + pair[1]]
+          if board.en_passant_target?(target[0],target[1]) && board.enemy?(target[0],target[1], @color)
+            offset = DIRECTIONS[@color][:enp_offset]
+            move_target = [target[0] + offset[0], target[1] + offset[1] ]
+            # should also store whether move is an en-passant capture
+            moves << [ @position, move_target, 1.0 ] # value of en-passant capture is 1 by definition.
+          end
+        end
       end
 
-      def get_moves(board) # override the generic get_moves function provided by the Piece class.
-        [[1,0,0],[2,0,0]]  # this will take some work.
-        #   PAWN_ATTACK = [[1,1],[1,-1]]
-        #   PAWN_ADVANCE = [[1,0]]
-        #   PAWN_INITIAL_ADVANCE = [[1,0],[2,0]]
-
-        # pawn advance also depends on side to move.
+      def get_advances(board, moves)
+        d = DIRECTIONS[@color]
+        target = [ @position[0] + d[:advance][0], @position[1] + d[:advance][1] ]
+        unless board.occupied?(target[0], target[1])
+          moves << [ @position, target, 0.0]
+          if @position[0] == d[:start_row]
+            target = [ @position[0] + d[:initial][0], @position[1] + d[:initial][1]]
+            unless board.occupied?(target[0], target[1])
+              moves << [ @position, target, 0.0]
+              # if this move is chosen and executed, make note that this pawn is now 
+              # en-passant capturable until it moves next.
+            end
+          end
+        end
       end
 
     end
 
     class Knight < Piece
-      def self.value
-        3.2
-      end
+      class << self
+        def value
+          3.2
+        end
 
-      def self.type
-        :N
-      end
+        def type
+          :N
+        end
 
-      def self.move_until_blocked?
-        false
-      end
+        def move_until_blocked?
+          false
+        end
 
-      def self.directions
-        [[2,1], [1,2], [-2,1], [-1,2], [-2,-1], [-1,-2], [2,-1], [1,-2]]
+        def directions
+          [[2,1], [1,2], [-2,1], [-1,2], [-2,-1], [-1,-2], [2,-1], [1,-2]]
+        end
       end
-
     end
 
     class Bishop < Piece
-      VALUE = 10.0/3.0
-      def self.value
-        VALUE
-      end
+      class << self
+        VALUE = 10.0/3.0
+        def value
+          VALUE
+        end
 
-      def self.type
-        :B
-      end
+        def type
+          :B
+        end
 
-      def self.move_until_blocked?
-        true
-      end
+        def move_until_blocked?
+          true
+        end
 
-      def self.directions
-        [[1,1],[1,-1],[-1,1],[-1,-1]]
+        def directions
+          [[1,1],[1,-1],[-1,1],[-1,-1]]
+        end
       end
-
     end
 
     class Rook < Piece
-      def self.value
-        5.1
-      end
+      class << self
+        def value
+          5.1
+        end
 
-      def self.type
-        :R
-      end
+        def type
+          :R
+        end
 
-      def self.move_until_blocked?
-        true
-      end
+        def move_until_blocked?
+          true
+        end
 
-      def self.directions
-        [[1,0],[-1,0],[0,1],[0,-1]]
+        def directions
+          [[1,0],[-1,0],[0,1],[0,-1]]
+        end
       end
     end
 
     class Queen < Piece
-      def self.value
-        8.8
-      end
+      class << self
+        def value
+          8.8
+        end
 
-      def self.type
-        :Q
-      end
+        def type
+          :Q
+        end
 
-      def self.move_until_blocked?
-        true
-      end
+        def move_until_blocked?
+          true
+        end
 
-      def self.directions
-        [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
+        def directions
+          [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
+        end
       end
     end
 
     class King < Piece
-      def self.value
-        1000.0
-      end
+      class << self
+        def value
+          1000.0
+        end
 
-      def self.type
-        :K
-      end
+        def type
+          :K
+        end
 
-      def self.move_until_blocked?
-        false
-      end
+        def move_until_blocked?
+          false
+        end
 
-      def self.directions
-        [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
+        def directions
+          [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
+        end
       end
     end
 
     def self.create_piece_by_sym(row, column, sym)
-      color, type = sym[0].to_sym, sym[1].to_sym
+      color, type = sym[0].to_sym, sym[1]
       case type
-      when :P
+      when "P"
         return Pawn.new(row, column, color)
-      when :R
+      when "R"
         return Rook.new(row, column, color)
-      when :N
+      when "N"
         return Knight.new(row, column, color)
-      when :B
+      when "B"
         return Bishop.new(row, column, color)
-      when :Q
+      when "Q"
         return Queen.new(row, column, color)
-      when :K
+      when "K"
         return King.new(row, column, color)
       end
     end
 
-    def self.get_value_by_sym(sym)
-      type = sym[1].to_sym
+    def self.get_value_by_sym(sym)  # will eventually want to replace this with a simple lookup table for performance.
+      type = sym[1]
       case type
-      when :P
+      when "P"
         return Pawn.value
-      when :R
+      when "R"
         return Rook.value
-      when :N
+      when "N"
         return Knight.value
-      when :B
+      when "B"
         return Bishop.value
-      when :Q
+      when "Q"
         return Queen.value
-      when :K
+      when "K"
         return King.value
       end
     end
 
+    # may be able to eliminate this.
     def self.setup(board)  
       # returns an array of new chess piece objects corresponding to the 
       # board representation specified in board.

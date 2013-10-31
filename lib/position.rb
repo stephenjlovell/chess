@@ -13,10 +13,19 @@ module Application
     # as space efficient as possible.
 
     class ChessPosition
-      attr_accessor :pieces
+      attr_accessor :pieces, :board
 
-      def initialize
-        @pieces = []
+      def initialize(board, pieces)
+        @board = board
+        @pieces = pieces
+      end
+
+      def get_moves
+        moves = []
+        @pieces.each do |piece|
+           moves += piece.get_moves(@board)
+        end
+        return moves
       end
 
       def to_s
