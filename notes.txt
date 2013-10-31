@@ -21,7 +21,6 @@ EVALUATION ----
 
   Weighted pattern matching
 
-
 Current Issues ----
 
   passing Board and Piece List from one node to another would require deep copy.

@@ -10,8 +10,26 @@ module Application
       @squares.each { |row| yield(row) }
     end
 
-    def initialize # sets the chessboard to its initial configuration
-                   # at the start of the game.                                      # row  board #
+    def initialize # generates a representation of an empty chessboard.
+                                                                                    # row  board #
+      @squares = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
+                   [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
+                   [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 2    1
+                   [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 3    2
+                   [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 4    3
+                   [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 5    4
+                   [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
+                   [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7    6
+                   [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 8    7
+                   [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 9    8
+                   [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
+                   [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
+            # column  0    1    2    3    4    5    6    7    8    9    10   11
+            # letter            A    B    C    D    E    F    G    H
+    end
+
+    def setup  # sets the chessboard to its initial configuration at start of game.
+                                                                                    # row  board #
       @squares = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
                    [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
                    [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, :wB, :wN, :wR, :XX, :XX ],  # 2    1
@@ -36,10 +54,6 @@ module Application
       @squares[row][column] = value
     end
 
-    def dup
-      # return a new Board
-    end
-
     def empty?(row,column)
       @squares[row][column] == nil
     end
@@ -57,7 +71,7 @@ module Application
       if occupied?(row,column)
         return true if @squares[row][column][0].to_sym != color
       end
-      return false
+      false
     end
 
     def pseudo_legal?(row, column, color)
@@ -68,7 +82,28 @@ module Application
       end
     end
 
+    def place_pieces(pieces) #place all pieces specified onto the board.
+      pieces.each do |piece|
+        @squares[piece.position[0]][piece.position[1]] = piece.symbol
+      end
+    end
+
+    def print
+      puts "-" * 41
+      @squares[2..9].each do |row|
+        line = []
+        row.each do |square|
+          if square == nil 
+            line << "  "
+          elsif square != :XX
+            line << square.to_s
+          end
+        end
+        puts "| " + line.join(" | ") + " |"
+        puts "-" * 41
+      end
+      puts "\n"
+    end
+
   end
 end
-
-

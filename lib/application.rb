@@ -24,9 +24,10 @@ module Application
     # current_position represents the root node in current search tree.
     
     def initialize
-      @board = Board.new
-      @current_position = Position::ChessPosition.new
-      @current_position.pieces = Pieces::setup_pieces(@board)
+      @board = Board.allocate
+      @board.setup
+      @position = Position::ChessPosition.new
+      @position.pieces = Pieces::setup(@board)
     end 
   end
 

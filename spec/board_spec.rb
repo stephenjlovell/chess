@@ -2,7 +2,10 @@ require './lib/application.rb'
 
 describe Application::Board do
 
-  before { @board = Application::Board.new }
+  before do 
+    @board = Application::Board.allocate
+    @board.setup
+  end
   
   subject { @board }
 

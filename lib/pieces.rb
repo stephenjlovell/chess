@@ -206,7 +206,7 @@ module Application
       end
     end
 
-    def self.setup_pieces(board)  
+    def self.setup(board)  
       # returns an array of new chess piece objects corresponding to the 
       # board representation specified in board.
       pieces = []
