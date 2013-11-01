@@ -40,7 +40,7 @@ module Application
               value = Pieces::get_value_by_sym(board[target[0],target[1]])
             end
 
-            moves << [@position, target, value]
+            moves << [self, target, value]
           
             if self.class.move_until_blocked? && board.empty?(target[0], target[1])
               explore_direction(target, direction, board, moves) 
@@ -56,12 +56,12 @@ module Application
                           advance: [1,0],
                           initial: [2,0],
                           enp_offset: [1,0], 
-                          start_row: 2 },
+                          start_row: 3 },
                      b: { attack: [[-1,-1],[-1,1]],
                           advance: [-1,0],                               
                           initial: [-2,0],
                           enp_offset: [-1,0],  
-                          start_row: 7 }, 
+                          start_row: 8 }, 
                      en_passant: [[0,1],[0,-1]] }
 
       class << self
@@ -92,7 +92,7 @@ module Application
           target = [ @position[0] + pair[0], @position[1] + pair[1]]
           if board.enemy?(target[0], target[1], @color)
             value = Pieces::get_value_by_sym(board[target[0],target[1]])
-            moves << [ @position, target, value ]
+            moves << [ self, target, value ]
           end
         end
       end
@@ -104,7 +104,7 @@ module Application
             offset = DIRECTIONS[@color][:enp_offset]
             move_target = [target[0] + offset[0], target[1] + offset[1] ]
             # should also store whether move is an en-passant capture
-            moves << [ @position, move_target, 1.0 ] # value of en-passant capture is 1 by definition.
+            moves << [ self, move_target, 1.0 ] # value of en-passant capture is 1 by definition.
           end
         end
       end
@@ -113,11 +113,11 @@ module Application
         d = DIRECTIONS[@color]
         target = [ @position[0] + d[:advance][0], @position[1] + d[:advance][1] ]
         unless board.occupied?(target[0], target[1])
-          moves << [ @position, target, 0.0]
+          moves << [ self, target, 0.0]
           if @position[0] == d[:start_row]
             target = [ @position[0] + d[:initial][0], @position[1] + d[:initial][1]]
             unless board.occupied?(target[0], target[1])
-              moves << [ @position, target, 0.0]
+              moves << [ self, target, 0.0]
               # if this move is chosen and executed, make note that this pawn is now 
               # en-passant capturable until it moves next.
             end
@@ -264,11 +264,8 @@ module Application
       end
     end
 
-    # may be able to eliminate this.
-    def self.setup(board)  
-      # returns an array of new chess piece objects corresponding to the 
-      # board representation specified in board.
-      pieces = []
+    def self.setup(board)  # returns an array of new chess piece objects corresponding to the 
+      pieces = []          # board representation specified in board.
       board.each_with_index do |row, row_index|
         row.each_with_index do |sym, column|
           unless sym == nil || sym == :XX

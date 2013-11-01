@@ -4,8 +4,7 @@ require './lib/position.rb'
 require './lib/evaluation.rb'
 require './lib/search.rb'
 
-module Application
-  # define application-level behavior here.
+module Application # define application-level behavior in this module and file.
 
   class << self
     def current_game
@@ -20,20 +19,19 @@ module Application
       @current_game = Application::Game.new
     end
 
-    def current_position
+    def current_position # represents the root node in current search tree.
       @current_position ||= current_game.position
     end
   end
 
   class Game
     attr_accessor :position  
-    # Application::current_position represents the root node in current search tree.
     
     def initialize
       board = Application::Board.allocate
       board.setup
       pieces = Pieces::setup(board)
-      @position = Position::ChessPosition.new(board, pieces)
+      @position = Position::ChessPosition.new(board, pieces, :w)
     end 
   end
 
