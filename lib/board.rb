@@ -82,12 +82,13 @@ module Application
       end
     end
 
-    def en_passant_target?(row, column) # determine if square is a valid en-passant capture target
+    def en_passant_target?(row, column) #placeholder
       false
     end
 
-    def move!(row, column, move)
-      @squares[row + move[0]][column + move[1]] = @squares[row][column]
+
+    def move!(row, column, advance)
+      @squares[row + advance[0]][column + advance[1]] = @squares[row][column]
       @squares[row][column] = nil
     end
 

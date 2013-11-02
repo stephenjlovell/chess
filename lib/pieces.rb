@@ -6,7 +6,7 @@ module Application
       attr_reader :color 
       attr_accessor :position
 
-      def initialize(row, column, color) # :b or :w
+      def initialize(row, column, color)
         @color = color
         @position = [row, column]
       end
@@ -265,15 +265,20 @@ module Application
     end
 
     def self.setup(board)  # returns an array of new chess piece objects corresponding to the 
-      pieces = []          # board representation specified in board.
+      pieces = { w: [], b: [] }         # board representation specified in board.
       board.each_with_index do |row, row_index|
         row.each_with_index do |sym, column|
           unless sym == nil || sym == :XX
-            pieces << Pieces::create_piece_by_sym(row_index, column, sym) 
+            piece = Pieces::create_piece_by_sym(row_index, column, sym) 
+            pieces[piece.color] << piece
           end
         end
       end
       return pieces
+    end
+
+    def self.castle
+      # allow castling
     end
 
   end
