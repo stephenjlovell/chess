@@ -24,8 +24,11 @@ module Application
 
     end
 
-    # initial call:  alphabeta(Node.new(Application::current_position), 4, -1.0/0.0, 1.0/0.0, true)
+    def self.root
+      Node.new(Application::current_position)
+    end
 
+    # initial call:  alphabeta(Search::root), 4)
     def self.alpha_beta(node, depth_remaining, alpha = -1.0/0.0, beta = 1.0/0.0, maximize = true)
       if depth_remaining == 0 || node.position.edges.empty?
         return node.value

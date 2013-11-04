@@ -32,7 +32,14 @@ module Application # define application-level behavior in this module and file.
       board.setup
       pieces = Pieces::setup(board)
       @position = Position::ChessPosition.new(board, pieces, :w)
-    end 
+    end
+
+    # Halfmove clock will be defined at the game level.
+
   end
 
 end
+
+
+
+

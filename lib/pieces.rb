@@ -2,6 +2,25 @@
 module Application
   module Pieces
 
+    # class PieceCollection
+    #   include Enumerable
+    #   attr_accessor :white, :black
+
+    #   def initialize(white = [], black = [])
+    #     @white  = white
+    #     @black = black
+    #   end
+
+    #   def each
+    #     all.each { |piece| yield(piece) }
+    #   end
+
+    #   def all
+    #     @white + @black
+    #   end
+
+    # end
+
     class Piece  # this class defines the common behavior of chess pieces.
       attr_reader :color 
       attr_accessor :position
@@ -11,7 +30,7 @@ module Application
         @position = [row, column]
       end
 
-      def copy # return a deep copy of the piece
+      def copy # return a deep copy of self
         self.class.new(@position[0],@position[1],@color)
       end
 
@@ -19,12 +38,10 @@ module Application
         (@color.to_s + self.class.type.to_s).to_sym
       end
 
-      def get_moves(board)
-        # returns a collection of all pseudo-legal moves for the current piece.
-        # each move contains the initial piece position, target square, and capture value.
-        moves = []
+      def get_moves(chess_position) # returns a collection of all pseudo-legal moves for the current piece.
+        moves = []                  # each move contains the piece, target square, capture value, and en_passant flag.
         self.class.directions.each do |direction|
-          move = explore_direction(@position, direction, board)
+          move = explore_direction(@position, direction, chess_position.board)
           moves += move unless move.empty?
         end
         return moves
@@ -40,7 +57,7 @@ module Application
               value = Pieces::get_value_by_sym(board[target[0],target[1]])
             end
 
-            moves << [self, target, value]
+            moves << [self, target, value, false]
           
             if self.class.move_until_blocked? && board.empty?(target[0], target[1])
               explore_direction(target, direction, board, moves) 
@@ -78,11 +95,11 @@ module Application
         end
       end
 
-      def get_moves(board) # supercedes the generic get_moves function provided by the Piece class.
+      def get_moves(chess_position) # supercedes the generic get_moves function provided by the Piece class.
         moves = []
-        get_attacks(board,moves)
-        get_en_passant(board,moves)
-        get_advances(board,moves)
+        get_attacks(chess_position.board,moves)
+        get_en_passant(chess_position,moves)
+        get_advances(chess_position,moves)
         return moves
       end
 
@@ -92,34 +109,34 @@ module Application
           target = [ @position[0] + pair[0], @position[1] + pair[1]]
           if board.enemy?(target[0], target[1], @color)
             value = Pieces::get_value_by_sym(board[target[0],target[1]])
-            moves << [ self, target, value ]
+            moves << [ self, target, value, false]
           end
         end
       end
 
-      def get_en_passant(board, moves)
+      def get_en_passant(chess_position, moves)
         DIRECTIONS[:en_passant].each do |pair|
           target = [ @position[0] + pair[0], @position[1] + pair[1]]
-          if board.en_passant_target?(target[0],target[1]) && board.enemy?(target[0],target[1], @color)
+          b = chess_position.board
+          if b.en_passant_target?(target[0],target[1]) && b.enemy?(target[0],target[1], @color)
             offset = DIRECTIONS[@color][:enp_offset]
             move_target = [target[0] + offset[0], target[1] + offset[1] ]
             # should also store whether move is an en-passant capture
-            moves << [ self, move_target, 1.0 ] # value of en-passant capture is 1 by definition.
+            moves << [ self, move_target, 1.0, false ] # value of en-passant capture is 1 by definition.
           end
         end
       end
 
-      def get_advances(board, moves)
+      def get_advances(chess_position, moves)
         d = DIRECTIONS[@color]
         target = [ @position[0] + d[:advance][0], @position[1] + d[:advance][1] ]
-        unless board.occupied?(target[0], target[1])
+        b = chess_position.board
+        unless b.occupied?(target[0], target[1])
           moves << [ self, target, 0.0]
           if @position[0] == d[:start_row]
             target = [ @position[0] + d[:initial][0], @position[1] + d[:initial][1]]
-            unless board.occupied?(target[0], target[1])
-              moves << [ self, target, 0.0]
-              # if this move is chosen and executed, make note that this pawn is now 
-              # en-passant capturable until it moves next.
+            unless b.occupied?(target[0], target[1])
+              moves << [ self, target, 0.0, true] # pawn is now en-passant capturable next turn only.
             end
           end
         end

@@ -46,6 +46,20 @@ module Application
             # letter            A    B    C    D    E    F    G    H
     end
 
+    def copy # return a deep copy of self.
+      board = Board.new
+      @squares[2..9].each_with_index do |row, row_index|
+        row[2..9].each_with_index do |sym, column_index|
+          board[row_index, column_index] = sym
+        end
+      end
+      return board
+    end
+
+    def to_sym(row,column)
+      [nil, nil, :a, :b, :c, :d, :e, :f, :g, :h, nil, nil ]
+    end
+
     def [](row,column)
       @squares[row][column]
     end
@@ -82,12 +96,8 @@ module Application
       end
     end
 
-    def en_passant_target?(row, column) #placeholder
-      false
-    end
+    def move!(row, column, advance)  # should accept a move object/array
 
-
-    def move!(row, column, advance)
       @squares[row + advance[0]][column + advance[1]] = @squares[row][column]
       @squares[row][column] = nil
     end

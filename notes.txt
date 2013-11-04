@@ -13,7 +13,7 @@ DATA STRUCTURE
 SEARCHING / TRAVERSAL ----
 
   Iterative Deepening Depth-First Search (IDDFS)
-    =>  MTD(f) for scope narrowing
+    =>  MTD(f) for scope narrowing (optional)
         =>  Alpha-Beta Pruning with memoization
             =>  Transposition hash table for memoization
 
@@ -23,15 +23,14 @@ EVALUATION ----
 
 Current Issues ----
 
-  passing Board and Piece List from one node to another would require deep copy.
-    - if there were some way of passing reference byval such that changes would not effect calling scope, that would 
-      be much more efficient
+  Need to account for castling, half-move clock, turn limit.
 
-  passing the Board Rep only (byval) would require generating a new piece list based on Board prior to each evaluation - even more wasteful than deep copy.
-
-  would be more efficient to deep copy piece list only, then generate board from piece list.  But still woefully inefficient.
+  create a hash within Position.pieces allowing pieces to be looked up by location
 
 
+To Do ----
+
+  add move! method to position object.
 
 
 
