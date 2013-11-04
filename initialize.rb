@@ -13,12 +13,12 @@ require './lib/application.rb'
   # moves = wp.get_moves(b)
   # print moves # => [[[7, 5], [8, 6], 1.0], [[7, 5], [8, 4], 1.0]] => true 
 
-  pos = Application::current_position
-  print pos
-  piece = pos.pieces[:w][1]
-  move = [piece, [4,4], 0.0]
-  100000.times do  # 4 seconds
-    new_position = Application::Position::create_position(pos, move)
-  end
+  # pos = Application::current_position
+  # print pos
+  # piece = pos.pieces[:w][1]
+  # move = [piece, [4,4], 0.0]
+  # 100000.times do  # 4 seconds
+  #   new_position = Application::Position::create_position(pos, move)
+  # end
 
   

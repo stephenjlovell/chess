@@ -1,4 +1,5 @@
 require './lib/board.rb'
+require './lib/move.rb'
 require './lib/pieces.rb'
 require './lib/position.rb'
 require './lib/evaluation.rb'

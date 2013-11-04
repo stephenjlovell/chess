@@ -56,10 +56,6 @@ module Application
       return board
     end
 
-    def to_sym(row,column)
-      [nil, nil, :a, :b, :c, :d, :e, :f, :g, :h, nil, nil ]
-    end
-
     def [](row,column)
       @squares[row][column]
     end
@@ -96,17 +92,11 @@ module Application
       end
     end
 
-    def move!(row, column, advance)  # should accept a move object/array
-
-      @squares[row + advance[0]][column + advance[1]] = @squares[row][column]
-      @squares[row][column] = nil
-    end
-
-    def place_pieces(pieces) #place all pieces specified onto the board.
-      pieces.each do |piece|
-        @squares[piece.position[0]][piece.position[1]] = piece.symbol
-      end
-    end
+    # def place_pieces(pieces) #place all pieces specified onto the board.
+    #   pieces.each do |piece|
+    #     @squares[piece.position[0]][piece.position[1]] = piece.symbol
+    #   end
+    # end
 
     def print
       puts "-" * 41

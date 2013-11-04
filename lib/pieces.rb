@@ -38,10 +38,14 @@ module Application
         (@color.to_s + self.class.type.to_s).to_sym
       end
 
+      def coordinates
+        Movement::coordinates(@position[0],@position[1])
+      end
+
       def get_moves(chess_position) # returns a collection of all pseudo-legal moves for the current piece.
         moves = []                  # each move contains the piece, target square, capture value, and en_passant flag.
         self.class.directions.each do |direction|
-          move = explore_direction(@position, direction, chess_position.board)
+          move = explore_direction(@position, direction, chess_position)
           moves += move unless move.empty?
         end
         return moves
@@ -49,15 +53,16 @@ module Application
 
       private 
 
-        def explore_direction(start, direction, board, moves = [] )
+        def explore_direction(start, direction, chess_position, moves = [] )
           target = [ start[0] + direction[0], start[1] + direction[1]]
           value = 0.0
+          board = chess_position.board
           if board.pseudo_legal?(target[0],target[1], @color)
             if board.enemy?(target[0],target[1], @color)
               value = Pieces::get_value_by_sym(board[target[0],target[1]])
             end
 
-            moves << [self, target, value, false]
+            moves << Movement::Move.new(chess_position, self.coordinates, target, value, false)
           
             if self.class.move_until_blocked? && board.empty?(target[0], target[1])
               explore_direction(target, direction, board, moves) 
@@ -97,19 +102,20 @@ module Application
 
       def get_moves(chess_position) # supercedes the generic get_moves function provided by the Piece class.
         moves = []
-        get_attacks(chess_position.board,moves)
+        get_attacks(chess_position,moves)
         get_en_passant(chess_position,moves)
         get_advances(chess_position,moves)
         return moves
       end
 
-      def get_attacks(board, moves)
+      def get_attacks(chess_position, moves)
         attacks = DIRECTIONS[@color][:attack]
         attacks.each do |pair|  # normal attacks
           target = [ @position[0] + pair[0], @position[1] + pair[1]]
+          board = chess_position.board
           if board.enemy?(target[0], target[1], @color)
             value = Pieces::get_value_by_sym(board[target[0],target[1]])
-            moves << [ self, target, value, false]
+            moves << Movement::Move.new(chess_position, self.coordinates, target, value, false)
           end
         end
       end
@@ -120,9 +126,8 @@ module Application
           b = chess_position.board
           if b.en_passant_target?(target[0],target[1]) && b.enemy?(target[0],target[1], @color)
             offset = DIRECTIONS[@color][:enp_offset]
-            move_target = [target[0] + offset[0], target[1] + offset[1] ]
-            # should also store whether move is an en-passant capture
-            moves << [ self, move_target, 1.0, false ] # value of en-passant capture is 1 by definition.
+            move_target = [target[0] + offset[0], target[1] + offset[1]]
+            moves << Movement::Move.new(chess_position, self.coordinates, move_target, 1.0, true) # value of en-passant capture is 1 by definition.
           end
         end
       end
@@ -136,7 +141,7 @@ module Application
           if @position[0] == d[:start_row]
             target = [ @position[0] + d[:initial][0], @position[1] + d[:initial][1]]
             unless b.occupied?(target[0], target[1])
-              moves << [ self, target, 0.0, true] # pawn is now en-passant capturable next turn only.
+              moves << Movement::Move.new(chess_position, self.coordinates, target, 0.0, false) # pawn is now en-passant capturable next turn only.
             end
           end
         end
@@ -263,7 +268,7 @@ module Application
       end
     end
 
-    def self.get_value_by_sym(sym)  # will eventually want to replace this with a simple lookup table for performance.
+    def self.get_value_by_sym(sym)  # will eventually want to replace this with a simple lookup hash for performance.
       type = sym[1]
       case type
       when "P"
@@ -282,20 +287,16 @@ module Application
     end
 
     def self.setup(board)  # returns an array of new chess piece objects corresponding to the 
-      pieces = { w: [], b: [] }         # board representation specified in board.
+      pieces = { w: {}, b: {} }         # board representation specified in board.
       board.each_with_index do |row, row_index|
         row.each_with_index do |sym, column|
           unless sym == nil || sym == :XX
             piece = self.create_piece_by_sym(row_index, column, sym) 
-            pieces[piece.color] << piece
+            pieces[piece.color][piece.coordinates] = piece
           end
         end
       end
       return pieces
-    end
-
-    def self.castle
-      # allow castling
     end
 
   end
