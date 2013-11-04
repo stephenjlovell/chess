@@ -269,7 +269,7 @@ module Application
       board.each_with_index do |row, row_index|
         row.each_with_index do |sym, column|
           unless sym == nil || sym == :XX
-            piece = Pieces::create_piece_by_sym(row_index, column, sym) 
+            piece = self.create_piece_by_sym(row_index, column, sym) 
             pieces[piece.color] << piece
           end
         end

@@ -9,13 +9,9 @@ module Application
       # En passant target square
       # Halfmove Clock
 
-      # Each node in the Search Tree (DAG) will contain a Position object, so this class needs to be
-      # as space efficient as possible.
-
     class ChessPosition
       attr_accessor :board, :pieces, :en_passant_target
       attr_reader :side_to_move
-
 
       def initialize(board, pieces, side, en_passant_target = nil)
         @board = board
@@ -24,7 +20,7 @@ module Application
         @en_passant_target = en_passant_target
       end
 
-      def get_moves
+      def get_moves # returns a sorted array of all possible moves for the current player.
         moves = []
         @pieces[:side_to_move].each { |piece| moves += piece.get_moves(@board) }
         return moves.sort { |x,y| y[2] <=> x[2] }
@@ -36,8 +32,8 @@ module Application
 
     end
 
-
-    def self.create_position(position, move)
+    def self.create_position(position, move) # returns a new position object representing the
+      # game state that results from the current player at position taking the specified move.
       en_passant_target = nil
 
       new_pieces = position.pieces[position.side_to_move].collect do |piece| 
@@ -47,12 +43,9 @@ module Application
           piece.copy
         end
       end
-
       side_to_move = if position.side_to_move == :w; :b; else; :w; end
-
       new_board = Application::Board.new
       new_board.place_pieces(new_pieces)
-
       ChessPosition.new(new_board, new_pieces, side_to_move, en_passant_target)
     end
 
