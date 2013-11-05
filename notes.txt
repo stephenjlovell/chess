@@ -30,7 +30,8 @@ Current Issues ----
 
 To Do ----
 
-  add move! method to position object.
+  come up with approach for castling:
+    
 
 
 

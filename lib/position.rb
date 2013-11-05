@@ -60,7 +60,8 @@ module Application
       en_passant_target = nil
       new_position = position.copy
       new_position.move!(move)
-      new_position.side_to_move = if position.side_to_move == :w; :b; else; :w; end
+      new_position.side_to_move = position.side_to_move == :w ? :b : :w
+
       return new_position
     end
 

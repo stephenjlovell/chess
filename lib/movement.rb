@@ -6,16 +6,15 @@ module Application
     class Move
       attr_reader :position, :coordinates, :target, :capture_value, :en_passant
 
-      def initialize(position, coordinates, target, capture_value, en_passant)
+      def initialize(position, coordinates, target, capture_value, options = {})
         @position = position
         @coordinates = coordinates
         @target = target
         @capture_value = capture_value
-        @en_passant = en_passant
+        @options = options
       end
 
     end
-
 
     def self.coordinates(row,column)
       (COLUMNS[row]) + (column - 1).to_s
@@ -32,17 +31,19 @@ module Application
       p[p.side_to_move][new_coordinates] = piece
       p[p.side_to_move].delete(move.coordinates)
 
-      if p.en_passant  # handle en passant captures
+      if move.options[:en_passant_capture]
         b[piece.position[0], move.target[1]] = nil
-        en_passant_target = coordinates(piece.position[0], move.target[1])
-        p[side_to_move].delete(en_passant_target)
+        p[side_to_move].delete(coordinates(piece.position[0], move.target[1]))
+        p.en_passant_target = nil
+      elsif move.options[:en_passant_target]
+        p.en_passant_target = move.target
       end
 
-      piece.position = move.target[]
+      piece.position = move.target
     end
 
     def self.castle!
-
+      # handle castling
     end
 
 

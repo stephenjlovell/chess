@@ -2,6 +2,8 @@
 module Application
   module Pieces
 
+    PIECE_VALUES = {  }
+
     class Piece  # this class defines the common behavior of chess pieces.
       attr_reader :color 
       attr_accessor :position
@@ -43,7 +45,7 @@ module Application
               value = Pieces::get_value_by_sym(board[target[0],target[1]])
             end
 
-            moves << Movement::Move.new(chess_position, self.coordinates, target, value, false)
+            moves << Movement::Move.new(chess_position, self.coordinates, target, value)
           
             if self.class.move_until_blocked? && board.empty?(target[0], target[1])
               explore_direction(target, direction, board, moves) 
@@ -96,7 +98,7 @@ module Application
           board = chess_position.board
           if board.enemy?(target[0], target[1], @color)
             value = Pieces::get_value_by_sym(board[target[0],target[1]])
-            moves << Movement::Move.new(chess_position, self.coordinates, target, value, false)
+            moves << Movement::Move.new(chess_position, self.coordinates, target, value)
           end
         end
       end
@@ -108,7 +110,8 @@ module Application
           if chess_position.en_passant_target?(target[0],target[1]) && b.enemy?(target[0],target[1], @color)
             offset = DIRECTIONS[@color][:enp_offset]
             move_target = [target[0] + offset[0], target[1] + offset[1]]
-            moves << Movement::Move.new(chess_position, self.coordinates, move_target, 1.0, true) # value of en-passant capture is 1 by definition.
+            moves << Movement::Move.new(chess_position, self.coordinates, move_target, 1.0, 
+                                        { en_passant_capture: true }) # value of en-passant capture is 1 by definition.
           end
         end
       end
@@ -122,12 +125,7 @@ module Application
           if @position[0] == d[:start_row]
             target = [ @position[0] + d[:initial][0], @position[1] + d[:initial][1]]
             unless b.occupied?(target[0], target[1])
-              moves << Movement::Move.new(chess_position, self.coordinates, target, 0.0, false) 
-
-              # pawn is now en-passant capturable next turn only.
-              # replace Movement::Move.en_passant with an options hash to set 
-              # Position.en_passant_target on selection of this move.
-            
+              moves << Movement::Move.new(chess_position, self.coordinates, target, 0.0, { en_passant_target: true }) 
             end
           end
         end
