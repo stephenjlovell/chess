@@ -2,25 +2,6 @@
 module Application
   module Pieces
 
-    # class PieceCollection
-    #   include Enumerable
-    #   attr_accessor :white, :black
-
-    #   def initialize(white = [], black = [])
-    #     @white  = white
-    #     @black = black
-    #   end
-
-    #   def each
-    #     all.each { |piece| yield(piece) }
-    #   end
-
-    #   def all
-    #     @white + @black
-    #   end
-
-    # end
-
     class Piece  # this class defines the common behavior of chess pieces.
       attr_reader :color 
       attr_accessor :position
@@ -124,7 +105,7 @@ module Application
         DIRECTIONS[:en_passant].each do |pair|
           target = [ @position[0] + pair[0], @position[1] + pair[1]]
           b = chess_position.board
-          if b.en_passant_target?(target[0],target[1]) && b.enemy?(target[0],target[1], @color)
+          if chess_position.en_passant_target?(target[0],target[1]) && b.enemy?(target[0],target[1], @color)
             offset = DIRECTIONS[@color][:enp_offset]
             move_target = [target[0] + offset[0], target[1] + offset[1]]
             moves << Movement::Move.new(chess_position, self.coordinates, move_target, 1.0, true) # value of en-passant capture is 1 by definition.
@@ -137,11 +118,16 @@ module Application
         target = [ @position[0] + d[:advance][0], @position[1] + d[:advance][1] ]
         b = chess_position.board
         unless b.occupied?(target[0], target[1])
-          moves << [ self, target, 0.0]
+          moves << Movement::Move.new(chess_position, self.coordinates, target, 0.0, false)
           if @position[0] == d[:start_row]
             target = [ @position[0] + d[:initial][0], @position[1] + d[:initial][1]]
             unless b.occupied?(target[0], target[1])
-              moves << Movement::Move.new(chess_position, self.coordinates, target, 0.0, false) # pawn is now en-passant capturable next turn only.
+              moves << Movement::Move.new(chess_position, self.coordinates, target, 0.0, false) 
+
+              # pawn is now en-passant capturable next turn only.
+              # replace Movement::Move.en_passant with an options hash to set 
+              # Position.en_passant_target on selection of this move.
+            
             end
           end
         end

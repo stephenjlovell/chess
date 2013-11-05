@@ -3,11 +3,7 @@ module Application
   module Position
 
     # ChessPosition describes the game state as of a specific turn. Should describe the following:
-      # Piece placement
-      # Side to move
-      # Castling rights
-      # En passant target square
-
+    # Piece placement, side to move, castling rights, en passant target square
     class ChessPosition
       attr_accessor :board, :pieces, :en_passant_target
       attr_reader :side_to_move
@@ -21,8 +17,17 @@ module Application
 
       def get_moves # returns a sorted array of all possible moves for the current player.
         moves = []
-        moves = @pieces[:side_to_move].each { |piece| moves += piece.get_moves(self) }
-        return moves.sort { |x,y| y[2] <=> x[2] }
+        @pieces[@side_to_move].each { |coordinates, piece| moves += piece.get_moves(self) }  # refactor 
+        return moves.sort { |x,y| y.capture_value <=> x.capture_value }
+      end
+
+      def en_passant_target?(row, column)
+        return false if @en_passant_target.nil?
+        if @en_passant_target[0] == row && @en_passant_target[1] == column
+          true
+        else
+          false
+        end
       end
 
       def copy
@@ -32,8 +37,12 @@ module Application
             pieces[color][coordinate] = piece.class.new(piece.position[0], piece.position[1], piece.color)
           end
         end
-        ChessPosition.new(@board.copy, pieces, @side_to_move, [@en_passant_target[0], @en_passant_target[1]]) 
-                          # en_passant_target is an array. need to deep copy this.
+        en_passant_target = if @en_passant_target.nil?
+          nil
+        else
+          [@en_passant_target[0], @en_passant_target[1]]
+        end 
+        ChessPosition.new(@board.copy, pieces, @side_to_move, en_passant_target) 
       end
 
       def move!(move) #should accept a move object/array
@@ -48,29 +57,11 @@ module Application
 
     def self.create_position(position, move) # returns a new position object representing the
       # game state that results from the current player at position taking the specified move.
-
-      
-
-
-      # en_passant_target = nil
-
-      # new_pieces = position.pieces[position.side_to_move].collect do |piece| 
-      #   if piece == move[0]
-      #     piece.class.new(move[1][0],move[1][1],piece.color)
-      #     en_passant_target = [move[1][0],move[1][1]] if move[3]
-      #   else
-      #     piece.copy
-      #   end
-      # end
-      # side_to_move = if position.side_to_move == :w; :b; else; :w; end
-      # new_board = Application::Board.new  # use the board.copy method here
-      # new_board.place_pieces(new_pieces)
-      # ChessPosition.new(new_board, new_pieces, side_to_move, en_passant_target)
-
-
-
-
-
+      en_passant_target = nil
+      new_position = position.copy
+      new_position.move!(move)
+      new_position.side_to_move = if position.side_to_move == :w; :b; else; :w; end
+      return new_position
     end
 
   end
