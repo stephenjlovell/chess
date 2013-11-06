@@ -23,15 +23,15 @@ EVALUATION ----
 
 Current Issues ----
 
-  Need to account for castling, half-move clock, turn limit.
-
-  create a hash within Position.pieces allowing pieces to be looked up by location
+  Castling - could handle this in the movement module or the Rook class.  Will need to store info in Position object.
 
 
 To Do ----
 
-  come up with approach for castling:
-    
+  come up with approach for castling
+  Add half-move clock (turn timer) to Application::Game.
+  Create full-turn counter in Application::Game
+  in places where position pairs are passed as integer arguments, use *arr to explode arr into args
 
 
 

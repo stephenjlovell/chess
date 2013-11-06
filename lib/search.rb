@@ -22,53 +22,62 @@
 module Application
   module Search # this module will define a search tree along with traversal algorithms for move selection.
 
-    class Node # this class defines a single node in the search tree
-      attr_accessor :position
+    class << self
+      @root = nil
 
-      def initialize(position)
-        @position = position
+      def root
+        @root ||= Node.new(Application::current_position)
       end
 
-      def edges 
-        @edges ||= @position.get_moves.collect do |move|
-          Node.new(Position::create_position(@position, move))
+      def min(x,y) # faster than using method supplied via Enumerable for binary comparisons.
+        x < y ? x : y 
+      end
+
+      def max(x,y)  # faster than using method supplied via Enumerable for binary comparisons.
+        x > y ? x : y
+      end 
+
+      # initial call:  alphabeta(Search::root), 4)
+      def alpha_beta(node, depth_remaining, alpha = -1.0/0.0, beta = 1.0/0.0, maximize = true)
+        if depth_remaining == 0 || node.position.edges.empty?
+          return node.value
+        elsif maximize # current node is a maximizing node
+          node.edges.each do |child|
+            alpha = max(alpha, alpha_beta(child, depth_remaining-1, alpha, beta, false))
+            break if beta <= alpha
+          end
+          return alpha
+        else  # current node is a minimizing node
+          node.edges.each do |child|
+            beta = min(beta, alpha_beta(child, depth_remaining-1, alpha, beta, true))
+            break if beta <= alpha
+          end
+          return beta
         end
       end
 
-      def value
-        @value ||= Evaluation::evaluate(@position)
-      end
+      #color_value: 1.0 or -1.0
+      def negamax_alpha_beta(node, depth_remaining, alpha = -1.0/0.0, beta = 1.0/0.0, color_value)
 
-      def value=(value)
-        @value = value
-      end
-
-    end
-
-    def self.root
-      Node.new(Application::current_position)
-    end
-
-    # initial call:  alphabeta(Search::root), 4)
-    def self.alpha_beta(node, depth_remaining, alpha = -1.0/0.0, beta = 1.0/0.0, maximize = true)
-      if depth_remaining == 0 || node.position.edges.empty?
-        return node.value
-      elsif maximize # current node is a maximizing node
+        if depth_remaining == 0 || node.position.edges.empty?
+          return node.value * color_value
+        end
+        best_value = -1.0/0.0
         node.edges.each do |child|
-          alpha = [alpha, alpha_beta(child, depth_remaining-1, alpha, beta, false)].max
+          value = -negamax_alpha_beta(child, depth_remaining-1, -beta, -alpha, -color)
+          best_value = max(best_value, value)
+          alpha = max(alpha, value)
           break if beta <= alpha
         end
-        return alpha
-      else  # current node is a minimizing node
-        node.edges.each do |child|
-          beta = [beta, alpha_beta(child, depth_remaining-1, alpha, beta, true)].min
-          break if beta <= alpha
-        end
-        return beta
+
       end
+
     end
 
   end
 end
+
+
+
 
 

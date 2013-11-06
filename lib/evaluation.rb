@@ -30,7 +30,7 @@ module Application
       return net_raw_material(position,friend, enemy)
     end
 
-    def self.net_raw_material(position, friend, enemy)
+    def self.net_raw_material(position, friend, enemy) # net material value for side to move.
       raw_material(position, friend) - raw_material(position, enemy)
     end
 
@@ -39,17 +39,41 @@ module Application
     end
 
 
-    # add reversible Piece-Square Tables
+    # reversible Piece-Square Tables
+    PST = { 
 
+      wP:[]
+      bP:[]
 
+      wR:[]
+      bR:[]
 
+      wN:[]
+      bN:[]
 
+      wB:[]
+      wB:[]
+
+      wQ:[]
+      bQ:[]
+
+      wK:[]
+      bK:[]
+
+    }
 
 
 
 
   end
 end 
+
+
+
+
+
+
+
 
 
 

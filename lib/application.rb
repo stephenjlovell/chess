@@ -26,6 +26,7 @@ require './lib/pieces.rb'
 require './lib/position.rb'
 require './lib/evaluation.rb'
 require './lib/search.rb'
+require './lib/user_interface.rb'
 
 module Application # define application-level behavior in this module and file.
 
@@ -45,6 +46,11 @@ module Application # define application-level behavior in this module and file.
     def current_position # represents the root node in current search tree.
       @current_position ||= current_game.position
     end
+
+    def current_side
+      @current_side ||= current_position.side_to_move
+    end
+
   end
 
   class Game
