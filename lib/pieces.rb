@@ -22,7 +22,7 @@
 module Application
   module Pieces
 
-    PIECE_VALUES = {  }
+    PIECE_VALUES = { }
 
     class Piece  # this class defines the common behavior of chess pieces.
       attr_reader :color 

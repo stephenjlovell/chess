@@ -25,6 +25,8 @@ Current Issues ----
 
   Castling - could handle this in the movement module or the Rook class.  Will need to store info in Position object.
 
+  Move::Coordinates is somehow getting rows/columns reversed.
+
 
 To Do ----
 

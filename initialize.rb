@@ -42,8 +42,15 @@ require './lib/application.rb'
   #   new_position = Application::Position::create_position(pos, move)
   # end
 
-  Application::current_position.edges
+  t0 = Time.now
   print Application::Search::select_move
+  t1 = Time.now
+
+  puts "move selected in #{t1 - t0} seconds."
+
+  # 5 ply => 0.93 seconds
+  # 6 ply => 1.89 seconds
+  # 7 ply => 24.83 seconds
 
 # # test Board.copy
 #   b = Application::current_position.board

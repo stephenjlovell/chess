@@ -26,7 +26,6 @@ module Application
       # def min(x,y) # faster than using method supplied via Enumerable for binary comparisons.
       #   x < y ? x : y 
       # end
-
       # def max(x,y)  # faster than using method supplied via Enumerable for binary comparisons.
       #   x > y ? x : y
       # end
@@ -46,28 +45,30 @@ module Application
           if depth_remaining == 0
             return node.value
           elsif maximize # current node is a maximizing node
+            is_root = node == root
             node.edges.each do |child|
               result = alpha_beta(child, root, best_node, 
                                   depth_remaining-1, alpha, beta, false)
               if result > alpha
                 alpha = result
-                best_node = child if node == root
+                best_node = child if is_root
               end
               break if beta <= alpha
             end
-            return best_node if node == root
+            return best_node if is_root
             return alpha
           else  # current node is a minimizing node
             node.edges.each do |child|
+            is_root = node == root
               result = alpha_beta(child, root, best_node, 
                                   depth_remaining-1, alpha, beta, true)
               if result > beta
                 beta = result
-                best_node = child if node == root
+                best_node = child if is_root
               end
               break if beta <= alpha
             end
-            return best_node if node == root
+            return best_node if is_root
             return beta
           end
         end
