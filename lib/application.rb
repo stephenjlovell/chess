@@ -19,7 +19,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-
 require './lib/board.rb'
 require './lib/movement.rb'
 require './lib/pieces.rb'

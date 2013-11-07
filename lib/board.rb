@@ -68,9 +68,9 @@ module Application
 
     def copy # return a deep copy of self.
       board = Board.new
-      @squares[2..9].each_with_index do |row, row_index|
-        row[2..9].each_with_index do |sym, column_index|
-          board[row_index, column_index] = sym
+      (2..9).each do |row|
+        (2..9).each do |column|
+          board[row, column] = @squares[row][column]
         end
       end
       return board
@@ -119,7 +119,9 @@ module Application
     # end
 
     def print
-      puts "-" * 41
+      i = 1
+      puts "    A    B    C    D    E    F    G    H"
+      puts "  " + ("-" * 41)
       @squares[2..9].each do |row|
         line = []
         row.each do |square|
@@ -129,9 +131,11 @@ module Application
             line << square.to_s
           end
         end
-        puts "| " + line.join(" | ") + " |"
-        puts "-" * 41
+        puts "#{i} | " + line.join(" | ") + " | #{i}"
+        puts "  " + ("-" * 41)
+        i+=1
       end
+      puts "    A    B    C    D    E    F    G    H"
       puts "\n"
     end
     

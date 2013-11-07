@@ -42,19 +42,16 @@ require './lib/application.rb'
   #   new_position = Application::Position::create_position(pos, move)
   # end
 
+  Application::current_position.edges
+  print Application::Search::select_move
+
+# # test Board.copy
+#   b = Application::current_position.board
+#   b2 = b.copy
+#   b.print
+#   b2.print
 
 
-  def foo
-    str = "!"
-    [1,2,3,4,5,6].each do |value|
-      str += value.to_s
-      break if value == 300
-    end
-    return str
-  end
-
-  puts foo
-  print foo
 
 
 

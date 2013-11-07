@@ -68,7 +68,7 @@ module Application
             moves << Movement::Move.new(chess_position, self.coordinates, target, value)
           
             if self.class.move_until_blocked? && board.empty?(target[0], target[1])
-              explore_direction(target, direction, board, moves) 
+              explore_direction(target, direction, chess_position, moves) 
             end
           end
           return moves
@@ -117,8 +117,8 @@ module Application
           target = [ @position[0] + pair[0], @position[1] + pair[1]]
           board = chess_position.board
           if board.enemy?(target[0], target[1], @color)
-            value = Pieces::get_value_by_sym(board[target[0],target[1]])
-            moves << Movement::Move.new(chess_position, self.coordinates, target, value)
+            moves << Movement::Move.new(chess_position, self.coordinates, target, 
+                                        Pieces::get_value_by_sym(board[target[0],target[1]]))
           end
         end
       end
@@ -130,9 +130,9 @@ module Application
           if chess_position.en_passant_target?(target[0],target[1]) && b.enemy?(target[0],target[1], @color)
             offset = DIRECTIONS[@color][:enp_offset]
             move_target = [target[0] + offset[0], target[1] + offset[1]]
-            moves << Movement::Move.new(chess_position, self.coordinates, move_target, 1.0, 
-                                        { en_passant_capture: true }) # value of en-passant capture is 1 by definition.
-          end
+            moves << Movement::Move.new(chess_position, self.coordinates, 
+                                        move_target, 1.0,  { en_passant_capture: true }) 
+          end                           # value of en-passant capture is 1 by definition.
         end
       end
 
@@ -141,11 +141,12 @@ module Application
         target = [ @position[0] + d[:advance][0], @position[1] + d[:advance][1] ]
         b = chess_position.board
         unless b.occupied?(target[0], target[1])
-          moves << Movement::Move.new(chess_position, self.coordinates, target, 0.0, false)
+          moves << Movement::Move.new(chess_position, self.coordinates, target, 0.0)
           if @position[0] == d[:start_row]
             target = [ @position[0] + d[:initial][0], @position[1] + d[:initial][1]]
             unless b.occupied?(target[0], target[1])
-              moves << Movement::Move.new(chess_position, self.coordinates, target, 0.0, { en_passant_target: true }) 
+              moves << Movement::Move.new(chess_position, self.coordinates, target, 
+                                          0.0, { en_passant_target: true }) 
             end
           end
         end

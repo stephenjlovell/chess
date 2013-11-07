@@ -35,30 +35,30 @@ module Application
     end
 
     def self.raw_material(position, side) # =~ 1,040 at start
-      position.pieces[side].inject(0.0) { |total, (key, piece)| total += piece.value }  
+      position.pieces[side].inject(0.0) { |total, (key, piece)| total += piece.class.value }  
     end
 
 
-    # reversible Piece-Square Tables
+    # Piece-Square Tables
     PST = { 
 
-      wP:[]
-      bP:[]
+      wP:[],
+      bP:[],
 
-      wR:[]
-      bR:[]
+      wR:[],
+      bR:[],
 
-      wN:[]
-      bN:[]
+      wN:[],
+      bN:[],
 
-      wB:[]
-      wB:[]
+      wB:[],
+      wB:[],
 
-      wQ:[]
-      bQ:[]
+      wQ:[],
+      bQ:[],
 
-      wK:[]
-      bK:[]
+      wK:[],
+      bK:[],
 
     }
 
