@@ -25,34 +25,69 @@ module Application
     COLUMNS = { 2 => "a", 3 => "b", 4 => "c", 5 => "d", 
                 6 => "e", 7 => "f", 8 => "g", 9 => "h" }
     class Move
-      attr_reader :position, :coordinates, :target, :capture_value, 
-                  :en_passant, :options
+      attr_reader :position, :square, :target, 
+                  :capture_value, :en_passant, :options
 
-      def initialize(position, coordinates, target, capture_value, options = {})
+      def initialize(position, square, target, capture_value, options = {})
         @position = position
-        @coordinates = coordinates
+        @square = square
         @target = target
         @capture_value = capture_value
         @options = options
       end
 
       def to_s
-        piece = @position.pieces[@position.side_to_move][@coordinates]
-        "#{piece.symbol.to_s} #{@coordinates} to #{Movement::coordinates(@target[0], @target[1])}"
+        piece = @position.pieces[@position.side_to_move][@square]
+        "#{piece.symbol.to_s} #{@square} to #{Movement::square(@target[0], @target[1])}"
       end
-
     end
 
-    def self.coordinates(row,column)
-      (COLUMNS[row]) + (column - 1).to_s
+    def self.square(row,column)
+      (COLUMNS[column]) + (row - 1).to_s
     end
-
-
 
     def self.castle!
       # handle castling
     end
 
+    # Mixin methods:
+
+    def get_moves # returns a sorted array of all possible moves for the current player.
+      moves = []
+      @pieces[@side_to_move].each { |square, piece| moves += piece.get_moves(self) }
+      moves.sort! { |x,y| y.capture_value <=> x.capture_value }
+      return moves
+    end
+
+    def create_position(move) # returns a new position object representing the game 
+      # state that results from the current player taking the specified move.
+      en_passant_target = nil
+      new_position = copy
+      new_position.move!(move)
+      new_position.previous_move = move
+      new_position.side_to_move = @side_to_move == :w ? :b : :w
+      return new_position
+    end
+
+    def move!(move) # updates self by performing the specified move.
+      board = self.board
+      piece = self.pieces[self.side_to_move][move.square]
+      board[move.target[0],move.target[1]] = board[piece.position[0],piece.position[1]]
+      board[piece.position[0], piece.position[1]] = nil
+
+      new_square = Movement::square(move.target[0],move.target[1])
+      self.pieces[self.side_to_move][new_square] = piece
+      self.pieces[self.side_to_move].delete(move.square)
+
+      if move.options[:en_passant_capture]
+        board[piece.position[0], move.target[1]] = nil
+        self.pieces[side_to_move].delete(Movement::square(piece.position[0], move.target[1]))
+        self.en_passant_target = nil
+      elsif move.options[:en_passant_target]
+        self.en_passant_target = [move.target[0], move.target[1]]
+      end
+      piece.position = [move.target[0],move.target[1]]
+    end
 
   end
 end

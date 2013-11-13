@@ -22,9 +22,9 @@
 module Application
   module Position
 
-    # ChessPosition describes the game state as of a specific turn. Should describe the following:
-    # Piece placement, side to move, castling rights, en passant target square
-    class ChessPosition
+    class ChessPosition    # Complete description of the game state as of a specific turn.
+      include Application::Movement # supplies get_moves, create_position, and move! methods
+
       attr_accessor :board, :pieces,  :side_to_move, :en_passant_target, :previous_move
 
       def initialize(board, pieces, side_to_move, en_passant_target = nil, previous_move = nil)
@@ -48,72 +48,28 @@ module Application
         @value = value
       end
 
+      def copy # perform a deep copy of self.
+        new_pieces = { w: {}, b: {} }
+        @pieces.each do |color, square_hash|
+          @pieces[color].each do |square, piece|
+            new_pieces[color][square] = piece.copy
+          end
+        end
+        en_passant_target = @en_passant_target.nil? ? nil : [@en_passant_target[0], @en_passant_target[1]]
+        ChessPosition.new(@board.copy, new_pieces, @side_to_move, en_passant_target) 
+      end
+
       def to_s
          # return a string decribing the position in Forsyth-Edwards Notation.
       end
 
       def edges
-        get_moves.collect do |move|
-          create_position(move)
-        end
+        @edges ||= get_moves.collect { |move| create_position(move) }
       end
 
-      # These methods will eventually be located in Application::Movement 
-      # and mixed in to the Position class:
-
-      def get_moves # returns a sorted array of all possible moves for the current player.
-        moves = []
-        @pieces[@side_to_move].each { |coordinates, piece| moves += piece.get_moves(self) }  # refactor 
-        moves.sort! { |x,y| y.capture_value <=> x.capture_value }
-        return moves
-      end
-
-      def create_position(move) # returns a new position object representing the
-        # game state that results from the current player at position taking the specified move.
-        en_passant_target = nil
-        new_position = copy
-        new_position.move!(move)
-        new_position.previous_move = move
-        new_position.side_to_move = @side_to_move == :w ? :b : :w
-        return new_position
-      end
-
-      def copy
-        pieces = { w: {}, b: {} }
-        @pieces.each do |color, coordinates_hash|
-          @pieces[color].each do |coordinate, piece|
-            pieces[color][coordinate] = piece.copy
-          end
-        end
-        en_passant_target = if @en_passant_target.nil?
-          nil
-        else
-          [@en_passant_target[0], @en_passant_target[1]]
-        end 
-        ChessPosition.new(@board.copy, pieces, @side_to_move, en_passant_target) 
-      end
-
-      def move!(move)  # where do we get the color?
-        # move.position => previous position
-        # self => position we want to mutate
-        p, b = self, self.board
-        piece = p.pieces[p.side_to_move][move.coordinates]
-        b[move.target[0],move.target[1]] = b[piece.position[0],piece.position[1]]
-        b[piece.position[0], piece.position[1]] = nil
-        # puts move.to_s
-        # self.board.print
-        new_coordinates = Movement::coordinates(move.target[0],move.target[1])
-        p.pieces[p.side_to_move][new_coordinates] = piece
-        p.pieces[p.side_to_move].delete(move.coordinates)
-
-        if move.options[:en_passant_capture]
-          b[piece.position[0], move.target[1]] = nil
-          p.pieces[side_to_move].delete(Movement::coordinates(piece.position[0], move.target[1]))
-          p.en_passant_target = nil
-        elsif move.options[:en_passant_target]
-          p.en_passant_target = [move.target[0], move.target[1]]
-        end
-        piece.position = [move.target[0],move.target[1]]
+      def parent
+        return nil if previous_move.nil?
+        previous_move.position
       end
 
     end

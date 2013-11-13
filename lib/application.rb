@@ -38,8 +38,8 @@ module Application # define application-level behavior in this module and file.
       @current_game = game  # may be needed in a future load_game method.
     end
 
-    def new_game
-      @current_game = Application::Game.new
+    def new_game(ai_player = :w)
+      @current_game = Application::Game.new(ai_player)
     end
 
     def current_position # represents the root node in current search tree.
@@ -55,14 +55,22 @@ module Application # define application-level behavior in this module and file.
   class Game
     attr_accessor :position  
     
-    def initialize
+    def initialize(ai_player = :w)
       board = Application::Board.allocate
       board.setup
       pieces = Pieces::setup(board)
-      @position = Position::ChessPosition.new(board, pieces, :w)
+      @position = Position::ChessPosition.new(board, pieces, ai_player)
+      @halfmove_counter = 0
+      @human_player = :w
     end
 
-    # Halfmove clock will be defined at the game level.
+    def move_counter
+      @halfmove_counter / 2
+    end
+
+    def end_turn
+      @halfmove_counter += 1
+    end
 
   end
 

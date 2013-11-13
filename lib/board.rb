@@ -24,8 +24,6 @@ module Application
   class Board
     include Enumerable
 
-    @squares = []
-
     def each
       @squares.each { |row| yield(row) }
     end
@@ -76,53 +74,41 @@ module Application
       return board
     end
 
-    def [](row,column)
+    def [](row, column)
       @squares[row][column]
     end
 
-    def []=(row,column, value)
+    def []=(row, column, value)
       @squares[row][column] = value
     end
 
-    def empty?(row,column)
+    def empty?(row, column)
       @squares[row][column] == nil
     end
 
-    def out_of_bounds?(row,column)
+    def out_of_bounds?(row, column)
       @squares[row][column] == :XX
     end
 
-    def occupied?(row,column)
+    def occupied?(row, column)
       sym = @squares[row][column]
       sym != nil && sym != :XX
     end
 
-    def enemy?(row,column,color)
-      if occupied?(row,column)
-        return true if @squares[row][column][0].to_sym != color
-      end
-      false
+    def enemy?(row, column, color)
+      occupied?(row,column) && @squares[row][column][0].to_sym != color
     end
 
     def pseudo_legal?(row, column, color)
-      if empty?(row, column) || enemy?(row, column, color)
-        true
-      else
-        false
-      end
+      empty?(row, column) || enemy?(row, column, color)
     end
 
-    # def place_pieces(pieces) #place all pieces specified onto the board.
-    #   pieces.each do |piece|
-    #     @squares[piece.position[0]][piece.position[1]] = piece.symbol
-    #   end
-    # end
-
     def print
-      i = 1
-      puts "    A    B    C    D    E    F    G    H"
+      i = 8
+      headings = "    A    B    C    D    E    F    G    H"
+      puts headings
       puts "  " + ("-" * 41)
-      @squares[2..9].each do |row|
+      @squares[2..9].reverse_each do |row|
         line = []
         row.each do |square|
           if square == nil 
@@ -133,9 +119,9 @@ module Application
         end
         puts "#{i} | " + line.join(" | ") + " | #{i}"
         puts "  " + ("-" * 41)
-        i+=1
+        i-=1
       end
-      puts "    A    B    C    D    E    F    G    H"
+      puts headings
       puts "\n"
     end
     

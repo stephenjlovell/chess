@@ -22,7 +22,8 @@
 module Application
   module Pieces
 
-    PIECE_VALUES = { }
+    PIECE_VALUES = { "P" => 1.0, "N" => 3.2, "B" => 10.0/3.0, 
+                     "R" => 5.1, "Q" => 8.8, "K" => 1000.0 }
 
     class Piece  # this class defines the common behavior of chess pieces.
       attr_reader :color 
@@ -41,12 +42,12 @@ module Application
         (@color.to_s + self.class.type.to_s).to_sym
       end
 
-      def coordinates
-        Movement::coordinates(@position[0],@position[1])
+      def square
+        Movement::square(@position[0], @position[1])
       end
 
       def get_moves(chess_position) # returns a collection of all pseudo-legal moves for the current piece.
-        moves = []                  # each move contains the piece, target square, capture value, and en_passant flag.
+        moves = []                  # each move contains the piece, target, capture value, and en_passant flag.
         self.class.directions.each do |direction|
           move = explore_direction(@position, direction, chess_position)
           moves += move unless move.empty?
@@ -55,7 +56,6 @@ module Application
       end
 
       private 
-
         def explore_direction(start, direction, chess_position, moves = [] )
           target = [ start[0] + direction[0], start[1] + direction[1]]
           value = 0.0
@@ -65,7 +65,7 @@ module Application
               value = Pieces::get_value_by_sym(board[target[0],target[1]])
             end
 
-            moves << Movement::Move.new(chess_position, self.coordinates, target, value)
+            moves << Movement::Move.new(chess_position, self.square, target, value)
           
             if self.class.move_until_blocked? && board.empty?(target[0], target[1])
               explore_direction(target, direction, chess_position, moves) 
@@ -103,8 +103,8 @@ module Application
         end
       end
 
-      def get_moves(chess_position) # supercedes the generic get_moves function provided by the Piece class.
-        moves = []
+      def get_moves(chess_position) # supercedes the generic get_moves function 
+        moves = []                  # provided by the Piece class.
         get_attacks(chess_position,moves)
         get_en_passant(chess_position,moves)
         get_advances(chess_position,moves)
@@ -117,7 +117,7 @@ module Application
           target = [ @position[0] + pair[0], @position[1] + pair[1]]
           board = chess_position.board
           if board.enemy?(target[0], target[1], @color)
-            moves << Movement::Move.new(chess_position, self.coordinates, target, 
+            moves << Movement::Move.new(chess_position, self.square, target, 
                                         Pieces::get_value_by_sym(board[target[0],target[1]]))
           end
         end
@@ -127,10 +127,11 @@ module Application
         DIRECTIONS[:en_passant].each do |pair|
           target = [ @position[0] + pair[0], @position[1] + pair[1]]
           b = chess_position.board
-          if chess_position.en_passant_target?(target[0],target[1]) && b.enemy?(target[0],target[1], @color)
+          if chess_position.en_passant_target?(target[0],target[1]) && 
+          b.enemy?(target[0],target[1], @color)
             offset = DIRECTIONS[@color][:enp_offset]
             move_target = [target[0] + offset[0], target[1] + offset[1]]
-            moves << Movement::Move.new(chess_position, self.coordinates, 
+            moves << Movement::Move.new(chess_position, self.square, 
                                         move_target, 1.0,  { en_passant_capture: true }) 
           end                           # value of en-passant capture is 1 by definition.
         end
@@ -139,13 +140,13 @@ module Application
       def get_advances(chess_position, moves)
         d = DIRECTIONS[@color]
         target = [ @position[0] + d[:advance][0], @position[1] + d[:advance][1] ]
-        b = chess_position.board
-        unless b.occupied?(target[0], target[1])
-          moves << Movement::Move.new(chess_position, self.coordinates, target, 0.0)
+        board = chess_position.board
+        unless board.occupied?(target[0], target[1])
+          moves << Movement::Move.new(chess_position, self.square, target, 0.0)
           if @position[0] == d[:start_row]
             target = [ @position[0] + d[:initial][0], @position[1] + d[:initial][1]]
-            unless b.occupied?(target[0], target[1])
-              moves << Movement::Move.new(chess_position, self.coordinates, target, 
+            unless board.occupied?(target[0], target[1])
+              moves << Movement::Move.new(chess_position, self.square, target, 
                                           0.0, { en_passant_target: true }) 
             end
           end
@@ -255,40 +256,8 @@ module Application
       end
     end
 
-    def self.create_piece_by_sym(row, column, sym)
-      color, type = sym[0].to_sym, sym[1]
-      case type
-      when "P"
-        return Pawn.new(row, column, color)
-      when "R"
-        return Rook.new(row, column, color)
-      when "N"
-        return Knight.new(row, column, color)
-      when "B"
-        return Bishop.new(row, column, color)
-      when "Q"
-        return Queen.new(row, column, color)
-      when "K"
-        return King.new(row, column, color)
-      end
-    end
-
     def self.get_value_by_sym(sym)  # will eventually want to replace this with a simple lookup hash for performance.
-      type = sym[1]
-      case type
-      when "P"
-        return Pawn.value
-      when "R"
-        return Rook.value
-      when "N"
-        return Knight.value
-      when "B"
-        return Bishop.value
-      when "Q"
-        return Queen.value
-      when "K"
-        return King.value
-      end
+      PIECE_VALUES[sym[1]]
     end
 
     def self.setup(board)  # returns an array of new chess piece objects corresponding to the 
@@ -297,11 +266,23 @@ module Application
         row.each_with_index do |sym, column|
           unless sym == nil || sym == :XX
             piece = self.create_piece_by_sym(row_index, column, sym) 
-            pieces[piece.color][piece.coordinates] = piece
+            pieces[piece.color][piece.square] = piece
           end
         end
       end
       return pieces
+    end
+
+    def self.create_piece_by_sym(row, column, sym)
+      color, type = sym[0].to_sym, sym[1]
+      case type
+      when "P" then Pawn.new(row, column, color)
+      when "R" then Rook.new(row, column, color)
+      when "N" then Knight.new(row, column, color)
+      when "B" then Bishop.new(row, column, color)
+      when "Q" then Queen.new(row, column, color)
+      when "K" then King.new(row, column, color)
+      end
     end
 
   end

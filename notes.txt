@@ -6,7 +6,7 @@ BOARD STATE
 DATA STRUCTURE
 
   Directed Acyclic Graph
-    Position object passed to node generator.
+    Position object used as node in search tree
     Evaluation score stored in node
     edges to other nodes generated based on move list.
 
@@ -23,17 +23,30 @@ EVALUATION ----
 
 Current Issues ----
 
-  Castling - could handle this in the movement module or the Rook class.  Will need to store info in Position object.
 
-  Move::Coordinates is somehow getting rows/columns reversed.
+  Minimax and Negamax performance should be very similar.  Instead:
+
+  # Minimax:
+    # 3 ply => 0.04 seconds, 462 nodes
+    # 4 ply => 0.08 seconds, 488 nodes
+    # 5 ply => 1.07 seconds, 10,089 nodes
+    # 6 ply => 2.25 seconds, 12,284 nodes
+    # 7 ply => 111.56 seconds, 260,354 nodes ... ???
+
+  # Negamax:
+    # 3 ply => .15 seconds, 562 nodes
+    # 4 ply => .89 seconds, 1,440 nodes
+    # 5 ply => 82.33 seconds, 52,494 nodes ... ???
 
 
 To Do ----
 
-  come up with approach for castling
+  Castling - could handle this in the movement module or the Rook class.  Will need to store info in Position object.
   Add half-move clock (turn timer) to Application::Game.
   Create full-turn counter in Application::Game
   in places where position pairs are passed as integer arguments, use *arr to explode arr into args
+
+
 
 
 

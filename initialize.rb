@@ -21,6 +21,8 @@
 
 puts 'loading chess library'
 
+$total_calls = 0
+
 require './lib/application.rb'
 
 # #  test initial moves available to pieces:
@@ -34,23 +36,23 @@ require './lib/application.rb'
   # moves = wp.get_moves(Application::current_position)
   # print moves
 
-  # pos = Application::current_position
-  # print pos
-  # piece = pos.pieces[:w][1]
-  # move = [piece, [4,4], 0.0]
-  # 100000.times do  # 4 seconds
-  #   new_position = Application::Position::create_position(pos, move)
-  # end
-
+  pos = Application::current_position  
   t0 = Time.now
-  print Application::Search::select_move
+  puts Application::Search::select_move.to_s
   t1 = Time.now
-
   puts "move selected in #{t1 - t0} seconds."
 
-  # 5 ply => 0.93 seconds
-  # 6 ply => 1.89 seconds
-  # 7 ply => 24.83 seconds
+# Minimax:
+  # 3 ply => 0.04 seconds, 462 nodes
+  # 4 ply => 0.08 seconds, 488 nodes
+  # 5 ply => 1.07 seconds, 10,089 nodes
+  # 6 ply => 2.25 seconds, 12,284 nodes
+  # 7 ply => 111.56 seconds, 260,354 nodes
+
+# Negamax:
+  # 3 ply => .15 seconds, 562 nodes
+  # 4 ply => .89 seconds, 1,440 nodes
+  # 5 ply => 82.33 seconds, 52,494 nodes ... ???
 
 # # test Board.copy
 #   b = Application::current_position.board
