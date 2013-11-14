@@ -42,17 +42,7 @@ require './lib/application.rb'
   t1 = Time.now
   puts "move selected in #{t1 - t0} seconds."
 
-# Minimax:
-  # 3 ply => 0.04 seconds, 462 nodes
-  # 4 ply => 0.08 seconds, 488 nodes
-  # 5 ply => 1.07 seconds, 10,089 nodes
-  # 6 ply => 2.25 seconds, 12,284 nodes
-  # 7 ply => 111.56 seconds, 260,354 nodes
 
-# Negamax:
-  # 3 ply => .15 seconds, 562 nodes
-  # 4 ply => .89 seconds, 1,440 nodes
-  # 5 ply => 82.33 seconds, 52,494 nodes ... ???
 
 # # test Board.copy
 #   b = Application::current_position.board

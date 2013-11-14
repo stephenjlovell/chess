@@ -22,8 +22,8 @@
 module Application
   module Pieces
 
-    PIECE_VALUES = { "P" => 1.0, "N" => 3.2, "B" => 10.0/3.0, 
-                     "R" => 5.1, "Q" => 8.8, "K" => 1000.0 }
+    PIECE_VALUES = { "P" => 100, "N" => 320, "B" => 333, 
+                     "R" => 510, "Q" => 880, "K" => 100000 }
 
     class Piece  # this class defines the common behavior of chess pieces.
       attr_reader :color 
@@ -58,7 +58,7 @@ module Application
       private 
         def explore_direction(start, direction, chess_position, moves = [] )
           target = [ start[0] + direction[0], start[1] + direction[1]]
-          value = 0.0
+          value = 0
           board = chess_position.board
           if board.pseudo_legal?(target[0],target[1], @color)
             if board.enemy?(target[0],target[1], @color)
@@ -158,7 +158,7 @@ module Application
     class Knight < Piece
       class << self
         def value
-          3.2
+          320
         end
 
         def type
@@ -177,7 +177,7 @@ module Application
 
     class Bishop < Piece
       class << self
-        VALUE = 10.0/3.0
+        VALUE = 333
         def value
           VALUE
         end
@@ -199,7 +199,7 @@ module Application
     class Rook < Piece
       class << self
         def value
-          5.1
+          510
         end
 
         def type
@@ -219,7 +219,7 @@ module Application
     class Queen < Piece
       class << self
         def value
-          8.8
+          880
         end
 
         def type
@@ -239,7 +239,7 @@ module Application
     class King < Piece
       class << self
         def value
-          1000.0
+          100000
         end
 
         def type
