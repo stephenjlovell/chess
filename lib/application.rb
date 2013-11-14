@@ -25,7 +25,7 @@ require './lib/pieces.rb'
 require './lib/position.rb'
 require './lib/evaluation.rb'
 require './lib/search.rb'
-require './lib/user_interface.rb'
+require './lib/gui.rb'
 require './lib/cli.rb'
 
 module Application # define application-level behavior in this module and file.
