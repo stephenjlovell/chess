@@ -91,7 +91,7 @@ module Application
 
       class << self
         def value
-          1.0
+          100
         end
 
         def type
