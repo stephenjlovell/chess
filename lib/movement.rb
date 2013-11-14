@@ -22,11 +22,13 @@
 module Application
   module Movement
 
-    COLUMNS = { 2 => "a", 3 => "b", 4 => "c", 5 => "d", 
-                6 => "e", 7 => "f", 8 => "g", 9 => "h" }
+    NUMBER_TO_LETTER = { 2 => "a", 3 => "b", 4 => "c", 5 => "d", 
+                         6 => "e", 7 => "f", 8 => "g", 9 => "h" }
+    LETTER_TO_NUMBER = { "a" => 2, "b" => 3, "c" => 4, "d" => 5,  
+                         "e" => 6, "f" => 7, "g" => 8 }
+
     class Move
-      attr_reader :position, :square, :target, 
-                  :capture_value, :en_passant, :options
+      attr_reader :position, :square, :target, :capture_value, :options
 
       def initialize(position, square, target, capture_value, options = {})
         @position = position
@@ -43,7 +45,11 @@ module Application
     end
 
     def self.square(row,column)
-      (COLUMNS[column]) + (row - 1).to_s
+      (NUMBER_TO_LETTER[column]) + (row - 1).to_s
+    end
+
+    def self.coordinates(square)
+      return square[1].to_i + 1, LETTER_TO_NUMBER[square[0]]
     end
 
     def self.castle!
@@ -59,14 +65,12 @@ module Application
       return moves
     end
 
-    def create_position(move) # returns a new position object representing the game 
-      # state that results from the current player taking the specified move.
-      en_passant_target = nil
-      new_position = copy
-      new_position.move!(move)
-      new_position.previous_move = move
-      new_position.side_to_move = @side_to_move == :w ? :b : :w
-      return new_position
+    def create_position(move) # returns a new position object representing the game state
+      pos = copy              # that results from the current player taking the specified move.
+      pos.move!(move)
+      pos.previous_move = move
+      pos.side_to_move = @side_to_move == :w ? :b : :w
+      return pos
     end
 
     def move!(move) # updates self by performing the specified move.
@@ -82,7 +86,7 @@ module Application
       if move.options[:en_passant_capture]
         board[piece.position[0], move.target[1]] = nil
         self.pieces[side_to_move].delete(Movement::square(piece.position[0], move.target[1]))
-        self.en_passant_target = nil
+        self.options.delete(:en_passant_target)
       elsif move.options[:en_passant_target]
         self.en_passant_target = [move.target[0], move.target[1]]
       end

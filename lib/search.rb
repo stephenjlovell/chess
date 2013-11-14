@@ -24,7 +24,7 @@ module Application
 
     def self.select_position
       root = Application::current_position
-      depth = 6
+      depth = 5
       alpha_beta(root, root, depth)
       # negamax_alpha_beta(root, root, depth)
     end 
@@ -81,6 +81,15 @@ module Application
           break if beta <= alpha
         end
         return node == root ? best_child : best_value
+      end
+
+      def self.mtd_f
+        # this algorithm will incrementally set the alpha-beta search window 
+        # and call either self.alpha_beta or self.negamax
+      end
+
+      def self.memoize
+
       end
 
   end

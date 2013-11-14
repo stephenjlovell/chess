@@ -26,7 +26,8 @@ module Application
     # Piece Square Tables derived from the following sources:
       # http://www.youtube.com/watch?v=zSJF6jZ61w0
       # http://www.bluefever.net/Downloads/CH56.zip
-    PST = { 
+
+    PST = {  # Piece Square Tables
       P: [ 0, 0, 0, 0, 0, 0, 0, 0,
            10, 10, 0, -10, -10, 0, 10, 10,
            5, 0, 0, 5, 5, 0, 0, 5,
@@ -104,15 +105,19 @@ module Application
       # friend = position.side_to_move
       # enemy = friend == :w ? :b : :w
       # return net_raw_material(position,friend, enemy)
-      net_raw_material(position)
+      net_material(position)
     end
 
-    def self.net_raw_material(position) # net material value for side to move.
+    def self.base_material(position, side)
+      position.pieces[side].inject(0) { |total, (key, piece)| total += piece.class.value }
+    end
+
+    def self.net_material(position) # net material value for side to move.
       g = Application::current_game
-      raw_material(position, g.ai_player) - raw_material(position, g.opponent)
+      material(position, g.ai_player) - material(position, g.opponent)
     end
 
-    def self.raw_material(position, side) # =~ 1,040 at start
+    def self.material(position, side) # =~ 1,040 at start
       position.pieces[side].inject(0) { |total, (key, piece)| total += adjusted_value(key, piece) }
     end
 

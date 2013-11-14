@@ -25,19 +25,19 @@ module Application
     class ChessPosition    # Complete description of the game state as of a specific turn.
       include Application::Movement # supplies get_moves, create_position, and move! methods
 
-      attr_accessor :board, :pieces,  :side_to_move, :en_passant_target, :previous_move
+      attr_accessor :board, :pieces,  :side_to_move, :en_passant_target, :previous_move, :options
 
-      def initialize(board, pieces, side_to_move, en_passant_target = nil, previous_move = nil)
+      def initialize(board, pieces, side_to_move, previous_move = nil, options = {})
         @board = board
         @pieces = pieces   # pieces collection generated via Pieces::Setup
         @side_to_move = side_to_move
-        @en_passant_target = en_passant_target
         @previous_move = previous_move
+        @options = options
       end
 
       def en_passant_target?(row, column)
-        return false if @en_passant_target.nil?
-        @en_passant_target[0] == row && @en_passant_target[1] == column
+        enp = @options[:en_passant_target]
+        !enp.nil? && enp[0] == row && enp[1] == column
       end
 
       def value
@@ -50,13 +50,13 @@ module Application
 
       def copy # perform a deep copy of self.
         new_pieces = { w: {}, b: {} }
+        options = Marshal.load(Marshal.dump(@options))
         @pieces.each do |color, square_hash|
           @pieces[color].each do |square, piece|
             new_pieces[color][square] = piece.copy
           end
         end
-        en_passant_target = @en_passant_target.nil? ? nil : [@en_passant_target[0], @en_passant_target[1]]
-        ChessPosition.new(@board.copy, new_pieces, @side_to_move, en_passant_target) 
+        ChessPosition.new(@board.copy, new_pieces, @side_to_move, @previous_move, options) 
       end
 
       def to_s

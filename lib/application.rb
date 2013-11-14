@@ -26,6 +26,7 @@ require './lib/position.rb'
 require './lib/evaluation.rb'
 require './lib/search.rb'
 require './lib/user_interface.rb'
+require './lib/cli.rb'
 
 module Application # define application-level behavior in this module and file.
 
@@ -53,6 +54,10 @@ module Application # define application-level behavior in this module and file.
     def current_board
       current_position.board
     end
+
+    def print
+      current_game.print
+    end
   end
 
   class Game
@@ -63,6 +68,7 @@ module Application # define application-level behavior in this module and file.
       board.setup
       pieces = Pieces::setup(board)
       @position = Position::ChessPosition.new(board, pieces, :w)
+      @position.options[:castle] = { left: true, right: true }
       @halfmove_counter = 0
       @ai_player = ai_player
       @opponent = ai_player == :w ? :b : :w
@@ -72,22 +78,52 @@ module Application # define application-level behavior in this module and file.
       @halfmove_counter / 2
     end
 
+    def print # print game state info along with board representation
+      opp_score = ((Evaluation::base_material(@position, @ai_player) - 100000) / 100) - 40
+      ai_score = ((Evaluation::base_material(@position, @opponent) - 100000) / 100) - 40
+      message = "| Move: #{move_count} | Ply: #{@halfmove_counter} " + 
+                "| Turn: #{@position.side_to_move.to_s} " +
+                "| AI Score: #{ai_score} | Opponent Score: #{opp_score} |"
+      separator = "-" * message.length
+      puts separator, message, separator, "\n"
+      @position.board.print
+    end
+
+    def stage # return :early or :late
+
+    end
+
+    def human_move(description)  # for now, just assume human moves are valid.
+      take_turn do
+        square = description[0..1] # Eventually, handle exception if human provides invalid move.
+        target = Movement::coordinates(description[-2..-1])
+        capture_value = Pieces::get_value_by_sym(Application::current_board[target[0],target[1]])
+        options = {}
+        if Application::current_board[*Movement::coordinates(square)][1] == "P"
+          if (description[1].to_i - description[-1].to_i).abs == 2
+            options = {en_passant_target: true}
+          end
+        end
+        move = Movement::Move.new(@position, square, target, capture_value, options)
+        @position = @position.create_position(move)
+      end
+    end
+
+    def opponent_move
+      # get move selected by opponent AI via UCI,
+      # and pass to take_turn as a position object
+    end
+
+    def make_move
+      take_turn { @position = Search::select_position }
+    end
 
     def take_turn
-      begin_turn
-      @position = Search::select_position
-      end_turn 
-    end
-
-    # would be more idiomatic to roll begin_turn and end_turn into single method 
-    # and pass a block to it.
-
-    def begin_turn  
-
-    end
-
-    def end_turn # contains procedures common to AI and opponent turns.
+      # code that runs at beginning of each turn
+      yield
+      # code that runs at end of each turn
       @halfmove_counter += 1
+      self.print
     end
 
   end

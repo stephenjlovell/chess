@@ -76,7 +76,6 @@ module Application
     end
 
     class Pawn < Piece
-
       DIRECTIONS = { w: { attack: [[1,1],[1,-1]],
                           advance: [1,0],
                           initial: [2,0],
@@ -257,6 +256,7 @@ module Application
     end
 
     def self.get_value_by_sym(sym)  # will eventually want to replace this with a simple lookup hash for performance.
+      return 0 if sym == nil || sym == :XX
       PIECE_VALUES[sym[1]]
     end
 

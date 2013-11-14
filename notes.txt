@@ -23,7 +23,6 @@ EVALUATION ----
 
 Current Issues ----
 
-
   Minimax and Negamax performance should be very similar.  Instead:
 
   # Minimax:
@@ -38,16 +37,24 @@ Current Issues ----
     # 4 ply => .89 seconds, 1,440 nodes
     # 5 ply => 82.33 seconds, 52,494 nodes ... ???
 
+  AI able to move opponent's pieces as if they were his own...?
+
 
 To Do ----
 
   Castling - could handle this in the movement module or the Rook class.  Will need to store info in Position object.
 
-  In places where position pairs are passed as integer arguments, use *arr to explode arr into args
+  move Position.en_passant_target into Position.options hash
+
+  Add separate PSTs for early- and late-game.
 
   Handle king_in_check? in board object
 
-  
+  WRITE TESTS!!!
+
+  research Ruby memory management
+
+
 
 
 
