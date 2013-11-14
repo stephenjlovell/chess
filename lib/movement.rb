@@ -87,6 +87,7 @@ module Application
         self.en_passant_target = [move.target[0], move.target[1]]
       end
       piece.position = [move.target[0],move.target[1]]
+      self.promote_pawns!
     end
 
   end

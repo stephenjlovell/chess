@@ -43,32 +43,48 @@ module Application # define application-level behavior in this module and file.
     end
 
     def current_position # represents the root node in current search tree.
-      @current_position ||= current_game.position
+      current_game.position
     end
 
     def current_side
-      @current_side ||= current_position.side_to_move
+      current_position.side_to_move
     end
 
+    def current_board
+      current_position.board
+    end
   end
 
   class Game
-    attr_accessor :position  
+    attr_accessor :position, :halfmove_counter, :ai_player, :opponent  
     
-    def initialize(ai_player = :w)
+    def initialize(ai_player = :b)
       board = Application::Board.allocate
       board.setup
       pieces = Pieces::setup(board)
-      @position = Position::ChessPosition.new(board, pieces, ai_player)
+      @position = Position::ChessPosition.new(board, pieces, :w)
       @halfmove_counter = 0
-      @human_player = :w
+      @ai_player = ai_player
+      @opponent = ai_player == :w ? :b : :w
     end
 
-    def move_counter
+    def move_count
       @halfmove_counter / 2
     end
 
-    def end_turn
+
+    def take_turn
+      @position = Search::select_position
+
+
+      end_turn 
+    end
+
+    def begin_turn
+
+    end
+
+    def end_turn # contains procedures common to AI and opponent turns.
       @halfmove_counter += 1
     end
 

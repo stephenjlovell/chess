@@ -22,21 +22,17 @@
 module Application
   module Search # this module will define a search tree along with traversal algorithms for move selection.
 
-    def self.select_move
+    def self.select_position
       root = Application::current_position
       depth = 6
-      best_node = alpha_beta(root, root, depth)
-      # best_node = negamax_alpha_beta(root, root, depth)
-      puts best_node.value
-      puts "#{$total_calls} total nodes explored."
-      best_node.board.print
-      return best_node.previous_move
+      alpha_beta(root, root, depth)
+      # negamax_alpha_beta(root, root, depth)
     end 
 
     private
       def self.alpha_beta(node, root, depth_remaining, alpha = -1.0/0.0, 
                           beta = 1.0/0.0, maximize = true)
-        # $total_calls += 1
+        $total_calls += 1
         if depth_remaining <= 0
           return node.value
         elsif maximize # current node is a maximizing node
@@ -71,7 +67,7 @@ module Application
       # color_value: 1.0 or -1.0
       def self.negamax_alpha_beta(node, root, depth_remaining, alpha = -1.0/0.0, 
                                   beta = 1.0/0.0, color = 1.0)
-        # $total_calls += 1
+        $total_calls += 1
         return node.value * color if depth_remaining <= 0
         best_child = nil
         best_value = -1.0/0.0

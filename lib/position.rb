@@ -72,6 +72,20 @@ module Application
         previous_move.position
       end
 
+      def promote_pawns! # to be called via move! method
+        if side_to_move == :w
+          (2..9).each { |column| promote_pawn!(9, column) if @board[9, column] == :wP }
+        else
+          (2..9).each { |column| promote_pawn!(2, column) if @board[2, column] == :bP }
+        end
+      end
+
+      def promote_pawn!(row, column)
+        square = Movement::square(row, column)
+        @board[row,column] = (@side_to_move.to_s + "Q").to_sym
+        @pieces[@side_to_move][square] = Pieces::Queen.new(row, column, @side_to_move)
+      end
+
     end
 
   end

@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-puts 'loading chess library'
+puts "loading chess library \n\n"
 
 $total_calls = 0
 
@@ -38,11 +38,14 @@ require './lib/application.rb'
 
   pos = Application::current_position  
   t0 = Time.now
-  puts Application::Search::select_move.to_s
+  best_pos = Application::Search::select_position
   t1 = Time.now
+
+  puts best_pos.previous_move.to_s
+  puts "value: #{best_pos.value}"
   puts "move selected in #{t1 - t0} seconds."
-
-
+  puts "#{$total_calls} total nodes explored."
+  best_pos.board.print
 
 # # test Board.copy
 #   b = Application::current_position.board

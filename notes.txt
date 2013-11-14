@@ -42,13 +42,12 @@ Current Issues ----
 To Do ----
 
   Castling - could handle this in the movement module or the Rook class.  Will need to store info in Position object.
-  Add half-move clock (turn timer) to Application::Game.
-  Create full-turn counter in Application::Game
-  in places where position pairs are passed as integer arguments, use *arr to explode arr into args
 
+  In places where position pairs are passed as integer arguments, use *arr to explode arr into args
 
+  Handle king_in_check? in board object
 
-
+  
 
 
 

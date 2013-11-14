@@ -103,6 +103,10 @@ module Application
       empty?(row, column) || enemy?(row, column, color)
     end
 
+    def king_in_check?(color)
+
+    end
+
     def print
       i = 8
       headings = "    A    B    C    D    E    F    G    H"
