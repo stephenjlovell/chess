@@ -104,7 +104,7 @@ module Application
     end
 
     def king_in_check?(color)
-
+      
     end
 
     def print

@@ -74,13 +74,15 @@ module Application # define application-level behavior in this module and file.
 
 
     def take_turn
+      begin_turn
       @position = Search::select_position
-
-
       end_turn 
     end
 
-    def begin_turn
+    # would be more idiomatic to roll begin_turn and end_turn into single method 
+    # and pass a block to it.
+
+    def begin_turn  
 
     end
 
