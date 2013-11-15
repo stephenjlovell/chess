@@ -120,7 +120,10 @@ module Application # define application-level behavior in this module and file.
 
     def take_turn
       # code that runs at beginning of each turn
+
+      
       yield
+      
       # code that runs at end of each turn
       @halfmove_counter += 1
       self.print

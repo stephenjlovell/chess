@@ -22,7 +22,7 @@
 module Application
   module GUI # This module serves as a wrapper for the Universal Chess Interface (UCI) GUI.
 
-
+    
 
   end
 end

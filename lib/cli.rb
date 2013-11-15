@@ -3,10 +3,11 @@ module Application
               # games.  Mainly for demo / debug purposes prior to building out main UCI GUI.
     
     def self.play # main CLI method.  Gets and responds to user input.
-      print "Welcome to Steve's Ruby Chess!  Choose your team (w/b):  "
-      team = gets.chomp
-      if team == "w" || team == "b"
-        Application::new_game(team.to_sym)
+      print "Welcome to Steve's Ruby Chess!  Choose your color (w/b):  "
+      human_color = gets.chomp.to_sym
+      if human_color == :w || human_color == :b
+        ai_color = human_color == :w ? :b : :w
+        Application::new_game(ai_color)
       end
       Application::print
       input = ""
@@ -20,7 +21,6 @@ module Application
       end
       puts "Thanks for playing!  See you soon."
     end
-
 
   end
 end

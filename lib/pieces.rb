@@ -89,8 +89,9 @@ module Application
                      en_passant: [[0,1],[0,-1]] }
 
       class << self
+        VALUE = PIECE_VALUES["P"]
         def value
-          100
+          VALUE
         end
 
         def type
@@ -156,8 +157,9 @@ module Application
 
     class Knight < Piece
       class << self
+        VALUE = PIECE_VALUES["N"]
         def value
-          320
+          VALUE
         end
 
         def type
@@ -176,7 +178,7 @@ module Application
 
     class Bishop < Piece
       class << self
-        VALUE = 333
+        VALUE = PIECE_VALUES["B"]
         def value
           VALUE
         end
@@ -197,8 +199,9 @@ module Application
 
     class Rook < Piece
       class << self
+        VALUE = PIECE_VALUES["R"]
         def value
-          510
+          VALUE
         end
 
         def type
@@ -217,8 +220,9 @@ module Application
 
     class Queen < Piece
       class << self
+        VALUE = PIECE_VALUES["Q"]
         def value
-          880
+          VALUE
         end
 
         def type
@@ -237,8 +241,9 @@ module Application
 
     class King < Piece
       class << self
+        VALUE = PIECE_VALUES["K"]
         def value
-          100000
+          VALUE
         end
 
         def type
