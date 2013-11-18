@@ -25,7 +25,8 @@ module Application
     class ChessPosition    # Complete description of the game state as of a specific turn.
       include Application::Movement # supplies get_moves, create_position, and move! methods
 
-      attr_accessor :board, :pieces,  :side_to_move, :en_passant_target, :previous_move, :options
+      attr_accessor :board, :pieces,  :side_to_move, :previous_move, :options
+      # option flags: :en_passant_target, :castle
 
       def initialize(board, pieces, side_to_move, previous_move = nil, options = {})
         @board = board
@@ -72,7 +73,7 @@ module Application
         previous_move.position
       end
 
-      def promote_pawns! # to be called via move! method
+      def promote_pawns! # called via move! method
         if side_to_move == :w
           (2..9).each { |column| promote_pawn!(9, column) if @board[9, column] == :wP }
         else

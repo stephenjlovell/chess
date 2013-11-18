@@ -23,8 +23,9 @@ module Application
   module Search # this module will define a search tree along with traversal algorithms for move selection.
 
     def self.select_position
+      $total_calls = 0
       root = Application::current_position
-      depth = 5
+      depth = 4
       alpha_beta(root, root, depth)
       # negamax_alpha_beta(root, root, depth)
     end 
@@ -89,7 +90,8 @@ module Application
       end
 
       def self.memoize
-
+        # this method will memoize the values for each node inspected to a transposition table
+        # to avoid duplicative processing.
       end
 
   end

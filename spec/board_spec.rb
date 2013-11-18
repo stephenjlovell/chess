@@ -41,7 +41,20 @@ describe Application::Board do
       @board.enemy?(2,6,:w).should be_false
       @board.enemy?(9,5,:w).should be_true
     end
+
+    it 'can tell if a move target is pseudo-legal' do
+      @board.pseudo_legal?(2,6,:w).should be_false
+      @board.pseudo_legal?(9,5,:W).should be_true
+      @board.pseudo_legal?(4,2,:w).should be_true
+    end
+  end
+
+  it 'can tell if the king is in check' do
+    
   end
 
 end
+
+
+
 

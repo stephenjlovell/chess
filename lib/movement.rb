@@ -24,11 +24,13 @@ module Application
 
     NUMBER_TO_LETTER = { 2 => "a", 3 => "b", 4 => "c", 5 => "d", 
                          6 => "e", 7 => "f", 8 => "g", 9 => "h" }
+                         
     LETTER_TO_NUMBER = { "a" => 2, "b" => 3, "c" => 4, "d" => 5,  
                          "e" => 6, "f" => 7, "g" => 8 }
 
     class Move
       attr_reader :position, :square, :target, :capture_value, :options
+      # option flags: :en_passant_target, :en_passant_capture
 
       def initialize(position, square, target, capture_value, options = {})
         @position = position
@@ -52,8 +54,12 @@ module Application
       return square[1].to_i + 1, LETTER_TO_NUMBER[square[0]]
     end
 
-    def self.castle!
-      # handle castling
+    def self.get_castle
+      # conditions for valid castling:
+        # King has not yet been moved
+        # Selected rook has not yet been moved.
+
+
     end
 
     # Mixin methods:
@@ -88,10 +94,20 @@ module Application
         self.pieces[side_to_move].delete(Movement::square(piece.position[0], move.target[1]))
         self.options.delete(:en_passant_target)
       elsif move.options[:en_passant_target]
-        self.en_passant_target = [move.target[0], move.target[1]]
+        self.options[:en_passant_target] = [move.target[0], move.target[1]]
       end
       piece.position = [move.target[0],move.target[1]]
       self.promote_pawns!
+
+      # set castling flags
+      case move.square
+      when "a1", "h8" # if left side rook moved, no longer available for castling.
+        self.options[:castle].delete(:left)
+      when "h1", "a8" # if right side rook moved, no longer available for castling.
+        self.options[:castle].delete(:right)
+      when "e1", "e8" # if king is moved, castling no longer permitted.
+        self.options.delete(:castle)
+      end
     end
 
   end

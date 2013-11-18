@@ -81,11 +81,11 @@ module Application # define application-level behavior in this module and file.
     def print # print game state info along with board representation
       opp_score = ((Evaluation::base_material(@position, @ai_player) - 100000) / 100) - 40
       ai_score = ((Evaluation::base_material(@position, @opponent) - 100000) / 100) - 40
-      message = "| Move: #{move_count} | Ply: #{@halfmove_counter} " + 
-                "| Turn: #{@position.side_to_move.to_s} " +
-                "| AI Score: #{ai_score} | Opponent Score: #{opp_score} |"
-      separator = "-" * message.length
-      puts separator, message, separator, "\n"
+      scoreboard = "| Move: #{move_count} | Ply: #{@halfmove_counter} " + 
+                   "| Turn: #{@position.side_to_move.to_s} " +
+                   "| AI Score: #{ai_score} | Opponent Score: #{opp_score} |"
+      separator = "-" * scoreboard.length
+      puts separator, scoreboard, separator, "\n"
       @position.board.print
     end
 

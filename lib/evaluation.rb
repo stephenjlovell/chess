@@ -123,12 +123,11 @@ module Application
 
     def self.adjusted_value(location, piece)
       table = PST[piece.class.type]
-      square_value = if piece.color == :w
+      return piece.class.value + if piece.color == :w
         table[SQUARES[location.to_sym]]
       else
         table[MIRROR[SQUARES[location.to_sym]]]
       end
-      return piece.class.value + square_value
     end
 
   end
