@@ -39,7 +39,7 @@ module Application
       end
 
       def symbol
-        (@color.to_s + self.class.type.to_s).to_sym
+        @symbol ||= (@color.to_s + self.class.type.to_s).to_sym
       end
 
       def square

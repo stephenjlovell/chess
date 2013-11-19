@@ -68,7 +68,7 @@ module Application # define application-level behavior in this module and file.
       board.setup
       pieces = Pieces::setup(board)
       @position = Position::ChessPosition.new(board, pieces, :w)
-      @position.options[:castle] = { left: true, right: true }
+      @position.options[:castle] = { low: true, high: true }
       @halfmove_counter = 0
       @ai_player = ai_player
       @opponent = ai_player == :w ? :b : :w
