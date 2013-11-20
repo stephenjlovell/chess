@@ -27,48 +27,51 @@ module Application
     class TranspositionTable
       # this class generates a hash code for each explored position using a 
       # Zobrist hashing algorithm, and stores the value of each position.
-      # An instance of this class is contained in each new Application::Game object.
-
-      PIECE_INDEX = { nil => 0, wp: 1, wN: 2, wB: 3, wR: 4, wQ: 5, wK: 6,
-                      bP: 7, bN: 8, bB: 9, bR: 10, bQ: 11, bK: 12 }
+      # A single instance of this class is contained in Application::Game instances.
 
       def initialize
         @table = {}
         @bitstrings = create_bitstring_array
       end
 
-      def memoize(position) # memoizes the inspected node value
-        @table[hash(position)] = position.value
+      def memoize(position) # memoizes and returns the inspected node value
+        h = hash(position.board)
+        @table[h] = position.value unless @table[h]
+        return @table[h]
       end
 
-      def hash(position)  # generates a unique hash corresponding to position.
-
+      def remembers?(board)
+        !!@table[hash(board)]
       end
 
-      def remembers?(position)
-        !!@table[hash(position)]
-      end
-
-      def keygen(board)
-        key = []
-        (2..9).each do |row|
-          (2..9).each do |column|
-            key << @bitstrings[row][column][board[row, column]]   
-          end
-        end
-        return key
+      def [](key)
+        @table[key]
       end
 
       private
+        def hash(board)  # generates a unique hash corresponding to position.
+          hsh = 0
+          (2..9).each do |row|
+            (2..9).each do |column|
+              sym = board[row, column]
+              unless sym.nil?
+                str = @bitstrings[row-2][column-2][sym]
+                str.unpack('L*').each { |i| hsh ^= i } # unpack to 64-bit unsigned ints, 
+              end                                      # and combine with Bitwise XOR.
+            end
+          end
+          return hsh
+        end
+
         def create_bitstring_array
           Array.new(8, Array.new(8, new_piece_hash ))
         end
 
         def new_piece_hash
           hsh = {}
-          [ nil, :wP, :wN, :wB, :wR, :wQ, :wK, 
+          [ :wP, :wN, :wB, :wR, :wQ, :wK, 
             :bP, :bN, :bB, :bR, :bQ, :bK ].each do |sym|
-            hsh[sym] = SecureRandom::uuid
+            hsh[sym] = SecureRandom::random_bytes
           end
           return hsh
         end
@@ -87,7 +90,7 @@ module Application
                           beta = 1.0/0.0, maximize = true)
         $total_calls += 1
         if depth_remaining <= 0
-          return node.value
+          return Application::current_game.tt.memoize(node)
         elsif maximize # current node is a maximizing node
           is_root = node == root
           best_node = nil
@@ -139,6 +142,11 @@ module Application
         # and call either self.alpha_beta or self.negamax
       end
 
+      def self.quiesence_search
+        # this algorithm provides a less-costly way of checking whether a move is likely
+        # to be unusually good or bad, without fully evaluating its child nodes.
+        # will be called on leaf nodes in search tree.
+      end
   end
 end
 

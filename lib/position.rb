@@ -65,7 +65,7 @@ module Application
       end
 
       def edges
-        @edges ||= self.get_moves.collect { |move| self.create_position(move) }
+        self.get_moves.collect { |move| self.create_position(move) }
       end
 
       def parent

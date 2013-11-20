@@ -25,20 +25,22 @@ $total_calls = 0
 
 require './lib/application.rb'
 
+# # Play the game!
+# Application::CLI::play
+
 # #  test initial moves available to pieces:
   # white_pieces = Application::current_position.pieces[:w]
   # white_pieces.each { |coordinate, piece| print piece.symbol, ' ', piece.position, ' => ', piece.get_moves(Application::current_position), "\n" }
   # print Application::current_position.get_moves
 
-# test attacks available to a pawn:
+# # test attacks available to a pawn:
   # b = Application::current_position.board
   # wp = Application::Pieces::Pawn.new(7,5,:w) # in position to attack
   # moves = wp.get_moves(Application::current_position)
   # print moves
 
-  Application::CLI::play
-
   # def test_move_generation
+  #   g = Application::new_game
   #   pos = Application::current_position  
   #   t0 = Time.now
   #   best_pos = Application::Search::select_position
@@ -50,6 +52,7 @@ require './lib/application.rb'
   #   puts "#{$total_calls} total nodes explored."
   #   best_pos.board.print
   # end
+  # test_move_generation
 
 # # test Board.copy
 #   b = Application::current_position.board
@@ -57,7 +60,16 @@ require './lib/application.rb'
 #   b.print
 #   b2.print
 
-
+# test Transposition Table hash function efficiency.
+  # g = Application::new_game(:w)
+  # h = 0
+  # t0 = Time.now
+  # 1000.times do 
+  #   h = g.tt.hash(g.position.board)
+  # end # 0.053708 seconds
+  # t1 = Time.now
+  # puts "The hash value for initial position is: #{h}"
+  # puts t1-t0
 
 
 

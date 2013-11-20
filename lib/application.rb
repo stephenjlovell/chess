@@ -61,8 +61,8 @@ module Application # define application-level behavior in this module and file.
   end
 
   class Game
-    attr_accessor :position, :halfmove_counter
-    attr_reader :ai_player, :opponent, :memo
+    attr_accessor :position, :halfmove_counter, :tt
+    attr_reader :ai_player, :opponent
     
     def initialize(ai_player = :b)
       board = Application::Board.allocate
@@ -73,7 +73,7 @@ module Application # define application-level behavior in this module and file.
       @halfmove_counter = 0
       @ai_player = ai_player
       @opponent = ai_player == :w ? :b : :w
-      @memo = Search::TranspositionTable.new
+      @tt = Search::TranspositionTable.new
     end
 
     def move_count
