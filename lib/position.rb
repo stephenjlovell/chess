@@ -23,8 +23,8 @@ module Application
   module Position
 
     class ChessPosition    # Complete description of the game state as of a specific turn.
-      include Application::Movement # supplies get_moves, create_position, and move! methods
-
+      include Application::Movement
+      
       attr_accessor :board, :pieces,  :side_to_move, :previous_move, :options
       # option flags: :en_passant_target, :castle
 
@@ -65,7 +65,7 @@ module Application
       end
 
       def edges
-        @edges ||= get_moves.collect { |move| create_position(move) }
+        @edges ||= self.get_moves.collect { |move| self.create_position(move) }
       end
 
       def parent

@@ -44,6 +44,8 @@ To Do ----
 
   Castling - could handle this in the movement module or the Rook class.  Will need to store info in Position object.
 
+  AI does not always select obvious best move
+
   Add separate PSTs for early- and late-game.
 
   Handle king_in_check? in board object

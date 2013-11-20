@@ -61,7 +61,8 @@ module Application # define application-level behavior in this module and file.
   end
 
   class Game
-    attr_accessor :position, :halfmove_counter, :ai_player, :opponent  
+    attr_accessor :position, :halfmove_counter
+    attr_reader :ai_player, :opponent, :memo
     
     def initialize(ai_player = :b)
       board = Application::Board.allocate
@@ -72,6 +73,7 @@ module Application # define application-level behavior in this module and file.
       @halfmove_counter = 0
       @ai_player = ai_player
       @opponent = ai_player == :w ? :b : :w
+      @memo = Search::TranspositionTable.new
     end
 
     def move_count
@@ -79,14 +81,17 @@ module Application # define application-level behavior in this module and file.
     end
 
     def print # print game state info along with board representation
-      opp_score = ((Evaluation::base_material(@position, @ai_player) - 100000) / 100) - 40
-      ai_score = ((Evaluation::base_material(@position, @opponent) - 100000) / 100) - 40
+      opp_score, ai_score = score(@ai_player), score(@opponent)
       scoreboard = "| Move: #{move_count} | Ply: #{@halfmove_counter} " + 
                    "| Turn: #{@position.side_to_move.to_s} " +
-                   "| AI Score: #{ai_score} | Opponent Score: #{opp_score} |"
+                   "| AI Score: #{ai_score} | Your Score: #{opp_score} |"
       separator = "-" * scoreboard.length
       puts separator, scoreboard, separator, "\n"
       @position.board.print
+    end
+
+    def score(enemy_color)
+      [(1040 - (Evaluation::base_material(@position,enemy_color)/100)),0].max
     end
 
     def stage # return :early or :late

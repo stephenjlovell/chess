@@ -102,14 +102,7 @@ module Application
                 a8: 56, b8: 57, c8: 58, d8: 59, e8: 60, f8: 61, g8: 62, h8: 63 }
 
     def self.evaluate(position) # return heuristic value of specified position.
-      # friend = position.side_to_move
-      # enemy = friend == :w ? :b : :w
-      # return net_raw_material(position,friend, enemy)
       net_material(position)
-    end
-
-    def self.base_material(position, side)
-      position.pieces[side].inject(0) { |total, (key, piece)| total += piece.class.value }
     end
 
     def self.net_material(position) # net material value for side to move.
@@ -128,6 +121,10 @@ module Application
       else
         table[MIRROR[SQUARES[location.to_sym]]]
       end
+    end
+
+    def self.base_material(position, side)
+      position.pieces[side].inject(0) { |total, (key, piece)| total += piece.class.value }
     end
 
   end

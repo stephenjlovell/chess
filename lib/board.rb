@@ -110,8 +110,9 @@ module Application
     def print
       i = 8
       headings = "    A    B    C    D    E    F    G    H"
+      divider =  "  " + ("-" * 41)
       puts headings
-      puts "  " + ("-" * 41)
+      puts divider
       @squares[2..9].reverse_each do |row|
         line = []
         row.each do |square|
@@ -122,7 +123,7 @@ module Application
           end
         end
         puts "#{i} | " + line.join(" | ") + " | #{i}"
-        puts "  " + ("-" * 41)
+        puts divider
         i-=1
       end
       puts headings
