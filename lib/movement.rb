@@ -56,18 +56,55 @@ module Application
       return square[1].to_i + 1, LETTER_TO_NUMBER[square[0]]
     end
 
+
+    # class Location
+    #   attr_accessor :r, :c
+
+    #   def initialize(*args)  # should accept and process a single string or pair of coordinates.
+    #     if args.length == 1
+    #       @r, @c = args[0][1].to_i + 1, LETTER_TO_NUMBER[args[0][0]]
+    #     elsif args.length == 2
+    #       @r, @c = *args
+    #     end
+    #   end
+
+    #   def copy
+    #     self.class.new(@r, @c)
+    #   end
+
+    #   def eql?(other)
+    #     @r == other.r && @c == other.c
+    #   end
+
+    #   alias :== :eql? 
+
+    #   def hash
+    #     [@r, @c].hash
+    #   end
+
+    #   def to_s  # replaces Movement::square
+    #     (NUMBER_TO_LETTER[@c]) + (@r - 1).to_s
+    #   end
+    # end
+
     # Mixin methods:
 
     def get_moves # returns a sorted array of all possible moves for the current player.
       moves = []
       @pieces[@side_to_move].each { |square, piece| moves += piece.get_moves(self) }
       moves += get_castles
-      # moves.sort! { |x,y| y.capture_value <=> x.capture_value }
+      moves.sort! { |x,y| y.capture_value <=> x.capture_value }
       return moves
     end
 
+    def sort_moves
+      # sort captures by MVV LVA
+      # sort non-captures by Killer Heuristic then 
+
+    end
+
     def create_position(move) # returns a new position object representing the game state
-      pos = copy              # that results from the current player taking the specified move.
+      pos = self.copy              # that results from the current player taking the specified move.
       if move.options[:castle] && move.options[:castle] != {}
         pos.castle!(move)
       else
@@ -85,12 +122,12 @@ module Application
         row = BACK_ROW[@side_to_move] 
         if hsh[:low]
           if @board.empty?(row, 3) && @board.empty?(row, 4) && @board.empty?(row, 5) # castling permitted on low side.
-            castles << Move.new(self, Move::square(row,6), [row,2], 0, castle: :low)
+            castles << Move.new(self, Movement::square(row,6), [row,2], 0, castle: :low)
           end
         end
         if hsh[:high]  
           if @board.empty?(row, 7) && @board.empty?(row, 8) # castling permitted on high side.
-            castles << Move.new(self, Move::square(row,6), [row,9], 0, castle: :high)
+            castles << Move.new(self, Movement::square(row,6), [row,9], 0, castle: :high)
           end
         end
       end
@@ -103,7 +140,7 @@ module Application
       rook = @pieces[@side_to_move][Movement::square(*move.target)]
       row = BACK_ROW[@side_to_move]
       if options[:low]
-        king_column, rook_column = 3, 4
+        king_column, rook_column = 4, 5
       elsif options[:high]
         king_column, rook_column = 7, 8
       end
@@ -114,7 +151,7 @@ module Application
     def move!(move) # updates self by performing the specified move.
       piece = @pieces[self.side_to_move][move.square]
       self.relocate_piece!(move.square, move.target)
-      self.set_en_passant_flag!(move)
+      self.set_en_passant_flag!(piece, move)
       self.promote_pawns!
       self.set_castle_flag!(move)
     end
@@ -126,12 +163,12 @@ module Application
       new_square = Movement::square(*target)
       @pieces[enemy].delete(new_square) if @pieces[enemy]
       @pieces[@side_to_move][new_square] = piece
-      piece.position = target
+      piece.position = [*target]
       @board[*(Movement::coordinates(old_square))] = nil
       @board[*target] = piece.symbol
     end
 
-    def set_en_passant_flag!(move)
+    def set_en_passant_flag!(piece, move)
       if move.options[:en_passant_capture]
         @board[piece.position[0], move.target[1]] = nil
         @pieces[side_to_move].delete(Movement::square(piece.position[0], move.target[1]))

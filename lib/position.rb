@@ -61,11 +61,15 @@ module Application
       end
 
       def to_s
-         # return a string decribing the position in Forsyth-Edwards Notation.
+        # return a string decribing the position in Forsyth-Edwards Notation.
       end
 
       def edges
         self.get_moves.collect { |move| self.create_position(move) }
+      end
+
+      def tactical_edges
+        self.get_moves.select{|m| m.capture_value > 0.0}.collect{|m| self.create_position(m)}
       end
 
       def parent

@@ -28,8 +28,7 @@ module Application
       @squares.each { |row| yield(row) }
     end
 
-    def initialize # generates a representation of an empty chessboard.
-                                                                                    # row  board #
+    def initialize # generates a representation of an empty chessboard.             # row  board #
       @squares = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
                    [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
                    [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 2    1
@@ -46,8 +45,7 @@ module Application
             # letter            A    B    C    D    E    F    G    H
     end
 
-    def setup  # sets the chessboard to its initial configuration at start of game.
-                                                                                    # row  board #
+    def setup  # sets initial configuration of board at start of game.              # row  board #
       @squares = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
                    [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
                    [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, :wB, :wN, :wR, :XX, :XX ],  # 2    1

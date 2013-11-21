@@ -21,12 +21,13 @@
 
 puts "loading chess library \n\n"
 
-$total_calls = 0
+$main_calls = 0
+$quiescence_calls = 0
 
 require './lib/application.rb'
 
-# # Play the game!
-# Application::CLI::play
+# Play the game!
+Application::CLI::play
 
 # #  test initial moves available to pieces:
   # white_pieces = Application::current_position.pieces[:w]
@@ -49,7 +50,7 @@ require './lib/application.rb'
   #   puts best_pos.previous_move.to_s
   #   puts "value: #{best_pos.value}"
   #   puts "move selected in #{t1 - t0} seconds."
-  #   puts "#{$total_calls} total nodes explored."
+  #   puts "#{$main_calls} + #{$quiescence_calls} total nodes explored."
   #   best_pos.board.print
   # end
   # test_move_generation

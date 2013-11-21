@@ -31,7 +31,7 @@ module Application
 
       def initialize
         @table = {}
-        @bitstrings = create_bitstring_array
+        @bitstrings = create_bytestring_array
       end
 
       def memoize(position) # memoizes and returns the inspected node value
@@ -49,21 +49,21 @@ module Application
       end
 
       private
-        def hash(board)  # generates a unique hash corresponding to position.
-          hsh = 0
+        def hash(board)  # generates a unique hash key corresponding to position.
+          key = 0
           (2..9).each do |row|
             (2..9).each do |column|
               sym = board[row, column]
               unless sym.nil?
                 str = @bitstrings[row-2][column-2][sym]
-                str.unpack('L*').each { |i| hsh ^= i } # unpack to 64-bit unsigned ints, 
-              end                                      # and combine with Bitwise XOR.
+                str.unpack('L*').each { |i| key ^= i } # unpack to 64-bit unsigned ints, 
+              end                                      # and merge into key with Bitwise XOR.
             end
           end
-          return hsh
+          return key
         end
 
-        def create_bitstring_array
+        def create_bytestring_array
           Array.new(8, Array.new(8, new_piece_hash ))
         end
 
@@ -78,9 +78,10 @@ module Application
     end
 
     def self.select_position
-      $total_calls = 0
+      $main_calls = 0
+      $quiescence_calls = 0
       root = Application::current_position
-      depth = 4
+      depth = 5
       alpha_beta(root, root, depth)
       # negamax_alpha_beta(root, root, depth)
     end 
@@ -88,40 +89,39 @@ module Application
     private
       def self.alpha_beta(node, root, depth_remaining, alpha = -1.0/0.0, 
                           beta = 1.0/0.0, maximize = true)
-        $total_calls += 1
+        $main_calls += 1
         if depth_remaining <= 0
-          return Application::current_game.tt.memoize(node)
+          # return Application::current_game.tt.memoize(node)
+          return quiesence(node, root, 5, alpha, beta, !maximize)
         elsif maximize # current node is a maximizing node
-          is_root = node == root
           best_node = nil
           node.edges.each do |child|
             result = alpha_beta(child, root, depth_remaining-1, alpha, beta, false)
             if result > alpha
               alpha = result
-              best_node = child if is_root
+              best_node = child
             end
             break if beta <= alpha
           end
-          return is_root ? best_node : alpha
+          return node == root ? best_node : alpha
         else  # current node is a minimizing node
-          is_root = node == root
           best_node = nil
           node.edges.each do |child|
             result = alpha_beta(child, root, depth_remaining-1, alpha, beta, true)
             if result > beta
               beta = result
-              best_node = child if is_root
+              best_node = child
             end
             break if beta <= alpha
           end
-          return is_root ? best_node : beta
+          return node == root ? best_node : beta
         end
       end
 
       # color_value: 1.0 or -1.0
       def self.negamax_alpha_beta(node, root, depth_remaining, alpha = -1.0/0.0, 
                                   beta = 1.0/0.0, color = 1.0)
-        $total_calls += 1
+        $main_calls += 1
         return node.value * color if depth_remaining <= 0
         best_child = nil
         best_value = -1.0/0.0
@@ -142,11 +142,35 @@ module Application
         # and call either self.alpha_beta or self.negamax
       end
 
-      def self.quiesence_search
-        # this algorithm provides a less-costly way of checking whether a move is likely
-        # to be unusually good or bad, without fully evaluating its child nodes.
-        # will be called on leaf nodes in search tree.
+      def self.quiesence(node, root, depth_remaining, alpha = -1.0/0.0, 
+                          beta = 1.0/0.0, maximize = true)
+        # This algorithm continues expanding only those child nodes resulting from
+        # capture moves.  This reduces the horizon effect on alpha beta searches.
+        $quiescence_calls += 1
+        return Application::current_game.tt.memoize(node) if depth_remaining <= 0
+        tactical_edges = node.tactical_edges
+        return Application::current_game.tt.memoize(node) if tactical_edges.empty?
+        if maximize # current node is a maximizing node
+          tactical_edges.each do |child|
+            result = quiesence(child, root, depth_remaining-1, alpha, beta, false)
+            if result > alpha
+              alpha = result
+            end
+            break if beta <= alpha
+          end
+          return alpha
+        else  # current node is a minimizing node
+          tactical_edges.each do |child|
+            result = quiesence(child, root, depth_remaining-1, alpha, beta, true)
+            if result > beta
+              beta = result
+            end
+            break if beta <= alpha
+          end
+          return beta
+        end
       end
+
   end
 end
 

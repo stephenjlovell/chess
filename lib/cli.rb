@@ -13,8 +13,9 @@ module Application
       input = ""
       until input == "quit" || input == "q" || input == "exit" do
         unless input == ""
-          Application::current_game.human_move(input)
+          Application::current_game.human_move(input) if human_color == :w
           Application::current_game.make_move
+          Application::current_game.human_move(input) if human_color == :b
         end
         print "where would you like to move?  "
         input = gets.chomp

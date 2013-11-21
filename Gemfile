@@ -7,10 +7,9 @@ ruby '1.9.3'
 
 # may want to include StateMachine gem for use in Application::Position::ChessPosition class.
 
+
 group :test do
-  
   gem 'rspec'
   gem 'factory_girl'
   gem 'capybara'
-
 end

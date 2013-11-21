@@ -58,11 +58,11 @@ module Application
       private 
         def explore_direction(start, direction, chess_position, moves = [] )
           target = [ start[0] + direction[0], start[1] + direction[1]]
-          value = 0
+          value = 0.0
           board = chess_position.board
           if board.pseudo_legal?(target[0],target[1], @color)
             if board.enemy?(target[0],target[1], @color)
-              value = Pieces::get_value_by_sym(board[target[0],target[1]])
+              value = Pieces::get_value_by_sym(board[target[0],target[1]]) / self.class.value
             end
 
             moves << Movement::Move.new(chess_position, self.square, target, value)
@@ -117,8 +117,8 @@ module Application
           target = [ @position[0] + pair[0], @position[1] + pair[1]]
           board = chess_position.board
           if board.enemy?(target[0], target[1], @color)
-            moves << Movement::Move.new(chess_position, self.square, target, 
-                                        Pieces::get_value_by_sym(board[target[0],target[1]]))
+            value = Pieces::get_value_by_sym(board[target[0],target[1]]) / self.class.value
+            moves << Movement::Move.new(chess_position, self.square, target, value)
           end
         end
       end
@@ -131,9 +131,10 @@ module Application
           b.enemy?(target[0],target[1], @color)
             offset = DIRECTIONS[@color][:enp_offset]
             move_target = [target[0] + offset[0], target[1] + offset[1]]
-            moves << Movement::Move.new(chess_position, self.square, 
-                                        move_target, 1.0,  { en_passant_capture: true }) 
-          end                           # value of en-passant capture is 1 by definition.
+            value = Pieces::get_value_by_sym(b[*target]) / self.class.value
+            moves << Movement::Move.new(chess_position, self.square, move_target, 
+                                        value,  { en_passant_capture: true }) 
+          end
         end
       end
 
@@ -261,7 +262,7 @@ module Application
     end
 
     def self.get_value_by_sym(sym)  # will eventually want to replace this with a simple lookup hash for performance.
-      return 0 if sym == nil || sym == :XX
+      return 0.0 if sym == nil || sym == :XX
       PIECE_VALUES[sym[1]]
     end
 
