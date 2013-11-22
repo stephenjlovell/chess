@@ -32,7 +32,6 @@ module Application
 
     class Move
       attr_reader :position, :square, :target, :capture_value, :options
-      # option flags: :en_passant_target, :en_passant_capture
 
       def initialize(position, square, target, capture_value, options = {})
         @position = position
@@ -48,6 +47,41 @@ module Application
       end
     end
 
+    class Location
+      attr_accessor :r, :c
+
+      def initialize(*args)  # should accept and process a single string or pair of coordinates.
+        if args.length == 1
+          @r, @c = args[0][1].to_i + 1, LETTER_TO_NUMBER[args[0][0]]
+        elsif args.length == 2
+          @r, @c = *args
+        end
+      end
+
+      def copy
+        self.class.new(@r, @c)
+      end
+
+      def eql?(other)
+        @r == other.r && @c == other.c
+      end
+
+      alias :== :eql? 
+
+      def hash
+        to_a.hash
+      end
+
+      def to_s  # replaces Movement::square
+        (NUMBER_TO_LETTER[@c]) + (@r - 1).to_s
+      end
+
+      def to_a
+        [@r, @c]
+      end
+
+    end
+
     def self.square(row,column)
       (NUMBER_TO_LETTER[column]) + (row - 1).to_s
     end
@@ -55,37 +89,6 @@ module Application
     def self.coordinates(square)
       return square[1].to_i + 1, LETTER_TO_NUMBER[square[0]]
     end
-
-
-    # class Location
-    #   attr_accessor :r, :c
-
-    #   def initialize(*args)  # should accept and process a single string or pair of coordinates.
-    #     if args.length == 1
-    #       @r, @c = args[0][1].to_i + 1, LETTER_TO_NUMBER[args[0][0]]
-    #     elsif args.length == 2
-    #       @r, @c = *args
-    #     end
-    #   end
-
-    #   def copy
-    #     self.class.new(@r, @c)
-    #   end
-
-    #   def eql?(other)
-    #     @r == other.r && @c == other.c
-    #   end
-
-    #   alias :== :eql? 
-
-    #   def hash
-    #     [@r, @c].hash
-    #   end
-
-    #   def to_s  # replaces Movement::square
-    #     (NUMBER_TO_LETTER[@c]) + (@r - 1).to_s
-    #   end
-    # end
 
     # Mixin methods:
 

@@ -56,8 +56,8 @@ module Application
               sym = board[row, column]
               unless sym.nil?
                 str = @bitstrings[row-2][column-2][sym]
-                str.unpack('L*').each { |i| key ^= i } # unpack to 64-bit unsigned ints, 
-              end                                      # and merge into key with Bitwise XOR.
+                str.unpack('L*').each { |i| key ^= i } # unpack to 64-bit unsigned long ints, 
+              end                                      # and merge into key via bitwise XOR.
             end
           end
           return key
@@ -83,17 +83,14 @@ module Application
       root = Application::current_position
       depth = 5
       alpha_beta(root, root, depth)
-      # negamax_alpha_beta(root, root, depth)
     end 
 
     private
       def self.alpha_beta(node, root, depth_remaining, alpha = -1.0/0.0, 
                           beta = 1.0/0.0, maximize = true)
         $main_calls += 1
-        if depth_remaining <= 0
-          # return Application::current_game.tt.memoize(node)
-          return quiesence(node, root, 5, alpha, beta, !maximize)
-        elsif maximize # current node is a maximizing node
+        return quiesence(node, root, 4, alpha, beta, !maximize) if depth_remaining <= 0
+        if maximize # current node is a maximizing node
           best_node = nil
           node.edges.each do |child|
             result = alpha_beta(child, root, depth_remaining-1, alpha, beta, false)
@@ -116,31 +113,7 @@ module Application
           end
           return node == root ? best_node : beta
         end
-      end
-
-      # color_value: 1.0 or -1.0
-      def self.negamax_alpha_beta(node, root, depth_remaining, alpha = -1.0/0.0, 
-                                  beta = 1.0/0.0, color = 1.0)
-        $main_calls += 1
-        return node.value * color if depth_remaining <= 0
-        best_child = nil
-        best_value = -1.0/0.0
-        node.edges.each do |child|
-          value = -negamax_alpha_beta(child, root, depth_remaining-1, -beta, -alpha, -color)
-          if value > best_value
-            best_value = value
-            best_child = child
-          end
-          alpha = alpha > value ? alpha : value 
-          break if beta <= alpha
-        end
-        return node == root ? best_child : best_value
-      end
-
-      def self.mtd_f
-        # this algorithm will incrementally set the alpha-beta search window 
-        # and call either self.alpha_beta or self.negamax
-      end
+      end # end alpha_beta
 
       def self.quiesence(node, root, depth_remaining, alpha = -1.0/0.0, 
                           beta = 1.0/0.0, maximize = true)
@@ -149,19 +122,19 @@ module Application
         $quiescence_calls += 1
         return Application::current_game.tt.memoize(node) if depth_remaining <= 0
         tactical_edges = node.tactical_edges
-        return Application::current_game.tt.memoize(node) if tactical_edges.empty?
-        if maximize # current node is a maximizing node
+        return Application::current_game.tt.memoize(node) if tactical_edges.empty?          
+        if maximize
           tactical_edges.each do |child|
-            result = quiesence(child, root, depth_remaining-1, alpha, beta, false)
+            result = quiesence(child, root, depth_remaining-1, alpha, beta, true)
             if result > alpha
               alpha = result
             end
             break if beta <= alpha
           end
           return alpha
-        else  # current node is a minimizing node
+        else
           tactical_edges.each do |child|
-            result = quiesence(child, root, depth_remaining-1, alpha, beta, true)
+            result = quiesence(child, root, depth_remaining-1, alpha, beta, false)
             if result > beta
               beta = result
             end
@@ -169,7 +142,31 @@ module Application
           end
           return beta
         end
+      end # end quiescence
+
+      def self.mtd_f
+        # this algorithm will incrementally set the alpha-beta search window 
+        # and call either self.alpha_beta or self.negamax
       end
+
+      # color_value: 1.0 or -1.0
+      # def self.negamax_alpha_beta(node, root, depth_remaining, alpha = -1.0/0.0, 
+      #                             beta = 1.0/0.0, color = 1.0)
+      #   $main_calls += 1
+      #   return node.value * color if depth_remaining <= 0
+      #   best_child = nil
+      #   best_value = -1.0/0.0
+      #   node.edges.each do |child|
+      #     value = -negamax_alpha_beta(child, root, depth_remaining-1, -beta, -alpha, -color)
+      #     if value > best_value
+      #       best_value = value
+      #       best_child = child
+      #     end
+      #     alpha = alpha > value ? alpha : value 
+      #     break if beta <= alpha
+      #   end
+      #   return node == root ? best_child : best_value
+      # end
 
   end
 end

@@ -35,7 +35,7 @@ module Application
       end
 
       def copy # return a deep copy of self
-        self.class.new(@position[0],@position[1],@color)
+        self.class.new(*@position, @color)
       end
 
       def symbol
@@ -58,20 +58,23 @@ module Application
       private 
         def explore_direction(start, direction, chess_position, moves = [] )
           target = [ start[0] + direction[0], start[1] + direction[1]]
-          value = 0.0
           board = chess_position.board
-          if board.pseudo_legal?(target[0],target[1], @color)
-            if board.enemy?(target[0],target[1], @color)
-              value = Pieces::get_value_by_sym(board[target[0],target[1]]) / self.class.value
-            end
-
-            moves << Movement::Move.new(chess_position, self.square, target, value)
-          
-            if self.class.move_until_blocked? && board.empty?(target[0], target[1])
+          if board.pseudo_legal?(*target, @color)
+            moves << Movement::Move.new(chess_position, self.square, target, 
+                                        mvv_lva_value(target, board))
+            if self.class.move_until_blocked? && board.empty?(*target)
               explore_direction(target, direction, chess_position, moves) 
             end
           end
           return moves
+        end
+
+        def mvv_lva_value(target, board, enemy = nil)
+          if enemy || board.enemy?(*target, @color)
+            Pieces::get_value_by_sym(board[*target]) / self.class.value
+          else
+            0.0
+          end
         end
     end
 
@@ -116,9 +119,9 @@ module Application
         attacks.each do |pair|  # normal attacks
           target = [ @position[0] + pair[0], @position[1] + pair[1]]
           board = chess_position.board
-          if board.enemy?(target[0], target[1], @color)
-            value = Pieces::get_value_by_sym(board[target[0],target[1]]) / self.class.value
-            moves << Movement::Move.new(chess_position, self.square, target, value)
+          if board.enemy?(*target, @color)  
+            moves << Movement::Move.new(chess_position, self.square, target, 
+                                        mvv_lva_value(target, chess_position.board, true))
           end
         end
       end
@@ -131,9 +134,8 @@ module Application
           b.enemy?(target[0],target[1], @color)
             offset = DIRECTIONS[@color][:enp_offset]
             move_target = [target[0] + offset[0], target[1] + offset[1]]
-            value = Pieces::get_value_by_sym(b[*target]) / self.class.value
             moves << Movement::Move.new(chess_position, self.square, move_target, 
-                                        value,  { en_passant_capture: true }) 
+                                        1.0,  { en_passant_capture: true }) 
           end
         end
       end

@@ -26,8 +26,8 @@ $quiescence_calls = 0
 
 require './lib/application.rb'
 
-# Play the game!
-Application::CLI::play
+# # Play the game!
+# Application::CLI::play
 
 # #  test initial moves available to pieces:
   # white_pieces = Application::current_position.pieces[:w]
@@ -40,20 +40,20 @@ Application::CLI::play
   # moves = wp.get_moves(Application::current_position)
   # print moves
 
-  # def test_move_generation
-  #   g = Application::new_game
-  #   pos = Application::current_position  
-  #   t0 = Time.now
-  #   best_pos = Application::Search::select_position
-  #   t1 = Time.now
+  def test_move_generation
+    g = Application::new_game
+    pos = Application::current_position  
+    t0 = Time.now
+    best_pos = Application::Search::select_position
+    t1 = Time.now
 
-  #   puts best_pos.previous_move.to_s
-  #   puts "value: #{best_pos.value}"
-  #   puts "move selected in #{t1 - t0} seconds."
-  #   puts "#{$main_calls} + #{$quiescence_calls} total nodes explored."
-  #   best_pos.board.print
-  # end
-  # test_move_generation
+    puts best_pos.previous_move.to_s
+    puts "value: #{best_pos.value}"
+    puts "move selected in #{t1 - t0} seconds."
+    puts "#{$main_calls} + #{$quiescence_calls} total nodes explored."
+    best_pos.board.print
+  end
+  test_move_generation
 
 # # test Board.copy
 #   b = Application::current_position.board
