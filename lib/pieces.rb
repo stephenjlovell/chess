@@ -263,7 +263,7 @@ module Application
       end
     end
 
-    def self.get_value_by_sym(sym)  # will eventually want to replace this with a simple lookup hash for performance.
+    def self.get_value_by_sym(sym)
       return 0.0 if sym == nil || sym == :XX
       PIECE_VALUES[sym[1]]
     end

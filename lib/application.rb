@@ -60,6 +60,25 @@ module Application # define application-level behavior in this module and file.
     end
   end
 
+  class Clock
+
+    def initialize 
+      @game_start = Time.now
+      @turn_start = Time.now
+    end
+
+    def time_up?
+      Time.now - @game_start > 180.0
+    end
+
+    def restart
+      @turn_start = Time.now
+    end
+
+    alias :end_turn :restart 
+
+  end
+
   class Game
     attr_accessor :position, :halfmove_counter, :tt
     attr_reader :ai_player, :opponent
@@ -125,12 +144,10 @@ module Application # define application-level behavior in this module and file.
 
     def take_turn
       # code that runs at beginning of each turn
-
-      
       yield
-      
       # code that runs at end of each turn
       @halfmove_counter += 1
+      # re-set turn timer.
       self.print
     end
 

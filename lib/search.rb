@@ -24,18 +24,18 @@ require 'SecureRandom'
 module Application
   module Search # this module will define a search tree along with traversal algorithms for move selection.
 
-    class TranspositionTable
-      # this class generates a hash code for each explored position using a 
-      # Zobrist hashing algorithm, and stores the value of each position.
+    class TranspositionTable # this class generates a hash code for each explored position  
+      # using a Zobrist hashing algorithm, and stores the value of each position.
       # A single instance of this class is contained in Application::Game instances.
 
       def initialize
         @table = {}
-        @bitstrings = create_bytestring_array
       end
 
       def memoize(position) # memoizes and returns the inspected node value
         h = hash(position.board)
+        # store h in position object instance variable to enable incremental calculation of
+        # hashes for child nodes.
         @table[h] = position.value unless @table[h]
         return @table[h]
       end
@@ -49,33 +49,32 @@ module Application
       end
 
       private
-        def hash(board)  # generates a unique hash key corresponding to position.
-          key = 0
-          (2..9).each do |row|
-            (2..9).each do |column|
-              sym = board[row, column]
-              unless sym.nil?
-                str = @bitstrings[row-2][column-2][sym]
-                str.unpack('L*').each { |i| key ^= i } # unpack to 64-bit unsigned long ints, 
-              end                                      # and merge into key via bitwise XOR.
-            end
-          end
-          return key
-        end
-
-        def create_bytestring_array
+        def self.create_bytestring_array
           Array.new(8, Array.new(8, new_piece_hash ))
         end
 
-        def new_piece_hash
-          hsh = {}
+        def self.new_piece_hash # creates a 12 element hash associating each piece to a 
+          hsh = {}         # set of 16 random bytes packed in a string.
           [ :wP, :wN, :wB, :wR, :wQ, :wK, 
             :bP, :bN, :bB, :bR, :bQ, :bK ].each do |sym|
             hsh[sym] = SecureRandom::random_bytes
           end
           return hsh
         end
-    end
+
+        BSTR = self.create_bytestring_array
+
+        def hash(board)  # generates a unique hash key corresponding to position.
+          key = 0
+          (2..9).each do |row|
+            (2..9).each do |column|
+              sym = board[row, column]
+              BSTR[row-2][column-2][sym].unpack('L*').each { |i| key ^= i } unless sym.nil? 
+            end  # unpack to 64-bit unsigned long ints and merge into key via bitwise XOR.
+          end
+          return key
+        end
+    end # end TranspostionTable class
 
     def self.select_position
       $main_calls = 0
@@ -86,10 +85,30 @@ module Application
     end 
 
     private
+      def self.iterative_deepening(root, depth)
+        value = Application::current_game.tt.memoize(node) # initial guess
+        (1..depth).each do |d|
+          value = mtd_f(root, value, depth)
+          # when halfmove clock is up, break and return current value
+        end
+      end
+
+      def self.mtd_f(root, value, depth) # this algorithm will incrementally set the 
+        g = value                        # alpha-beta search window and call alpha_beta.
+        upper_bound = 1.0/0
+        lower_bound = -1.0/0
+        until lower_bound >= upper_bound do
+          beta = g == lower_bound ? g + 1 : g
+          g = alpha_beta(root, beta-1, beta, depth)
+          if g < beta then upper_bound = g else lower_bound = g end
+        end
+        return g
+      end
+
       def self.alpha_beta(node, root, depth_remaining, alpha = -1.0/0.0, 
                           beta = 1.0/0.0, maximize = true)
         $main_calls += 1
-        return quiesence(node, root, 4, alpha, beta, !maximize) if depth_remaining <= 0
+        return quiesence(node, root, 1, alpha, beta, !maximize) if depth_remaining <= 0
         if maximize # current node is a maximizing node
           best_node = nil
           node.edges.each do |child|
@@ -144,34 +163,8 @@ module Application
         end
       end # end quiescence
 
-      def self.mtd_f
-        # this algorithm will incrementally set the alpha-beta search window 
-        # and call either self.alpha_beta or self.negamax
-      end
-
-      # color_value: 1.0 or -1.0
-      # def self.negamax_alpha_beta(node, root, depth_remaining, alpha = -1.0/0.0, 
-      #                             beta = 1.0/0.0, color = 1.0)
-      #   $main_calls += 1
-      #   return node.value * color if depth_remaining <= 0
-      #   best_child = nil
-      #   best_value = -1.0/0.0
-      #   node.edges.each do |child|
-      #     value = -negamax_alpha_beta(child, root, depth_remaining-1, -beta, -alpha, -color)
-      #     if value > best_value
-      #       best_value = value
-      #       best_child = child
-      #     end
-      #     alpha = alpha > value ? alpha : value 
-      #     break if beta <= alpha
-      #   end
-      #   return node == root ? best_child : best_value
-      # end
-
   end
 end
-
-
 
 
 
