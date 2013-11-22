@@ -82,6 +82,7 @@ module Application
       root = Application::current_position
       depth = 5
       alpha_beta(root, root, depth)
+      # iterative_deepening(root, depth)  # need to pass best_node up through call stack
     end 
 
     private
@@ -137,7 +138,7 @@ module Application
       def self.quiesence(node, root, depth_remaining, alpha = -1.0/0.0, 
                           beta = 1.0/0.0, maximize = true)
         # This algorithm continues expanding only those child nodes resulting from
-        # capture moves.  This reduces the horizon effect on alpha beta searches.
+        # capture moves.  This reduces the 'horizon effect' on alpha beta searches.
         $quiescence_calls += 1
         return Application::current_game.tt.memoize(node) if depth_remaining <= 0
         tactical_edges = node.tactical_edges

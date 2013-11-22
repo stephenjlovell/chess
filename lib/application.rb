@@ -61,7 +61,6 @@ module Application # define application-level behavior in this module and file.
   end
 
   class Clock
-
     def initialize 
       @game_start = Time.now
       @turn_start = Time.now
@@ -76,15 +75,14 @@ module Application # define application-level behavior in this module and file.
     end
 
     alias :end_turn :restart 
-
   end
 
   class Game
-    attr_accessor :position, :halfmove_counter, :tt
+    attr_accessor :position, :halfmove_counter, :tt, :clock
     attr_reader :ai_player, :opponent
     
     def initialize(ai_player = :b)
-      board = Application::Board.allocate
+      board = Board.allocate
       board.setup
       pieces = Pieces::setup(board)
       @position = Position::ChessPosition.new(board, pieces, :w)
@@ -93,6 +91,7 @@ module Application # define application-level behavior in this module and file.
       @ai_player = ai_player
       @opponent = ai_player == :w ? :b : :w
       @tt = Search::TranspositionTable.new
+      @clock = Clock.new
     end
 
     def move_count
@@ -143,12 +142,11 @@ module Application # define application-level behavior in this module and file.
     end
 
     def take_turn
-      # code that runs at beginning of each turn
+      # add any code must run at beginning of each turn
       yield
-      # code that runs at end of each turn
       @halfmove_counter += 1
-      # re-set turn timer.
       self.print
+      @clock.end_turn
     end
 
   end
