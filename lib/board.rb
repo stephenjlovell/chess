@@ -24,10 +24,6 @@ module Application
   class Board
     include Enumerable
 
-    def each
-      @squares.each { |row| yield(row) }
-    end
-
     def initialize # generates a representation of an empty chessboard.             # row  board #
       @squares = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
                    [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
@@ -62,13 +58,27 @@ module Application
             # letter            A    B    C    D    E    F    G    H
     end
 
-    def copy # return a deep copy of self.
-      board = Board.new
+    def each
+      @squares.each { |row| yield(row) }
+    end
+
+    alias :each_row :each
+
+    def each_square
+      each_square_with_location { |r,c,s| yield (@squares[r][c]) }
+    end
+
+    def each_square_with_location
       (2..9).each do |row|
         (2..9).each do |column|
-          board[row, column] = @squares[row][column]
+          yield row, column, @squares[row][column]
         end
       end
+    end
+
+    def copy # return a deep copy of self.
+      board = Board.new
+      each_square_with_location { |r,c,s| board[r, c] = s }
       return board
     end
 

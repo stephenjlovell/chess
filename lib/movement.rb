@@ -96,18 +96,17 @@ module Application
       moves = []
       @pieces[@side_to_move].each { |square, piece| moves += piece.get_moves(self) }
       moves += get_castles
-      moves.sort! { |x,y| y.capture_value <=> x.capture_value }
+      sort_moves(moves)
       return moves
     end
 
-    def sort_moves
-      # sort captures by MVV LVA
-      # sort non-captures by Killer Heuristic then 
-
+    def sort_moves(moves)
+      moves.sort! { |x,y| y.capture_value <=> x.capture_value }
+      # also sort non-captures by Killer Heuristic
     end
 
     def create_position(move) # returns a new position object representing the game state
-      pos = self.copy              # that results from the current player taking the specified move.
+      pos = self.copy         # that results from the current player taking the specified move.
       if move.options[:castle] && move.options[:castle] != {}
         pos.castle!(move)
       else

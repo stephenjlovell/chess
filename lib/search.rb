@@ -52,7 +52,7 @@ module Application
       def self.create_bytestring_array
         Array.new(8, Array.new(8, new_piece_hash ))
       end
-
+      
       def self.new_piece_hash # creates a 12 element hash associating each piece to a 
         hsh = {}              # set of 16 random bytes packed in a string.
         [ :wP, :wN, :wB, :wR, :wQ, :wK, 
@@ -62,40 +62,40 @@ module Application
         return hsh
       end
 
-      BSTR = self.create_bytestring_array
+      BSTR = create_bytestring_array
 
       def hash(board)  # generates a unique hash key corresponding to position.
         key = 0
-        (2..9).each do |row|
-          (2..9).each do |column|
-            sym = board[row, column]
-            BSTR[row-2][column-2][sym].unpack('L*').each { |i| key ^= i } unless sym.nil? 
-          end  # unpack to 64-bit unsigned long ints and merge into key via bitwise XOR.
-        end
+        board.each_square_with_location do |row, column, sym|
+          BSTR[row-2][column-2][sym].unpack('L*').each { |i| key ^= i } unless sym.nil? 
+        end  # unpack to 64-bit unsigned long ints and merge into key via bitwise XOR.
         return key
       end
+
     end # end TranspostionTable class
 
     def self.select_position
       $main_calls = 0
       $quiescence_calls = 0
       root = Application::current_position
-      depth = 3
-      return iterative_deepening(root, depth)  # need to pass best_node up through call stack
+      depth = 6
+      # return iterative_deepening(root, depth)
+      best_node, value = get_best_node(root, depth)
+      return best_node
     end 
 
     private
+
     def self.iterative_deepening(root, depth)
       value = Application::current_game.tt.memoize(root) # initial guess
       (1..depth).each do |d|
-        puts "starting mtd_f algorithm"
-        best_node, value = mtd_f(root, value, depth)
+        best_node, value = mtdf(root, value, depth)
         break if Application::current_game.clock.time_up?
       end
       return best_node
     end
 
-    def self.mtd_f(root, value, depth) # this algorithm will incrementally set the 
+    def self.mtdf(root, value, depth) # this algorithm will incrementally set the 
       g = value                        # alpha-beta search window and call alpha_beta.
       upper_bound = 1.0/0
       lower_bound = -1.0/0
@@ -108,7 +108,7 @@ module Application
       return best_node, g
     end
 
-    def self.get_best_node(root, depth, alpha, beta)
+    def self.get_best_node(root, depth, alpha = -1.0/0.0, beta = 1.0/0.0)
       best_node = nil
       root.edges.each do |child|
         result = alpha_beta(child, root, depth-1, alpha, beta, false)

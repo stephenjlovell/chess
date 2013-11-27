@@ -47,10 +47,8 @@ To Do ----
 
   Add separate PSTs for early- and late-game.
   Handle king_in_check? in board object
-  Add quiescence search.
   Add Killer Heuristic to move ordering.
   Allow incremental calculation of hash values based on previous move of the Transposition Table.
-  Fix left-side castling so that king only moves two squares.
 
 
 

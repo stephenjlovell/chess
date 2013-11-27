@@ -43,7 +43,7 @@ module Application
       end
 
       def square
-        @square ||= Movement::square(@position[0], @position[1])
+        @square ||= Movement::square(*@position)
       end
 
       def get_moves(chess_position) # returns a collection of all pseudo-legal moves for the current piece.
