@@ -67,7 +67,7 @@ module Application # define application-level behavior in this module and file.
     end
 
     def time_up?
-      Time.now - @game_start > 180.0
+      (Time.now - @game_start) > 60.0
     end
 
     def restart

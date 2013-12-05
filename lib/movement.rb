@@ -45,6 +45,7 @@ module Application
         piece = @position.pieces[@position.side_to_move][@square]
         "#{piece.symbol.to_s} #{@square} to #{Movement::square(@target[0], @target[1])}"
       end
+
     end
 
     class Location

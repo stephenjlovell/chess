@@ -25,7 +25,7 @@ module Application
     class ChessPosition    # Complete description of the game state as of a specific turn.
       include Application::Movement
       
-      attr_accessor :board, :pieces,  :side_to_move, :previous_move, :options
+      attr_accessor :board, :pieces,  :side_to_move, :previous_move, :options, :hash_value
       # option flags: :en_passant_target, :castle
 
       def initialize(board, pieces, side_to_move, previous_move = nil, options = {})
@@ -65,7 +65,7 @@ module Application
       end
 
       def edges
-        self.get_moves.collect { |move| self.create_position(move) }
+        self.get_moves.collect { |m| self.create_position(m) }
       end
 
       def tactical_edges
@@ -73,8 +73,8 @@ module Application
       end
 
       def parent
-        return nil if previous_move.nil?
-        previous_move.position
+        return nil if @previous_move.nil?
+        @previous_move.position
       end
 
     end
