@@ -22,104 +22,50 @@
 require 'SecureRandom'
 
 module Application
-  module Search # this module will define a search tree along with traversal algorithms for move selection.
-
-    class TranspositionTable # this class generates a hash code for each explored position  
-      # using a Zobrist hashing algorithm, and stores the value of each position.
-      # A single instance of this class is contained in Application::Game instances.
-
-      def initialize
-        @table = {}
-      end
-
-      def memoize(position) # memoizes and returns the inspected node value
-        h = hash(position)
-        position.hash_value = h
-        # store h in position object instance variable to enable incremental calculation of
-        # hashes for child nodes.
-        
-        @table[h] = position.value unless @table[h]
-        return @table[h]
-      end
-
-      def [](key)
-        @table[key]
-      end
-
-      private
-      def self.create_bytestring_array
-        Array.new(8, Array.new(8, new_piece_hash ))
-      end
-      
-      def self.new_piece_hash # creates a 12 element hash associating each piece to a 
-        hsh = {}              # set of 16 random bytes packed in a string.
-        [ :wP, :wN, :wB, :wR, :wQ, :wK, 
-          :bP, :bN, :bB, :bR, :bQ, :bK ].each do |sym|
-          hsh[sym] = SecureRandom::random_bytes
-        end
-        return hsh
-      end
-
-      BSTR = create_bytestring_array
-
-      def hash(position)  # generates a unique hash key corresponding to position.
-        key = 0
-        # parent_hash = position.parent.hash_value || nil
-        # if parent_hash
-        #   # call method to create a 
-        # else
-        #   position.board.each_square_with_location do |r, c, sym|
-        #     BSTR[r-2][c-2][sym].unpack('L*').each { |i| key ^= i } unless sym.nil? 
-        #   end  # unpack to 64-bit unsigned long ints and merge into key via bitwise XOR.
-        # end
-        position.board.each_square_with_location do |r, c, sym|
-          BSTR[r-2][c-2][sym].unpack('L*').each { |i| key ^= i } unless sym.nil? 
-        end  # unpack to 64-bit unsigned long ints and merge into key via bitwise XOR.
-        return key
-      end
-
-    end # end TranspostionTable class
+  module Search # this module will define tree traversal algorithms for move selection.
 
     def self.select_position
       $main_calls = 0
       $quiescence_calls = 0
       root = Application::current_position
-      depth = 5
-      puts "iterative_deepening(#{root}, #{depth})"
-      return iterative_deepening(root, depth)
-      # best_node, value = get_best_node(root, depth)
+      max_depth = 6
+      puts "iterative_deepening(#{root}, #{max_depth})"
+      return iterative_deepening(root, max_depth)
+      # best_node, value = get_best_node(root, $max_depth)
       # return best_node
     end 
 
     private
 
     def self.iterative_deepening(root, depth)
-      guess = Application::current_game.tt.memoize(root) # initial guess
+      guess = Application::current_game.tt.memoize(root, depth, -$INF, $INF) # initial guess
+      best_node = nil
       (1..depth).each do |d|
-        puts "mtdf(#{root}, #{value}, #{d})"
+        $iterative_depth = d
+        puts "\tmtdf(#{root}, #{guess}, #{d})"
         best_node, value = mtdf(root, guess, d)
-        break if Application::current_game.clock.time_up?
+        guess = value
+        # break if Application::current_game.clock.time_up?
       end
       return best_node
     end
 
     def self.mtdf(root, value, depth) # this algorithm will incrementally set the 
-      g = value                        # alpha-beta search window and call alpha_beta.
-      upper_bound = 1.0/0
-      lower_bound = -1.0/0
+      g = value                       # alpha-beta search window and call alpha_beta.
+      upper_bound = $INF
+      lower_bound = -$INF
       while lower_bound < upper_bound do
         beta = (g == lower_bound ? g+1 : g)
-        puts "get_best_node(#{root}, #{depth}, #{beta-1}, #{beta})"
-        best_node, g = get_best_node(root, depth, beta-1, beta)
+        best_node, g = get_best_node_with_memory(root, depth, beta-1, beta)
         if g < beta then upper_bound = g else lower_bound = g end
       end
       return best_node, g
     end
 
-    def self.get_best_node(root, depth, alpha = -1.0/0.0, beta = 1.0/0.0)
+    def self.get_best_node(root, depth, alpha = -$INF, beta = $INF)
       best_node = nil
       root.edges.each do |child|
-        result = alpha_beta(child, depth-1, alpha, beta, false)
+        result = alpha_beta_with_memory(child, depth-1, alpha, beta, false)
         if result > alpha
           alpha = result
           best_node = child
@@ -129,7 +75,7 @@ module Application
       return best_node, alpha
     end
 
-    def self.alpha_beta(node, depth, alpha = -1.0/0.0, beta = 1.0/0.0, maximize = true)
+    def self.alpha_beta(node, depth, alpha=-$INF, beta=$INF, maximize=true)
       $main_calls += 1
       return quiesence(node, 1, alpha, beta, !maximize) if depth <= 0
       if maximize
@@ -149,13 +95,13 @@ module Application
       end
     end
 
-    def self.quiesence(node, depth, alpha = -1.0/0.0, beta = 1.0/0.0, maximize = true)
-      # This algorithm continues expanding only those child nodes resulting from
-      # capture moves.  This reduces the 'horizon effect' on alpha beta searches.
+    def self.quiesence(node, depth, alpha=-$INF, beta=$INF, maximize=true) # This algorithm only expands
+    # child nodes resulting from capture moves. This reduces the 'horizon effect' on alpha beta searches.
       $quiescence_calls += 1
-      return Application::current_game.tt.memoize(node) if depth <= 0
+      depth_searched = $iterative_depth - depth
+      return Application::current_game.tt.memoize(node,depth_searched, alpha, beta) if depth <= 0
       tactical_edges = node.tactical_edges
-      return Application::current_game.tt.memoize(node) if tactical_edges.empty?          
+      return Application::current_game.tt.memoize(node, depth_searched, alpha, beta) if tactical_edges.empty?          
       if maximize
         tactical_edges.each do |child|
           result = quiesence(child, depth-1, alpha, beta, true)
@@ -172,6 +118,103 @@ module Application
         return beta
       end
     end # end quiescence
+
+    def self.get_best_node_with_memory(root, depth, alpha=-$INF, beta=$INF)
+      puts "\t\t\tget_best_node_with_memory(#{root}, #{depth}, #{alpha}, #{beta}"
+      tt = Application::current_game.tt
+      
+      # entry = tt.retrieve(root)
+      # if entry
+      #   return entry.lower_bound if entry.lower_bound >= beta
+      #   return entry.upper_bound if entry.upper_bound <= alpha
+      #   alpha = max(alpha, entry.lower_bound)
+      #   beta = min(beta, entry.upper_bound)
+      # end
+
+      # if depth <= 0
+      #   result = tt.memoize(root, alpha, beta, depth)
+      #   puts "leaf node with value #{result}" 
+      # else
+        result = -$INF
+        a = alpha
+        best_node = nil
+        root.edges.each do |child|
+          result = max(result, alpha_beta_with_memory(child, depth-1, a, beta, false))
+          if result > a
+            a = result
+            best_node = child
+          end
+          break if result < beta
+        end
+      # end
+      # upper_bound = $INF
+      # lower_bound = -$INF
+      # if result <= alpha 
+      #   upper_bound = result
+      # elsif result < beta
+      #   lower_bound = result
+      #   upper_bound = result
+      # end
+      # lower_bound = result if result >= beta
+      # tt.store(root, depth, lower_bound, upper_bound, result)
+      # puts "the end!"
+      return best_node, result
+    end
+
+    def self.alpha_beta_with_memory(node, depth, alpha=-$INF, beta=$INF, maximize=true)
+      puts "\t\t\talpha_beta_with_memory(#{node}, #{depth}, #{alpha}, #{beta}, #{maximize}"
+      tt = Application::current_game.tt
+      
+      entry = tt.retrieve(node)
+      if entry
+        return entry.lower_bound if entry.lower_bound >= beta
+        return entry.upper_bound if entry.upper_bound <= alpha
+        alpha = max(alpha, entry.lower_bound)
+        beta = min(beta, entry.upper_bound)
+      end
+
+      if depth <= 0
+        result = tt.memoize(node, alpha, beta, depth)
+        puts "leaf node with value #{result}" 
+      elsif maximize
+        result = -$INF
+        a = alpha
+        node.edges.each do |child|
+          result = max(result, alpha_beta_with_memory(child, depth-1, a, beta, false))
+          a = max(a, result)
+          break if result < beta
+        end
+      else  # min node
+        result = $INF
+        b = beta
+        node.edges.each do |child|
+          result = min(result, alpha_beta_with_memory(child, depth-1, alpha, b, true))
+          b = min(b,result)
+          break if result > alpha
+        end
+      end
+
+      upper_bound = $INF
+      lower_bound = -$INF
+      if result <= alpha 
+        upper_bound = result
+      elsif result < beta
+        lower_bound = result
+        upper_bound = result
+      end
+      lower_bound = result if result >= beta
+      tt.store(node, depth, lower_bound, upper_bound, result)
+      puts "the end!"
+      return result
+    end
+
+    def self.max(a,b)
+      a > b ? a : b
+    end
+
+    def self.min(a,b)
+      a < b ? a : b
+    end
 
   end
 end

@@ -27,8 +27,12 @@ require './lib/evaluation.rb'
 require './lib/search.rb'
 require './lib/gui.rb'
 require './lib/cli.rb'
+require './lib/memory.rb'
 
 module Application # define application-level behavior in this module and file.
+
+  # application-level global constants:
+  $INF = 1.0/0.0
 
   class << self
     def current_game
@@ -90,7 +94,7 @@ module Application # define application-level behavior in this module and file.
       @halfmove_counter = 0
       @ai_player = ai_player
       @opponent = ai_player == :w ? :b : :w
-      @tt = Search::TranspositionTable.new
+      @tt = Memory::TranspositionTable.new
       @clock = Clock.new
     end
 
