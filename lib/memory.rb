@@ -2,10 +2,10 @@ module Application
   module Memory
 
     class Entry # this class contains the information to be stored in each bucket.
-      attr_reader :depth, :lower_bound, :upper_bound, :value
+      attr_reader :depth, :type, :value, :best_node
       # @type may be :upper_bound, :lower_bound, :exact_match
-      def initialize(depth, lower_bound, upper_bound, value)
-        @depth, @lower_bound, @upper_bound, @value = depth, lower_bound, upper_bound, value
+      def initialize(depth, type, value, best_node)
+        @depth, @type, @value, @best_node = depth, type, value, best_node
       end
     end
 
@@ -16,15 +16,9 @@ module Application
         @table = {}
       end
 
-      # def remembers?(node)
-      #   h = hash(node)
-      #   !!@table[h]
-      # end
-
-      def store(node, depth, lower_bound, upper_bound, value=nil)
+      def store(node, depth, type, value, best_node=nil)
         h = hash(node)
-        value ||= node.value
-        @table[h] = Entry.new(depth, lower_bound, upper_bound, value)
+        @table[h] = Entry.new(depth, type, value, best_node)
       end
 
       def retrieve(node)
@@ -36,13 +30,11 @@ module Application
         @table[h]
       end
 
-      def memoize(node, depth, alpha, beta) 
+      def memoize(node, depth, type, value, best_node=nil) 
         h = hash(node)
         node.hash_value = h # store h in position object instance variable to enable 
-                                # incremental calculation of hashes for child nodes.
-        unless @table[h]
-          @table[h] = Entry.new(depth, alpha, beta, node.value)
-        end
+                            # incremental calculation of hashes for child nodes.
+        @table[h] = Entry.new(depth, type, value, best_node) unless @table[h]
         return @table[h].value
       end
 
@@ -77,8 +69,6 @@ module Application
         return key
       end
     end # end TranspostionTable class
-
-
 
   end
 end

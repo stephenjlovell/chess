@@ -138,17 +138,25 @@ module Application
     end
 
     def castle!(move)
-      options = move.options[:castle]
       king = @pieces[@side_to_move][move.square]
       rook = @pieces[@side_to_move][Movement::square(*move.target)]
       row = BACK_ROW[@side_to_move]
-      if options[:low]
-        king_column, rook_column = 4, 5
-      elsif options[:high]
-        king_column, rook_column = 7, 8
+
+      begin
+        sym = move.options[:castle]
+        if sym
+          if :low
+            king_column, rook_column = 4, 5
+          elsif :high
+            king_column, rook_column = 7, 8
+          end
+          relocate_piece!(king.square,[row, king_column])
+          relocate_piece!(rook.square,[row, rook_column])
+        end
+      rescue Exception => err
+        puts move.options
+        # err.backtrace.inspect
       end
-      relocate_piece!(king.square,[row, king_column])
-      relocate_piece!(rook.square,[row, rook_column])
     end
 
     def move!(move) # updates self by performing the specified move.
