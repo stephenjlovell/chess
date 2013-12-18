@@ -29,8 +29,7 @@ module Application
       $quiescence_calls = 0
       $tt = Application::current_game.tt
       root = Application::current_position
-      best_node, value = iterative_deepening(root, 4)
-      # best_node, value = mtdf(root, 0, 4)   # for some reason, odd-numbered depths seem to throw off results
+      best_node, value = iterative_deepening(root, 10)
       return best_node
     end 
 
@@ -40,6 +39,7 @@ module Application
       pos = Application::current_position
       guess = pos.parent ? pos.parent.value : pos.value
       best_node = nil
+      value = -$INF
       (1..depth).each do |d|
         $iterative_depth = d
         best_node, value = mtdf(root, guess, d)
@@ -118,8 +118,8 @@ module Application
         return entry.value if alpha > beta
       end
 
-      if depth <= 0
-        value = -quiesence(node, 1, -beta, -alpha)
+      if depth <= 2
+        value = -quiesence(node, depth-1, -beta, -alpha)
         if value <= alpha
           $tt.store(node, depth, :lower_bound, value)  # what is saved for best_node?
         elsif value >= beta

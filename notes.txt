@@ -24,7 +24,6 @@ EVALUATION ----
 Current Issues ----
 
   AI does not always select obvious best moves - does not always capture expensive units except via pawns.
-  MTD(f) search tree explodes when run for odd-numbered depths...?
 
 To Do ----
 
@@ -33,10 +32,6 @@ To Do ----
     - Location class could serve as key in piece list hashes.
     - create Move subclasses for Castle and EnPassant.  Relocate create_position and related methods to Move class,
       and override generic behavior in subclasses.
-
-
-
-      
 
   Add separate PSTs for early- and late-game.
   Handle king_in_check? in board object
