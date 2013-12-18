@@ -71,7 +71,7 @@ module Application # define application-level behavior in this module and file.
     end
 
     def time_up?
-      (Time.now - @game_start) > 60.0
+      (Time.now - @turn_start) > 20.0
     end
 
     def restart
@@ -121,6 +121,7 @@ module Application # define application-level behavior in this module and file.
     end
 
     def human_move(description)  # for now, just assume human moves are valid.
+      # puts "human_move(#{description})"
       take_turn do
         square = description[0..1] # Eventually, handle exception if human provides invalid move.
         target = Movement::coordinates(description[-2..-1])

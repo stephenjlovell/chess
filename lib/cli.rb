@@ -4,20 +4,22 @@ module Application
     
     def self.play # main CLI method.  Gets and responds to user input.
       print "Welcome to Steve's Ruby Chess!  Choose your color (w/b):  "
-      human_color = gets.chomp.to_sym
-      if human_color == :w || human_color == :b
-        ai_color = human_color == :w ? :b : :w
+      $stdout.flush
+      human_color = gets.chomp
+      if human_color == "w" || human_color == "b"
+        ai_color = human_color == "w" ? :b : :w
         Application::new_game(ai_color)
-      end
+      end 
       Application::print
       input = ""
       until input == "quit" || input == "q" || input == "exit" do
         unless input == ""
-          Application::current_game.human_move(input) if human_color == :w
+          Application::current_game.human_move(input) if human_color == "w"
           Application::current_game.make_move
-          Application::current_game.human_move(input) if human_color == :b
+          Application::current_game.human_move(input) if human_color != "w"
         end
         print "where would you like to move?  "
+        $stdout.flush
         input = gets.chomp
       end
       puts "Thanks for playing!  See you soon."

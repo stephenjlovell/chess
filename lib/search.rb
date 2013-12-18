@@ -25,24 +25,28 @@ module Application
   module Search # this module will define tree traversal algorithms for move selection.
 
     def self.select_position
-      $main_calls = 0
-      $quiescence_calls = 0
       $tt = Application::current_game.tt
       root = Application::current_position
-      best_node, value = iterative_deepening(root, 10)
+      best_node, value = iterative_deepening(root, 5)
       return best_node
     end 
 
     private
     def self.iterative_deepening(root, depth)
-      puts "iterative_deepening(#{root}, #{depth})"
+      # puts "iterative_deepening(#{root}, #{depth})"
       pos = Application::current_position
       guess = pos.parent ? pos.parent.value : pos.value
       best_node = nil
       value = -$INF
+
+      puts "depth | main nodes | quiescence nodes"
+
       (1..depth).each do |d|
-        $iterative_depth = d
+        $main_calls = 0
+        $quiescence_calls = 0
         best_node, value = mtdf(root, guess, d)
+        puts "#{d}    | #{$main_calls}           | #{$quiescence_calls}"
+
         guess = value
         if Application::current_game.clock.time_up?
           puts "evaluation time ran out after depth #{d}"
@@ -56,7 +60,7 @@ module Application
 
     def self.mtdf(root, value, depth) # this algorithm will incrementally set the 
       g = value                       # alpha-beta search window and call alpha_beta.
-      puts "\tmtdf(#{root}, #{value}, #{depth})"
+      # puts "\tmtdf(#{root}, #{value}, #{depth})"
       upper_bound = $INF
       lower_bound = -$INF
       while lower_bound < upper_bound do
@@ -68,7 +72,7 @@ module Application
     end
 
     def self.get_best_node(root, depth, alpha=-$INF, beta=$INF)
-      puts "\t\tget_best_node(#{root}, #{depth}, #{alpha}, #{beta})"
+      # puts "\t\tget_best_node(#{root}, #{depth}, #{alpha}, #{beta})"
       $main_calls += 1
       entry = $tt.retrieve(root)
       if entry && entry.depth >= depth
@@ -119,7 +123,7 @@ module Application
       end
 
       if depth <= 2
-        value = -quiesence(node, depth-1, -beta, -alpha)
+        value = -quiescence(node, depth-1, -beta, -alpha)
         if value <= alpha
           $tt.store(node, depth, :lower_bound, value)  # what is saved for best_node?
         elsif value >= beta
@@ -151,8 +155,8 @@ module Application
       return best_value
     end
 
-    def self.quiesence(node, depth, alpha, beta)
-      # puts "\t\t\t\tquiesence(#{node}, #{alpha}, #{beta})"
+    def self.quiescence(node, depth, alpha, beta)
+      # puts "\t\t\t\tquiescence(#{node}, #{alpha}, #{beta})"
       $quiescence_calls += 1
       $main_calls += 1
 
@@ -187,7 +191,7 @@ module Application
       best_value = -$INF   # cannot assume that any child nodes
       best_node = nil
       node.tactical_edges.each do |child|
-        result = -quiesence(child, depth-1, -beta, -alpha)
+        result = -quiescence(child, depth-1, -beta, -alpha)
         if result > best_value
           best_value = result 
           best_node = child

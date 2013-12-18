@@ -46,11 +46,11 @@ module Application
         "#{piece.symbol.to_s} #{@square} to #{Movement::square(@target[0], @target[1])}"
       end
 
-      def create_position    # returns a new position object representing the game state
+      def create_position        # returns a new position object representing the game state
         pos = position.copy      # that results from the current player taking the specified move.
         move!(pos)
         pos.previous_move = self
-        pos.side_to_move = @side_to_move == :w ? :b : :w
+        pos.side_to_move = position.side_to_move == :w ? :b : :w
         return pos
       end
 
@@ -78,7 +78,6 @@ module Application
         @options = options
         @side_to_castle = side_to_castle
       end
-
 
       def move!(pos)
         king = pos.pieces[pos.side_to_move][square]
