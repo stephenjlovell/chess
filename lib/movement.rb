@@ -142,7 +142,7 @@ module Application
     def get_moves # returns a sorted array of all possible moves for the current player.
       moves = []
       @pieces[@side_to_move].each { |square, piece| moves += piece.get_moves(self) }
-      moves += get_castles if @options[:castle]
+      # moves += get_castles if @options[:castle]  # disable castles for now.
       sort_moves(moves)
       return moves
     end

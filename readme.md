@@ -1,4 +1,4 @@
 
 ## Chess
 
-A simple chess engine / AI for learning purposes.
+A Chess AI written in Ruby for fun and learning.

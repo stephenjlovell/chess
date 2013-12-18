@@ -24,6 +24,7 @@ EVALUATION ----
 Current Issues ----
 
   AI does not always select obvious best moves - does not always capture expensive units except via pawns.
+  MTD(f) search tree explodes when run for odd-numbered depths...?
 
 To Do ----
 

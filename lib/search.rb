@@ -27,11 +27,10 @@ module Application
     def self.select_position
       $main_calls = 0
       $quiescence_calls = 0
+      $tt = Application::current_game.tt
       root = Application::current_position
-      # max_depth = 6
-      # return iterative_deepening(root, max_depth)
-      # best_node, value = get_best_node(root, max_depth)
-      best_node, value = mtdf(root, 0, 4)
+      best_node, value = iterative_deepening(root, 4)
+      # best_node, value = mtdf(root, 0, 4)   # for some reason, odd-numbered depths seem to throw off results
       return best_node
     end 
 
@@ -39,11 +38,10 @@ module Application
     def self.iterative_deepening(root, depth)
       puts "iterative_deepening(#{root}, #{depth})"
       pos = Application::current_position
-      guess = pos.parent.value || pos.value
+      guess = pos.parent ? pos.parent.value : pos.value
       best_node = nil
       (1..depth).each do |d|
         $iterative_depth = d
-        puts "\tmtdf(#{root}, #{guess}, #{d})"
         best_node, value = mtdf(root, guess, d)
         guess = value
         if Application::current_game.clock.time_up?
@@ -58,7 +56,7 @@ module Application
 
     def self.mtdf(root, value, depth) # this algorithm will incrementally set the 
       g = value                       # alpha-beta search window and call alpha_beta.
-      puts "mtdf(#{root}, #{value}, #{depth})"
+      puts "\tmtdf(#{root}, #{value}, #{depth})"
       upper_bound = $INF
       lower_bound = -$INF
       while lower_bound < upper_bound do
@@ -70,10 +68,9 @@ module Application
     end
 
     def self.get_best_node(root, depth, alpha=-$INF, beta=$INF)
-      puts "get_best_node(#{root}, #{depth}, #{alpha}, #{beta})"
+      puts "\t\tget_best_node(#{root}, #{depth}, #{alpha}, #{beta})"
       $main_calls += 1
-      tt = Application::current_game.tt
-      entry = tt.retrieve(root)
+      entry = $tt.retrieve(root)
       if entry && entry.depth >= depth
         return entry.best_node, entry.value if entry.type == :exact_value
         if entry.type == :lower_bound && entry.value > alpha
@@ -97,21 +94,20 @@ module Application
       end
 
       if best_value <= alpha
-        tt.store(root, depth, :lower_bound, best_value, best_node)
+        $tt.store(root, depth, :lower_bound, best_value, best_node)
       elsif best_value >= beta
-        tt.store(root, depth, :upper_bound, best_value, best_node)
+        $tt.store(root, depth, :upper_bound, best_value, best_node)
       else
-        tt.store(root, depth, :exact_value, best_value, best_node)
+        $tt.store(root, depth, :exact_value, best_value, best_node)
       end
       return best_node, best_value
     end
 
     def self.alpha_beta(node, depth, alpha=-$INF, beta=$INF)
-      # puts "\talpha_beta(#{node}, #{depth}, #{alpha}, #{beta})"
+      # puts "\t\t\talpha_beta(#{node}, #{depth}, #{alpha}, #{beta})"
       $main_calls += 1
-      tt = Application::current_game.tt
 
-      entry = tt.retrieve(node)
+      entry = $tt.retrieve(node)
       if entry && entry.depth >= depth
         return entry.value if entry.type == :exact_value
         if entry.type == :lower_bound && entry.value > alpha
@@ -125,11 +121,11 @@ module Application
       if depth <= 0
         value = -quiesence(node, 1, -beta, -alpha)
         if value <= alpha
-          tt.store(node, depth, :lower_bound, value)  # what is saved for best_node?
+          $tt.store(node, depth, :lower_bound, value)  # what is saved for best_node?
         elsif value >= beta
-          tt.store(node, depth, :upper_bound, value)
+          $tt.store(node, depth, :upper_bound, value)
         else
-          tt.store(node, depth, :exact_value, value)
+          $tt.store(node, depth, :exact_value, value)
         end
         return value
       end
@@ -146,22 +142,21 @@ module Application
       end
 
       if best_value <= alpha
-        tt.store(node, depth, :lower_bound, best_value, best_node)
+        $tt.store(node, depth, :lower_bound, best_value, best_node)
       elsif best_value >= beta
-        tt.store(node, depth, :upper_bound, best_value, best_node)
+        $tt.store(node, depth, :upper_bound, best_value, best_node)
       else
-        tt.store(node, depth, :exact_value, best_value, best_node)
+        $tt.store(node, depth, :exact_value, best_value, best_node)
       end
       return best_value
     end
 
     def self.quiesence(node, depth, alpha, beta)
-      # puts "\tquiesence(#{node}, #{alpha}, #{beta})"
-      # $quiescence_calls += 1
+      # puts "\t\t\t\tquiesence(#{node}, #{alpha}, #{beta})"
+      $quiescence_calls += 1
       $main_calls += 1
-      tt = Application::current_game.tt
 
-      entry = tt.retrieve(node)
+      entry = $tt.retrieve(node)
       if entry && entry.depth >= depth
         return entry.value if entry.type == :exact_value
         if entry.type == :lower_bound && entry.value > alpha
@@ -176,22 +171,18 @@ module Application
       
       if depth <= 0
         if value <= alpha
-          tt.store(node, depth, :lower_bound, value)  # what is saved for best_node?
+          $tt.store(node, depth, :lower_bound, value)  # what is saved for best_node?
         elsif value >= beta
-          tt.store(node, depth, :upper_bound, value)
+          $tt.store(node, depth, :upper_bound, value)
         else
-          tt.store(node, depth, :exact_value, value)
+          $tt.store(node, depth, :exact_value, value)
         end
         return value
       end
 
       # assume 'standing pat' lower bound:
-
       return beta if value >= beta
-
       alpha = score if value > alpha
-
-
 
       best_value = -$INF   # cannot assume that any child nodes
       best_node = nil
@@ -206,11 +197,11 @@ module Application
       end
 
       if best_value <= alpha
-        tt.store(node, depth, :lower_bound, best_value, best_node)
+        $tt.store(node, depth, :lower_bound, alpha, best_node)
       elsif best_value >= beta
-        tt.store(node, depth, :upper_bound, best_value, best_node)
+        $tt.store(node, depth, :upper_bound, alpha, best_node)
       else
-        tt.store(node, depth, :exact_value, best_value, best_node)
+        $tt.store(node, depth, :exact_value, alpha, best_node)
       end
       return alpha
     end
