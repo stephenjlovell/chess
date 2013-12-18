@@ -1,4 +1,4 @@
-require './lib/application.rb'
+require 'spec_helper'
 
 describe Application::Position do
   describe Application::Position::ChessPosition do
@@ -20,9 +20,6 @@ describe Application::Position do
       describe "and public mixed-in methods" do
         it { should respond_to :get_moves } 
         it { should respond_to :get_castles }
-        it { should respond_to :create_position }
-        it { should respond_to :castle! }
-        it { should respond_to :move! }
         it { should respond_to :relocate_piece! }
         it { should respond_to :set_en_passant_flag!}
         it { should respond_to :set_castle_flag! }
@@ -31,9 +28,16 @@ describe Application::Position do
       end
     end
 
-    it "can generate a list of edges to child positions" do
-      @position.edges.each do |pos| 
-        pos.class.should == Application::Position::ChessPosition
+    describe "can generate a list of edges" do
+      it "to child positions" do
+        @position.edges.each do |pos| 
+          pos.class.should == Application::Position::ChessPosition
+        end
+      end
+      it "to child positions involving captures" do
+        @position.tactical_edges.each do |pos|
+          pos.class.should == Application::Position::ChessPosition
+        end
       end
     end
 

@@ -26,8 +26,8 @@ $quiescence_calls = 0
 
 require './lib/application.rb'
 
-# Play the game!
-Application::CLI::play
+# # Play the game!
+# Application::CLI::play
 
 # #  test initial moves available to pieces:
   # white_pieces = Application::current_position.pieces[:w]
@@ -55,11 +55,6 @@ Application::CLI::play
   # end
   # test_move_generation
 
-# # test Board.copy
-#   b = Application::current_position.board
-#   b2 = b.copy
-#   b.print
-#   b2.print
 
 # test Transposition Table hash function efficiency.
   # g = Application::new_game(:w)

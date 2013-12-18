@@ -1,4 +1,4 @@
-require './lib/application.rb'
+require 'spec_helper'
 
 describe Application::Movement do
   

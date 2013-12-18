@@ -20,6 +20,9 @@
 #-----------------------------------------------------------------------------------
  
 module Application
+  # unicode symbols for chess pieces:
+  GRAPHICS = { wP: "\u2659", wN: "\u2658", wB: "\u2657", wR: "\u2656", wQ: "\u2655", wK: "\u2654" , 
+               bP: "\u265F", bN: "\u265E", bB: "\u265D", bR: "\u265C", bQ: "\u265B", bK: "\u265A" }
 
   class Board
     include Enumerable
@@ -117,17 +120,17 @@ module Application
 
     def print
       i = 8
-      headings = "    A    B    C    D    E    F    G    H"
-      divider =  "  " + ("-" * 41)
+      headings = "    A   B   C   D   E   F   G   H"
+      divider =  "  " + ("-" * 33)
       puts headings
       puts divider
       @squares[2..9].reverse_each do |row|
         line = []
         row.each do |square|
           if square == nil 
-            line << "  "
+            line << " "
           elsif square != :XX
-            line << square.to_s
+            line << GRAPHICS[square]
           end
         end
         puts "#{i} | " + line.join(" | ") + " | #{i}"
@@ -137,6 +140,6 @@ module Application
       puts headings
       puts "\n"
     end
-    
+
   end
 end

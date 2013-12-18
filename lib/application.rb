@@ -113,11 +113,11 @@ module Application # define application-level behavior in this module and file.
     end
 
     def score(enemy_color)
-      [(1040 - (Evaluation::base_material(@position,enemy_color)/100)),0].max
+      [(1040 - (Evaluation::base_material(@position, enemy_color)/100)),0].max
     end
 
     def stage # return :early or :late
-
+      
     end
 
     def human_move(description)  # for now, just assume human moves are valid.
@@ -132,7 +132,7 @@ module Application # define application-level behavior in this module and file.
           end
         end
         move = Movement::Move.new(@position, square, target, capture_value, options)
-        @position = @position.create_position(move)
+        @position = move.create_position
       end
     end
 

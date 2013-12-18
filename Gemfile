@@ -3,10 +3,7 @@ source 'https://rubygems.org'
 
 ruby '1.9.3'
 
-# select a gem that wraps one of the open-source Chess UI options:
-
-# may want to include StateMachine gem for use in Application::Position::ChessPosition class.
-
+# add a gem that wraps one of the open-source Chess UI options.
 
 group :test do
   gem 'rspec'

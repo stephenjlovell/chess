@@ -1,3 +1,5 @@
+require 'spec_helper'
+
 describe Application::Pieces do
   describe "chess pieces" do
     before do

@@ -65,11 +65,11 @@ module Application
       end
 
       def edges
-        self.get_moves.collect { |m| self.create_position(m) }
+        self.get_moves.collect { |m| m.create_position }
       end
 
       def tactical_edges
-        self.get_moves.select{|m| m.capture_value > 0.0}.collect{|m| self.create_position(m)}
+        self.get_moves.select{|m| m.capture_value > 0.0}.collect{|m| m.create_position}
       end
 
       def parent
