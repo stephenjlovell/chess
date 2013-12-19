@@ -1,29 +1,22 @@
 
 BOARD STATE
-
   Hybrid approach: Piece list for move generation with separate board square representation for lookups.  
-
-DATA STRUCTURE
-
-  Directed Acyclic Graph
-    Position object used as node in search tree
-    Evaluation score stored in node
-    edges to other nodes generated based on move list.
-
+GAME TREE DATA STRUCTURE
+  Position object used as node in search tree
+  Evaluation score stored in node
+  edges to other nodes generated based on move list.
 SEARCHING / TRAVERSAL ----
-
-  Iterative Deepening Depth-First Search (IDDFS)
-    =>  MTD(f) for scope narrowing (optional)
+  Iterative Deepening
+    =>  MTD(f) for scope narrowing
         =>  Alpha-Beta Pruning with memoization
             =>  Transposition hash table for memoization
-
 EVALUATION ----
-
   Weighted pattern matching
 
 Current Issues ----
 
   AI does not always select obvious best moves - does not always capture expensive units except via pawns.
+
 
 To Do ----
 
@@ -32,13 +25,13 @@ To Do ----
     - Location class could serve as key in piece list hashes.
     - create Move subclasses for Castle and EnPassant.  Relocate create_position and related methods to Move class,
       and override generic behavior in subclasses.
+      allow for lazy move generation
 
   Add separate PSTs for early- and late-game.
   Handle king_in_check? in board object
   Add Killer Heuristic to move ordering.
   Allow incremental calculation of hash values based on previous move of the Transposition Table.
 
-  Add table for unicode chess symbols?
 
 
 
