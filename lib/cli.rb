@@ -7,8 +7,9 @@ module Application
       $stdout.flush
       human_color = gets.chomp
       if human_color == "w" || human_color == "b"
+        time_limit = 20.0
         ai_color = human_color == "w" ? :b : :w
-        Application::new_game(ai_color)
+        Application::new_game(ai_color, time_limit)
       end 
       Application::print
       input = ""

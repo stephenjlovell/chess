@@ -43,8 +43,8 @@ module Application # define application-level behavior in this module and file.
       @current_game = game  # may be needed in a future load_game method.
     end
 
-    def new_game(ai_player = :w)
-      @current_game = Application::Game.new(ai_player)
+    def new_game(ai_player = :b, time_limit = 120.0)
+      @current_game = Application::Game.new(ai_player, time_limit)
     end
 
     def current_position # represents the root node in current search tree.
@@ -65,9 +65,10 @@ module Application # define application-level behavior in this module and file.
   end
 
   class Clock
-    def initialize 
-      @game_start = Time.now
-      @turn_start = Time.now
+    attr_reader :game_start
+
+    def initialize(time_limit = 120.0) 
+      @game_start, @turn_start, @time_limit = Time.now, Time.now, time_limit
     end
 
     def time_up?
@@ -85,7 +86,7 @@ module Application # define application-level behavior in this module and file.
     attr_accessor :position, :halfmove_counter, :tt, :clock
     attr_reader :ai_player, :opponent
     
-    def initialize(ai_player = :b)
+    def initialize(ai_player = :b, time_limit = 120.0)
       board = Board.allocate
       board.setup
       pieces = Pieces::setup(board)
@@ -95,7 +96,7 @@ module Application # define application-level behavior in this module and file.
       @ai_player = ai_player
       @opponent = ai_player == :w ? :b : :w
       @tt = Memory::TranspositionTable.new
-      @clock = Clock.new
+      @clock = Clock.new(time_limit)
     end
 
     def move_count

@@ -51,6 +51,7 @@ module Application
 
       BSTR = create_bytestring_array
 
+      # Zobrist hash algorithm
       def hash(position)  # generates a unique hash key corresponding to position.
         key = 0
         # parent_hash = position.parent.hash_value || nil

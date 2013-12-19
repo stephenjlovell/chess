@@ -55,10 +55,7 @@ describe Application::Position::ChessPosition do
 
   describe "should know about its parent position" do
     let(:child) { @position.edges.first }
-
     it { child.parent.should == @position }
-
-
   end
 
 
