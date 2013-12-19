@@ -16,6 +16,11 @@ SQUARES = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
 
 FactoryGirl.define do
 
+  factory :game, class: Application::Game do
+
+
+  end
+
   factory :board, class: Application::Board do  
     squares SQUARES
   end
@@ -26,5 +31,7 @@ FactoryGirl.define do
     side_to_move :w
     initialize_with { new(board, pieces, side_to_move) }
   end
+
+
 
 end
