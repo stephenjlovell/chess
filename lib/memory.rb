@@ -43,11 +43,9 @@ module Application
       end
       
       def self.piece_hash # creates a 12 element hash associating each piece to a 
-        hsh = {}              # set of 16 random bytes packed in a string.
+        hsh = {}          # set of 16 random bytes packed in a string.
         [ :wP, :wN, :wB, :wR, :wQ, :wK, 
-          :bP, :bN, :bB, :bR, :bQ, :bK ].each do |sym|
-          hsh[sym] = SecureRandom::random_bytes
-        end
+          :bP, :bN, :bB, :bR, :bQ, :bK ].each { |sym| hsh[sym] = SecureRandom::random_bytes }
         return hsh
       end
 

@@ -27,6 +27,8 @@ module Application
   class Board
     include Enumerable
 
+    attr_writer :squares
+
     def initialize # generates a representation of an empty chessboard.             # row  board #
       @squares = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
                    [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
@@ -120,10 +122,8 @@ module Application
 
     def print
       i = 8
-      headings = "    A   B   C   D   E   F   G   H"
-      divider =  "  " + ("-" * 33)
-      puts headings
-      puts divider
+      puts (headings = "    A   B   C   D   E   F   G   H")
+      puts (divider =  "  " + ("-" * 33))
       @squares[2..9].reverse_each do |row|
         line = []
         row.each do |square|
@@ -137,8 +137,7 @@ module Application
         puts divider
         i-=1
       end
-      puts headings
-      puts "\n"
+      puts "#{headings}\n"
     end
 
   end

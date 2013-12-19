@@ -16,17 +16,15 @@ SQUARES = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
 
 FactoryGirl.define do
 
-  factory :board do  
+  factory :board, class: Application::Board do  
     squares SQUARES
   end
 
-  factory :position do
-    board 
-    pieces
-    side_to_move
-    previous_move
-    options
-    hash_value
+  factory :position, class: Application::Position::ChessPosition do
+    board  { FactoryGirl.build(:board) }
+    pieces { Application::Pieces::setup(board) }
+    side_to_move :w
+    initialize_with { new(board, pieces, side_to_move) }
   end
 
 end
