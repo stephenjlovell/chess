@@ -22,28 +22,53 @@
 module Application
   module Movement
 
+    BACK_ROW = { w: 2, b: 9 }
     NUMBER_TO_LETTER = { 2 => "a", 3 => "b", 4 => "c", 5 => "d", 
                          6 => "e", 7 => "f", 8 => "g", 9 => "h" }
-                         
-    LETTER_TO_NUMBER = { "a" => 2, "b" => 3, "c" => 4, "d" => 5,  
-                         "e" => 6, "f" => 7, "g" => 8, "h" => 9 }
 
-    BACK_ROW = { w: 2, b: 9 }
+    class Location
+      attr_accessor :r, :c
+      
+      def initialize(r,c)  
+        @r, @c = r,c
+      end
+
+      def eql?(other)
+        @r == other.r && @c == other.c
+      end
+
+      alias :== :eql? 
+
+      def +(arr)
+        self.class.new(@r+arr[0], @c+arr[1])
+      end
+
+      def hash
+        to_a.hash
+      end
+
+      def copy
+        self.class.new(@r, @c)
+      end
+
+      def to_s  # will replace Movement::square
+        (NUMBER_TO_LETTER[@c]) + (@r - 1).to_s
+      end
+
+      def to_a
+        [@r, @c]
+      end
+    end
 
     class Move
-      attr_reader :position, :square, :target, :capture_value, :options
-      # once subclasses are created, this will eliminate need for options hash.
-      def initialize(position, square, target, capture_value, options = {})
-        @position = position
-        @square = square
-        @target = target
-        @capture_value = capture_value
-        @options = options
+      attr_reader :position, :from, :to, :capture_value
+
+      def initialize(position, from, to, capture_value)
+        @position, @from, @to, @capture_value = position, from, to, capture_value
       end
 
       def to_s
-        piece = @position.pieces[@position.side_to_move][@square]
-        "#{piece.symbol.to_s} #{@square} to #{Movement::square(@target[0], @target[1])}"
+        "#{@position.board[@from].to_s} #{@from.to_s} to #{@to.to_s}"
       end
 
       def create_position        # returns a new position object representing the game state
@@ -55,206 +80,131 @@ module Application
       end
 
       def move!(pos) # updates self by performing the specified move.
-        piece = pos.pieces[pos.side_to_move][square]
-        pos.relocate_piece!(square, target)
-        pos.set_en_passant_flag!(piece, self)
-        pos.promote_pawns!
-        pos.set_castle_flag!(self) if pos.options[:castle]
+        pos.relocate_piece!(@from, @to)
+        pos.promote_pawn!(@to)
+        pos.set_castle_flag!(@from) if pos.options[:castle]
+        pos.options.delete(:en_passant_target)
       end
-
     end
 
     class Castle < Move
-      attr_reader :side_to_castle
+      attr_reader :position, :from, :to, :side
 
-      COLUMNS = { low:  { king: 4, rook: 5 },
-                  high: { king: 7, rook: 8 } }
+      FROM_COL = { low:  { king: 6, rook: 2 },
+                   high: { king: 6, rook: 9 } }
+      TO_COL = { low:  { king: 4, rook: 5 },
+                 high: { king: 8, rook: 7 } }
 
-      def initialize(position, square, target, side_to_castle)
-        @position = position
-        @square = square
-        @target = target
-        @capture_value = 0
-        @options = options
-        @side_to_castle = side_to_castle
+      def initialize(position, side)
+        @position, @side = position, side
       end
 
       def move!(pos)
-        king = pos.pieces[pos.side_to_move][square]
-        rook = pos.pieces[pos.side_to_move][Movement::square(*target)]
-        row = BACK_ROW[pos.side_to_move]
-        columns = COLUMNS[@side_to_castle]
-        pos.relocate_piece!(king.square,[row, columns[:king]])
-        pos.relocate_piece!(rook.square,[row, columns[:rook]])
+        pos.options = nil  # remove castle and en-passant flag
+        row = BACK_ROW[pos.side_to_move]        
+        king_from = Location.new(row, FROM_COL[@side][:king])
+        king_to = Location.new(row, TO_COL[@side][:king])
+        rook_from = Location.new(row, FROM_COL[@side][:rook])
+        rook_to = Location.new(row, TO_COL[@side][:rook])
+        pos.relocate_piece!(king_from, king_to)
+        pos.relocate_piece!(rook_from, rook_to)
+      end
+
+    end
+
+    class EnPassantAttack < Move
+
+      def initialize(position, from, to)
+        @position, @from, @to, @capture_value = position, from, to, 1.0
+      end
+
+      def move!(pos)
+        pos.relocate_piece!(@from, @to)
+        target = Location.new(@from.r, @to.c)
+        pos.board[target] = nil
+        pos.pieces[position.side_to_move].delete(target)
+        pos.options.delete(:en_passant_target)
       end
     end
 
-    class EnPassant < Move
+    class EnPassantTarget < Move
 
+      def initialize(position, from, to)
+        @position, @from, @to, @capture_value = position, from, to, 0.0
+      end
+      
+      def move!(pos)
+        pos.relocate_piece!(@from, @to)
+        @position.options[:en_passant_target] = @to
+      end
     end
 
+    # Mixin methods (included in Position object):
 
-    # class Location
-    #   attr_accessor :r, :c
-
-    #   def initialize(*args)  # should accept and process a single string or pair of coordinates.
-    #     if args.length == 1
-    #       @r, @c = args[0][1].to_i + 1, LETTER_TO_NUMBER[args[0][0]]
-    #     elsif args.length == 2
-    #       @r, @c = *args
-    #     end
-    #   end
-
-    #   def copy
-    #     self.class.new(@r, @c)
-    #   end
-
-    #   def eql?(other)
-    #     @r == other.r && @c == other.c
-    #   end
-
-    #   alias :== :eql? 
-
-    #   def hash
-    #     to_a.hash
-    #   end
-
-    #   def to_s  # will replace Movement::square
-    #     (NUMBER_TO_LETTER[@c]) + (@r - 1).to_s
-    #   end
-
-    #   def to_a
-    #     [@r, @c]
-    #   end
-    # end
-
-    def self.square(row,column)
-      (NUMBER_TO_LETTER[column]) + (row - 1).to_s
-    end
-
-    def self.coordinates(square)
-      return square[1].to_i + 1, LETTER_TO_NUMBER[square[0]]
-    end
-
-    # Mixin methods:
-
-    def get_moves # returns a sorted array of all possible moves for the current player.
+    def moves # returns a sorted array of all possible moves for the current player.
       moves = []
-      @pieces[@side_to_move].each { |square, piece| moves += piece.get_moves(self) }
-      # moves += get_castles if @options[:castle]  # disable castles for now.
+      @pieces[@side_to_move].each { |key, piece| moves += piece.get_moves(key,self) }
+      moves += get_castles if @options[:castle]  # disable castles for now.
       sort_moves(moves)
       return moves
     end
 
     def sort_moves(moves)
       moves.sort! { |x,y| y.capture_value <=> x.capture_value }
-      # also sort non-captures by Killer Heuristic
+      # also sort non-captures by Killer Heuristic?
     end
-
-    # def create_position(move) # returns a new position object representing the game state
-    #   pos = self.copy         # that results from the current player taking the specified move.
-    #   if move.options[:castle] && move.options[:castle] != {}
-    #     pos.castle!(move)
-    #   else
-    #     pos.move!(move)
-    #   end
-    #   pos.previous_move = move
-    #   pos.side_to_move = @side_to_move == :w ? :b : :w
-    #   return pos
-    # end
 
     def get_castles
       castles = []
       hsh = @options[:castle]
       row = BACK_ROW[@side_to_move] 
       if hsh[:low]
-        if @board.empty?(row, 3) && @board.empty?(row, 4) && @board.empty?(row, 5) # castling permitted on low side.
-          castles << Castle.new(self, Movement::square(row,6), [row,2], :low)
+        if @board.empty?(Location.new(row, 3)) && 
+           @board.empty?(Location.new(row, 4)) && 
+           @board.empty?(Location.new(row, 5)) # castling permitted on low side.
+          castles << Castle.new(self, :low)
         end
       end
       if hsh[:high]  
-        if @board.empty?(row, 7) && @board.empty?(row, 8) # castling permitted on high side.
-          castles << Castle.new(self, Movement::square(row,6), [row,9], :high)
+        if @board.empty?(Location.new(row, 7)) && 
+           @board.empty?(Location.new(row, 8)) # castling permitted on high side.
+          castles << Castle.new(self, :high)
         end
       end
       return castles
     end
 
-    # def castle!(move)
-    #   king = @pieces[@side_to_move][move.square]
-    #   rook = @pieces[@side_to_move][Movement::square(*move.target)]
-    #   row = BACK_ROW[@side_to_move]
-
-    #   begin
-    #     sym = move.options[:castle]
-    #     if sym
-    #       if :low
-    #         king_column, rook_column = 4, 5
-    #       elsif :high
-    #         king_column, rook_column = 7, 8
-    #       end
-    #       relocate_piece!(king.square,[row, king_column])
-    #       relocate_piece!(rook.square,[row, rook_column])
-    #     end
-    #   rescue Exception => err
-    #     puts move.options
-    #     # err.backtrace.inspect
-    #   end
-    # end
-
-    # def move!(move) # updates self by performing the specified move.
-    #   piece = @pieces[self.side_to_move][move.square]
-    #   self.relocate_piece!(move.square, move.target)
-    #   self.set_en_passant_flag!(piece, move)
-    #   self.promote_pawns!
-    #   self.set_castle_flag!(move) if self.options[:castle]
-    # end
-
-    def relocate_piece!(old_square,target)
+    def relocate_piece!(from, to)
       enemy = @side_to_move == :w ? :b : :w
-      piece = @pieces[@side_to_move][old_square]
-      @pieces[@side_to_move].delete(old_square)
-      new_square = Movement::square(*target)
-      @pieces[enemy].delete(new_square) if @pieces[enemy]
-      @pieces[@side_to_move][new_square] = piece
-      piece.position = [*target]
-      @board[*(Movement::coordinates(old_square))] = nil
-      @board[*target] = piece.symbol
+      piece = @pieces[@side_to_move][from]
+      @pieces[@side_to_move].delete(from)
+      @pieces[enemy].delete(to) if @pieces[enemy]
+      @pieces[@side_to_move][to] = piece
+      @board[from] = nil
+      @board[to] = piece.symbol
     end
 
-    def set_en_passant_flag!(piece, move)
-      if move.options[:en_passant_capture]
-        @board[piece.position[0], move.target[1]] = nil
-        @pieces[side_to_move].delete(Movement::square(piece.position[0], move.target[1]))
-        @options.delete(:en_passant_target)
-      elsif move.options[:en_passant_target]
-        @options[:en_passant_target] = [move.target[0], move.target[1]]
+    def set_castle_flag!(from) # removes the appropriate castling option when Rook or King moves.
+      type = @pieces[@side_to_move][from].type
+      if type == :R
+        if from == Location.new(BACK_ROW[@side_to_move],2)
+          options[:castle].delete(:low)
+        elsif from == Location.new(BACK_ROW[@side_to_move],9)
+          options[:castle].delete(:high)
+        end
+      elsif type == :K
+        options.delete(:castle)
       end
     end
 
-    def set_castle_flag!(move) # removes the appropriate castling option when Rook or King moves.
-      case move.square
-      when "a1", "a8" # if left side rook moved, no longer available for castling.
-        self.options[:castle].delete(:low) 
-      when "h1", "h8" # if right side rook moved, no longer available for castling.
-        self.options[:castle].delete(:high) 
-      when "e1", "e8" # if king is moved, castling no longer permitted.
-        self.options.delete(:castle) 
+    PAWN_PROMOTION = { wP: :wQ, bP: :bQ }
+    def promote_pawn!(to) # called via move! method
+      enemy = @side_to_move == :w ? :b : :w
+      type = @pieces[@side_to_move][to]
+      if to.r == BACK_ROW[enemy] && type == :P
+        @board[to] = PAWN_PROMOTION[@side_to_move]
+        @pieces[@side_to_move][to] = Pieces::Queen.new(@side_to_move)
       end
-    end
-
-    def promote_pawns! # called via move! method
-      if side_to_move == :w
-        (2..9).each { |column| promote_pawn!(9, column) if @board[9, column] == :wP }
-      else
-        (2..9).each { |column| promote_pawn!(2, column) if @board[2, column] == :bP }
-      end
-    end
-
-    def promote_pawn!(row, column)
-      square = Movement::square(row, column)
-      @board[row,column] = (@side_to_move.to_s + "Q").to_sym
-      @pieces[@side_to_move][square] = Pieces::Queen.new(row, column, @side_to_move)
     end
 
   end

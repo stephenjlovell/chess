@@ -17,12 +17,10 @@ describe Application::Position::ChessPosition do
     it { should respond_to :previous_move }
     it { should respond_to :options }
     describe "and public mixed-in methods" do
-      it { should respond_to :get_moves } 
+      it { should respond_to :moves } 
       it { should respond_to :get_castles }
       it { should respond_to :relocate_piece! }
-      it { should respond_to :set_en_passant_flag!}
       it { should respond_to :set_castle_flag! }
-      it { should respond_to :promote_pawns! }
       it { should respond_to :promote_pawn! }
     end
   end
@@ -30,8 +28,8 @@ describe Application::Position::ChessPosition do
   describe "move generation" do
     describe "generates a list of edges" do
       it "to child positions" do
-        @position.edges.each do |pos| 
-          pos.class.should == Application::Position::ChessPosition
+        @position.edges.each do |child| 
+          child.class.should == Application::Position::ChessPosition
         end
       end
       it "to child positions involving captures" do
@@ -57,8 +55,6 @@ describe Application::Position::ChessPosition do
     let(:child) { @position.edges.first }
     it { child.parent.should == @position }
   end
-
-
 
 end
 

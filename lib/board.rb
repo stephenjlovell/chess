@@ -74,46 +74,50 @@ module Application
     end
 
     def each_square_with_location
-      (2..9).each do |row|
-        (2..9).each do |column|
-          yield row, column, @squares[row][column]
+      (2..9).each do |r|
+        (2..9).each do |c|
+          yield r, c, @squares[r][c]
         end
       end
     end
 
     def copy # return a deep copy of self.
       board = Board.new
-      each_square_with_location { |r,c,s| board[r, c] = s }
+      each_square_with_location { |r,c,s| board[Movement::Location.new(r,c)] = s }
       return board
     end
 
-    def [](row, column)
-      @squares[row][column]
+    def coordinates(r, c)
+      @squares[r][c]
     end
 
-    def []=(row, column, value)
-      @squares[row][column] = value
+    def [](location)
+      @squares[location.r][location.c]
     end
 
-    def empty?(row, column)
-      @squares[row][column] == nil
+    def []=(location, value)
+      @squares[location.r][location.c] = value
     end
 
-    def out_of_bounds?(row, column)
-      @squares[row][column] == :XX
+    def empty?(location)
+      @squares[location.r][location.c] == nil
     end
 
-    def occupied?(row, column)
-      sym = @squares[row][column]
+    def out_of_bounds?(location)
+      @squares[location.r][location.c] == :XX
+    end
+
+    def occupied?(location)
+      sym = @squares[location.r][location.c]
       sym != nil && sym != :XX
     end
 
-    def enemy?(row, column, color)
-      occupied?(row,column) && @squares[row][column][0].to_sym != color
+    def enemy?(location, color)
+      occupied?(location) && @squares[location.r][location.c][0].to_sym != color
     end
 
-    def pseudo_legal?(row, column, color)
-      empty?(row, column) || enemy?(row, column, color)
+    def pseudo_legal?(location, color)
+      empty?(location) || enemy?(location, color)
     end
 
     def king_in_check?(color)

@@ -36,9 +36,8 @@ module Application
         @options = options
       end
 
-      def en_passant_target?(row, column)
-        enp = @options[:en_passant_target]
-        !enp.nil? && enp[0] == row && enp[1] == column
+      def en_passant_target?(location)
+        @options[:en_passant_target] == location
       end
 
       def value
@@ -51,10 +50,10 @@ module Application
 
       def copy # perform a deep copy of self.
         new_pieces = { w: {}, b: {} }
-        options = Marshal.load(Marshal.dump(@options))
-        @pieces.each do |color, square_hash|
-          @pieces[color].each do |square, piece|
-            new_pieces[color][square] = piece.copy
+        options = Marshal.load(Marshal.dump(@options))  # en passant targets should not be automatically preserved.
+        @pieces.each do |color, hsh|
+          @pieces[color].each do |location, piece|
+            new_pieces[color][location] = piece.copy
           end
         end
         ChessPosition.new(@board.copy, new_pieces, @side_to_move, @previous_move, options) 
@@ -64,12 +63,14 @@ module Application
         # return a string decribing the position in Forsyth-Edwards Notation.
       end
 
-      def edges
-        self.get_moves.collect { |m| m.create_position }
+      # should only get moves initially, then make moves separately.
+      
+      def edges  
+        self.moves.collect { |m| m.create_position }
       end
 
       def tactical_edges
-        self.get_moves.select{|m| m.capture_value > 0.0}.collect{|m| m.create_position}
+        self.moves.select{|m| m.capture_value > 0.0}.collect{|m| m.create_position}
       end
 
       def parent

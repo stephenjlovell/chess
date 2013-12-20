@@ -20,30 +20,37 @@ describe Application::Board do
   # be added to Board Factory as a singleton, could remove attr_writer from class.
 
   it 'should place pieces in the correct initial position' do
-    @board[2,10].should == :XX  # square [2,10] should be out of bounds.
-    @board[4,2].should == nil   # square [4,2] should be nil.
-    @board[2,6].should == :wK   # white king should be located at [2,6]
-    @board[9,5].should == :bQ   # black queen should be located at [9,5]
+    @board.coordinates(2,10).should == :XX  # square [2,10] should be out of bounds.
+    @board.coordinates(4,2).should == nil   # square [4,2] should be nil.
+    @board.coordinates(2,6).should == :wK   # white king should be located at [2,6]
+    @board.coordinates(9,5).should == :bQ   # black queen should be located at [9,5]
   end
 
-  describe 'when inspecting a square, can determine' do 
+  describe 'when inspecting a square, it can determine' do
+    before do
+      @empty = FactoryGirl.build(:location, r: 4, c: 2)
+      @out = FactoryGirl.build(:location, r: 2, c: 10)
+      @occupied = FactoryGirl.build(:location, r: 2, c: 6)
+      @enemy = FactoryGirl.build(:location, r: 9, c: 5)
+    end
+
     it 'if a square is empty' do
-      @board.empty?(4,2).should be_true
+      @board.empty?(@empty).should be_true
     end
     it 'if out of bounds' do
-      @board.out_of_bounds?(2,10).should be_true
+      @board.out_of_bounds?(@out).should be_true
     end 
     it 'if occupied' do
-      @board.occupied?(2,6).should be_true
+      @board.occupied?(@occupied).should be_true
     end
     it 'if occupied by an enemy' do
-      @board.enemy?(2,6,:w).should be_false
-      @board.enemy?(9,5,:w).should be_true
+      @board.enemy?(@occupied,:w).should be_false
+      @board.enemy?(@enemy,:w).should be_true
     end
     it 'if a move target is pseudo-legal' do
-      @board.pseudo_legal?(2,6,:w).should be_false
-      @board.pseudo_legal?(9,5,:W).should be_true
-      @board.pseudo_legal?(4,2,:w).should be_true
+      @board.pseudo_legal?(@out,:w).should be_false
+      @board.pseudo_legal?(@enemy,:W).should be_true
+      @board.pseudo_legal?(@empty,:w).should be_true
     end
   end
 

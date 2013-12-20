@@ -18,7 +18,10 @@ FactoryGirl.define do
 
   factory :game, class: Application::Game do
 
+  end
 
+  factory :location, class: Application::Movement::Location do
+    initialize_with { new(r,c) }
   end
 
   factory :board, class: Application::Board do  

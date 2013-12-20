@@ -27,54 +27,43 @@ module Application
 
     class Piece  # this class defines the common behavior of chess pieces.
       attr_reader :color 
-      attr_accessor :position
 
-      def initialize(row, column, color)
+      def initialize(color)
         @color = color
-        @position = [row, column]
       end
 
       def copy # return a deep copy of self
-        self.class.new(*@position, @color)
+        self.class.new(@color)
       end
 
       def symbol
         @symbol ||= (@color.to_s + self.class.type.to_s).to_sym
       end
 
-      def square
-        @square ||= Movement::square(*@position)
-      end
-
-      def get_moves(chess_position) # returns a collection of all pseudo-legal moves for the current piece.
-        moves = []                  # each move contains the piece, target, capture value, and en_passant flag.
+      def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
+        moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
         self.class.directions.each do |direction|
-          move = explore_direction(@position, direction, chess_position)
+          move = explore_direction(from, direction, position)
           moves += move unless move.empty?
         end
         return moves
       end
 
       private 
-        def explore_direction(start, direction, chess_position, moves = [] )
-          target = [ start[0] + direction[0], start[1] + direction[1]]
-          board = chess_position.board
-          if board.pseudo_legal?(*target, @color)
-            moves << Movement::Move.new(chess_position, self.square, target, 
-                                        mvv_lva_value(target, board))
-            if self.class.move_until_blocked? && board.empty?(*target)
-              explore_direction(target, direction, chess_position, moves) 
+        def explore_direction(from, direction, position, moves = [] )
+          to = from + direction
+          board = position.board
+          if board.pseudo_legal?(to, @color)
+            moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
+            if self.class.move_until_blocked? && board.empty?(to)
+              explore_direction(to, direction, position, moves) 
             end
           end
           return moves
         end
 
-        def mvv_lva_value(target, board, enemy = nil)
-          if enemy || board.enemy?(*target, @color)
-            Pieces::get_value_by_sym(board[*target]) / self.class.value
-          else
-            0.0
-          end
+        def mvv_lva_value(to, board)
+          board.enemy?(to, @color) ? (Pieces::get_value_by_sym(board[to])/self.class.value) : 0.0
         end
     end
 
@@ -106,54 +95,54 @@ module Application
         end
       end
 
-      def get_moves(chess_position) # supercedes the generic get_moves function 
+      def get_moves(from, position) # supercedes the generic get_moves function 
         moves = []                  # provided by the Piece class.
-        get_attacks(chess_position,moves)
-        get_en_passant(chess_position,moves)
-        get_advances(chess_position,moves)
+        get_attacks(from, position, moves)
+        get_en_passant(from, position, moves)
+        get_advances(from, position, moves)
         return moves
       end
 
-      def get_attacks(chess_position, moves)
+      def get_attacks(from, position, moves)
         attacks = DIRECTIONS[@color][:attack]
+        board = position.board        
         attacks.each do |pair|  # normal attacks
-          target = [ @position[0] + pair[0], @position[1] + pair[1]]
-          board = chess_position.board
-          if board.enemy?(*target, @color)  
-            moves << Movement::Move.new(chess_position, self.square, target, 
-                                        mvv_lva_value(target, chess_position.board, true))
+          to = from + pair
+          if board.enemy?(to, @color)  
+            moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
           end
         end
       end
 
-      def get_en_passant(chess_position, moves)
+      def get_en_passant(from, position, moves)
+        board = position.board
         DIRECTIONS[:en_passant].each do |pair|
-          target = [ @position[0] + pair[0], @position[1] + pair[1]]
-          b = chess_position.board
-          if chess_position.en_passant_target?(target[0],target[1]) && 
-          b.enemy?(target[0],target[1], @color)
+          target = from + pair
+          if position.en_passant_target?(target) && board.enemy?(target, @color)
             offset = DIRECTIONS[@color][:enp_offset]
-            move_target = [target[0] + offset[0], target[1] + offset[1]]
-            moves << Movement::Move.new(chess_position, self.square, move_target, 
-                                        1.0,  { en_passant_capture: true }) 
+            move_to = target + offset
+            moves << Movement::EnPassantAttack.new(position, from, move_to) 
           end
         end
       end
 
-      def get_advances(chess_position, moves)
+      def get_advances(from, position, moves)
         d = DIRECTIONS[@color]
-        target = [ @position[0] + d[:advance][0], @position[1] + d[:advance][1] ]
-        board = chess_position.board
-        unless board.occupied?(target[0], target[1])
-          moves << Movement::Move.new(chess_position, self.square, target, 0.0)
-          if @position[0] == d[:start_row]
-            target = [ @position[0] + d[:initial][0], @position[1] + d[:initial][1]]
-            unless board.occupied?(target[0], target[1])
-              moves << Movement::Move.new(chess_position, self.square, target, 
-                                          0.0, { en_passant_target: true }) 
+        to = from + d[:advance]
+        board = position.board
+        unless board.occupied?(to)
+          moves << Movement::Move.new(position, from, to, 0.0)
+          if from.r == d[:start_row]
+            to = from + d[:initial]
+            unless board.occupied?(to)
+              moves << Movement::EnPassantTarget.new(position, from, to) 
             end
           end
         end
+      end
+
+      def mvv_lva_value(to, board)
+        (Pieces::get_value_by_sym(board[to])/self.class.value)
       end
 
     end
@@ -273,23 +262,23 @@ module Application
       board.each_with_index do |row, row_index|
         row.each_with_index do |sym, column|
           unless sym == nil || sym == :XX
-            piece = self.create_piece_by_sym(row_index, column, sym) 
-            pieces[piece.color][piece.square] = piece
+            piece = self.create_piece_by_sym(sym)
+            pieces[piece.color][Movement::Location.new(row_index, column)] = piece
           end
         end
       end
       return pieces
     end
 
-    def self.create_piece_by_sym(row, column, sym)
+    def self.create_piece_by_sym(sym)
       color, type = sym[0].to_sym, sym[1]
       case type
-      when "P" then Pawn.new(row, column, color)
-      when "R" then Rook.new(row, column, color)
-      when "N" then Knight.new(row, column, color)
-      when "B" then Bishop.new(row, column, color)
-      when "Q" then Queen.new(row, column, color)
-      when "K" then King.new(row, column, color)
+      when "P" then Pawn.new(color)
+      when "R" then Rook.new(color)
+      when "N" then Knight.new(color)
+      when "B" then Bishop.new(color)
+      when "Q" then Queen.new(color)
+      when "K" then King.new(color)
       end
     end
 

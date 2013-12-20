@@ -22,8 +22,8 @@
 load './lib/application.rb'
 puts "Chess library loaded. \n\n"
 
-# # Play the game!
-# Application::CLI::play
+# Play the game!
+Application::CLI::play
 
 # #  test initial moves available to pieces:
   # white_pieces = Application::current_position.pieces[:w]
