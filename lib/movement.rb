@@ -161,14 +161,14 @@ module Application
       if hsh[:low]
         if @board.empty?(Location.new(row, 3)) && 
            @board.empty?(Location.new(row, 4)) && 
-           @board.empty?(Location.new(row, 5)) # castling permitted on low side.
-          castles << Castle.new(self, :low)
+           @board.empty?(Location.new(row, 5))
+          castles << Castle.new(self, :low)  # castling permitted on low side.
         end
       end
       if hsh[:high]  
         if @board.empty?(Location.new(row, 7)) && 
-           @board.empty?(Location.new(row, 8)) # castling permitted on high side.
-          castles << Castle.new(self, :high)
+           @board.empty?(Location.new(row, 8))
+          castles << Castle.new(self, :high)  # castling permitted on high side.
         end
       end
       return castles

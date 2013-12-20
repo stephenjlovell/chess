@@ -42,21 +42,22 @@ module Application
 
       def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
         moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
+        until_blocked = self.class.move_until_blocked?
         self.class.directions.each do |direction|
-          move = explore_direction(from, direction, position)
+          move = explore_direction(from, direction, position, until_blocked)
           moves += move unless move.empty?
         end
         return moves
       end
 
       private 
-        def explore_direction(from, direction, position, moves = [] )
+        def explore_direction(from, direction, position, until_blocked, moves = [] )
           to = from + direction
           board = position.board
           if board.pseudo_legal?(to, @color)
             moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
-            if self.class.move_until_blocked? && board.empty?(to)
-              explore_direction(to, direction, position, moves) 
+            if until_blocked && board.empty?(to)
+              explore_direction(to, direction, position, until_blocked, moves) 
             end
           end
           return moves
@@ -104,9 +105,8 @@ module Application
       end
 
       def get_attacks(from, position, moves)
-        attacks = DIRECTIONS[@color][:attack]
         board = position.board        
-        attacks.each do |pair|  # normal attacks
+        DIRECTIONS[@color][:attack].each do |pair|  # normal attacks
           to = from + pair
           if board.enemy?(to, @color)  
             moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
@@ -127,21 +127,20 @@ module Application
       end
 
       def get_advances(from, position, moves)
-        d = DIRECTIONS[@color]
-        to = from + d[:advance]
-        board = position.board
-        unless board.occupied?(to)
+        dir = DIRECTIONS[@color]
+        to = from + dir[:advance]
+        unless position.board.occupied?(to)
           moves << Movement::Move.new(position, from, to, 0.0)
-          if from.r == d[:start_row]
-            to = from + d[:initial]
-            unless board.occupied?(to)
+          if from.r == dir[:start_row]
+            to = from + dir[:initial]
+            unless position.board.occupied?(to)
               moves << Movement::EnPassantTarget.new(position, from, to) 
             end
           end
         end
       end
 
-      def mvv_lva_value(to, board)
+      def mvv_lva_value(to, board) # most valuable victim / least valuable attacker heuristic
         (Pieces::get_value_by_sym(board[to])/self.class.value)
       end
 
@@ -257,13 +256,13 @@ module Application
       PIECE_VALUES[sym[1]]
     end
 
-    def self.setup(board)  # returns an array of new chess piece objects corresponding to the 
-      pieces = { w: {}, b: {} }         # board representation specified in board.
-      board.each_with_index do |row, row_index|
-        row.each_with_index do |sym, column|
+    def self.setup(board)        # returns a collection of chess pieces 
+      pieces = { w: {}, b: {} }  # corresponding to the specified board representation.
+      board.each_with_index do |row, r|
+        row.each_with_index do |sym, c|
           unless sym == nil || sym == :XX
             piece = self.create_piece_by_sym(sym)
-            pieces[piece.color][Movement::Location.new(row_index, column)] = piece
+            pieces[piece.color][Movement::Location.new(r, c)] = piece
           end
         end
       end
