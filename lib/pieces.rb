@@ -22,10 +22,11 @@
 module Application
   module Pieces
 
-    PIECE_VALUES = { "P" => 100, "N" => 320, "B" => 333, 
-                     "R" => 510, "Q" => 880, "K" => 100000 }
+    # change to symbols:
+    PIECE_VALUES = { P: 100, N: 320, B: 333, 
+                     R: 510, Q: 880, K: 100000 }
 
-    class Piece  # this class defines the common behavior of chess pieces.
+    class Piece  # Provides a common template used by each concrete chess piece class.
       attr_reader :color 
 
       def initialize(color)
@@ -45,7 +46,7 @@ module Application
         until_blocked = self.class.move_until_blocked?
         self.class.directions.each do |direction|
           move = explore_direction(from, direction, position, until_blocked)
-          moves += move unless move.empty?
+          moves += move
         end
         return moves
       end
@@ -55,7 +56,7 @@ module Application
           to = from + direction
           board = position.board
           if board.pseudo_legal?(to, @color)
-            moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
+            moves << Movement::Move.new(position, from.copy, to, mvv_lva_value(to, board))
             if until_blocked && board.empty?(to)
               explore_direction(to, direction, position, until_blocked, moves) 
             end
@@ -82,7 +83,7 @@ module Application
                      en_passant: [[0,1],[0,-1]] }
 
       class << self
-        VALUE = PIECE_VALUES["P"]
+        VALUE = PIECE_VALUES[:P]
         def value
           VALUE
         end
@@ -109,7 +110,7 @@ module Application
         DIRECTIONS[@color][:attack].each do |pair|  # normal attacks
           to = from + pair
           if board.enemy?(to, @color)  
-            moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
+            moves << Movement::Move.new(position, from.copy, to, mvv_lva_value(to, board))
           end
         end
       end
@@ -121,7 +122,7 @@ module Application
           if position.en_passant_target?(target) && board.enemy?(target, @color)
             offset = DIRECTIONS[@color][:enp_offset]
             move_to = target + offset
-            moves << Movement::EnPassantAttack.new(position, from, move_to) 
+            moves << Movement::EnPassantAttack.new(position, from.copy, move_to) 
           end
         end
       end
@@ -130,11 +131,11 @@ module Application
         dir = DIRECTIONS[@color]
         to = from + dir[:advance]
         unless position.board.occupied?(to)
-          moves << Movement::Move.new(position, from, to, 0.0)
+          moves << Movement::Move.new(position, from.copy, to, 0.0)
           if from.r == dir[:start_row]
             to = from + dir[:initial]
             unless position.board.occupied?(to)
-              moves << Movement::EnPassantTarget.new(position, from, to) 
+              moves << Movement::EnPassantTarget.new(position, from.copy, to) 
             end
           end
         end
@@ -143,12 +144,11 @@ module Application
       def mvv_lva_value(to, board) # most valuable victim / least valuable attacker heuristic
         (Pieces::get_value_by_sym(board[to])/self.class.value)
       end
-
     end
 
     class Knight < Piece
       class << self
-        VALUE = PIECE_VALUES["N"]
+        VALUE = PIECE_VALUES[:N]
         def value
           VALUE
         end
@@ -169,7 +169,7 @@ module Application
 
     class Bishop < Piece
       class << self
-        VALUE = PIECE_VALUES["B"]
+        VALUE = PIECE_VALUES[:B]
         def value
           VALUE
         end
@@ -190,7 +190,7 @@ module Application
 
     class Rook < Piece
       class << self
-        VALUE = PIECE_VALUES["R"]
+        VALUE = PIECE_VALUES[:R]
         def value
           VALUE
         end
@@ -211,7 +211,7 @@ module Application
 
     class Queen < Piece
       class << self
-        VALUE = PIECE_VALUES["Q"]
+        VALUE = PIECE_VALUES[:Q]
         def value
           VALUE
         end
@@ -232,7 +232,7 @@ module Application
 
     class King < Piece
       class << self
-        VALUE = PIECE_VALUES["K"]
+        VALUE = PIECE_VALUES[:K]
         def value
           VALUE
         end
@@ -253,7 +253,7 @@ module Application
 
     def self.get_value_by_sym(sym)
       return 0.0 if sym == nil || sym == :XX
-      PIECE_VALUES[sym[1]]
+      PIECE_VALUES[sym[1].to_sym]
     end
 
     def self.setup(board)        # returns a collection of chess pieces 

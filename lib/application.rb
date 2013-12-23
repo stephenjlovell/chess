@@ -124,16 +124,10 @@ module Application # define application-level behavior in this module and file.
     def human_move(description)  # for now, just assume human moves are valid.
       # puts "human_move(#{description})"
       take_turn do
-        square = description[0..1] # Eventually, handle exception if human provides invalid move.
-        target = Movement::coordinates(description[-2..-1])
-        capture_value = Pieces::get_value_by_sym(Application::current_board[target[0],target[1]])
-        options = {}
-        if Application::current_board[*Movement::coordinates(square)][1] == "P"
-          if (description[1].to_i - description[-1].to_i).abs == 2
-            options = {en_passant_target: true}
-          end
-        end
-        move = Movement::Move.new(@position, square, target, capture_value, options)
+        from = Movement::to_location(description[0..1]) # Eventually, handle exception if human provides invalid move.
+        to = Movement::to_location(description[-2..-1])
+        capture_value = Pieces::get_value_by_sym(Application::current_board[to])
+        move = Movement::Move.new(@position, from, to, capture_value)
         @position = move.create_position
       end
     end

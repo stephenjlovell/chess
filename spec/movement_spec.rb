@@ -17,8 +17,6 @@ describe Application::Movement do
     it "should generate the correct number of nodes" do
       (0..3).each { |n| Perft(@root, n).should == MAX_TREE[n] }
     end # at depth 4, expecting 197,281 but get 197,742
-
-
   end
 
 

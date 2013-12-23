@@ -22,19 +22,22 @@
 module Application
   module Movement
 
-    BACK_ROW = { w: 2, b: 9 }
     NUMBER_TO_LETTER = { 2 => "a", 3 => "b", 4 => "c", 5 => "d", 
                          6 => "e", 7 => "f", 8 => "g", 9 => "h" }
+    LETTER_TO_NUMBER = { "a" => 2, "b" => 3, "c" => 4, "d" => 5,
+                         "e" => 6, "f" => 7, "g" => 8, "h" => 9 }
+
+    BACK_ROW = { w: 2, b: 9 }
 
     class Location
-      attr_accessor :r, :c
+      attr_reader :r, :c
       
-      def initialize(r,c)  
+      def initialize(r,c)
         @r, @c = r,c
       end
 
       def eql?(other)
-        @r == other.r && @c == other.c
+        @r.eql?(other.r) && @c.eql?(other.c)
       end
 
       alias :== :eql? 
@@ -51,8 +54,12 @@ module Application
         self.class.new(@r, @c)
       end
 
-      def to_s  # will replace Movement::square
+      def to_s
         (NUMBER_TO_LETTER[@c]) + (@r - 1).to_s
+      end
+
+      def to_sym
+        to_s.to_sym
       end
 
       def to_a
@@ -72,18 +79,24 @@ module Application
       end
 
       def create_position        # returns a new position object representing the game state
-        pos = position.copy      # that results from the current player taking the specified move.
+        pos = @position.copy     # that results from the current player taking the specified move.
         move!(pos)
         pos.previous_move = self
-        pos.side_to_move = position.side_to_move == :w ? :b : :w
+        pos.side_to_move = @position.side_to_move == :w ? :b : :w
         return pos
       end
 
       def move!(pos) # updates self by performing the specified move.
-        pos.relocate_piece!(@from, @to)
-        pos.promote_pawn!(@to)
-        pos.set_castle_flag!(@from) if pos.options[:castle]
-        pos.options.delete(:en_passant_target)
+        # begin
+          pos.set_castle_flag!(@from) if pos.options[:castle]
+          pos.relocate_piece!(@from, @to)
+          pos.promote_pawn!(@to)
+          pos.options.delete(:en_passant_target) if pos.options
+        # rescue
+        #   print "#from:{@from} to:#{@to} \n"
+        # ensure
+          
+        # end
       end
     end
 
@@ -135,15 +148,21 @@ module Application
       
       def move!(pos)
         pos.relocate_piece!(@from, @to)
-        @position.options[:en_passant_target] = @to
+        @position.options[:en_passant_target] = @to.copy
       end
+    end
+
+    # Module helper methods:
+
+    def self.to_location(str)
+      Location.new(str[1].to_i + 1, LETTER_TO_NUMBER[str[0]])
     end
 
     # Mixin methods (included in Position object):
 
     def moves # returns a sorted array of all possible moves for the current player.
       moves = []
-      @pieces[@side_to_move].each { |key, piece| moves += piece.get_moves(key,self) }
+      active_pieces.each { |key, piece| moves += piece.get_moves(key,self) }
       moves += get_castles if @options[:castle]  # disable castles for now.
       sort_moves(moves)
       return moves
@@ -159,15 +178,13 @@ module Application
       hsh = @options[:castle]
       row = BACK_ROW[@side_to_move] 
       if hsh[:low]
-        if @board.empty?(Location.new(row, 3)) && 
-           @board.empty?(Location.new(row, 4)) && 
+        if @board.empty?(Location.new(row, 3)) && @board.empty?(Location.new(row, 4)) && 
            @board.empty?(Location.new(row, 5))
           castles << Castle.new(self, :low)  # castling permitted on low side.
         end
       end
       if hsh[:high]  
-        if @board.empty?(Location.new(row, 7)) && 
-           @board.empty?(Location.new(row, 8))
+        if @board.empty?(Location.new(row, 7)) && @board.empty?(Location.new(row, 8))
           castles << Castle.new(self, :high)  # castling permitted on high side.
         end
       end
@@ -176,16 +193,18 @@ module Application
 
     def relocate_piece!(from, to)
       enemy = @side_to_move == :w ? :b : :w
-      piece = @pieces[@side_to_move][from]
-      @pieces[@side_to_move].delete(from)
-      @pieces[enemy].delete(to) if @pieces[enemy]
-      @pieces[@side_to_move][to] = piece
+      piece = active_pieces[from]
+      active_pieces.delete(from)
+      @pieces[enemy].delete(to) 
+      active_pieces[to] = piece
       @board[from] = nil
       @board[to] = piece.symbol
     end
 
     def set_castle_flag!(from) # removes the appropriate castling option when Rook or King moves.
-      type = @pieces[@side_to_move][from].type
+      # puts from
+      # puts active_pieces[from]
+      type = active_pieces[from].class.type
       if type == :R
         if from == Location.new(BACK_ROW[@side_to_move],2)
           options[:castle].delete(:low)
@@ -200,10 +219,10 @@ module Application
     PAWN_PROMOTION = { wP: :wQ, bP: :bQ }
     def promote_pawn!(to) # called via move! method
       enemy = @side_to_move == :w ? :b : :w
-      type = @pieces[@side_to_move][to]
+      type = active_pieces[to]
       if to.r == BACK_ROW[enemy] && type == :P
         @board[to] = PAWN_PROMOTION[@side_to_move]
-        @pieces[@side_to_move][to] = Pieces::Queen.new(@side_to_move)
+        active_pieces[to] = Pieces::Queen.new(@side_to_move)
       end
     end
 

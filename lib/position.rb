@@ -40,6 +40,10 @@ module Application
         @options[:en_passant_target] == location
       end
 
+      def active_pieces
+        @pieces[@side_to_move]
+      end
+
       def value
         @value ||= Evaluation::evaluate(self)
       end
@@ -53,7 +57,7 @@ module Application
         options = Marshal.load(Marshal.dump(@options))  # en passant targets should not be automatically preserved.
         @pieces.each do |color, hsh|
           @pieces[color].each do |location, piece|
-            new_pieces[color][location] = piece.copy
+            new_pieces[color][location.copy] = piece.copy
           end
         end
         ChessPosition.new(@board.copy, new_pieces, @side_to_move, @previous_move, options) 
@@ -70,7 +74,7 @@ module Application
       end
 
       def tactical_edges
-        self.moves.select{|m| m.capture_value > 0.0}.collect{|m| m.create_position}
+        self.moves.select{|m| m.capture_value > 0.0}.collect{ |m| m.create_position}
       end
 
       def parent
