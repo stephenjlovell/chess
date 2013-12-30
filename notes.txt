@@ -25,6 +25,7 @@ Current Issues ----
 Move Generation benchmarking (4-ply, 197742 nodes)
 
   Using Location object - baseline: 46.596299 seconds
+                          after refcatoring: 35.324076 seconds
 
 
 

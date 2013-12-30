@@ -67,7 +67,7 @@ module Application
         options = Marshal.load(Marshal.dump(@options))  # en passant targets should not be automatically preserved.
         @pieces.each do |color, hsh|
           @pieces[color].each do |location, piece|
-            new_pieces[color][location.copy] = piece.copy
+            new_pieces[color][location] = piece
           end
         end
         ChessPosition.new(@board.copy, new_pieces, @side_to_move, @previous_move, options) 

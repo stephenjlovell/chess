@@ -143,7 +143,7 @@ module Application
       def move!(pos)
         # puts 'EnPassantTarget.move!'
         pos.relocate_piece!(@from, @to)
-        pos.options[:en_passant_target] = @to.copy
+        pos.options[:en_passant_target] = @to
       end
     end
 
@@ -157,7 +157,7 @@ module Application
 
     def moves # returns a sorted array of all possible moves for the current player.
       moves = []
-      active_pieces.each { |key, piece| moves += piece.get_moves(key.copy, self) }
+      active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
       moves += get_castles if @options[:castle]  # disable castles for now.
       sort_moves(moves)
       # print moves, "\n"
@@ -190,11 +190,11 @@ module Application
     def relocate_piece!(from, to)
       enemy = @side_to_move == :w ? :b : :w
       piece = active_pieces[from]
-      if piece.nil?
-        puts "from: #{from} to: #{to}"
-        puts self.inspect
-        @board.print
-      end
+      # if piece.nil?
+      #   puts "from: #{from} to: #{to}"
+      #   puts self.inspect
+      #   @board.print
+      # end
       active_pieces.delete(from)
       @pieces[enemy].delete(to) 
       active_pieces[to] = piece

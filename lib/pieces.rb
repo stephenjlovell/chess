@@ -63,7 +63,7 @@ module Application
           to = current_location + direction
           board = position.board
           if board.pseudo_legal?(to, @color)
-            moves << Movement::Move.new(position, from.copy, to, mvv_lva_value(to, board))
+            moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
             if until_blocked && board.empty?(to)
               explore_direction(from, to, direction, position, until_blocked, moves) 
             end
@@ -117,7 +117,7 @@ module Application
         DIRECTIONS[@color][:attack].each do |pair|  # normal attacks
           to = from + pair
           if board.enemy?(to, @color)  
-            moves << Movement::Move.new(position, from.copy, to, mvv_lva_value(to, board))
+            moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
           end
         end
       end
@@ -129,7 +129,7 @@ module Application
           if position.en_passant_target?(target) && board.enemy?(target, @color)
             offset = DIRECTIONS[@color][:enp_offset]
             move_to = target + offset
-            moves << Movement::EnPassantAttack.new(position, from.copy, move_to) 
+            moves << Movement::EnPassantAttack.new(position, from, move_to) 
           end
         end
       end
@@ -138,11 +138,11 @@ module Application
         dir = DIRECTIONS[@color]
         to = from + dir[:advance]
         unless position.board.occupied?(to)
-          moves << Movement::Move.new(position, from.copy, to, 0.0)
+          moves << Movement::Move.new(position, from, to, 0.0)
           if from.r == dir[:start_row]
             to = from + dir[:initial]
             unless position.board.occupied?(to)
-              moves << Movement::EnPassantTarget.new(position, from.copy, to) 
+              moves << Movement::EnPassantTarget.new(position, from, to) 
             end
           end
         end
