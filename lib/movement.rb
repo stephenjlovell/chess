@@ -87,21 +87,15 @@ module Application
       end
 
       def move!(pos) # updates self by performing the specified move.
-        # begin
-          pos.set_castle_flag!(@from) if pos.options[:castle]
-          pos.relocate_piece!(@from, @to)
-          pos.promote_pawn!(@to)
-          pos.options.delete(:en_passant_target) if pos.options
-        # rescue
-        #   print "#from:{@from} to:#{@to} \n"
-        # ensure
-          
-        # end
+        pos.set_castle_flag!(@from) if pos.options[:castle]
+        pos.relocate_piece!(@from, @to)
+        pos.promote_pawn!(@to)
+        pos.options.delete(:en_passant_target) if pos.options
       end
     end
 
     class Castle < Move
-      attr_reader :position, :from, :to, :side
+      attr_reader :side
 
       FROM_COL = { low:  { king: 6, rook: 2 },
                    high: { king: 6, rook: 9 } }
@@ -113,6 +107,7 @@ module Application
       end
 
       def move!(pos)
+        puts 'Castle.move!'
         pos.options = nil  # remove castle and en-passant flag
         row = BACK_ROW[pos.side_to_move]        
         king_from = Location.new(row, FROM_COL[@side][:king])
@@ -126,29 +121,29 @@ module Application
     end
 
     class EnPassantAttack < Move
-
       def initialize(position, from, to)
         @position, @from, @to, @capture_value = position, from, to, 1.0
       end
 
       def move!(pos)
+        # puts 'EnPassantAttack.move!'
         pos.relocate_piece!(@from, @to)
         target = Location.new(@from.r, @to.c)
         pos.board[target] = nil
-        pos.pieces[position.side_to_move].delete(target)
+        pos.pieces[pos.side_to_move].delete(target)
         pos.options.delete(:en_passant_target)
       end
     end
 
     class EnPassantTarget < Move
-
       def initialize(position, from, to)
         @position, @from, @to, @capture_value = position, from, to, 0.0
       end
       
       def move!(pos)
+        # puts 'EnPassantTarget.move!'
         pos.relocate_piece!(@from, @to)
-        @position.options[:en_passant_target] = @to.copy
+        pos.options[:en_passant_target] = @to.copy
       end
     end
 
@@ -162,9 +157,10 @@ module Application
 
     def moves # returns a sorted array of all possible moves for the current player.
       moves = []
-      active_pieces.each { |key, piece| moves += piece.get_moves(key,self) }
+      active_pieces.each { |key, piece| moves += piece.get_moves(key.copy, self) }
       moves += get_castles if @options[:castle]  # disable castles for now.
       sort_moves(moves)
+      # print moves, "\n"
       return moves
     end
 
@@ -178,13 +174,13 @@ module Application
       hsh = @options[:castle]
       row = BACK_ROW[@side_to_move] 
       if hsh[:low]
-        if @board.empty?(Location.new(row, 3)) && @board.empty?(Location.new(row, 4)) && 
-           @board.empty?(Location.new(row, 5))
+        if @board.coordinates_empty?(row, 3) && @board.coordinates_empty?(row, 4) && 
+           @board.coordinates_empty?(row, 5)
           castles << Castle.new(self, :low)  # castling permitted on low side.
         end
       end
       if hsh[:high]  
-        if @board.empty?(Location.new(row, 7)) && @board.empty?(Location.new(row, 8))
+        if @board.coordinates_empty?(row, 7) && @board.coordinates_empty?(row, 8)
           castles << Castle.new(self, :high)  # castling permitted on high side.
         end
       end
@@ -194,6 +190,11 @@ module Application
     def relocate_piece!(from, to)
       enemy = @side_to_move == :w ? :b : :w
       piece = active_pieces[from]
+      if piece.nil?
+        puts "from: #{from} to: #{to}"
+        puts self.inspect
+        @board.print
+      end
       active_pieces.delete(from)
       @pieces[enemy].delete(to) 
       active_pieces[to] = piece
@@ -202,14 +203,11 @@ module Application
     end
 
     def set_castle_flag!(from) # removes the appropriate castling option when Rook or King moves.
-      # puts from
-      # puts active_pieces[from]
       type = active_pieces[from].class.type
       if type == :R
-        if from == Location.new(BACK_ROW[@side_to_move],2)
-          options[:castle].delete(:low)
-        elsif from == Location.new(BACK_ROW[@side_to_move],9)
-          options[:castle].delete(:high)
+        if from.r == BACK_ROW[@side_to_move]
+          options[:castle].delete(:low) if from.c == 2
+          options[:castle].delete(:high) if from.c == 9
         end
       elsif type == :K
         options.delete(:castle)
@@ -217,12 +215,12 @@ module Application
     end
 
     PAWN_PROMOTION = { wP: :wQ, bP: :bQ }
-    def promote_pawn!(to) # called via move! method
-      enemy = @side_to_move == :w ? :b : :w
-      type = active_pieces[to]
-      if to.r == BACK_ROW[enemy] && type == :P
-        @board[to] = PAWN_PROMOTION[@side_to_move]
-        active_pieces[to] = Pieces::Queen.new(@side_to_move)
+    def promote_pawn!(location) # called via move! method
+      enemy = @side_location_move == :w ? :b : :w
+      type = active_pieces[location].class.type
+      if location.r == BACK_ROW[enemy] && type == :P
+        @board[location] = PAWN_PROMOTION[@side_to_move]
+        active_pieces[location] = Pieces::Queen.new(@side_to_move)
       end
     end
 

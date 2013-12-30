@@ -22,8 +22,8 @@
 load './lib/application.rb'
 puts "Chess library loaded. \n\n"
 
-# Play the game!
-Application::CLI::play
+# # Play the game!
+# Application::CLI::play
 
 # #  test initial moves available to pieces:
   # white_pieces = Application::current_position.pieces[:w]
@@ -46,10 +46,18 @@ Application::CLI::play
   #   puts best_pos.previous_move.to_s
   #   puts "value: #{best_pos.value}"
   #   puts "move selected in #{t1 - t0} seconds."
-  #   # best_pos.board.print
+  #   best_pos.board.print
   # end
   # test_move_generation
 
+  def test_pawn_movement
+    pos = Application::current_position
+    loc = Application::Movement::Location.new(3,3)
+    pawn = pos.pieces[:w][loc]
+    pawn_moves = pawn.get_moves(loc, pos)
+    new_pos = pawn_moves.first.create_position
+    return pos, new_pos
+  end
 
 # test Transposition Table hash function efficiency.
   # g = Application::new_game(:w)

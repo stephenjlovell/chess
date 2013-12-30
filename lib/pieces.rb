@@ -37,28 +37,35 @@ module Application
         self.class.new(@color)
       end
 
-      def symbol
-        @symbol ||= (@color.to_s + self.class.type.to_s).to_sym
+      def symbol  #rename to_sym
+        to_s.to_sym
+      end
+
+      def to_s
+        @color.to_s + self.class.type.to_s
       end
 
       def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
         moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
         until_blocked = self.class.move_until_blocked?
         self.class.directions.each do |direction|
-          move = explore_direction(from, direction, position, until_blocked)
+          move = explore_direction(from, from, direction, position, until_blocked)
           moves += move
         end
         return moves
       end
 
+      # the problem is right here.  when saving a copy of the "from" location, it needs to be the original 
+      # location of the piece.
+
       private 
-        def explore_direction(from, direction, position, until_blocked, moves = [] )
-          to = from + direction
+        def explore_direction(from, current_location, direction, position, until_blocked, moves = [] )
+          to = current_location + direction
           board = position.board
           if board.pseudo_legal?(to, @color)
             moves << Movement::Move.new(position, from.copy, to, mvv_lva_value(to, board))
             if until_blocked && board.empty?(to)
-              explore_direction(to, direction, position, until_blocked, moves) 
+              explore_direction(from, to, direction, position, until_blocked, moves) 
             end
           end
           return moves

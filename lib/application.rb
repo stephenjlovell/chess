@@ -87,11 +87,13 @@ module Application # define application-level behavior in this module and file.
     attr_reader :ai_player, :opponent
     
     def initialize(ai_player = :b, time_limit = 120.0)
-      board = Board.allocate
-      board.setup
-      pieces = Pieces::setup(board)
-      @position = Position::ChessPosition.new(board, pieces, :w)
-      @position.options[:castle] = { low: true, high: true }
+      # board = Board.allocate
+      # board.setup
+      # pieces = Pieces::setup(board)
+      # @position = Position::ChessPosition.new(board, pieces, :w)
+      # @position.options[:castle] = { low: true, high: true }
+      @position = Position::ChessPosition.allocate
+      @position.setup
       @halfmove_counter = 0
       @ai_player = ai_player
       @opponent = ai_player == :w ? :b : :w
@@ -145,6 +147,10 @@ module Application # define application-level behavior in this module and file.
       # add any code must run at beginning of each turn
       yield
       @halfmove_counter += 1
+
+      #print pieces for debugging
+      p self.position.pieces
+
       self.print
       @clock.end_turn
     end

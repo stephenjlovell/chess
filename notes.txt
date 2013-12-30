@@ -17,6 +17,16 @@ Current Issues ----
 
   AI does not always select obvious best moves - does not always capture expensive units except via pawns.
 
+  make sure root node is not changed in-place during move generation.
+
+
+
+
+Move Generation benchmarking (4-ply, 197742 nodes)
+
+  Using Location object - baseline: 46.596299 seconds
+
+
 
 To Do ----
 

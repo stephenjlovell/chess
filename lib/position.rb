@@ -36,6 +36,16 @@ module Application
         @options = options
       end
 
+      def setup
+        @board = Application::Board.allocate
+        @board.setup
+        @pieces = Pieces::setup(board)
+        @side_to_move = :w  # white always goes first.
+        @options = {}
+        @options[:castle] = { low: true, high: true }
+        return self
+      end
+
       def en_passant_target?(location)
         @options[:en_passant_target] == location
       end
@@ -68,13 +78,17 @@ module Application
       end
 
       # should only get moves initially, then make moves separately.
-      
+
+      def inspect
+        "<Application::Position::ChessPosition #{@board.inspect} <@pieces:#{@pieces.inspect}>, <@side_to_move:#{@side_to_move}>"
+      end
+
       def edges  
         self.moves.collect { |m| m.create_position }
       end
 
       def tactical_edges
-        self.moves.select{|m| m.capture_value > 0.0}.collect{ |m| m.create_position}
+        self.moves.select{ |m| m.capture_value > 0.0}.collect{ |m| m.create_position}
       end
 
       def parent

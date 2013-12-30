@@ -20,7 +20,7 @@
 #-----------------------------------------------------------------------------------
  
 module Application
-  # unicode symbols for chess pieces:
+  # Unicode symbols for chess pieces:
   GRAPHICS = { wP: "\u2659", wN: "\u2658", wB: "\u2657", wR: "\u2656", wQ: "\u2655", wK: "\u2654" , 
                bP: "\u265F", bN: "\u265E", bB: "\u265D", bR: "\u265C", bQ: "\u265B", bK: "\u265A" }
 
@@ -103,8 +103,16 @@ module Application
       @squares[location.r][location.c] == nil
     end
 
+    def coordinates_empty?(r,c)
+      @squares[r][c] == nil
+    end
+
     def out_of_bounds?(location)
       @squares[location.r][location.c] == :XX
+    end
+
+    def coordinates_out_of_bounds?(r, c)
+      @squares[r][c] == :XX
     end
 
     def occupied?(location)
