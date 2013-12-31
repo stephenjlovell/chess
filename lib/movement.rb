@@ -155,16 +155,7 @@ module Application
 
     # Mixin methods (included in Position object):
 
-    def moves # returns a sorted array of all possible moves for the current player.
-      moves = []
-      active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
-      moves += get_castles if @options[:castle]  # disable castles for now.
-      sort_moves(moves)
-      # print moves, "\n"
-      return moves
-    end
-
-    def sort_moves(moves)
+    def sort_moves!(moves)
       moves.sort! { |x,y| y.capture_value <=> x.capture_value }
       # also sort non-captures by Killer Heuristic?
     end

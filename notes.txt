@@ -17,12 +17,9 @@ Current Issues ----
 
   AI does not always select obvious best moves - does not always capture expensive units except via pawns.
 
-  make sure root node is not changed in-place during move generation.
 
 
-
-
-Move Generation benchmarking (4-ply, 197742 nodes)
+Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
 
   Using Location object - baseline: 46.596299 seconds
                           after refcatoring: 35.324076 seconds
@@ -30,13 +27,8 @@ Move Generation benchmarking (4-ply, 197742 nodes)
 
 
 To Do ----
-
-  Refactor Move Generation:
-
-    - Location class could serve as key in piece list hashes.
-    - create Move subclasses for Castle and EnPassant.  Relocate create_position and related methods to Move class,
-      and override generic behavior in subclasses.
-      allow for lazy move generation
+  
+  Lazy move generation - generate all moves for a node, but only create positions as needed.  This will avoid creating positions for nodes that will never be inspected due to alpha-beta cutoffs.
 
   Add separate PSTs for early- and late-game.
   Handle king_in_check? in board object

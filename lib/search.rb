@@ -89,7 +89,8 @@ module Application
 
       best_value = -$INF
       best_node = nil
-      root.edges.each do |child|
+      root.edges.each do |move|
+        child = move.create_position
         result = -alpha_beta(child, depth-1, -beta, -alpha)
         if result > best_value
           best_value = result 
@@ -137,7 +138,8 @@ module Application
       end
       best_value = -$INF
       best_node = nil
-      node.edges.each do |child|
+      node.edges.each do |move|
+        child = move.create_position
         result = -alpha_beta(child, depth-1, -beta, -alpha)
         if result > best_value
           best_value = result 
@@ -192,7 +194,8 @@ module Application
 
       best_value = -$INF   # cannot assume that any child nodes
       best_node = nil
-      node.tactical_edges.each do |child|
+      node.tactical_edges.each do |move|
+        child = move.create_position
         result = -quiescence(child, depth-1, -beta, -alpha)
         if result > best_value
           best_value = result 

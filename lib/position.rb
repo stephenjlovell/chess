@@ -83,13 +83,24 @@ module Application
         "<Application::Position::ChessPosition #{@board.inspect} <@pieces:#{@pieces.inspect}>, <@side_to_move:#{@side_to_move}>"
       end
 
-      def edges  
-        self.moves.collect { |m| m.create_position }
+      def get_moves # returns a sorted array of all possible moves for the current player.
+        moves = []
+        active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
+        moves += get_castles if @options[:castle]  # disable castles for now.
+        sort_moves!(moves)
+        # print moves, "\n"
+        return moves
       end
 
+      alias :edges :get_moves
+
       def tactical_edges
-        self.moves.select{ |m| m.capture_value > 0.0}.collect{ |m| m.create_position}
+        get_moves.select{ |m| m.capture_value > 0.0}
       end
+
+      def get_children
+        get_moves.collect { |m| m.create_position }
+      end 
 
       def parent
         return nil if @previous_move.nil?
