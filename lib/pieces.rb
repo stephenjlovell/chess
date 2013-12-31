@@ -55,9 +55,6 @@ module Application
         return moves
       end
 
-      # the problem is right here.  when saving a copy of the "from" location, it needs to be the original 
-      # location of the piece.
-
       private 
         def explore_direction(from, current_location, direction, position, until_blocked, moves = [] )
           to = current_location + direction

@@ -49,7 +49,6 @@ module Application
         $quiescence_calls = 0
         best_node, value = mtdf(root, guess, d)
         puts "#{d}    | #{$main_calls}           | #{$quiescence_calls}"
-
         guess = value
         if Application::current_game.clock.time_up?
           puts "evaluation time ran out after depth #{d}"
