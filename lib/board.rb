@@ -27,7 +27,7 @@ module Application
   class Board
     include Enumerable
 
-    attr_writer :squares
+    attr_accessor :squares
 
     def initialize # generates a representation of an empty chessboard.             # row  board #
       @squares = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
@@ -63,6 +63,26 @@ module Application
             # letter            A    B    C    D    E    F    G    H
     end
 
+    def print
+      i = 8
+      puts (headings = "    A   B   C   D   E   F   G   H")
+      puts (divider =  "  " + ("-" * 33))
+      @squares[2..9].reverse_each do |row|
+        line = []
+        row.each do |square|
+          if square == nil 
+            line << " "
+          elsif square != :XX
+            line << GRAPHICS[square]
+          end
+        end
+        puts "#{i} | " + line.join(" | ") + " | #{i}"
+        puts divider
+        i-=1
+      end
+      puts "#{headings}\n"
+    end
+
     def each
       @squares.each { |row| yield(row) }
     end
@@ -81,9 +101,17 @@ module Application
       end
     end
 
-    def copy # return a deep copy of self.
+    def reverse_each_square_with_location
+      (2..9).reverse_each do |r|
+        (2..9).reverse_each do |c|
+          yield r, c, @squares[r][c]
+        end
+      end
+    end
+
+    def copy # return a deep copy of self.  Locations are passed by reference but are immutable.
       board = Board.new
-      each_square_with_location { |r,c,s| board[Movement::Location.new(r,c)] = s }
+      self.each_square_with_location { |r,c,s| board.squares[r][c] = s }
       return board
     end
 
@@ -128,29 +156,76 @@ module Application
       empty?(location) || enemy?(location, color)
     end
 
-    def king_in_check?(color)
-      
+    # clean up directions in piece module - make directions constants and place at top of module, reference here.
+
+    def evades_check?(from, to, color)
+      piece_sym = self[from]
+      target_sym = self[to]
+
+      self[from] = nil  # simulate making the specified regular move
+      self[to] = piece_sym
+
+      not_in_check = !king_in_check?(color)
+
+      self[from] = piece_sym  # undo changes to board
+      self[to] = target_sym
+
+      return not_in_check
     end
 
-    def print
-      i = 8
-      puts (headings = "    A   B   C   D   E   F   G   H")
-      puts (divider =  "  " + ("-" * 33))
-      @squares[2..9].reverse_each do |row|
-        line = []
-        row.each do |square|
-          if square == nil 
-            line << " "
-          elsif square != :XX
-            line << GRAPHICS[square]
-          end
-        end
-        puts "#{i} | " + line.join(" | ") + " | #{i}"
-        puts divider
-        i-=1
+    def king_in_check?(color)
+      threats = THREATS[color]
+      from = find_king(color) # get location of king for color.
+      pawn_attacks = Pieces::Pawn.directions[color][:attack]
+      return true if check_each_direction(from, pawn_attacks, false, threats[:pawn])
+      knight_attacks = Pieces::Knight.directions # knights only
+      return true if check_each_direction(from, knight_attacks, false, threats[:knight])
+      straight_attacks = Pieces::Rook.directions  # queens, rooks
+      return true if check_each_direction(from, straight_attacks, true, threats[:straight])
+      diagonal_attacks = Pieces::Bishop.directions  # queens, bishops
+      return true if check_each_direction(from, diagonal_attacks, true, threats[:diagonal])
+      # puts "no threats found"
+      return false
+    end
+
+    # private
+
+    THREATS = { w: { pawn: [:bP], knight: [:bN], straight: [:bR, :bQ], diagonal: [:bB, :bQ] }, 
+                b: { pawn: [:wP], knight: [:wN], straight: [:wR, :wQ], diagonal: [:wB, :wQ] } }
+
+    # alternative would be to store king location in an instance variable and update it on king move execution.
+    def find_king(color)  
+      if color == :w  # King is more likely to be at its own end of the board.
+        each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :wK }
+      else
+        reverse_each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :bK }
       end
-      puts "#{headings}\n"
+      # raise 'king not found'
+    end
+
+    def check_each_direction(from, directions, until_blocked, threat_pieces)
+      directions.each { |d| return true if check_direction(from, d, until_blocked, threat_pieces) }
+      return false
+    end
+
+    def check_direction(current_location, direction, until_blocked, threat_pieces) # specify the kind of enemy to look for.
+      to = current_location + direction
+      return true if threat_to_king?(to, threat_pieces)
+      if until_blocked && empty?(to)  # check ray attacks recursively until blocked
+        return check_direction(to, direction, until_blocked, threat_pieces) if until_blocked && empty?(to) 
+      end
+      return false
+    end
+
+    def threat_to_king?(location, threat_pieces)
+      sym = self[location]
+      threat_pieces.each { |piece| return true if piece == sym }
+      return false
     end
 
   end
 end
+
+
+
+

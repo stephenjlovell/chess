@@ -99,6 +99,10 @@ module Application
         def move_until_blocked?
           false
         end
+
+        def directions
+          DIRECTIONS
+        end
       end
 
       def get_moves(from, position) # supercedes the generic get_moves function 
@@ -266,7 +270,7 @@ module Application
         row.each_with_index do |sym, c|
           unless sym == nil || sym == :XX
             piece = self.create_piece_by_sym(sym)
-            pieces[piece.color][Movement::Location.new(r, c)] = piece
+            pieces[piece.color][Location::get_location(r, c)] = piece
           end
         end
       end

@@ -23,9 +23,9 @@ module Application
   module Evaluation # this module will contain all helper methods related to determining 
                     # the heuristic value of a given chess position.
       
-    PST = {  # Piece Square Tables          # Piece Square Tables derived from the following sources:
-      P: [  0,  0,  0,   0,   0,  0,  0,  0,          # http://www.youtube.com/watch?v=zSJF6jZ61w0,
-           10, 10,  0, -10, -10,  0, 10, 10,  # http://www.bluefever.net/Downloads/CH56.zip
+    PST = {  # Piece Square Tables            # Piece Square Tables derived from the following sources:
+      P: [  0,  0,  0,   0,   0,  0,  0,  0,    # http://www.youtube.com/watch?v=zSJF6jZ61w0,
+           10, 10,  0, -10, -10,  0, 10, 10,    # http://www.bluefever.net/Downloads/CH56.zip
             5,  0,  0,   5,   5,  0,  0,  5,
             0,  0, 10,  20,  20, 10,  0,  0,
             5,  5,  5,  10,  10,  5,  5,  5,
@@ -60,7 +60,7 @@ module Application
            25, 25, 25, 25, 25, 25, 25, 25,
             0,  0,  5, 10, 10,  5,  0,  0 ],
 
-      Q: [ 0, 0, 0, 0, 0, 0, 0, 0, #placeholder table
+      Q: [ 0, 0, 0, 0, 0, 0, 0, 0, # placeholder table
            0, 0, 0, 0, 0, 0, 0, 0,
            0, 0, 0, 0, 0, 0, 0, 0,
            0, 0, 0, 0, 0, 0, 0, 0,
@@ -69,7 +69,7 @@ module Application
            0, 0, 0, 0, 0, 0, 0, 0,
            0, 0, 0, 0, 0, 0, 0, 0 ],
 
-      K: [ 0, 0, 0, 0, 0, 0, 0, 0, #placeholder table
+      K: [ 0, 0, 0, 0, 0, 0, 0, 0, # placeholder table
            0, 0, 0, 0, 0, 0, 0, 0,
            0, 0, 0, 0, 0, 0, 0, 0,
            0, 0, 0, 0, 0, 0, 0, 0,

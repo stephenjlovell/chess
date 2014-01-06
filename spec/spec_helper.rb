@@ -5,7 +5,7 @@ RSpec.configure do |config|
   config.include FactoryGirl::Syntax::Methods
 end
 
-require './lib/application.rb'
+load './lib/application.rb'
 require 'factories.rb'
 
 def Perft(node, depth)  # Counts all leaf nodes to specified depth.

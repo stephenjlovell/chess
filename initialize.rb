@@ -36,7 +36,17 @@ puts "Chess library loaded. \n\n"
   # moves = wp.get_moves(Application::current_position)
   # print moves
 
-  # def test_move_generation
+  def test_king_checking
+    board = Application::Board.new
+    board.setup
+    # board.find_king(:w)
+    puts board.king_in_check?(:w)
+    board.squares[3][7] = :bQ
+    puts board.king_in_check?(:w)
+  end
+  test_king_checking
+
+  # def test_move_selection
   #   g = Application::new_game
   #   pos = Application::current_position  
   #   t0 = Time.now
@@ -48,16 +58,16 @@ puts "Chess library loaded. \n\n"
   #   puts "move selected in #{t1 - t0} seconds."
   #   best_pos.board.print
   # end
-  # test_move_generation
+  # # test_move_selection
 
-  def test_pawn_movement
-    pos = Application::current_position
-    loc = Application::Movement::Location.new(3,3)
-    pawn = pos.pieces[:w][loc]
-    pawn_moves = pawn.get_moves(loc, pos)
-    new_pos = pawn_moves.first.create_position
-    return pos, new_pos
-  end
+  # def test_pawn_movement
+  #   pos = Application::current_position
+  #   loc = Application::Movement::Location.new(3,3)
+  #   pawn = pos.pieces[:w][loc]
+  #   pawn_moves = pawn.get_moves(loc, pos)
+  #   new_pos = pawn_moves.first.create_position
+  #   return pos, new_pos
+  # end
 
 # test Transposition Table hash function efficiency.
   # g = Application::new_game(:w)

@@ -22,50 +22,7 @@
 module Application
   module Movement
 
-    NUMBER_TO_LETTER = { 2 => "a", 3 => "b", 4 => "c", 5 => "d", 
-                         6 => "e", 7 => "f", 8 => "g", 9 => "h" }
-    LETTER_TO_NUMBER = { "a" => 2, "b" => 3, "c" => 4, "d" => 5,
-                         "e" => 6, "f" => 7, "g" => 8, "h" => 9 }
-
     BACK_ROW = { w: 2, b: 9 }
-
-    class Location
-      attr_reader :r, :c
-      
-      def initialize(r,c)
-        @r, @c = r,c
-      end
-
-      def eql?(other)
-        @r.eql?(other.r) && @c.eql?(other.c)
-      end
-
-      alias :== :eql? 
-
-      def +(arr)
-        self.class.new(@r+arr[0], @c+arr[1])
-      end
-
-      def hash
-        to_a.hash
-      end
-
-      def copy
-        self.class.new(@r, @c)
-      end
-
-      def to_s
-        (NUMBER_TO_LETTER[@c]) + (@r - 1).to_s
-      end
-
-      def to_sym
-        to_s.to_sym
-      end
-
-      def to_a
-        [@r, @c]
-      end
-    end
 
     class Move
       attr_reader :position, :from, :to, :capture_value
@@ -103,17 +60,17 @@ module Application
                  high: { king: 8, rook: 7 } }
 
       def initialize(position, side)
-        @position, @side = position, side
+        @position, @side, @capture_value = position, side, 0.0
       end
 
       def move!(pos)
-        puts 'Castle.move!'
         pos.options = nil  # remove castle and en-passant flag
         row = BACK_ROW[pos.side_to_move]        
-        king_from = Location.new(row, FROM_COL[@side][:king])
-        king_to = Location.new(row, TO_COL[@side][:king])
-        rook_from = Location.new(row, FROM_COL[@side][:rook])
-        rook_to = Location.new(row, TO_COL[@side][:rook])
+        king_from = Location::get_location(row, FROM_COL[@side][:king])
+        king_to = Location::get_location(row, TO_COL[@side][:king])
+        rook_from = Location::get_location(row, FROM_COL[@side][:rook])
+        rook_to = Location::get_location(row, TO_COL[@side][:rook])
+
         pos.relocate_piece!(king_from, king_to)
         pos.relocate_piece!(rook_from, rook_to)
       end
@@ -126,9 +83,8 @@ module Application
       end
 
       def move!(pos)
-        # puts 'EnPassantAttack.move!'
         pos.relocate_piece!(@from, @to)
-        target = Location.new(@from.r, @to.c)
+        target = Location::get_location(@from.r, @to.c)
         pos.board[target] = nil
         pos.pieces[pos.side_to_move].delete(target)
         pos.options.delete(:en_passant_target)
@@ -141,7 +97,6 @@ module Application
       end
       
       def move!(pos)
-        # puts 'EnPassantTarget.move!'
         pos.relocate_piece!(@from, @to)
         pos.options[:en_passant_target] = @to
       end
@@ -149,9 +104,6 @@ module Application
 
     # Module helper methods:
 
-    def self.to_location(str)
-      Location.new(str[1].to_i + 1, LETTER_TO_NUMBER[str[0]])
-    end
 
     # Mixin methods (included in Position object):
 
@@ -181,11 +133,6 @@ module Application
     def relocate_piece!(from, to)
       enemy = @side_to_move == :w ? :b : :w
       piece = active_pieces[from]
-      # if piece.nil?
-      #   puts "from: #{from} to: #{to}"
-      #   puts self.inspect
-      #   @board.print
-      # end
       active_pieces.delete(from)
       @pieces[enemy].delete(to) 
       active_pieces[to] = piece

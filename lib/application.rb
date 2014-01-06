@@ -20,6 +20,7 @@
 #-----------------------------------------------------------------------------------
 
 require './lib/board.rb'
+require './lib/location.rb'
 require './lib/movement.rb'
 require './lib/pieces.rb'
 require './lib/position.rb'
@@ -126,8 +127,8 @@ module Application # define application-level behavior in this module and file.
     def human_move(description)  # for now, just assume human moves are valid.
       # puts "human_move(#{description})"
       take_turn do
-        from = Movement::to_location(description[0..1]) # Eventually, handle exception if human provides invalid move.
-        to = Movement::to_location(description[-2..-1])
+        from = Location::get_location_from_string(description[0..1]) # Eventually, handle exception if human provides invalid move.
+        to = Location::get_location_from_string(description[-2..-1])
         capture_value = Pieces::get_value_by_sym(Application::current_board[to])
         move = Movement::Move.new(@position, from, to, capture_value)
         @position = move.create_position
@@ -147,10 +148,6 @@ module Application # define application-level behavior in this module and file.
       # add any code must run at beginning of each turn
       yield
       @halfmove_counter += 1
-
-      #print pieces for debugging
-      p self.position.pieces
-
       self.print
       @clock.end_turn
     end

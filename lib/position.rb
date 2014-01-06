@@ -62,6 +62,15 @@ module Application
         @value = value
       end
 
+      def king_in_check?
+        @board.king_in_check?(@side_to_move)
+      end
+
+      def evades_check?(from, to)
+        @board.evades_check?(from, to, @side_to_move)
+      end
+
+
       def copy # perform a deep copy of self.
         new_pieces = { w: {}, b: {} }
         options = Marshal.load(Marshal.dump(@options))  # en passant targets should not be automatically preserved.
@@ -77,22 +86,14 @@ module Application
         # return a string decribing the position in Forsyth-Edwards Notation.
       end
 
-      # should only get moves initially, then make moves separately.
-
       def inspect
-        "<Application::Position::ChessPosition #{@board.inspect} <@pieces:#{@pieces.inspect}>, <@side_to_move:#{@side_to_move}>"
+        "<Application::Position::ChessPosition <@board:#{@board.inspect}> <@pieces:#{@pieces.inspect}>, <@side_to_move:#{@side_to_move}>>"
       end
 
-      def get_moves # returns a sorted array of all possible moves for the current player.
-        moves = []
-        active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
-        moves += get_castles if @options[:castle]  # disable castles for now.
-        sort_moves!(moves)
-        # print moves, "\n"
-        return moves
+      def parent
+        return nil if @previous_move.nil?
+        @previous_move.position
       end
-
-      alias :edges :get_moves
 
       def tactical_edges
         get_moves.select{ |m| m.capture_value > 0.0}
@@ -100,11 +101,30 @@ module Application
 
       def get_children
         get_moves.collect { |m| m.create_position }
-      end 
+      end
 
-      def parent
-        return nil if @previous_move.nil?
-        @previous_move.position
+      def get_moves # returns a sorted array of all possible moves for the current player.
+        king_in_check? ? get_evasive_moves : get_pseudolegal_moves
+      end
+
+      alias :edges :get_moves
+
+      def get_evasive_moves # returns only moves which result in king no longer being in check
+        get_regular_moves.select { |m| evades_check?(m.from, m.to) }
+        # sort_moves!(moves)  # sorting by capture value is pointless here.  need a different heuristic.
+      end
+      # checkmate found if king is in check and no evasive moves are available
+
+      def get_pseudolegal_moves
+        moves = get_regular_moves
+        moves += get_castles if @options[:castle] # castling only allowed when not in check.
+        sort_moves!(moves)
+      end
+
+      def get_regular_moves
+        moves = []
+        active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
+        return moves
       end
 
     end

@@ -20,7 +20,7 @@ FactoryGirl.define do
 
   end
 
-  factory :location, class: Application::Movement::Location do
+  factory :location, class: Application::Location::Location do
     r 0
     c 0
     initialize_with { new(r,c) }

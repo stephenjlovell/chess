@@ -14,10 +14,7 @@ describe Application::Board do
   it { should respond_to(:empty?) }
   it { should respond_to(:out_of_bounds?) }
   it { should respond_to(:enemy?) }
-
-  it { should_not respond_to(:squares) } # squares should be private.
-  # Currently squares are write-only for testing; if an attribute accessor could 
-  # be added to Board Factory as a singleton, could remove attr_writer from class.
+  it { should respond_to(:squares) }
 
   it 'should place pieces in the correct initial position' do
     @board.coordinates(2,10).should == :XX  # square [2,10] should be out of bounds.
@@ -54,8 +51,21 @@ describe Application::Board do
     end
   end
 
-  it 'should know if the king is in check' do
-    
+  describe 'king saftey' do
+    before do
+      @board = Application::Board.allocate
+      @board.setup
+      @threat_board = @board.copy
+      @threat_board.squares[3][7] = :bQ
+    end
+
+    it 'should know if the specified king is in check' do
+      @board.king_in_check?(:w).should be_false
+      @board.king_in_check?(:b).should be_false
+      @threat_board.king_in_check?(:w).should be_true
+      @threat_board.king_in_check?(:b).should be_false
+    end
+
   end
 
 end
