@@ -156,51 +156,39 @@ module Application
       empty?(location) || enemy?(location, color)
     end
 
-    # clean up directions in piece module - make directions constants and place at top of module, reference here.
-
     def evades_check?(from, to, color)
       piece_sym = self[from]
       target_sym = self[to]
-
       self[from] = nil  # simulate making the specified regular move
       self[to] = piece_sym
-
       not_in_check = !king_in_check?(color)
-
       self[from] = piece_sym  # undo changes to board
       self[to] = target_sym
-
       return not_in_check
     end
+
+    THREATS = { w: { P: [:bP], N: [:bN], straight: [:bR, :bQ], diagonal: [:bB, :bQ] }, 
+                b: { P: [:wP], N: [:wN], straight: [:wR, :wQ], diagonal: [:wB, :wQ] } }
 
     def king_in_check?(color)
       threats = THREATS[color]
       from = find_king(color) # get location of king for color.
-      pawn_attacks = Pieces::Pawn.directions[color][:attack]
-      return true if check_each_direction(from, pawn_attacks, false, threats[:pawn])
-      knight_attacks = Pieces::Knight.directions # knights only
-      return true if check_each_direction(from, knight_attacks, false, threats[:knight])
-      straight_attacks = Pieces::Rook.directions  # queens, rooks
-      return true if check_each_direction(from, straight_attacks, true, threats[:straight])
-      diagonal_attacks = Pieces::Bishop.directions  # queens, bishops
-      return true if check_each_direction(from, diagonal_attacks, true, threats[:diagonal])
-      # puts "no threats found"
-      return false
+      dir = Pieces::DIRECTIONS
+      check_each_direction(from, dir[:P][color][:attack], false, threats[:P]) || # pawns
+      check_each_direction(from, dir[:N], false, threats[:N]) || # knights
+      check_each_direction(from, dir[:straight], true, threats[:straight]) || # queens, rooks
+      check_each_direction(from, dir[:diagonal], true, threats[:diagonal]) # queens, bishops
     end
 
-    # private
-
-    THREATS = { w: { pawn: [:bP], knight: [:bN], straight: [:bR, :bQ], diagonal: [:bB, :bQ] }, 
-                b: { pawn: [:wP], knight: [:wN], straight: [:wR, :wQ], diagonal: [:wB, :wQ] } }
-
-    # alternative would be to store king location in an instance variable and update it on king move execution.
-    def find_king(color)  
+    private
+    
+    def find_king(color)  # alternatively, store king location in instance var and update on king move
       if color == :w  # King is more likely to be at its own end of the board.
         each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :wK }
       else
         reverse_each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :bK }
       end
-      # raise 'king not found'
+      raise 'King not found'
     end
 
     def check_each_direction(from, directions, until_blocked, threat_pieces)
@@ -208,11 +196,11 @@ module Application
       return false
     end
 
-    def check_direction(current_location, direction, until_blocked, threat_pieces) # specify the kind of enemy to look for.
+    def check_direction(current_location, direction, until_blocked, threat_pieces)
       to = current_location + direction
       return true if threat_to_king?(to, threat_pieces)
       if until_blocked && empty?(to)  # check ray attacks recursively until blocked
-        return check_direction(to, direction, until_blocked, threat_pieces) if until_blocked && empty?(to) 
+        return check_direction(to, direction, until_blocked, threat_pieces)
       end
       return false
     end

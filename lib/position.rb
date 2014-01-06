@@ -70,7 +70,6 @@ module Application
         @board.evades_check?(from, to, @side_to_move)
       end
 
-
       def copy # perform a deep copy of self.
         new_pieces = { w: {}, b: {} }
         options = Marshal.load(Marshal.dump(@options))  # en passant targets should not be automatically preserved.

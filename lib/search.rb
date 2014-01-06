@@ -22,7 +22,7 @@
 require 'SecureRandom'
 
 module Application
-  module Search # this module will define tree traversal algorithms for move selection.
+  module Search # this module defines tree traversal algorithms for move selection.
 
     def self.select_position
       $tt = Application::current_game.tt
@@ -38,17 +38,19 @@ module Application
     def self.iterative_deepening(root, depth)
       # puts "iterative_deepening(#{root}, #{depth})"
       pos = Application::current_position
+      $evaluation_calls = 0
       guess = pos.parent ? pos.parent.value : pos.value
       best_node = nil
       value = -$INF
 
-      puts "depth | main nodes | quiescence nodes"
+      puts "depth | main nodes | quiescence nodes | evaluations"
 
       (1..depth).each do |d|
         $main_calls = 0
         $quiescence_calls = 0
+        $evaluation_calls = 0
         best_node, value = mtdf(root, guess, d)
-        puts "#{d}    | #{$main_calls}           | #{$quiescence_calls}"
+        puts "#{d}    | #{$main_calls}           | #{$quiescence_calls} | #{$evaluation_calls}"
         guess = value
         if Application::current_game.clock.time_up?
           puts "evaluation time ran out after depth #{d}"

@@ -36,15 +36,15 @@ puts "Chess library loaded. \n\n"
   # moves = wp.get_moves(Application::current_position)
   # print moves
 
-  def test_king_checking
-    board = Application::Board.new
-    board.setup
-    # board.find_king(:w)
-    puts board.king_in_check?(:w)
-    board.squares[3][7] = :bQ
-    puts board.king_in_check?(:w)
-  end
-  test_king_checking
+  # def test_king_checking
+  #   board = Application::Board.new
+  #   board.setup
+  #   # board.find_king(:w)
+  #   puts board.king_in_check?(:w)
+  #   board.squares[3][7] = :bQ
+  #   puts board.king_in_check?(:w)
+  # end
+  # test_king_checking
 
   # def test_move_selection
   #   g = Application::new_game

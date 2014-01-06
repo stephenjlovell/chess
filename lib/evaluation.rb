@@ -97,9 +97,16 @@ module Application
                 a7: 48, b7: 49, c7: 50, d7: 51, e7: 52, f7: 53, g7: 54, h7: 55,
                 a8: 56, b8: 57, c8: 58, d8: 59, e8: 60, f8: 61, g8: 62, h8: 63 }
 
-    def self.evaluate(position) # return heuristic value of specified position.
+    def self.evaluate(position)
+      $evaluation_calls += 1 
       net_material(position)
     end
+
+    def self.base_material(position, side)
+      position.pieces[side].inject(0) { |total, (key, piece)| total += piece.class.value }
+    end
+
+    private
 
     def self.net_material(position) # net material value for side to move.
       g = Application::current_game
@@ -117,10 +124,6 @@ module Application
       else
         table[MIRROR[SQUARES[location.to_sym]]]
       end
-    end
-
-    def self.base_material(position, side)
-      position.pieces[side].inject(0) { |total, (key, piece)| total += piece.class.value }
     end
 
   end

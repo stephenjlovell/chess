@@ -22,9 +22,23 @@
 module Application
   module Pieces
 
-    # change to symbols:
     PIECE_VALUES = { P: 100, N: 320, B: 333, 
                      R: 510, Q: 880, K: 100000 }
+
+    DIRECTIONS = { straight: [[1,0],[-1,0],[0,1],[0,-1]], 
+                   diagonal: [[1,1],[1,-1],[-1,1],[-1,-1]], 
+                   N: [[2,1], [1,2], [-2,1], [-1,2], [-2,-1], [-1,-2], [2,-1], [1,-2]], 
+                   P: { w: { attack: [[1,1],[1,-1]],
+                             advance: [1,0],
+                             initial: [2,0],
+                             enp_offset: [1,0], 
+                             start_row: 3 },
+                        b: { attack: [[-1,-1],[-1,1]],
+                             advance: [-1,0],                               
+                             initial: [-2,0],
+                             enp_offset: [-1,0],  
+                             start_row: 8 }, 
+                        en_passant: [[0,1],[0,-1]]} }
 
     class Piece  # Provides a common template used by each concrete chess piece class.
       attr_reader :color 
@@ -74,17 +88,6 @@ module Application
     end
 
     class Pawn < Piece
-      DIRECTIONS = { w: { attack: [[1,1],[1,-1]],
-                          advance: [1,0],
-                          initial: [2,0],
-                          enp_offset: [1,0], 
-                          start_row: 3 },
-                     b: { attack: [[-1,-1],[-1,1]],
-                          advance: [-1,0],                               
-                          initial: [-2,0],
-                          enp_offset: [-1,0],  
-                          start_row: 8 }, 
-                     en_passant: [[0,1],[0,-1]] }
 
       class << self
         VALUE = PIECE_VALUES[:P]
@@ -100,8 +103,9 @@ module Application
           false
         end
 
+        PAWN_DIRECTIONS = DIRECTIONS[:P]
         def directions
-          DIRECTIONS
+          PAWN_DIRECTIONS
         end
       end
 
@@ -115,7 +119,7 @@ module Application
 
       def get_attacks(from, position, moves)
         board = position.board        
-        DIRECTIONS[@color][:attack].each do |pair|  # normal attacks
+        self.class.directions[@color][:attack].each do |pair|  # normal attacks
           to = from + pair
           if board.enemy?(to, @color)  
             moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
@@ -125,10 +129,10 @@ module Application
 
       def get_en_passant(from, position, moves)
         board = position.board
-        DIRECTIONS[:en_passant].each do |pair|
+        self.class.directions[:en_passant].each do |pair|
           target = from + pair
           if position.en_passant_target?(target) && board.enemy?(target, @color)
-            offset = DIRECTIONS[@color][:enp_offset]
+            offset = self.class.directions[@color][:enp_offset]
             move_to = target + offset
             moves << Movement::EnPassantAttack.new(position, from, move_to) 
           end
@@ -136,7 +140,7 @@ module Application
       end
 
       def get_advances(from, position, moves)
-        dir = DIRECTIONS[@color]
+        dir = self.class.directions[@color]
         to = from + dir[:advance]
         unless position.board.occupied?(to)
           moves << Movement::Move.new(position, from, to, 0.0)
@@ -169,8 +173,9 @@ module Application
           false
         end
 
+        KNIGHT_DIRECTIONS = DIRECTIONS[:N]
         def directions
-          [[2,1], [1,2], [-2,1], [-1,2], [-2,-1], [-1,-2], [2,-1], [1,-2]]
+          KNIGHT_DIRECTIONS
         end
       end
     end
@@ -190,8 +195,9 @@ module Application
           true
         end
 
+        BISHOP_DIRECTIONS = DIRECTIONS[:diagonal]
         def directions
-          [[1,1],[1,-1],[-1,1],[-1,-1]]
+          BISHOP_DIRECTIONS
         end
       end
     end
@@ -211,8 +217,9 @@ module Application
           true
         end
 
+        ROOK_DIRECTIONS = DIRECTIONS[:straight]
         def directions
-          [[1,0],[-1,0],[0,1],[0,-1]]
+          ROOK_DIRECTIONS
         end
       end
     end
@@ -232,8 +239,9 @@ module Application
           true
         end
 
+        QUEEN_DIRECTIONS = DIRECTIONS[:diagonal] + DIRECTIONS[:straight]
         def directions
-          [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
+          QUEEN_DIRECTIONS
         end
       end
     end
@@ -253,8 +261,9 @@ module Application
           false
         end
 
+        KING_DIRECTIONS = DIRECTIONS[:diagonal] + DIRECTIONS[:straight]
         def directions
-          [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
+          KING_DIRECTIONS
         end
       end
     end

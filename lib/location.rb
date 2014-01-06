@@ -25,8 +25,7 @@ module Application
            # the interpreter.
 
       # def +(arr)
-      #   Application::Location::LOCATIONS[@r+arr[0]][@c+arr[1]]
-      #   # Application::Location::get_location(@r+arr[0], @c+arr[1])
+      #   Application::Location::get_location(@r+arr[0], @c+arr[1])
       # end
 
       def hash
@@ -50,6 +49,8 @@ module Application
       end
     end
 
+    # module helper methods
+
     def self.create_locations
       hsh = {}
       (2..9).each do |r|
@@ -63,12 +64,23 @@ module Application
 
     LOCATIONS = create_locations
 
+    # def self.all_locations
+    #   @@all_locations ||= create_locations
+    #   # @@all_locations
+    # end
+
     def self.get_location(r, c)
+      # puts "all_locations: #{all_locations}"
+      # all_locations[r][c]
       LOCATIONS[r][c]
     end
 
     def self.get_location_from_string(str)
       get_location(str[1].to_i + 1, LETTER_TO_NUMBER[str[0]])
+    end
+
+    def self.inspect
+      "<Application::Location <@@locations: #{@@locations}>>"
     end
 
   end
