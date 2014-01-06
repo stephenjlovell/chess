@@ -78,6 +78,10 @@ describe Application::Board do
       @board.setup
       @threat_board = @board.copy
       @threat_board.squares[3][7] = :bQ
+      @from = FactoryGirl.build(:location, r: 2, c: 6)
+      @to = FactoryGirl.build(:location, r: 3, c: 7)
+      @alt_from = FactoryGirl.build(:location, r: 3, c: 3)
+      @alt_to = FactoryGirl.build(:location, r: 3, c: 3)
     end
 
     it 'should know if the specified king is in check' do
@@ -87,7 +91,10 @@ describe Application::Board do
       @threat_board.king_in_check?(:b).should be_false
     end
 
-    it 'should'
+    it 'should test if a move would get specified side out of check' do
+      @threat_board.evades_check?(@from, @to, :w).should be_true
+      @threat_board.evades_check?(@alt_from, @alt_to, :w).should be_false
+    end
 
   end
 
