@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------------
 # Copyright (c) 2013 Stephen J. Lovell
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -183,12 +183,17 @@ module Application
     private
     
     def find_king(color)  # alternatively, store king location in instance var and update on king move
-      if color == :w  # King is more likely to be at its own end of the board.
-        each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :wK }
-      else
-        reverse_each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :bK }
+      begin
+        if color == :w  # King is more likely to be at its own end of the board.
+          each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :wK }
+        else
+          reverse_each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :bK }
+        end
+        raise 'King not found'
+      rescue
+        puts color
+        self.print
       end
-      raise 'King not found'
     end
 
     def check_each_direction(from, directions, until_blocked, threat_pieces)

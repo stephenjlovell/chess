@@ -79,6 +79,7 @@ FactoryGirl.define do
     factory :test_position do
       board { FactoryGirl.build(:test_board) }
       pieces { Application::Pieces::setup(board) }
+      initialize_with { new(board, pieces, side_to_move) }
     end
   end
 

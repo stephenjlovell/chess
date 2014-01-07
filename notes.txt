@@ -29,7 +29,7 @@ To Do ----
 
 
   King Safety -
-    run king_in_check? prior to move generation, then select move generation strategy based on king_in_check?
+    there currently is nothing preventing AI from moving INTO check...
 
 
 

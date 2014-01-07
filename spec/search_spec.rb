@@ -23,17 +23,21 @@ require 'spec_helper'
 
 describe "Search" do
 
-  # before { @root = FactoryGirl.build(:test_position) }
-  before do 
-    @game = FactoryGirl.build(:test_game)
-    @root = @game.position
+  before do
+    @pos = FactoryGirl.build(:position)
+    @check_pos = FactoryGirl.build(:test_position) 
   end
 
-  describe "when AI king is in check" do
-    it "will move out of check if possible" do
-      pos = Application::Search::select_position(@root)
+  describe "when AI king is not in check" do
+    it "will select the most valuable move" do
+      new_pos = Application::Search::select_position(@pos)
     end
+  end
 
+  describe "when AI king is in check" do    # king captures cannot be permitted
+    it "will move out of check if possible" do
+      new_pos = Application::Search::select_position(@check_pos)
+    end
   end
 
 

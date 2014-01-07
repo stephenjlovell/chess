@@ -46,18 +46,18 @@ puts "Chess library loaded. \n\n"
   # end
   # test_king_checking
 
-  def test_move_selection
-    g = Application::new_game
-    pos = Application::current_position  
-    t0 = Time.now
-    best_pos = Application::Search::select_position(pos)
-    t1 = Time.now
+  # def test_move_selection
+  #   g = Application::new_game
+  #   pos = Application::current_position  
+  #   t0 = Time.now
+  #   best_pos = Application::Search::select_position(pos)
+  #   t1 = Time.now
 
-    puts best_pos.previous_move.to_s
-    puts "value: #{best_pos.value}"
-    puts "move selected in #{t1 - t0} seconds."
-    best_pos.board.print
-  end
+  #   puts best_pos.previous_move.to_s
+  #   puts "value: #{best_pos.value}"
+  #   puts "move selected in #{t1 - t0} seconds."
+  #   best_pos.board.print
+  # end
   # test_move_selection
 
   # def test_pawn_movement
