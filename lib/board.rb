@@ -156,7 +156,7 @@ module Application
       empty?(location) || enemy?(location, color)
     end
 
-    def evades_check?(from, to, color)
+    def avoids_check?(from, to, color)
       piece_sym = self[from]
       target_sym = self[to]
       self[from] = nil  # simulate making the specified regular move

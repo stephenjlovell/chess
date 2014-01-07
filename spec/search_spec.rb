@@ -40,6 +40,27 @@ describe "Search" do
     end
   end
 
+  describe "strategy pattern permits use of" do
+    describe "mtdf" do
+      it "as a standalone algorithm" do
+
+      end
+
+      it "from within an iterative deepening framework" do
+
+      end
+    end
+    describe "alpha beta" do
+      it "as a standalone algorithm" do
+
+      end
+
+      it "from within an iterative deepening framework" do
+
+      end
+    end
+  end
+
 
 
 end

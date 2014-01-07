@@ -44,7 +44,7 @@ module Application # define application-level behavior in this module and file.
       @current_game = game  # may be needed in a future load_game method.
     end
 
-    def new_game(ai_player = :b, time_limit = 120.0)
+    def new_game(ai_player = :b, time_limit = 60.0)
       @current_game = Application::Game.new(ai_player, time_limit)
     end
 

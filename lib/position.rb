@@ -66,8 +66,8 @@ module Application
         @in_check ||= @board.king_in_check?(@side_to_move)
       end
 
-      def evades_check?(from, to)
-        @board.evades_check?(from, to, @side_to_move)
+      def avoids_check?(from, to)
+        @board.avoids_check?(from, to, @side_to_move)
       end
 
       def copy # perform a deep copy of self.

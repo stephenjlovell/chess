@@ -87,8 +87,8 @@ describe Application::Board do
     end
 
     it 'should test if a move would get specified side out of check' do
-      @threat_board.evades_check?(@from, @to, :w).should be_true
-      @threat_board.evades_check?(@alt_from, @alt_to, :w).should be_false
+      @threat_board.avoids_check?(@from, @to, :w).should be_true
+      @threat_board.avoids_check?(@alt_from, @alt_to, :w).should be_false
     end
 
   end

@@ -108,8 +108,7 @@ module Application
     # Mixin methods (included in Position object):
 
     def sort_moves!(moves)
-      moves.sort! { |x,y| y.capture_value <=> x.capture_value }
-      # also sort non-captures by Killer Heuristic?
+      moves.sort! { |x,y| y.capture_value <=> x.capture_value }  # also sort non-captures by Killer Heuristic?
     end
 
     def get_castles
@@ -119,12 +118,18 @@ module Application
       if hsh[:low]
         if @board.coordinates_empty?(row, 3) && @board.coordinates_empty?(row, 4) && 
            @board.coordinates_empty?(row, 5)
-          castles << Castle.new(self, :low)  # castling permitted on low side.
+          king_from = Location::get_location(row, Castle::FROM_COL[:low][:king])
+          if avoids_check?(king_from, king_from + [-1,0]) && avoids_check?(king_from, king_from + [-2,0])
+            castles << Castle.new(self, :low) # king cannot move through or into check
+          end
         end
       end
       if hsh[:high]  
         if @board.coordinates_empty?(row, 7) && @board.coordinates_empty?(row, 8)
-          castles << Castle.new(self, :high)  # castling permitted on high side.
+          king_from = Location::get_location(row, Castle::FROM_COL[:low][:king])
+          if avoids_check?(king_from, king_from + [1,0]) && avoids_check?(king_from, king_from + [2,0])
+            castles << Castle.new(self, :high) # king cannot move through or into check
+          end
         end
       end
       return castles

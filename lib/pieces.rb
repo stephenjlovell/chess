@@ -74,7 +74,7 @@ module Application
           to = current_location + direction
           board = position.board
           if board.pseudo_legal?(to, @color)
-            if board.evades_check?(from, to, @color)
+            if board.avoids_check?(from, to, @color)
               moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
             end
             if until_blocked && board.empty?(to)
@@ -123,7 +123,7 @@ module Application
         board = position.board        
         self.class.directions[@color][:attack].each do |pair|  # normal attacks
           to = from + pair
-          if board.enemy?(to, @color) && board.evades_check?(from, to, @color)
+          if board.enemy?(to, @color) && board.avoids_check?(from, to, @color)
             moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
           end
         end
@@ -136,7 +136,7 @@ module Application
           if position.en_passant_target?(target) && board.enemy?(target, @color)
             offset = self.class.directions[@color][:enp_offset]
             move_to = target + offset
-            if board.evades_check?(from, to, @color)
+            if board.avoids_check?(from, to, @color)
               moves << Movement::EnPassantAttack.new(position, from, move_to)
             end 
           end
@@ -148,13 +148,13 @@ module Application
         dir = self.class.directions[@color]
         to = from + dir[:advance]
         unless board.occupied?(to)
-          if board.evades_check?(from, to, @color)
+          if board.avoids_check?(from, to, @color)
             moves << Movement::Move.new(position, from, to, 0.0)
           end
           if from.r == dir[:start_row]
             to = from + dir[:initial]
             unless board.occupied?(to)
-              if board.evades_check?(from, to, @color)
+              if board.avoids_check?(from, to, @color)
                 moves << Movement::EnPassantTarget.new(position, from, to) 
               end
             end
