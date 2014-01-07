@@ -26,7 +26,7 @@ module Application
 
     def self.select_position(root)
       $tt = Application::current_game.tt
-      best_node, value = iterative_deepening(root, 8)
+      best_node, value = iterative_deepening(root, 10)
       #   $main_calls = 0
       #   $quiescence_calls = 0
       # best_node, value = get_best_node(root, 5)

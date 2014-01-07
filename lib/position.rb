@@ -103,30 +103,12 @@ module Application
       end
 
       def get_moves # returns a sorted array of all possible moves for the current player.
-        in_check? ? get_evasive_moves : get_pseudolegal_moves_and_castles
-      end
-
-      alias :edges :get_moves
-
-      # should always prevent side to move from moving into check...
-
-      def get_evasive_moves # returns only moves which result in king no longer being in check
-        get_regular_moves.select { |m| evades_check?(m.from, m.to) }
-        # sort_moves!(moves)  # sorting by capture value is pointless here.  need a different heuristic.
-      end
-      # checkmate found if king is in check and no evasive moves are available
-
-      def get_pseudolegal_moves_and_castles
-        moves = get_pseudolegal_moves
-        moves += get_castles if @options[:castle] # castling only allowed when not in check.
-        sort_moves!(moves)
-      end
-
-      def get_pseudolegal_moves
         moves = []
         active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
-        return moves
+        moves += get_castles if in_check? && @options[:castle]
+        sort_moves!(moves)
       end
+      alias :edges :get_moves
 
     end
 
