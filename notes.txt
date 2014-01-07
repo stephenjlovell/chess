@@ -30,6 +30,7 @@ To Do ----
 
   King Safety -
     there currently is nothing preventing AI from moving INTO check...
+    to avoid full legal move generation, need to scan for absolute pins.
 
 
 
