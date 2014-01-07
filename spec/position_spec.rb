@@ -23,13 +23,7 @@ require 'spec_helper'
 
 describe Application::Position::ChessPosition do
 
-  before do
-    # @position = FactoryGirl.build(:position)
-    @position = Application::current_position
-    @pieces = @position.pieces
-    @board = @position.board
-  end
-
+  before { @position = FactoryGirl.build(:test_position) }
   subject { @position }
 
   describe "should respond to public methods" do
@@ -55,22 +49,24 @@ describe Application::Position::ChessPosition do
           m.should respond_to :create_position
         end
       end
-      it "to child positions involving captures" do
-        # tactical_edges = @position.tactical_edges
-        # tactical_edges.should_not be_empty
-        # tactical_edges.each do |pos|
-        #   pos.class.should == Application::Position::ChessPosition
-        # end
+      it "to tactical edges involving captures" do
+        tactical_edges = @position.tactical_edges
+        tactical_edges.count.should == 2
+        tactical_edges.each do |m|
+          m.should respond_to :move!
+          m.should respond_to :create_position
+        end
       end
     end
   end
 
-  describe "when using the copy method" do
-    let(:dup) { @position.copy }
-
+  describe "when deep copying self" do
+    let(:dup){ @position.copy }
+    let(:location){ FactoryGirl.build(:location) }
+    
     it "should return a new independent object" do
-      dup.pieces[:w]["a1"] = :foo
-      @pieces[:w]["a1"].should_not == :foo
+      dup.pieces[:w][location] = :foo
+      @position.pieces[:w][location].should_not == :foo
     end
   end
 

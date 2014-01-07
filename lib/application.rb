@@ -141,7 +141,7 @@ module Application # define application-level behavior in this module and file.
     end
 
     def make_move
-      take_turn { @position = Search::select_position }
+      take_turn { @position = Search::select_position(Application::current_position) }
     end
 
     def take_turn

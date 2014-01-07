@@ -23,7 +23,7 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
   Using Location object - baseline: 46.596299 seconds
                           after refcatoring 12/30/13: 35.324076 seconds
                           after refactoring 1/5/14: 24.660283 seconds
-                          after adding king safety: 25.755122 seconds
+                          after adding king safety 1/6/14: 25.213673 seconds
 
 To Do ----
 

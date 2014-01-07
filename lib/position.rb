@@ -62,8 +62,8 @@ module Application
         @value = value
       end
 
-      def king_in_check?
-        @board.king_in_check?(@side_to_move)
+      def in_check?
+        @in_check ||= @board.king_in_check?(@side_to_move)
       end
 
       def evades_check?(from, to)
@@ -74,7 +74,7 @@ module Application
         new_pieces = { w: {}, b: {} }
         options = Marshal.load(Marshal.dump(@options))  # en passant targets should not be automatically preserved.
         @pieces.each do |color, hsh|
-          @pieces[color].each do |location, piece|
+          hsh.each do |location, piece|
             new_pieces[color][location] = piece
           end
         end
@@ -95,7 +95,7 @@ module Application
       end
 
       def tactical_edges
-        get_moves.select{ |m| m.capture_value > 0.0}
+        get_moves.select{ |m| m.capture_value > 0.0 }
       end
 
       def get_children
@@ -103,10 +103,14 @@ module Application
       end
 
       def get_moves # returns a sorted array of all possible moves for the current player.
-        king_in_check? ? get_evasive_moves : get_pseudolegal_moves
+        in_check? ? get_evasive_moves : get_pseudolegal_moves
       end
 
       alias :edges :get_moves
+
+      # should always prevent side to move from moving into check...
+      # if piece moved is
+
 
       def get_evasive_moves # returns only moves which result in king no longer being in check
         get_regular_moves.select { |m| evades_check?(m.from, m.to) }

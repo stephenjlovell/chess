@@ -23,11 +23,7 @@ require 'spec_helper'
 
 describe Application::Board do
 
-  before do 
-    @board = Application::Board.allocate
-    @board.setup
-  end
-  
+  before { @board = FactoryGirl.build(:board) }
   subject { @board }
 
   it { should respond_to(:each) }
@@ -74,14 +70,13 @@ describe Application::Board do
 
   describe 'king saftey' do
     before do
-      @board = Application::Board.allocate
-      @board.setup
+      @board = FactoryGirl.build(:test_board)
       @threat_board = @board.copy
-      @threat_board.squares[3][7] = :bQ
+      @threat_board.squares[3][7] = :bP
       @from = FactoryGirl.build(:location, r: 2, c: 6)
       @to = FactoryGirl.build(:location, r: 3, c: 7)
-      @alt_from = FactoryGirl.build(:location, r: 3, c: 3)
-      @alt_to = FactoryGirl.build(:location, r: 3, c: 3)
+      @alt_from = FactoryGirl.build(:location, r: 2, c: 3)
+      @alt_to = FactoryGirl.build(:location, r: 2, c: 4)
     end
 
     it 'should know if the specified king is in check' do

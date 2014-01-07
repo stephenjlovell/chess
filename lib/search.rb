@@ -24,9 +24,8 @@ require 'SecureRandom'
 module Application
   module Search # this module defines tree traversal algorithms for move selection.
 
-    def self.select_position
+    def self.select_position(root)
       $tt = Application::current_game.tt
-      root = Application::current_position
       best_node, value = iterative_deepening(root, 8)
       #   $main_calls = 0
       #   $quiescence_calls = 0
@@ -138,6 +137,7 @@ module Application
         end
         return value
       end
+
       best_value = -$INF
       best_node = nil
       node.edges.each do |move|
@@ -164,7 +164,6 @@ module Application
     def self.quiescence(node, depth, alpha, beta)
       # puts "\t\t\t\tquiescence(#{node}, #{alpha}, #{beta})"
       $quiescence_calls += 1
-      $main_calls += 1
 
       entry = $tt.retrieve(node)
       if entry && entry.depth >= depth
