@@ -135,9 +135,9 @@ module Application
           target = from + pair
           if position.en_passant_target?(target) && board.enemy?(target, @color)
             offset = self.class.directions[@color][:enp_offset]
-            move_to = target + offset
+            to = target + offset
             if board.avoids_check?(from, to, @color)
-              moves << Movement::EnPassantAttack.new(position, from, move_to)
+              moves << Movement::EnPassantAttack.new(position, from, to)
             end 
           end
         end

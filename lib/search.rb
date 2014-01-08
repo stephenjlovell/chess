@@ -36,19 +36,19 @@ module Application
         best_node, value = send(@algorithm)
       end
 
-      def iterative_deepening_mtdf(depth = 8)
+      def iterative_deepening_mtdf(depth = 5)
         iterative_deepening(depth) do |guess, d|
           mtdf(guess, d)
         end
       end
 
-      def iterative_deepening_alpha_beta(depth = 8)
+      def iterative_deepening_alpha_beta(depth = 5)
         iterative_deepening(depth) do |guess, d|
-          alpha_beta(@root, d)
+          alpha_beta(d)
         end
       end
 
-      def mtdf(g = nil, depth = 4) # this algorithm will incrementally set the alpha-beta search window and call alpha_beta.
+      def mtdf(g = nil, depth = 5) # this algorithm will incrementally set the alpha-beta search window and call alpha_beta.
         # puts "\tmtdf(#{@root}, #{g}, #{depth})"
         g ||= @root.value
         upper_bound = $INF
@@ -61,7 +61,7 @@ module Application
         return best_node, g
       end
 
-      def alpha_beta(depth, alpha=-$INF, beta=$INF) # change these names
+      def alpha_beta(depth = 5, alpha=-$INF, beta=$INF) # change these names
         # puts "\t\tget_best_node(#{root}, #{depth}, #{alpha}, #{beta})"
         $main_calls += 1
         entry = $tt.retrieve(@root)
@@ -98,7 +98,7 @@ module Application
         return best_node, best_value
       end
 
-      private
+      private  # these algorithms cannot be called by the client directly:
 
       def iterative_deepening(depth)
         # puts "iterative_deepening(#{@root}, #{depth})"

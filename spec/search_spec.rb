@@ -25,38 +25,37 @@ describe "Search" do
 
   before do
     @pos = FactoryGirl.build(:position)
-    @check_pos = FactoryGirl.build(:test_position) 
+    @check_pos = FactoryGirl.build(:test_position)
+    @search = Application::Search 
   end
 
-  describe "when AI king is not in check" do
-    it "will select the most valuable move" do
-      new_pos = Application::Search::select_position(@pos)
-    end
-  end
+  # describe "when AI king is not in check" do
+  #   it "will select the most valuable move" do
+  #     Application::Search::select_position(@pos)
+  #   end
+  # end
 
-  describe "when AI king is in check" do    # king captures cannot be permitted
-    it "will move out of check if possible" do
-      new_pos = Application::Search::select_position(@check_pos)
-    end
-  end
+  # describe "when AI king is in check" do    # king captures cannot be permitted
+  #   it "will move out of check if possible" do
+  #     Application::Search::select_position(@check_pos)
+  #   end
+  # end
 
   describe "strategy pattern permits use of" do
     describe "mtdf" do
       it "as a standalone algorithm" do
-
+        puts "--mtdf--#{@search::select_position(@check_pos, :mtdf).previous_move}"
       end
-
       it "from within an iterative deepening framework" do
-
+        puts "--iterative_deepening_mtdf-- #{@search::select_position(@check_pos, :iterative_deepening_mtdf).previous_move}"
       end
     end
     describe "alpha beta" do
       it "as a standalone algorithm" do
-
+        puts "--alpha_beta--#{@search::select_position(@check_pos, :alpha_beta).previous_move}"
       end
-
       it "from within an iterative deepening framework" do
-
+        puts "--iterative_deepening_alpha_beta--#{@search::select_position(@check_pos, :iterative_deepening_alpha_beta).previous_move}"
       end
     end
   end
