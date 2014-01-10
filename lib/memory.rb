@@ -23,6 +23,7 @@ module Application
 
       def retrieve(node)
         h = hash(node)
+        $memory_calls += 1 if @table[h]
         @table[h]
       end
 

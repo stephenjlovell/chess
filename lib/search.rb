@@ -48,6 +48,28 @@ module Application
         end
       end
 
+      def iterative_deepening(depth)
+        # puts "iterative_deepening(#{@root}, #{depth})"
+        $evaluation_calls = 0
+        guess = @root.parent ? @root.parent.value : @root.value
+        best_node = nil
+        value = -$INF
+        puts "depth | main nodes | quiescence nodes | evaluations | memory access"
+        (1..depth).each do |d|
+          Search::reset_counters
+          best_node, value = yield(guess, d)
+          puts "#{d} | #{$main_calls} | #{$quiescence_calls} | #{$evaluation_calls} | #{$memory_calls}"
+          guess = value
+          if Application::current_game.clock.time_up?
+            puts "evaluation time ran out after depth #{d}"
+            break
+          end
+          # at each depth d, need to make sure the values discovered so far are used to order moves used in depth d+1.
+          # this will increase the number of alpha-beta cutoffs.
+        end
+        return best_node, value
+      end
+
       def mtdf(g = nil, depth = 5) # this algorithm will incrementally set the alpha-beta search window and call alpha_beta.
         # puts "\tmtdf(#{@root}, #{g}, #{depth})"
         g ||= @root.value
@@ -96,32 +118,6 @@ module Application
           $tt.store(@root, depth, :exact_value, best_value, best_node)
         end
         return best_node, best_value
-      end
-
-      private  # these algorithms cannot be called by the client directly:
-
-      def iterative_deepening(depth)
-        # puts "iterative_deepening(#{@root}, #{depth})"
-        $evaluation_calls = 0
-        guess = @root.parent ? @root.parent.value : @root.value
-        best_node = nil
-        value = -$INF
-        puts "depth | main nodes | quiescence nodes | evaluations"
-        (1..depth).each do |d|
-          $main_calls = 0
-          $quiescence_calls = 0
-          $evaluation_calls = 0
-          best_node, value = yield(guess, d)
-          puts "#{d}    | #{$main_calls}           | #{$quiescence_calls} | #{$evaluation_calls}"
-          guess = value
-          if Application::current_game.clock.time_up?
-            puts "evaluation time ran out after depth #{d}"
-            break
-          end
-          # at each depth d, need to make sure the values discovered so far are used to order moves used in depth d+1.
-          # this will increase the number of alpha-beta cutoffs.
-        end
-        return best_node, value
       end
 
       def alpha_beta_main(node, depth, alpha=-$INF, beta=$INF)
@@ -204,9 +200,9 @@ module Application
 
         # assume 'standing pat' lower bound:
         return beta if value >= beta
-        alpha = score if value > alpha
+        alpha = value if value > alpha
 
-        best_value = -$INF   # cannot assume that any child nodes
+        best_value = -$INF
         best_node = nil
         node.tactical_edges.each do |move|
           child = move.create_position
@@ -233,15 +229,20 @@ module Application
     # Module helper methods
 
     def self.select_position(root, algorithm = :iterative_deepening_mtdf)
-      $main_calls = 0
-      $quiescence_calls = 0
-      $evaluation_calls = 0
+      reset_counters
       $tt = Application::current_game.tt
       strategy = Strategy.new(root, algorithm)
       best_node, value = strategy.select_position
       # best_node, value = iterative_deepening(root, 10)
       return best_node
     end 
+
+    def self.reset_counters
+      $main_calls = 0
+      $quiescence_calls = 0
+      $evaluation_calls = 0
+      $memory_calls = 0
+    end
 
   end
 end

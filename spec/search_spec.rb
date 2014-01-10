@@ -43,12 +43,12 @@ describe "Search" do
 
   describe "strategy pattern permits use of" do
     describe "mtdf" do
-      it "as a standalone algorithm" do
-        puts "--mtdf--#{@search::select_position(@check_pos, :mtdf).previous_move}"
-      end
-      it "from within an iterative deepening framework" do
-        puts "--iterative_deepening_mtdf-- #{@search::select_position(@check_pos, :iterative_deepening_mtdf).previous_move}"
-      end
+      # it "as a standalone algorithm" do
+      #   puts "--mtdf--#{@search::select_position(@check_pos, :mtdf).previous_move}"
+      # end
+      # it "from within an iterative deepening framework" do
+      #   puts "--iterative_deepening_mtdf-- #{@search::select_position(@check_pos, :iterative_deepening_mtdf).previous_move}"
+      # end
     end
     describe "alpha beta" do
       it "as a standalone algorithm" do
