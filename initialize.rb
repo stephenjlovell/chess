@@ -25,16 +25,6 @@ puts "Chess library loaded. \n\n"
 # Play the game!
 Application::CLI::play
 
-# #  test initial moves available to pieces:
-  # white_pieces = Application::current_position.pieces[:w]
-  # white_pieces.each { |coordinate, piece| print piece.symbol, ' ', piece.position, ' => ', piece.get_moves(Application::current_position), "\n" }
-  # print Application::current_position.get_moves
-
-# # test attacks available to a pawn:
-  # b = Application::current_position.board
-  # wp = Application::Pieces::Pawn.new(7,5,:w) # in position to attack
-  # moves = wp.get_moves(Application::current_position)
-  # print moves
 
   # def test_king_checking
   #   board = Application::Board.new
@@ -60,14 +50,6 @@ Application::CLI::play
   # end
   # test_move_selection
 
-  # def test_pawn_movement
-  #   pos = Application::current_position
-  #   loc = Application::Movement::Location.new(3,3)
-  #   pawn = pos.pieces[:w][loc]
-  #   pawn_moves = pawn.get_moves(loc, pos)
-  #   new_pos = pawn_moves.first.create_position
-  #   return pos, new_pos
-  # end
 
 # test Transposition Table hash function efficiency.
   # g = Application::new_game(:w)

@@ -95,7 +95,7 @@ module Application
       end
 
       def tactical_edges
-        get_moves.select{ |m| m.capture_value > 0.0 }
+        in_check? ? get_moves : get_moves.select{ |m| m.capture_value > 0.0 }
       end
 
       def get_children

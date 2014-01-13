@@ -23,6 +23,7 @@ module Application
   module Movement
 
     BACK_ROW = { w: 2, b: 9 }
+    PAWN_PROMOTION = { w: :wQ, b: :bQ }
 
     class Move
       attr_reader :position, :from, :to, :capture_value
@@ -46,10 +47,18 @@ module Application
       def move!(pos) # updates self by performing the specified move.
         pos.set_castle_flag!(@from) if pos.options[:castle]
         pos.relocate_piece!(@from, @to)
-        pos.promote_pawn!(@to)
         pos.options.delete(:en_passant_target) if pos.options
       end
     end
+
+
+    class PawnAdvance < Move
+      def move!(pos)
+        super
+        pos.promote_pawn!(@to)
+      end
+    end
+
 
     class Castle < Move
       attr_reader :side
@@ -157,7 +166,7 @@ module Application
       end
     end
 
-    PAWN_PROMOTION = { wP: :wQ, bP: :bQ }
+
     def promote_pawn!(location) # called via move! method
       enemy = @side_location_move == :w ? :b : :w
       type = active_pieces[location].class.type

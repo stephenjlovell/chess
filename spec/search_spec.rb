@@ -51,9 +51,9 @@ describe "Search" do
       # end
     end
     describe "alpha beta" do
-      it "as a standalone algorithm" do
-        puts "--alpha_beta--#{@search::select_position(@check_pos, :alpha_beta).previous_move}"
-      end
+      # it "as a standalone algorithm" do
+      #   puts "--alpha_beta--#{@search::select_position(@check_pos, :alpha_beta).previous_move}"
+      # end
       it "from within an iterative deepening framework" do
         puts "--iterative_deepening_alpha_beta--#{@search::select_position(@check_pos, :iterative_deepening_alpha_beta).previous_move}"
       end

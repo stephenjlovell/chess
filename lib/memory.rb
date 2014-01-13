@@ -23,21 +23,23 @@ module Application
 
       def retrieve(node)
         h = hash(node)
-        $memory_calls += 1 if @table[h]
+        if @table[h]
+          $memory_calls += 1 
+        end
         @table[h]
       end
 
-      def [](h)
-        @table[h]
-      end
+      # def [](h)
+      #   @table[h]
+      # end
 
-      def memoize(node, depth, type, value, best_node=nil) 
-        h = hash(node)
-        node.hash_value = h # store h in position object instance variable to enable 
-                            # incremental calculation of hashes for child nodes.
-        @table[h] = Entry.new(depth, type, value, best_node) unless @table[h]
-        return @table[h].value
-      end
+      # def memoize(node, depth, type, value, best_node=nil) 
+      #   h = hash(node)
+      #   node.hash_value = h # store h in position object instance variable to enable 
+      #                       # incremental calculation of hashes for child nodes.
+      #   @table[h] = Entry.new(depth, type, value, best_node) unless @table[h]
+      #   return @table[h].value
+      # end
 
       def self.create_bytestring_array
         Array.new(8, Array.new(8, piece_hash ))

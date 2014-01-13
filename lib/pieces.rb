@@ -149,7 +149,7 @@ module Application
         to = from + dir[:advance]
         unless board.occupied?(to)
           if board.avoids_check?(from, to, @color)
-            moves << Movement::Move.new(position, from, to, 0.0)
+            moves << Movement::PawnAdvance.new(position, from, to, 0.0)
           end
           if from.r == dir[:start_row]
             to = from + dir[:initial]

@@ -191,6 +191,7 @@ module Application
         end
         raise 'King not found'
       rescue
+        puts "king not found"
         puts color
         self.print
       end
