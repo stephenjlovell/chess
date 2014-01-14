@@ -27,8 +27,8 @@ module Application
     class Strategy
       attr_reader :algorithm
 
-      def initialize(root, algorithm = :iterative_deepening_mtdf)
-        @root, @algorithm = root, algorithm
+      def initialize(root, algorithm = :iterative_deepening_mtdf, max_depth = 9)
+        @root, @algorithm, @max_depth = root, algorithm, max_depth
       end
 
       def select_position
@@ -36,14 +36,14 @@ module Application
         best_node, value = send(@algorithm)
       end
 
-      def iterative_deepening_mtdf(depth = 7)
-        iterative_deepening(depth) do |guess, d|
+      def iterative_deepening_mtdf
+        iterative_deepening(@max_depth) do |guess, d|
           mtdf(guess, d)
         end
       end
 
-      def iterative_deepening_alpha_beta(depth = 7)
-        iterative_deepening(depth) do |guess, d|
+      def iterative_deepening_alpha_beta
+        iterative_deepening(@max_depth) do |guess, d|
           alpha_beta(d)
         end
       end
@@ -69,8 +69,9 @@ module Application
         return best_node, value
       end
 
-      def mtdf(g = nil, depth = 7) # this algorithm will incrementally set the alpha-beta search window and call alpha_beta.
+      def mtdf(g = nil, depth = nil) # this algorithm will incrementally set the alpha-beta search window and call alpha_beta.
         g ||= @root.value
+        depth ||= @max_depth
         upper_bound = $INF
         lower_bound = -$INF
         while lower_bound < upper_bound do
@@ -81,7 +82,7 @@ module Application
         return best_node, g
       end
 
-      def alpha_beta(depth = 7, alpha=-$INF, beta=$INF) # change these names
+      def alpha_beta(depth, alpha=-$INF, beta=$INF) # change these names
         $main_calls += 1
 
         entry = $tt.retrieve(@root)
@@ -111,19 +112,7 @@ module Application
           break if best_value >= beta
         end
 
-        if edge_count == 0 && @root.in_check?
-          puts "CHECKMATE!"
-          return -$INF
-        end
-
-        if best_value <= alpha
-          $tt.store(@root, depth, :lower_bound, best_value, best_node)
-        elsif best_value >= beta
-          $tt.store(@root, depth, :upper_bound, best_value, best_node)
-        else
-          $tt.store(@root, depth, :exact_value, best_value, best_node)
-        end
-        return best_node, best_value
+        return best_node, store_result(edge_count, @root, depth, best_value, alpha, beta, best_node)
       end
 
       def alpha_beta_main(node, depth, alpha=-$INF, beta=$INF)
@@ -141,18 +130,9 @@ module Application
           return entry.value if alpha >= beta
         end
 
-        if depth == 0 # || terminal node (checkmate)
-          
-          value = -quiescence(node, 1, -beta, -alpha)
-
-          if value <= alpha
-            $tt.store(node, depth, :lower_bound, value)  # what is saved for best_node?
-          elsif value >= beta
-            $tt.store(node, depth, :upper_bound, value)
-          else
-            $tt.store(node, depth, :exact_value, value)
-          end
-          return value
+        if depth == 0
+          best_value = -quiescence(node, 1, -beta, -alpha)
+          return store_node(node, depth, best_value, alpha, beta)  # quiesence search cannot find checkmates.
         end
 
         best_value = -$INF  # this is sufficient for finding checkmate.
@@ -170,19 +150,7 @@ module Application
           break if best_value >= beta
         end
 
-        if edge_count == 0 && node.in_check?
-          puts "CHECKMATE!"
-          return -$INF
-        end
-
-        if best_value <= alpha
-          $tt.store(node, depth, :lower_bound, best_value, best_node)
-        elsif best_value >= beta
-          $tt.store(node, depth, :upper_bound, best_value, best_node)
-        else
-          $tt.store(node, depth, :exact_value, best_value, best_node)
-        end
-        return best_value
+        store_result(edge_count, node, depth, best_value, alpha, beta, best_node)
       end
 
       def quiescence(node, depth, alpha, beta)
@@ -200,20 +168,8 @@ module Application
           return entry.value if alpha >= beta
         end
 
-        best_value = node.value
-
-        # if depth == 0  # || terminal node (checkmate)
-        #   if value <= alpha
-        #     $tt.store(node, depth, :lower_bound, value)  # what is saved for best_node?
-        #   elsif value >= beta
-        #     $tt.store(node, depth, :upper_bound, value)
-        #   else
-        #     $tt.store(node, depth, :exact_value, value)
-        #   end
-        #   return value
-        # end
-
-        return best_value if best_value >= beta  # assume 'standing pat' lower bound
+        best_value = node.value  # assume 'standing pat' lower bound
+        return best_value if best_value >= beta  
         alpha = best_value if best_value > alpha
 
         best_node = nil
@@ -229,14 +185,18 @@ module Application
           alpha = best_value if best_value > alpha
           break if best_value >= beta
         end
+        store_result(edge_count, node, depth, best_value, alpha, beta, best_node)
+      end
 
+      def store_result(edge_count, node, depth, best_value, alpha, beta, best_node=nil)
         if edge_count == 0 && node.in_check?
-          puts "CHECKMATE"
-          return -$INF
-          #checkmate for side to move.
+          store_checkmate(edge_count, node)
+        else
+          store_node(node, depth, best_value, alpha, beta, best_node)
         end
-
-
+      end
+  
+      def store_node(node, depth, best_value, alpha, beta, best_node=nil)
         if best_value <= alpha
           $tt.store(node, depth, :lower_bound, best_value, best_node)
         elsif best_value >= beta
@@ -246,7 +206,15 @@ module Application
         end
         return best_value
       end
-    end
+
+      def store_checkmate(edge_count, node)
+        puts "checkmate found for side #{@node.side_to_move}"
+        value = @root.side_to_move == @node.side_to_move ? -$INF : $INF
+        $tt.store(node, @max_depth+1, :exact_value, value)
+        return value
+      end
+
+    end  # end Strategy class
 
 
     # Module helper methods
@@ -255,10 +223,7 @@ module Application
       reset_counters
       $tt = Application::current_game.tt
       strategy = Strategy.new(root, algorithm)
-      # puts "\ndepth | main nodes | quiescence nodes | total  nodes | evaluations | memory access"
       best_node, value = strategy.select_position
-      # puts "6 | #{$main_calls} | #{$quiescence_calls} | #{$main_calls+$quiescence_calls} | #{$evaluation_calls} | #{$memory_calls}"
-      # puts best_node.board.print
       return best_node
     end 
 

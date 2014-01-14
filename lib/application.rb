@@ -88,11 +88,6 @@ module Application # define application-level behavior in this module and file.
     attr_reader :ai_player, :opponent
     
     def initialize(ai_player = :b, time_limit = 120.0)
-      # board = Board.allocate
-      # board.setup
-      # pieces = Pieces::setup(board)
-      # @position = Position::ChessPosition.new(board, pieces, :w)
-      # @position.options[:castle] = { low: true, high: true }
       @position = Position::ChessPosition.allocate
       @position.setup
       @halfmove_counter = 0

@@ -168,7 +168,7 @@ module Application
 
 
     def promote_pawn!(location) # called via move! method
-      enemy = @side_location_move == :w ? :b : :w
+      enemy = @side_to_move == :w ? :b : :w
       type = active_pieces[location].class.type
       if location.r == BACK_ROW[enemy] && type == :P
         @board[location] = PAWN_PROMOTION[@side_to_move]

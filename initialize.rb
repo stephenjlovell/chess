@@ -22,33 +22,8 @@
 load './lib/application.rb'
 puts "Chess library loaded. \n\n"
 
-# Play the game!
-Application::CLI::play
-
-
-  # def test_king_checking
-  #   board = Application::Board.new
-  #   board.setup
-  #   # board.find_king(:w)
-  #   puts board.king_in_check?(:w)
-  #   board.squares[3][7] = :bQ
-  #   puts board.king_in_check?(:w)
-  # end
-  # test_king_checking
-
-  # def test_move_selection
-  #   g = Application::new_game
-  #   pos = Application::current_position  
-  #   t0 = Time.now
-  #   best_pos = Application::Search::select_position(pos)
-  #   t1 = Time.now
-
-  #   puts best_pos.previous_move.to_s
-  #   puts "value: #{best_pos.value}"
-  #   puts "move selected in #{t1 - t0} seconds."
-  #   best_pos.board.print
-  # end
-  # test_move_selection
+# # Play the game!
+# Application::CLI::play
 
 
 # test Transposition Table hash function efficiency.
@@ -61,6 +36,8 @@ Application::CLI::play
   # t1 = Time.now
   # puts "The hash value for initial position is: #{h}"
   # puts t1-t0
+
+
 
 
 

@@ -183,18 +183,12 @@ module Application
     private
     
     def find_king(color)  # alternatively, store king location in instance var and update on king move
-      begin
-        if color == :w  # King is more likely to be at its own end of the board.
-          each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :wK }
-        else
-          reverse_each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :bK }
-        end
-        raise 'King not found'
-      rescue
-        puts "king not found"
-        puts color
-        self.print
+      if color == :w  # King is more likely to be at its own end of the board.
+        each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :wK }
+      else
+        reverse_each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :bK }
       end
+      raise 'King not found'
     end
 
     def check_each_direction(from, directions, until_blocked, threat_pieces)

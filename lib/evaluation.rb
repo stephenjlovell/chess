@@ -23,7 +23,7 @@ module Application
   module Evaluation # this module will contain all helper methods related to determining 
                     # the heuristic value of a given chess position.
       
-    PST = {  # Piece Square Tables            # Piece Square Tables derived from the following sources:
+    PST = {  # Piece Square Tables              # Piece Square Tables derived from the following sources:
       P: [  0,  0,  0,   0,   0,  0,  0,  0,    # http://www.youtube.com/watch?v=zSJF6jZ61w0,
            10, 10,  0, -10, -10,  0, 10, 10,    # http://www.bluefever.net/Downloads/CH56.zip
             5,  0,  0,   5,   5,  0,  0,  5,
@@ -99,7 +99,7 @@ module Application
 
     def self.evaluate(position)
       $evaluation_calls += 1 
-      net_material(position)
+      net_material(position) + mobility(position)
     end
 
     def self.base_material(position, side)
@@ -108,21 +108,29 @@ module Application
 
     private
 
+    def self.mobility(position)
+      if position.in_check?
+        g = Application::current_game
+        return position.side_to_move == g.opponent ? 90 : -90
+      end
+      return 0
+    end
+
     def self.net_material(position) # net material value for side to move.
       g = Application::current_game
       material(position, g.ai_player) - material(position, g.opponent)
     end
 
     def self.material(position, side) # =~ 1,040 at start
-      position.pieces[side].inject(0) { |total, (key, piece)| total += adjusted_value(key, piece) }
+      position.pieces[side].inject(0) { |total, (key, piece)| total += adjusted_value(position, key, piece) }
     end
 
-    def self.adjusted_value(location, piece)
-      table = PST[piece.class.type]
+    def self.adjusted_value(position, location, piece)
+      pst = PST[piece.class.type]
       return piece.class.value + if piece.color == :w
-        table[SQUARES[location.to_sym]]
+        pst[SQUARES[location.to_sym]]
       else
-        table[MIRROR[SQUARES[location.to_sym]]]
+        pst[MIRROR[SQUARES[location.to_sym]]]
       end
     end
 

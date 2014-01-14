@@ -24,8 +24,8 @@ require 'spec_helper'
 describe "Search" do
 
   before do
-    @pos = FactoryGirl.build(:position)
-    @check_pos = FactoryGirl.build(:test_position)
+    # @pos = FactoryGirl.build(:position)
+    # @check_pos = FactoryGirl.build(:test_position)
     @search = Application::Search 
   end
 
@@ -42,21 +42,22 @@ describe "Search" do
   # end
 
   describe "strategy pattern permits use of" do
+    let(:pos) { FactoryGirl.build(:test_position) }
     describe "mtdf" do
       # it "as a standalone algorithm" do
       #   puts "--mtdf--#{@search::select_position(@check_pos, :mtdf).previous_move}"
       # end
-      # it "from within an iterative deepening framework" do
-      #   puts "--iterative_deepening_mtdf-- #{@search::select_position(@check_pos, :iterative_deepening_mtdf).previous_move}"
-      # end
+      it "from within an iterative deepening framework" do
+        puts "--iterative_deepening_mtdf-- #{@search::select_position(pos, :iterative_deepening_mtdf).previous_move}"
+      end
     end
     describe "alpha beta" do
       # it "as a standalone algorithm" do
       #   puts "--alpha_beta--#{@search::select_position(@check_pos, :alpha_beta).previous_move}"
       # end
-      it "from within an iterative deepening framework" do
-        puts "--iterative_deepening_alpha_beta--#{@search::select_position(@check_pos, :iterative_deepening_alpha_beta).previous_move}"
-      end
+      # it "from within an iterative deepening framework" do
+      #   puts "--iterative_deepening_alpha_beta--#{@search::select_position(pos, :iterative_deepening_alpha_beta).previous_move}"
+      # end
     end
   end
 

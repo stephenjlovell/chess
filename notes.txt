@@ -32,8 +32,11 @@ To Do ----
   Add Killer Heuristic to move ordering.
   Allow incremental calculation of hash values based on previous move of the Transposition Table.
 
-  Add king_in_check penalty during move evaluation
+  -when best_node is available from a TT entry, that means it's a PV node.
 
+  Explore adding search extensions to "interesting" branches:
+    -checks
+    -moves with MVV-LVA ratio greater than 2
 
 
 
