@@ -124,11 +124,12 @@ module Application
         self.class.directions[@color][:attack].each do |pair|  # normal attacks
           to = from + pair
           if board.enemy?(to, @color) && board.avoids_check?(from, to, @color)
-            moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
+            moves << Movement::PawnMove.new(position, from, to, mvv_lva_value(to, board))
           end
         end
       end
 
+      # don't bother looking for these if there is no en_passant_target.
       def get_en_passant(from, position, moves)
         board = position.board
         self.class.directions[:en_passant].each do |pair|
@@ -149,7 +150,7 @@ module Application
         to = from + dir[:advance]
         if board.empty?(to)
           if board.avoids_check?(from, to, @color)
-            moves << Movement::PawnAdvance.new(position, from, to, 0.0) 
+            moves << Movement::PawnMove.new(position, from, to, 0.0) 
           end
           if from.r == dir[:start_row]
             to = from + dir[:initial]

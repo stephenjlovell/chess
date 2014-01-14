@@ -52,9 +52,9 @@ module Application
     end
 
 
-    class PawnAdvance < Move
+    class PawnMove < Move
       def move!(pos)
-        super
+        super(pos)
         pos.promote_pawn!(@to)
       end
     end

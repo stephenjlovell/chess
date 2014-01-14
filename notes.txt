@@ -16,7 +16,6 @@ EVALUATION ----
 Current Issues ----
 
   AI does not always select obvious best moves - does not always capture expensive units except via pawns.
-  MTD(f) based search stack searching far fewer nodes than expected.
 
 Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
   Using Location object - baseline: 46.596299 seconds
@@ -32,7 +31,7 @@ To Do ----
   Add Killer Heuristic to move ordering.
   Allow incremental calculation of hash values based on previous move of the Transposition Table.
 
-  -when best_node is available from a TT entry, that means it's a PV node.
+  -when best_node is available from a TT entry, that means it's a PV node.  Explore PV nodes first(prior to standard move-gen)
 
   Explore adding search extensions to "interesting" branches:
     -checks

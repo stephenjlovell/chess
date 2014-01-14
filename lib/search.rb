@@ -49,7 +49,6 @@ module Application
       end
 
       def iterative_deepening(depth)
-        $evaluation_calls = 0
         guess = @root.parent ? @root.parent.value : @root.value
         best_node = nil
         value = -$INF
@@ -82,13 +81,14 @@ module Application
         return best_node, g
       end
 
-      def alpha_beta(depth, alpha=-$INF, beta=$INF) # change these names
+      def alpha_beta(depth=nil, alpha=-$INF, beta=$INF) # change these names
         $main_calls += 1
+        depth ||= @max_depth
 
         entry = $tt.retrieve(@root)
         if entry && entry.depth >= depth
           if entry.type == :exact_value
-            return entry.best_node, entry.value 
+            return entry.best_node, entry.value # PV node
           elsif entry.type == :lower_bound && entry.value > alpha
             alpha = entry.value 
           elsif entry.type == :upper_bound && entry.value < beta
@@ -99,9 +99,9 @@ module Application
 
         best_value = -$INF
         best_node = nil
-        edge_count = 0
+        mate_possible = true
         @root.edges.each do |move|
-          edge_count += 1
+          mate_possible = false
           child = move.create_position
           result = -alpha_beta_main(child, depth-1, -beta, -alpha)
           if result > best_value
@@ -112,7 +112,7 @@ module Application
           break if best_value >= beta
         end
 
-        return best_node, store_result(edge_count, @root, depth, best_value, alpha, beta, best_node)
+        return best_node, store_result(mate_possible, @root, depth, best_value, alpha, beta, best_node)
       end
 
       def alpha_beta_main(node, depth, alpha=-$INF, beta=$INF)
@@ -121,7 +121,7 @@ module Application
         entry = $tt.retrieve(node)
         if entry && entry.depth >= depth
           if entry.type == :exact_value
-            return entry.value 
+            return entry.value # PV node
           elsif entry.type == :lower_bound && entry.value > alpha
             alpha = entry.value 
           elsif entry.type == :upper_bound && entry.value < beta
@@ -131,15 +131,15 @@ module Application
         end
 
         if depth == 0
-          best_value = -quiescence(node, 1, -beta, -alpha)
+          best_value = -quiescence(node, 0, -beta, -alpha)
           return store_node(node, depth, best_value, alpha, beta)  # quiesence search cannot find checkmates.
         end
 
         best_value = -$INF  # this is sufficient for finding checkmate.
         best_node = nil
-        edge_count = 0
+        mate_possible = true
         node.edges.each do |move|
-          edge_count += 1
+          mate_possible = false
           child = move.create_position
           result = -alpha_beta_main(child, depth-1, -beta, -alpha)
           if result > best_value
@@ -150,7 +150,7 @@ module Application
           break if best_value >= beta
         end
 
-        store_result(edge_count, node, depth, best_value, alpha, beta, best_node)
+        store_result(mate_possible, node, depth, best_value, alpha, beta, best_node)
       end
 
       def quiescence(node, depth, alpha, beta)
@@ -173,9 +173,9 @@ module Application
         alpha = best_value if best_value > alpha
 
         best_node = nil
-        edge_count = 0
+        mate_possible = true
         node.tactical_edges.each do |move|
-          edge_count += 1
+          mate_possible = false
           child = move.create_position
           result = -quiescence(child, depth-1, -beta, -alpha)
           if result > best_value
@@ -185,12 +185,12 @@ module Application
           alpha = best_value if best_value > alpha
           break if best_value >= beta
         end
-        store_result(edge_count, node, depth, best_value, alpha, beta, best_node)
+        store_result(mate_possible, node, depth, best_value, alpha, beta, best_node)
       end
 
-      def store_result(edge_count, node, depth, best_value, alpha, beta, best_node=nil)
-        if edge_count == 0 && node.in_check?
-          store_checkmate(edge_count, node)
+      def store_result(mate_possible, node, depth, best_value, alpha, beta, best_node=nil)
+        if mate_possible && node.in_check?
+          store_checkmate(node)
         else
           store_node(node, depth, best_value, alpha, beta, best_node)
         end
@@ -207,15 +207,13 @@ module Application
         return best_value
       end
 
-      def store_checkmate(edge_count, node)
-        puts "checkmate found for side #{@node.side_to_move}"
-        value = @root.side_to_move == @node.side_to_move ? -$INF : $INF
+      def store_checkmate(node)
+        value = @root.side_to_move == node.side_to_move ? -$INF : $INF
         $tt.store(node, @max_depth+1, :exact_value, value)
         return value
       end
 
     end  # end Strategy class
-
 
     # Module helper methods
 
