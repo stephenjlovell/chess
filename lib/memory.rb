@@ -1,6 +1,19 @@
 module Application
   module Memory
 
+    class PVStack < Array
+
+      def print
+        puts "---------Principal Variation--------"
+        each do |m|
+          puts m.to_s
+          puts m.position.board.print
+        end
+      end
+    
+    end
+
+
     class Entry # this class contains the information to be stored in each bucket.
       attr_reader :depth, :type, :value, :best_node
       # @type may be :upper_bound, :lower_bound, :exact_match
