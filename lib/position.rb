@@ -25,10 +25,10 @@ module Application
     class ChessPosition    # Complete description of the game state as of a specific turn.
       include Application::Movement
       
-      attr_accessor :board, :pieces,  :side_to_move, :previous_move, :options, :hash_value
+      attr_accessor :board, :pieces,  :side_to_move, :halfmove_clock, :previous_move, :options, :hash_value
       # option flags: :en_passant_target, :castle
 
-      def initialize(board, pieces, side_to_move, previous_move = nil, options = {})
+      def initialize(board, pieces, side_to_move, halfmove_clock, previous_move = nil, options = {})
         @board = board
         @pieces = pieces   # pieces collection generated via Pieces::Setup
         @side_to_move = side_to_move
@@ -46,10 +46,6 @@ module Application
         return self
       end
 
-      def en_passant_target?(location)
-        @options[:en_passant_target] == location
-      end
-
       def active_pieces
         @pieces[@side_to_move]
       end
@@ -62,8 +58,27 @@ module Application
         @value = value
       end
 
+      def enemy
+        @enemy ||= @side_to_move == :w ? :b : :w
+      end
+
       def in_check?
-        @in_check ||= @board.king_in_check?(@side_to_move)
+        # @in_check ||= @board.king_in_check?(@side_to_move)
+        if @in_check.nil?
+          in_check = @board.king_in_check?(@side_to_move)
+          if in_check.nil?
+            self.value = -$INF  # The king is dead, long live the king.
+            @in_check = true
+          else 
+            @in_check = in_check
+          end
+        else
+          @in_check
+        end
+      end
+
+      def enemy_in_check?
+        @board.king_in_check?(enemy)
       end
 
       def avoids_check?(from, to)
@@ -78,7 +93,7 @@ module Application
             new_pieces[color][location] = piece
           end
         end
-        ChessPosition.new(@board.copy, new_pieces, @side_to_move, @previous_move, options) 
+        ChessPosition.new(@board.copy, new_pieces, @side_to_move, @halfmove_clock, @previous_move, options) 
       end
 
       def to_s
@@ -105,7 +120,7 @@ module Application
       def get_moves # returns a sorted array of all possible moves for the current player.
         moves = []
         active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
-        moves += get_castles if in_check? && @options[:castle]
+        moves += get_castles if !in_check? && @options[:castle]
         sort_moves!(moves)
       end
       alias :edges :get_moves

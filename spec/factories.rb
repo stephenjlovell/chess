@@ -74,12 +74,14 @@ FactoryGirl.define do
     board  { FactoryGirl.build(:board) }
     pieces { Application::Pieces::setup(board) }
     side_to_move :w
-    initialize_with { new(board, pieces, side_to_move) }
+    halfmove_clock 0
+    initialize_with { new(board, pieces, side_to_move, halfmove_clock) }
 
     factory :test_position do
       board { FactoryGirl.build(:test_board) }
       pieces { Application::Pieces::setup(board) }
-      initialize_with { new(board, pieces, side_to_move) }
+      halfmove_clock 20
+      initialize_with { new(board, pieces, side_to_move, halfmove_clock) }
     end
   end
 

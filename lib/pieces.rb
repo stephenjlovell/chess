@@ -113,14 +113,13 @@ module Application
 
       def get_moves(from, position) # supercedes the generic get_moves function 
         moves = []                  # provided by the Piece class.
-        get_attacks(from, position, moves)
-        get_en_passant(from, position, moves)
-        get_advances(from, position, moves)
+        get_attacks(from, position, position.board, moves)
+        get_en_passant(from, position, position.board, moves) if position.options[:en_passant_target]
+        get_advances(from, position, position.board, moves)
         return moves
       end
 
-      def get_attacks(from, position, moves)
-        board = position.board        
+      def get_attacks(from, position, board, moves)
         self.class.directions[@color][:attack].each do |pair|  # normal attacks
           to = from + pair
           if board.enemy?(to, @color) && board.avoids_check?(from, to, @color)
@@ -129,12 +128,10 @@ module Application
         end
       end
 
-      # don't bother looking for these if there is no en_passant_target.
-      def get_en_passant(from, position, moves)
-        board = position.board
+      def get_en_passant(from, position, board, moves)
         self.class.directions[:en_passant].each do |pair|
           target = from + pair
-          if position.en_passant_target?(target) && board.enemy?(target, @color)
+          if position.options[:en_passant_target] == target
             offset = self.class.directions[@color][:enp_offset]
             to = target + offset
             if board.avoids_check?(from, to, @color)
@@ -144,8 +141,7 @@ module Application
         end
       end
 
-      def get_advances(from, position, moves)
-        board = position.board
+      def get_advances(from, position, board, moves)
         dir = self.class.directions[@color]
         to = from + dir[:advance]
         if board.empty?(to)

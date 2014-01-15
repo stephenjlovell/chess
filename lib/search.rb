@@ -27,8 +27,8 @@ module Application
     class Strategy
       attr_reader :algorithm
 
-      def initialize(root, algorithm = :iterative_deepening_mtdf, max_depth = 9)
-        @root, @algorithm, @max_depth = root, algorithm, max_depth
+      def initialize(root, max_depth, algorithm = :iterative_deepening_mtdf)
+        @root, @max_depth, @algorithm  = root, (max_depth * 2), algorithm
       end
 
       def select_position
@@ -37,13 +37,13 @@ module Application
       end
 
       def iterative_deepening_mtdf
-        iterative_deepening(@max_depth) do |guess, d|
+        iterative_deepening(@max_depth/2) do |guess, d|
           mtdf(guess, d)
         end
       end
 
       def iterative_deepening_alpha_beta
-        iterative_deepening(@max_depth) do |guess, d|
+        iterative_deepening(@max_depth/2) do |guess, d|
           alpha_beta(d)
         end
       end
@@ -55,7 +55,7 @@ module Application
         puts "\ndepth | main nodes | quiescence nodes | total  nodes | evaluations | memory access"
         (1..depth).each do |d|
           Search::reset_counters
-          best_node, value = yield(guess, d)
+          best_node, value = yield(guess, d*2)
           puts "#{d} | #{$main_calls} | #{$quiescence_calls} | #{$main_calls+$quiescence_calls} | #{$evaluation_calls} | #{$memory_calls}"
           guess = value
           if Application::current_game.clock.time_up?
@@ -97,13 +97,13 @@ module Application
           return entry.best_node, entry.value if alpha >= beta
         end
 
-        best_value = -$INF
-        best_node = nil
-        mate_possible = true
+        best_value, best_node, mate_possible = -$INF, nil, true
+
         @root.edges.each do |move|
           mate_possible = false
           child = move.create_position
-          result = -alpha_beta_main(child, depth-1, -beta, -alpha)
+          extension = move.capture_value >= 1.5 ? 1 : 2 # || child.in_check?
+          result = -alpha_beta_main(child, depth-extension, -beta, -alpha)
           if result > best_value
             best_value = result 
             best_node = child
@@ -120,8 +120,8 @@ module Application
 
         entry = $tt.retrieve(node)
         if entry && entry.depth >= depth
-          if entry.type == :exact_value
-            return entry.value # PV node
+          if entry.type == :exact_value  # PV node found
+            return entry.value
           elsif entry.type == :lower_bound && entry.value > alpha
             alpha = entry.value 
           elsif entry.type == :upper_bound && entry.value < beta
@@ -130,18 +130,20 @@ module Application
           return entry.value if alpha >= beta
         end
 
-        if depth == 0
+        if depth <= 0
+          mate_possible = node.edges.count == 0
           best_value = -quiescence(node, 0, -beta, -alpha)
-          return store_node(node, depth, best_value, alpha, beta)  # quiesence search cannot find checkmates.
+          return store_result(mate_possible, node, depth, best_value, alpha, beta)  
+          # need to deal with potential checkmates here.
         end
 
-        best_value = -$INF  # this is sufficient for finding checkmate.
-        best_node = nil
-        mate_possible = true
+        best_value, best_node, mate_possible = -$INF, nil, true
+
         node.edges.each do |move|
-          mate_possible = false
+          mate_possible = false  # if legal moves are available, it's not checkmate.
           child = move.create_position
-          result = -alpha_beta_main(child, depth-1, -beta, -alpha)
+          extension = move.capture_value >= 1.5 ? 1 : 2 # || child.in_check?
+          result = -alpha_beta_main(child, depth-extension, -beta, -alpha)
           if result > best_value
             best_value = result 
             best_node = child
@@ -158,7 +160,7 @@ module Application
 
         entry = $tt.retrieve(node)
         if entry && entry.depth >= depth
-          if entry.type == :exact_value
+          if entry.type == :exact_value  # PV node found
             return entry.value 
           elsif entry.type == :lower_bound && entry.value > alpha
             alpha = entry.value 
@@ -169,15 +171,16 @@ module Application
         end
 
         best_value = node.value  # assume 'standing pat' lower bound
+
         return best_value if best_value >= beta  
         alpha = best_value if best_value > alpha
 
-        best_node = nil
-        mate_possible = true
+        best_node, mate_possible = nil, true
+
         node.tactical_edges.each do |move|
           mate_possible = false
           child = move.create_position
-          result = -quiescence(child, depth-1, -beta, -alpha)
+          result = -quiescence(child, depth-2, -beta, -alpha)
           if result > best_value
             best_value = result 
             best_node = child
@@ -220,7 +223,7 @@ module Application
     def self.select_position(root, algorithm = :iterative_deepening_mtdf, max_depth=10)
       reset_counters
       $tt = Application::current_game.tt
-      strategy = Strategy.new(root, algorithm, max_depth)
+      strategy = Strategy.new(root, max_depth, algorithm)
       best_node, value = strategy.select_position
       return best_node
     end 

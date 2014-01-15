@@ -161,10 +161,10 @@ module Application
       target_sym = self[to]
       self[from] = nil  # simulate making the specified regular move
       self[to] = piece_sym
-      not_in_check = !king_in_check?(color)
+      avoids_check = king_in_check?(color) == false  # No moves are legal if king has been killed.
       self[from] = piece_sym  # undo changes to board
       self[to] = target_sym
-      return not_in_check
+      return avoids_check
     end
 
     THREATS = { w: { P: [:bP], N: [:bN], straight: [:bR, :bQ], diagonal: [:bB, :bQ] }, 
@@ -173,6 +173,7 @@ module Application
     def king_in_check?(color)
       threats = THREATS[color]
       from = find_king(color) # get location of king for color.
+      return nil if from.nil?
       dir = Pieces::DIRECTIONS
       check_each_direction(from, dir[:P][color][:attack], false, threats[:P]) || # pawns
       check_each_direction(from, dir[:N], false, threats[:N]) || # knights
@@ -183,12 +184,12 @@ module Application
     private
     
     def find_king(color)  # alternatively, store king location in instance var and update on king move
-      if color == :w  # King is more likely to be at its own end of the board.
+      if color == :w      # King is more likely to be at its own end of the board.
         each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :wK }
       else
         reverse_each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :bK }
       end
-      raise 'King not found'
+      return nil
     end
 
     def check_each_direction(from, directions, until_blocked, threat_pieces)

@@ -1,7 +1,7 @@
 
 BOARD STATE
   Hybrid approach: Piece list for move generation with separate board square representation for lookups.  
-GAME TREE DATA STRUCTURE
+GAME TREE
   Position object used as node in search tree
   Evaluation score stored in node
   edges to other nodes generated based on move list.
@@ -36,6 +36,14 @@ To Do ----
   Explore adding search extensions to "interesting" branches:
     -checks
     -moves with MVV-LVA ratio greater than 2
+
+  If capture or pawn move, reset halfmove_clock.  If any other move, increment halfmove_clock by 1.
+
+
+
+
+
+
 
 
 

@@ -24,7 +24,7 @@ require 'spec_helper'
 describe "Search" do
 
   before do
-    @search = Application::Search 
+    @s = Application::Search 
   end
 
   # describe "when AI king is not in check" do
@@ -43,19 +43,19 @@ describe "Search" do
     let(:game) { FactoryGirl.build(:test_game) }
     let(:pos) { game.position }
     describe "mtdf" do
-      it "as a standalone algorithm" do
-        puts "--mtdf--#{@search::select_position(pos, :mtdf).previous_move}"
-      end
-      it "from within an iterative deepening framework" do
-        puts "--iterative_deepening_mtdf-- #{@search::select_position(pos, :iterative_deepening_mtdf).previous_move}"
-      end
+      # it "as a standalone algorithm" do
+      #   puts "--mtdf--#{@s::select_position(pos, :mtdf).previous_move}"
+      # end
+      # it "from within an iterative deepening framework" do
+      #   puts "--iterative_deepening_mtdf-- #{@s::select_position(pos, :iterative_deepening_mtdf).previous_move}"
+      # end
     end
     describe "alpha beta" do
-      it "as a standalone algorithm" do
-        puts "--alpha_beta--#{@search::select_position(pos, :alpha_beta).previous_move}"
-      end
+      # it "as a standalone algorithm" do
+      #   puts "--alpha_beta--#{@s::select_position(pos, :alpha_beta).previous_move}"
+      # end
       it "from within an iterative deepening framework" do
-        puts "--iterative_deepening_alpha_beta--#{@search::select_position(pos, :iterative_deepening_alpha_beta).previous_move}"
+        puts "--iterative_deepening_alpha_beta--#{@s::select_position(pos, :iterative_deepening_alpha_beta).previous_move}"
       end
     end
   end

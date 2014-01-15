@@ -99,7 +99,8 @@ module Application
 
     def self.evaluate(position)
       $evaluation_calls += 1 
-      net_material(position) + mobility(position)
+      g = Application::current_game
+      net_material(g, position) + mobility(g, position)
     end
 
     def self.base_material(position, side)
@@ -108,30 +109,30 @@ module Application
 
     private
 
-    def self.mobility(position)
+    def self.mobility(g, position)  # should really check this for both sides.
       if position.in_check?
-        g = Application::current_game
         return position.side_to_move == g.opponent ? 90 : -90
+      elsif position.enemy_in_check?
+        return position.side_to_move == g.opponent ? -90 : 90
       end
       return 0
     end
 
-    def self.net_material(position) # net material value for side to move.
-      g = Application::current_game
+    def self.net_material(g, position) # net material value for side to move.
       material(position, g.ai_player) - material(position, g.opponent)
     end
 
     def self.material(position, side) # =~ 1,040 at start
-      position.pieces[side].inject(0) { |total, (key, piece)| total += adjusted_value(position, key, piece) }
+      position.pieces[side].inject(0) { |total, (key, piece)| total += adjusted_value(piece, key) }
     end
 
-    def self.adjusted_value(position, location, piece)
+    def self.adjusted_value(piece, location)
+      return piece.class.value + pst_value(piece, location)
+    end
+
+    def self.pst_value(piece, location)
       pst = PST[piece.class.type]
-      return piece.class.value + if piece.color == :w
-        pst[SQUARES[location.to_sym]]
-      else
-        pst[MIRROR[SQUARES[location.to_sym]]]
-      end
+      piece.color == :w ? pst[SQUARES[location.to_sym]] : pst[MIRROR[SQUARES[location.to_sym]]]
     end
 
   end
