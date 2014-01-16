@@ -25,7 +25,7 @@ module Application
     class ChessPosition    # Complete description of the game state as of a specific turn.
       include Application::Movement
       
-      attr_accessor :board, :pieces,  :side_to_move, :halfmove_clock, :previous_move, :options, :hash_value
+      attr_accessor :board, :pieces,  :side_to_move, :halfmove_clock, :previous_move, :options
       # option flags: :en_passant_target, :castle
 
       def initialize(board, pieces, side_to_move, halfmove_clock, previous_move = nil, options = {})

@@ -31,12 +31,10 @@ To Do ----
   Add Killer Heuristic to move ordering.
   Allow incremental calculation of hash values based on previous move of the Transposition Table.
 
-
-  Move ordering by Principal Variation
-  -when best_node is available from a TT entry, that means it's a PV node.  Explore PV nodes first(prior to standard move-gen)
-  -set a pv_node flag in TT entries (or only entering a value for best_node if PV node)
-
-
+  Principal Variation - 
+    Add a "replacement scheme" to node storage: only overwrite when depth is greater than stored depth. 
+    when storing "exact" nodes, save the PV to a separate hash table.
+    Store some kind of hash key for the PV in the TT entry 
 
   Explore adding search extensions to "interesting" branches:
     -checks

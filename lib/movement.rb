@@ -36,6 +36,10 @@ module Application
         "#{@position.board[@from].to_s} #{@from.to_s} to #{@to.to_s}"
       end
 
+      def copy
+        self.class.new(@position.copy, @from, @to, @capture_value)
+      end
+
       def create_position        # returns a new position object representing the game state
         pos = @position.copy     # that results from the current player taking the specified move.
         move!(pos)
@@ -72,6 +76,10 @@ module Application
         @position, @side, @capture_value = position, side, 0.0
       end
 
+      def copy
+        Castle.new(@position.copy, @side, @capture_value )
+      end
+
       def move!(pos)
         pos.options = nil  # remove castle and en-passant flag
         row = BACK_ROW[pos.side_to_move]        
@@ -87,8 +95,8 @@ module Application
     end
 
     class EnPassantAttack < Move
-      def initialize(position, from, to)
-        @position, @from, @to, @capture_value = position, from, to, 1.0
+      def initialize(position, from, to, capture_value=1.0)
+        @position, @from, @to, @capture_value = position, from, to, capture_value
       end
 
       def move!(pos)
@@ -101,8 +109,8 @@ module Application
     end
 
     class EnPassantTarget < Move
-      def initialize(position, from, to)
-        @position, @from, @to, @capture_value = position, from, to, 0.0
+      def initialize(position, from, to, capture_value=0.0)
+        @position, @from, @to, @capture_value = position, from, to, capture_value
       end
       
       def move!(pos)

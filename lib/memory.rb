@@ -1,16 +1,48 @@
 module Application
   module Memory
+    require 'SecureRandom'
 
-    class PVStack < Array
+    class PVStack
+      include Enumerable
+      attr_accessor :moves
+
+      def initialize
+        @moves = []
+      end
+
+      def each
+        @moves.each { |m| yield(m) }
+      end
+
+      def +(stack)
+        @moves += stack.moves
+        return self
+      end
+
+      def clear
+        @moves = []
+      end
+
+      def [](index)
+        @moves[index]
+      end
+
+      def []=(index, move)
+        @moves[index] = move
+      end
 
       def print
-        puts "---------Principal Variation--------"
-        each do |m|
-          puts m.to_s
-          puts m.position.board.print
-        end
+        puts "------Principal Variation (#{self.count} moves)------"
+        each { |m| puts m.to_s }
       end
     
+      def print_details
+        puts "------Principal Variation (#{self.count} moves)------"
+        each do |m|
+          puts m.position.board.print
+          puts m.to_s
+        end
+      end
     end
 
 
@@ -30,29 +62,14 @@ module Application
       end
 
       def store(node, depth, type, value, best_node=nil)
-        h = hash(node)
-        @table[h] = Entry.new(depth, type, value, best_node)
+        @table[hash(node)] = Entry.new(depth, type, value, best_node)
       end
 
       def retrieve(node)
         h = hash(node)
-        if @table[h]
-          $memory_calls += 1 
-        end
+        $memory_calls += 1 if @table[h]
         @table[h]
       end
-
-      # def [](h)
-      #   @table[h]
-      # end
-
-      # def memoize(node, depth, type, value, best_node=nil) 
-      #   h = hash(node)
-      #   node.hash_value = h # store h in position object instance variable to enable 
-      #                       # incremental calculation of hashes for child nodes.
-      #   @table[h] = Entry.new(depth, type, value, best_node) unless @table[h]
-      #   return @table[h].value
-      # end
 
       def self.create_bytestring_array
         Array.new(8, Array.new(8, piece_hash ))
@@ -67,17 +84,8 @@ module Application
 
       BSTR = create_bytestring_array
 
-      # Zobrist hash algorithm
-      def hash(position)  # generates a unique hash key corresponding to position.
+      def hash(position)  # Zobrist hashing. Generates a unique hash key corresponding to position.
         key = 0
-        # parent_hash = position.parent.hash_value || nil
-        # if parent_hash
-        #   # call method to create a 
-        # else
-        #   position.board.each_square_with_location do |r, c, sym|
-        #     BSTR[r-2][c-2][sym].unpack('L*').each { |i| key ^= i } unless sym.nil? 
-        #   end  # unpack to 64-bit unsigned long ints and merge into key via bitwise XOR.
-        # end
         position.board.each_square_with_location do |r, c, sym|
           BSTR[r-2][c-2][sym].unpack('L*').each { |i| key ^= i } unless sym.nil? 
         end  # unpack to 64-bit unsigned long ints and merge into key via bitwise XOR.

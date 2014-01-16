@@ -19,8 +19,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-require 'SecureRandom'
-
 module Application
   module Search # this module defines tree traversal algorithms for move selection.
 
@@ -33,45 +31,41 @@ module Application
 
       def select_position
         raise "search algorithm #{@algorithm} is unavailable" unless respond_to?(@algorithm)
-        best_node, value = send(@algorithm)
+        best_node, value, final_stack = send(@algorithm)
       end
 
       def iterative_deepening_mtdf
-        final_stack = Memory::PVStack.new
         iterative_deepening(@max_depth/2) do |guess, d, previous_stack, current_stack|
           mtdf(guess, d, current_stack)
         end
       end
 
       def iterative_deepening_alpha_beta
-        final_stack = Memory::PVStack.new
         iterative_deepening(@max_depth/2) do |guess, d, previous_stack, current_stack|
           alpha_beta(d, -$INF, $INF, current_stack)
         end
       end
 
-      def iterative_deepening(depth, final_stack=nil)
+      def iterative_deepening(depth)
         guess = @root.parent ? @root.parent.value : @root.value
         best_node = nil
         value = -$INF
         previous_stack = nil
-        puts "\ndepth | main nodes | quiescence nodes | total  nodes | evaluations | memory access"
+        current_stack = Memory::PVStack.new
+        puts "\nd | main | quies. | total | evals | memory | non-replacements"
         (1..depth).each do |d|
           Search::reset_counters
-          current_stack = Memory::PVStack.new
-          best_node, value = yield(guess, d*2, previous_stack, current_stack)
-          puts "#{d} | #{$main_calls} | #{$quiescence_calls} | #{$main_calls+$quiescence_calls} | #{$evaluation_calls} | #{$memory_calls}"
+          best_node, value, current_stack = yield(guess, d*2, previous_stack, Memory::PVStack.new)
+          puts "#{d} | #{$main_calls} | #{$quiescence_calls} | #{$main_calls+$quiescence_calls} | #{$evaluation_calls} | #{$memory_calls} | #{$non_replacements}"
           guess = value
           previous_stack = current_stack
-          final_stack = current_stack
           if Application::current_game.clock.time_up?
             puts "evaluation time ran out after depth #{d}"
             break
           end
-          # at each depth d, need to make sure the values discovered so far are used to order moves used in depth d+1.
-          # this will increase the number of alpha-beta cutoffs.
         end
-        return best_node, value
+        # current_stack.print
+        return best_node, value, current_stack
       end
 
       def mtdf(g = nil, depth = nil, parent_stack=nil) # this algorithm will incrementally set the alpha-beta search window and call alpha_beta.
@@ -86,11 +80,10 @@ module Application
           if g < beta then upper_bound = g else lower_bound = g end
         end
         parent_stack = current_stack
-        return best_node, g
+        return best_node, g, current_stack
       end
 
       def alpha_beta(depth=nil, alpha=-$INF, beta=$INF, parent_stack = nil) # change these names
-        $main_calls += 1
         depth ||= @max_depth
         parent_stack ||= Memory::PVStack.new
         current_stack = Memory::PVStack.new
@@ -98,18 +91,19 @@ module Application
         entry = $tt.retrieve(@root)
         if entry && entry.depth >= depth
           if entry.type == :exact_value
-            return entry.best_node, entry.value
+            return entry.best_node, entry.value, current_stack  # retrieve PV from entry.pv
           elsif entry.type == :lower_bound && entry.value > alpha
             alpha = entry.value 
           elsif entry.type == :upper_bound && entry.value < beta
             beta = entry.value
           end
-          return entry.best_node, entry.value if alpha >= beta
+          return entry.best_node, entry.value, current_stack if alpha >= beta # retrieve PV from entry.pv
         end
 
         best_value, best_node, mate_possible = -$INF, nil, true
 
         @root.edges.each do |move|
+          $main_calls += 1
           mate_possible = false
           child = move.create_position
           extension = move.capture_value >= 1.5 ? 1 : 2 # || child.in_check?
@@ -120,20 +114,16 @@ module Application
           end
           if best_value > alpha  # child node now a PV node.
             alpha = best_value
-
-            # this will not work if alpha is reset more than once.
-            parent_stack[0] = child
+            parent_stack[0] = move
             parent_stack += current_stack  # merge PVStack for child node into PVStack for parent node.
-
           end
           break if best_value >= beta
         end
-
-        return best_node, store_result(mate_possible, @root, depth, best_value, alpha, beta, best_node)
+        result = store_result(mate_possible, @root, depth, best_value, alpha, beta, best_node)
+        return best_node, result, parent_stack
       end
 
       def alpha_beta_main(node, depth, alpha=-$INF, beta=$INF, parent_stack=nil)
-        $main_calls += 1
         current_stack = Memory::PVStack.new
 
         entry = $tt.retrieve(node)
@@ -145,19 +135,21 @@ module Application
           elsif entry.type == :upper_bound && entry.value < beta
             beta = entry.value
           end
-          return entry.value if alpha >= beta
+          if alpha >= beta
+            return entry.value 
+          end
         end
 
         if depth <= 0
           mate_possible = node.edges.count == 0
           best_value = -quiescence(node, -1, -beta, -alpha)
           return store_result(mate_possible, node, 0, best_value, alpha, beta)  
-          # need to deal with potential checkmates here.
         end
 
         best_value, best_node, mate_possible = -$INF, nil, true
 
         node.edges.each do |move|
+          $main_calls += 1
           mate_possible = false  # if legal moves are available, it's not checkmate.
           child = move.create_position
           extension = move.capture_value >= 1.5 ? 1 : 2 # || child.in_check?
@@ -168,7 +160,7 @@ module Application
           end
           if best_value > alpha # child node now a PV node.
             alpha = best_value
-            parent_stack[0] = child
+            parent_stack[0] = move
             parent_stack += current_stack  # merge PVStack for child node into PVStack for parent node.
           end
           break if best_value >= beta
@@ -178,7 +170,6 @@ module Application
       end
 
       def quiescence(node, depth, alpha, beta)  # quiesence nodes are not part of the principal variation.
-        $quiescence_calls += 1
 
         entry = $tt.retrieve(node)
         if entry && entry.depth >= depth
@@ -193,13 +184,13 @@ module Application
         end
 
         best_value = node.value  # assume 'standing pat' lower bound
-
         return best_value if best_value >= beta  
         alpha = best_value if best_value > alpha
 
         best_node, mate_possible = nil, true
 
         node.tactical_edges.each do |move|
+          $quiescence_calls += 1
           mate_possible = false
           child = move.create_position
           result = -quiescence(child, depth-2, -beta, -alpha)
@@ -213,7 +204,7 @@ module Application
         store_result(mate_possible, node, depth, best_value, alpha, beta, best_node)
       end
 
-      # may want to move these into the TT table class.
+      # move these into the TT table class.
       def store_result(mate_possible, node, depth, best_value, alpha, beta, best_node=nil)
         if mate_possible && node.in_check?
           store_checkmate(node)
@@ -243,16 +234,17 @@ module Application
 
     # Module helper methods
 
-    def self.select_position(root, algorithm = :iterative_deepening_mtdf, max_depth=10)
+    def self.select_position(root, algorithm = :iterative_deepening_mtdf, max_depth=6)
       reset_counters
       $tt = Application::current_game.tt
       strategy = Strategy.new(root, max_depth, algorithm)
-      best_node, value = strategy.select_position
+      best_node, value, final_stack = strategy.select_position
+      final_stack.print
       return best_node
     end 
 
     def self.reset_counters
-      $main_calls, $quiescence_calls, $evaluation_calls, $memory_calls = 0, 0, 0, 0
+      $main_calls, $quiescence_calls, $evaluation_calls, $memory_calls, $non_replacements = 0, 0, 0, 0, 0
     end
 
   end
