@@ -234,12 +234,12 @@ module Application
 
     # Module helper methods
 
-    def self.select_position(root, algorithm = :iterative_deepening_mtdf, max_depth=6)
+    def self.select_position(root, algorithm = :iterative_deepening_mtdf, max_depth=4)
       reset_counters
       $tt = Application::current_game.tt
       strategy = Strategy.new(root, max_depth, algorithm)
       best_node, value, final_stack = strategy.select_position
-      final_stack.print
+      # final_stack.print
       return best_node
     end 
 

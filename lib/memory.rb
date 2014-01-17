@@ -68,7 +68,10 @@ module Application
       def retrieve(node)
         h = hash(node)
         $memory_calls += 1 if @table[h]
+
+        # replacement schemes here explode the search for some reason.
         @table[h]
+      
       end
 
       def self.create_bytestring_array
