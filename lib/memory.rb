@@ -6,8 +6,9 @@ module Application
       include Enumerable
       attr_accessor :moves
 
-      def initialize
-        @moves = []
+      def initialize(moves=[])
+        @moves = moves
+        @counter = 0
       end
 
       def each
@@ -21,6 +22,12 @@ module Application
 
       def clear
         @moves = []
+      end
+
+      def next_move
+        move = @moves[@counter]
+        @counter += 1
+        return move
       end
 
       def [](index)
@@ -63,6 +70,7 @@ module Application
 
       def store(node, depth, type, value, best_node=nil)
         @table[hash(node)] = Entry.new(depth, type, value, best_node)
+        return value
       end
 
       def retrieve(node)

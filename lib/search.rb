@@ -35,14 +35,14 @@ module Application
       end
 
       def iterative_deepening_mtdf
-        iterative_deepening(@max_depth/2) do |guess, d|
-          mtdf(guess, d)
+        iterative_deepening(@max_depth/2) do |guess, d, previous_pv, current_pv|
+          mtdf(guess, d, previous_pv, current_pv)
         end
       end
 
       def iterative_deepening_alpha_beta
-        iterative_deepening(@max_depth/2) do |guess, d|
-          alpha_beta(d)
+        iterative_deepening(@max_depth/2) do |guess, d, previous_pv, current_pv|
+          alpha_beta(d, -$INF, $INF, previous_pv, current_pv)
         end
       end
 
@@ -51,35 +51,41 @@ module Application
         best_node = nil
         value = -$INF
         puts "\nd | main | quies. | total | evals | memory | non-replacements"
+        previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
         (1..depth).each do |d|
           Search::reset_counters
-          best_node, value, current_stack = yield(guess, d*2)
+          current_pv = Memory::PVStack.new
+          best_node, value = yield(guess, d*2, previous_pv, current_pv)
           puts "#{d} | #{$main_calls} | #{$quiescence_calls} | #{$main_calls+$quiescence_calls} | #{$evaluation_calls} | #{$memory_calls} | #{$non_replacements}"
           guess = value
+          # current_pv.print
+          previous_pv = current_pv
           if Application::current_game.clock.time_up?
-            puts "evaluation time ran out after depth #{d}"
-            break
+            puts "evaluation time ran out after depth #{d}"; break
           end
         end
-        # current_stack.print
+        # current_pv.print
         return best_node, value
       end
 
-      def mtdf(g = nil, depth = nil) # this algorithm will incrementally set the alpha-beta search window and call alpha_beta.
+      def mtdf(g=nil, depth=nil, previous_pv=nil, parent_pv=nil) # incrementally sets the alpha-beta search window and call alpha_beta.
         g ||= @root.value
         depth ||= @max_depth
         upper_bound = $INF
         lower_bound = -$INF
         while lower_bound < upper_bound do
           beta = (g == lower_bound ? g+1 : g)
-          best_node, g = alpha_beta(depth, beta-1, beta)
+          current_pv = Memory::PVStack.new
+          best_node, g = alpha_beta(depth, beta-1, beta, previous_pv, current_pv)
           if g < beta then upper_bound = g else lower_bound = g end
         end
-        return best_node, g
+        # parent_pv = current_pv
+        return best_node, g, current_pv
       end
 
-      def alpha_beta(depth=nil, alpha=-$INF, beta=$INF) # change these names
+      def alpha_beta(depth=nil, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil)
         depth ||= @max_depth
+        parent_pv ||= Memory::PVStack.new
 
         entry = $tt.retrieve(@root)
         if entry && entry.depth >= depth
@@ -94,19 +100,26 @@ module Application
         end
 
         best_value, best_node, mate_possible = -$INF, nil, true
+        current_pv = Memory::PVStack.new
 
         @root.edges.each do |move|
+        # pv_move = previous_pv.next_move
+        # moves = pv_move ? [pv_move] + @root.edges : @root.edges
+        # moves.each do |move|
           $main_calls += 1
           mate_possible = false
           child = move.create_position
-          extension = move.capture_value || child.in_check? >= 1.5 ? 1 : 2
-          result = -alpha_beta_main(child, depth-extension, -beta, -alpha)
+          extension = move.capture_value >= 1.5 || child.in_check? ? 1 : 2
+          result = -alpha_beta_main(child, depth-extension, -beta, -alpha, previous_pv, current_pv)
           if result > best_value
             best_value = result 
             best_node = child
           end
           if best_value > alpha  # child node now a PV node.
             alpha = best_value
+            parent_pv.clear
+            parent_pv[0] = move
+            parent_pv += current_pv  # merge PVStack for child node into PVStack for parent node.
           end
           break if best_value >= beta
         end
@@ -114,7 +127,7 @@ module Application
         return best_node, result
       end
 
-      def alpha_beta_main(node, depth, alpha=-$INF, beta=$INF)
+      def alpha_beta_main(node, depth, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil)
 
         entry = $tt.retrieve(node)
         if entry && entry.depth >= depth
@@ -137,19 +150,26 @@ module Application
         end
 
         best_value, best_node, mate_possible = -$INF, nil, true
+        current_pv = Memory::PVStack.new
 
         node.edges.each do |move|
+        # pv_move = previous_pv.next_move
+        # moves = pv_move ? [pv_move] + node.edges : node.edges
+        # moves.each do |move|
           $main_calls += 1
           mate_possible = false  # if legal moves are available, it's not checkmate.
           child = move.create_position
           extension = move.capture_value >= 1.5 || child.in_check? ? 1 : 2
-          result = -alpha_beta_main(child, depth-extension, -beta, -alpha)
+          result = -alpha_beta_main(child, depth-extension, -beta, -alpha, previous_pv, current_pv)
           if result > best_value
             best_value = result 
             best_node = child
           end
           if best_value > alpha # child node now a PV node.
             alpha = best_value
+            parent_pv.clear
+            parent_pv[0] = move
+            parent_pv += current_pv  # merge PVStack for child node into PVStack for parent node.
           end
           break if best_value >= beta
         end
@@ -202,27 +222,26 @@ module Application
       end
   
       def store_node(node, depth, best_value, alpha, beta, best_node=nil)
-        if best_value <= alpha
-          $tt.store(node, depth, :lower_bound, best_value, best_node)
+        flag = if best_value <= alpha
+          :lower_bound
         elsif best_value >= beta
-          $tt.store(node, depth, :upper_bound, best_value, best_node)
+          :upper_bound
         else
-          $tt.store(node, depth, :exact_value, best_value, best_node)
+          :exact_value
         end
-        return best_value
+        $tt.store(node, depth, flag, best_value, best_node)
       end
 
       def store_checkmate(node)
         value = @root.side_to_move == node.side_to_move ? -$INF : $INF
         $tt.store(node, @max_depth+1, :exact_value, value)
-        return value
       end
 
     end  # end Strategy class
 
     # Module helper methods
 
-    def self.select_position(root, algorithm = :iterative_deepening_mtdf, max_depth=10)
+    def self.select_position(root, algorithm = :iterative_deepening_mtdf, max_depth=7)
       reset_counters
       $tt = Application::current_game.tt
       strategy = Strategy.new(root, max_depth, algorithm)

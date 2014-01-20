@@ -32,13 +32,12 @@ To Do ----
   Allow incremental calculation of hash values based on previous move of the Transposition Table.
 
   Principal Variation - 
-    Add a "replacement scheme" to node storage: only overwrite when depth is greater than stored depth. 
-    when storing "exact" nodes, save the PV to a separate hash table.
-    Store some kind of hash key for the PV in the TT entry 
+
 
   Explore adding search extensions to "interesting" branches:
     -checks
     -moves with MVV-LVA ratio greater than 2
+    -pawn promotions
 
   If capture or pawn move, reset halfmove_clock.  If any other move, increment halfmove_clock by 1.
 

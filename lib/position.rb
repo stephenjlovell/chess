@@ -46,6 +46,10 @@ module Application
         return self
       end
 
+      def hash
+        
+      end
+
       def active_pieces
         @pieces[@side_to_move]
       end
