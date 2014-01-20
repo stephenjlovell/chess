@@ -29,22 +29,23 @@ module Application
       attr_reader :position, :from, :to, :capture_value
 
       def initialize(position, from, to, capture_value)
-        @position, @from, @to, @capture_value = position, from, to, capture_value
+        @position, @from, @to, @capture_value, @hash = position, from, to, capture_value, nil
       end
 
       def to_s
         "#{@position.board[@from].to_s} #{@from.to_s} to #{@to.to_s}"
       end
 
-      def copy
-        self.class.new(@position.copy, @from, @to, @capture_value)
-      end
+      # def copy
+      #   self.class.new(@position.copy, @from, @to, @capture_value)
+      # end
 
       def create_position        # returns a new position object representing the game state
         pos = @position.copy     # that results from the current player taking the specified move.
         move!(pos)
         pos.previous_move = self
         pos.side_to_move = @position.side_to_move == :w ? :b : :w
+        pos.hash = @position.hash ^ self.hash 
         return pos
       end
 
@@ -53,6 +54,32 @@ module Application
         pos.relocate_piece!(@from, @to)
         pos.options.delete(:en_passant_target) if pos.options
       end
+
+      def hash
+        unless @hash
+          key = 0
+          bstr = Memory::BSTR
+          board = @position.board
+          sym_from = board[from]
+          # if a piece is being captured, XOR out the bytestring value for its location:
+          bstr[to.r-2][to.c-2][board[to]].unpack('L*').each { |i| key ^= i } unless board.empty?(to)
+          @hash = hash_piece(from, to, sym_from) ^ key
+        end
+        return @hash
+      end
+
+      private
+      def hash_piece(from, to, sym)
+        key = 0
+        bstr = Memory::BSTR
+        board = @position.board
+        # XOR out the bytestring value for the piece being moved:        
+        bstr[from.r-2][from.c-2][sym].unpack('L*').each { |i| key ^= i }
+        # XOR in the bytestring value for the moved piece at its new location:
+        bstr[to.r-2][to.c-2][sym].unpack('L*').each { |i| key ^= i }
+        return key
+      end
+
     end
 
 
@@ -76,10 +103,6 @@ module Application
         @position, @side, @capture_value = position, side, 0.0
       end
 
-      def copy
-        Castle.new(@position.copy, @side, @capture_value )
-      end
-
       def move!(pos)
         pos.options = nil  # remove castle and en-passant flag
         row = BACK_ROW[pos.side_to_move]        
@@ -90,6 +113,22 @@ module Application
 
         pos.relocate_piece!(king_from, king_to)
         pos.relocate_piece!(rook_from, rook_to)
+      end
+
+      def hash
+        key = 0
+        board = @position.board
+        king_from = Location::get_location(row, FROM_COL[@side][:king])
+        king_to = Location::get_location(row, TO_COL[@side][:king])
+        rook_from = Location::get_location(row, FROM_COL[@side][:rook])
+        rook_to = Location::get_location(row, TO_COL[@side][:rook])
+        key ^ hash_piece(king_from, king_to, board[king_from]) ^ 
+              hash_piece(rook_from, rook_to, board[rook_from])
+        return key
+      end
+
+      def to_s
+
       end
 
     end
@@ -106,6 +145,21 @@ module Application
         pos.pieces[pos.side_to_move].delete(target)
         pos.options.delete(:en_passant_target)
       end
+
+      def hash
+        unless @hash
+          key = 0
+          bstr = Memory::BSTR
+          board = @position.board
+          sym_from = board[from]
+          target = Location::get_location(@from.r, @to.c)
+          # if a piece is being captured, XOR out the bytestring value for its location:
+          bstr[target.r-2][target.c-2][board[target]].unpack('L*').each { |i| key ^= i }
+          @hash = hash_piece(from, to, sym_from) ^ key
+        end
+        return @hash
+      end
+
     end
 
     class EnPassantTarget < Move
@@ -123,10 +177,6 @@ module Application
 
 
     # Mixin methods (included in Position object):
-
-    def sort_moves!(moves)
-      moves.sort! { |x,y| y.capture_value <=> x.capture_value }  # also sort non-captures by Killer Heuristic?
-    end
 
     def get_castles
       castles = []

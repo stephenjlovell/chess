@@ -22,8 +22,8 @@
 load './lib/application.rb'
 puts "Chess library loaded. \n\n"
 
-# Play the game!
-Application::CLI::play
+# # Play the game!
+# Application::CLI::play
 
 
 # test Transposition Table hash function efficiency.

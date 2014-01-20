@@ -2,6 +2,25 @@ module Application
   module Memory
     require 'SecureRandom'
 
+    def self.create_bytestring_array
+      arr = []
+      (0..8).each do |i|
+        row = []
+        (0..8).each { |j| row[j] = piece_hash }
+        arr[i] = row
+      end
+      return arr
+    end
+    
+    def self.piece_hash # creates a 12 element hash associating each piece to a 
+      hsh = {}          # set of 16 random bytes packed in a string.
+      [ :wP, :wN, :wB, :wR, :wQ, :wK, 
+        :bP, :bN, :bB, :bR, :bQ, :bK ].each { |sym| hsh[sym] = SecureRandom::random_bytes }
+      return hsh
+    end
+
+    BSTR = create_bytestring_array
+
     class PVStack
       include Enumerable
       attr_accessor :moves
@@ -28,6 +47,10 @@ module Application
         move = @moves[@counter]
         @counter += 1
         return move
+      end
+
+      def reset_counter
+        @counter = 0
       end
 
       def [](index)
@@ -68,40 +91,44 @@ module Application
         @table = {}
       end
 
-      def store(node, depth, type, value, best_node=nil)
-        @table[hash(node)] = Entry.new(depth, type, value, best_node)
-        return value
+      def store_result(root, max_depth, mate_possible, node, depth, best_value, alpha, beta, best_node=nil)
+        if mate_possible && node.in_check?
+          store_checkmate(root, max_depth, node)
+        else
+          store_node(node, depth, best_value, alpha, beta, best_node)
+        end
+      end
+  
+      def store_node(node, depth, best_value, alpha, beta, best_node=nil)
+        flag = if best_value <= alpha
+          :lower_bound
+        elsif best_value >= beta
+          :upper_bound
+        else
+          :exact_value
+        end
+        store_entry(node, depth, flag, best_value, best_node)
+      end
+
+      def store_checkmate(root, max_depth, node)
+        value = root.side_to_move == node.side_to_move ? -$INF : $INF
+        store_entry(node, max_depth+1, :exact_value, value)
+      end
+
+      def store_entry(node, depth, type, value, best_node=nil)
+        h = node.hash
+        if @table[h].nil? || depth >= @table[h].depth   # simple depth-based replacement scheme.
+          @table[h] = Entry.new(depth, type, value, best_node)
+        end
+        return @table[h].value
       end
 
       def retrieve(node)
-        h = hash(node)
+        h = node.hash
         $memory_calls += 1 if @table[h]
-
-        # replacement schemes here explode the search for some reason.
         @table[h]
-      
       end
 
-      def self.create_bytestring_array
-        Array.new(8, Array.new(8, piece_hash ))
-      end
-      
-      def self.piece_hash # creates a 12 element hash associating each piece to a 
-        hsh = {}          # set of 16 random bytes packed in a string.
-        [ :wP, :wN, :wB, :wR, :wQ, :wK, 
-          :bP, :bN, :bB, :bR, :bQ, :bK ].each { |sym| hsh[sym] = SecureRandom::random_bytes }
-        return hsh
-      end
-
-      BSTR = create_bytestring_array
-
-      def hash(position)  # Zobrist hashing. Generates a unique hash key corresponding to position.
-        key = 0
-        position.board.each_square_with_location do |r, c, sym|
-          BSTR[r-2][c-2][sym].unpack('L*').each { |i| key ^= i } unless sym.nil? 
-        end  # unpack to 64-bit unsigned long ints and merge into key via bitwise XOR.
-        return key
-      end
     end # end TranspostionTable class
 
   end

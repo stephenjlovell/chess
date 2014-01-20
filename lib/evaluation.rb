@@ -99,8 +99,7 @@ module Application
 
     def self.evaluate(position)
       $evaluation_calls += 1 
-      g = Application::current_game
-      net_material(g, position) + mobility(g, position)
+      net_material(position) + mobility(position)
     end
 
     def self.base_material(position, side)
@@ -109,17 +108,17 @@ module Application
 
     private
 
-    def self.mobility(g, position)  # should really check this for both sides.
+    def self.mobility(position)  # should really check this for both sides.
       if position.in_check?
-        return position.side_to_move == g.opponent ? 90 : -90
+        return 90
       elsif position.enemy_in_check?
-        return position.side_to_move == g.opponent ? -90 : 90
+        return -90
       end
-      return 0
+      0
     end
 
-    def self.net_material(g, position) # net material value for side to move.
-      material(position, g.ai_player) - material(position, g.opponent)
+    def self.net_material(position) # net material value for side to move.
+      material(position, position.side_to_move) - material(position, position.enemy)
     end
 
     def self.material(position, side) # =~ 1,040 at start

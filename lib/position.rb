@@ -25,15 +25,12 @@ module Application
     class ChessPosition    # Complete description of the game state as of a specific turn.
       include Application::Movement
       
-      attr_accessor :board, :pieces,  :side_to_move, :halfmove_clock, :previous_move, :options
+      attr_accessor :board, :pieces,  :side_to_move, :halfmove_clock, :previous_move, :options, :hash
       # option flags: :en_passant_target, :castle
 
       def initialize(board, pieces, side_to_move, halfmove_clock, previous_move = nil, options = {})
-        @board = board
-        @pieces = pieces   # pieces collection generated via Pieces::Setup
-        @side_to_move = side_to_move
-        @previous_move = previous_move
-        @options = options
+        @board, @pieces, @side_to_move, @previous_move = board, pieces, side_to_move, previous_move
+        @options, @hash = options, nil
       end
 
       def setup
@@ -43,11 +40,8 @@ module Application
         @side_to_move = :w  # white always goes first.
         @options = {}
         @options[:castle] = { low: true, high: true }
+        @hash = get_initial_hash
         return self
-      end
-
-      def hash
-        
       end
 
       def active_pieces
@@ -67,7 +61,6 @@ module Application
       end
 
       def in_check?
-        # @in_check ||= @board.king_in_check?(@side_to_move)
         if @in_check.nil?
           in_check = @board.king_in_check?(@side_to_move)
           if in_check.nil?
@@ -91,7 +84,7 @@ module Application
 
       def copy # perform a deep copy of self.
         new_pieces = { w: {}, b: {} }
-        options = Marshal.load(Marshal.dump(@options))  # en passant targets should not be automatically preserved.
+        options = Marshal.load(Marshal.dump(@options))  # expensive operation. replace options hash with object properties.
         @pieces.each do |color, hsh|
           hsh.each do |location, piece|
             new_pieces[color][location] = piece
@@ -113,7 +106,7 @@ module Application
         @previous_move.position
       end
 
-      def tactical_edges
+      def tactical_edges(pv_move=nil)
         in_check? ? get_moves : get_moves.select{ |m| m.capture_value > 0.0 }
       end
 
@@ -121,13 +114,47 @@ module Application
         get_moves.collect { |m| m.create_position }
       end
 
-      def get_moves # returns a sorted array of all possible moves for the current player.
-        moves = []
-        active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
-        moves += get_castles if !in_check? && @options[:castle]
-        sort_moves!(moves)
+      def get_moves(pv_move=nil) # returns a sorted array of all possible moves for the current player.
+        unless @moves
+          @moves = []
+          active_pieces.each { |key, piece| @moves += piece.get_moves(key, self) }
+          @moves += get_castles if !in_check? && @options[:castle]
+          sort_moves!(@moves, pv_move)
+        end
+        return @moves      
       end
       alias :edges :get_moves
+
+      def sort_moves!(moves, pv_move)
+        moves.sort! { |x,y| y.capture_value <=> x.capture_value }  # also sort non-captures by Killer Heuristic?
+        # if pv_move
+        #   pv_hash = pv_move.hash
+        #   puts "previous move: #{@previous_move}"
+        #   puts "pv_hash: #{pv_move.to_s}"
+        #   moves.each { |m| puts "#{m.to_s}" }
+
+        #   moves.sort! do |x,y|
+        #     if x.hash == pv_hash
+        #       1
+        #     elsif y.hash == pv_hash
+        #       -1
+        #     else
+        #       0
+        #     end
+        #   end
+        # end
+        # The block must implement a comparison between x and y, and return -1, 
+        # when x follows y, 0 when x and y are equivalent, or +1 if y follows x.
+      end
+
+      def get_initial_hash
+        key = 0
+        bstr = Memory::BSTR
+        @board.each_square_with_location do |r, c, sym|
+          bstr[r-2][c-2][sym].unpack('L*').each { |i| key ^= i } unless sym.nil? 
+        end  # unpack to 64-bit unsigned long ints and merge into key via bitwise XOR.
+        return key
+      end
 
     end
 
