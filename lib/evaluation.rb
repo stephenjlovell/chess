@@ -110,9 +110,9 @@ module Application
 
     def self.mobility(position)  # should really check this for both sides.
       if position.in_check?
-        return 90
-      elsif position.enemy_in_check?
         return -90
+      elsif position.enemy_in_check?
+        return 90
       end
       0
     end
