@@ -84,7 +84,7 @@ module Application
         return best_node, g, current_pv
       end
 
-      def alpha_beta(depth=nil, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil)
+      def alpha_beta(depth=@max_depth/4, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil)
         depth ||= @max_depth
         parent_pv ||= Memory::PVStack.new
 
@@ -103,7 +103,7 @@ module Application
         best_value, best_node, mate_possible = -$INF, nil, true
         current_pv = Memory::PVStack.new
 
-        pv_move = previous_pv.next_move
+        pv_move = previous_pv.next_move if previous_pv
         if pv_move
           $main_calls += 1
           mate_possible = false
@@ -252,7 +252,7 @@ module Application
 
     # Module helper methods
 
-    def self.select_position(root, algorithm = :iterative_deepening_mtdf, max_depth=6)
+    def self.select_position(root, algorithm = :iterative_deepening_mtdf, max_depth=5)
       reset_counters
       $tt = Application::current_game.tt
       strategy = Strategy.new(root, max_depth, algorithm)

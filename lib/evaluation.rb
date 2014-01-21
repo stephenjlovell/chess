@@ -110,11 +110,12 @@ module Application
 
     def self.mobility(position)  # should really check this for both sides.
       if position.in_check?
-        return -90
+        -90
       elsif position.enemy_in_check?
-        return 90
+        90
+      else
+        0
       end
-      0
     end
 
     def self.net_material(position) # net material value for side to move.
