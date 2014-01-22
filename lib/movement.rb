@@ -22,18 +22,8 @@
 module Application
   module Movement
 
-#  Move strategies required:
-#
-#    Castling - will require some additional information to be stored in Move object.
-#      - when creating a castle move, could attach the additional info within singleton methods? 
-#
-#    
-#
-#    Pawn EnPassant Capture (EnPassant Attack) get target square from position.en_passant_target
-
-    module MakesCapture
-      # any behavior shared between capture strategies (RegularCapture and EnPassantCapture)
-      # is defined in Mixin methods here.
+    module MakesCapture # Any behavior shared between capture strategies 
+      # i.e. (RegularCapture and EnPassantCapture) is defined in Mixin methods here.
 
       def initialize(captured_piece)
         @captured_piece = captured_piece
@@ -42,7 +32,6 @@ module Application
       def mvv_lva_value(moved_piece)
         @captured_piece.class.value / @moved_piece.class.value
       end
-
     end
 
 
@@ -122,7 +111,7 @@ module Application
 
 
     class MoveList
-      # notional place to store, organize, and sort moves
+      # notional place to store, organize, and sort moves.
 
       attr_accessor :captures, :regular_moves, :castles, :checks
 

@@ -41,22 +41,19 @@ module Application
                         en_passant: [[0,1],[0,-1]]} }
 
     class Piece  # Provides a common template used by each concrete chess piece class.
-      attr_reader :color 
+      attr_reader :color, :symbol
 
       def initialize(color)
         @color = color
+        @symbol = (@color.to_s + self.class.type.to_s).to_sym
       end
 
       def copy # return a deep copy of self
         self.class.new(@color)
       end
 
-      def symbol  #rename to_sym
-        to_s.to_sym
-      end
-
       def to_s
-        @color.to_s + self.class.type.to_s
+        @symbol.to_s
       end
 
       def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
