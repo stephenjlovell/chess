@@ -109,7 +109,7 @@ module Application
       end
     end
 
-    def copy # return a deep copy of self.  Locations are passed by reference but are immutable.
+    def copy # return a deep copy of self.
       board = Board.new
       self.each_square_with_location { |r,c,s| board.squares[r][c] = s }
       return board

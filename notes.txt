@@ -11,11 +11,12 @@ SEARCHING / TRAVERSAL ----
         =>  Alpha-Beta Pruning with memoization
             =>  Transposition hash table for memoization
 EVALUATION ----
-  Weighted pattern matching
+  Material balance
+  Mobility balance
+  Piece Square Tables
+
 
 Current Issues ----
-
-  AI does not always select obvious best moves - does not always capture expensive units except via pawns.
 
 Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
   Using Location object - baseline: 46.596299 seconds
