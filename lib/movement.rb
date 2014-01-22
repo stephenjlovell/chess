@@ -24,65 +24,131 @@ module Application
 
     module MakesCapture # Any behavior shared between capture strategies 
       # i.e. (RegularCapture and EnPassantCapture) is defined in Mixin methods here.
-
       def initialize(captured_piece)
         @captured_piece = captured_piece
+      end
+      
+      def make!(position, piece, from, to)
+        relocate_piece!(position, piece, from, to)
+        position.enemy_pieces.delete(to)
+      end
+
+      def unmake!(position, piece, from, to)
+        relocate_piece!(position, piece, to, from)
+        position.enemy_pieces[to] = @captured_piece
       end
 
       def mvv_lva_value(moved_piece)
         @captured_piece.class.value / @moved_piece.class.value
       end
+
+      def hash
+
+      end
     end
 
 
-    class MoveStrategy  # Generic template for move strategies.  
-      # Any shared strategy behavior can also be defined here.
+    class MoveStrategy  # Generic template for move strategies. Shared strategy behavior is defined here.
       def initialize
       end
 
-      def make!(position)
+      def make!(position, piece, from, to)
       end
 
-      def unmake!(position)
+      def unmake!(position, piece, from, to)
+      end
+
+      def relocate_piece!(position, piece, from, to)
+        position.active_pieces.delete(from) # relocate piece within piece list
+        position.active_pieces[to] = piece
+        position.board[from] = nil  # relocate piece on board.
+        position.board[to] = piece.symbol
       end
     end
 
     class RegularMove < MoveStrategy
+      def make!(position, piece, from, to)
+        relocate_piece!(position, piece, from, to)
+      end
 
+      def unmake!(position, piece, from, to)
+        relocate_piece!(position, piece, to, from)
+      end
     end
 
     class RegularCapture < MoveStrategy #  Stores captured piece for unmake purposes.
       include MakesCapture
-
     end
 
     class EnPassantCapture < MoveStrategy
       include MakesCapture
 
-      def make!(position) 
-        # Get target square from position.en_passant_target
+      def initialize(captured_piece, en_passant_target)
+        @captured_piece, @en_passant_target = captured_piece, en_passant_target
       end
 
-      def unmake!(position)
+      def make!(position, piece, from, to) # Get target square from position.en_passant_target
+        relocate_piece!(position, piece, from, to)
+        position.board[@en_passant_target] = nil
+        position.enemy_pieces.delete(@en_passant_target)
+      end
+
+      def unmake!(position, piece, from, to)
+        relocate_piece!(position, piece, to, from)
+        position.board[@en_passant_target] = @captured_piece.symbol
+        position.enemy_pieces[@en_passant_target] = @captured_piece
+      end
+
+      def hash
+
       end
 
     end
 
-    class EnPassantAdvance < MoveStrategy
-      # Pawn double advance (EnPassant Target) 
-      # Set or remove the en_passant_target from position object
+    class EnPassantAdvance < MoveStrategy # Sets or removes the en_passant_target from position object.
+      def make!(position, piece, from, to)
+        relocate_piece!(position, piece, from, to)
+        position.en_passant_target = to
+      end
+
+      def unmake!(position, piece, from, to)
+        relocate_piece!(position, piece, to, from)
+        position.en_passant_target = nil
+      end
     end
 
-    class PawnPromotion < MoveStrategy
-      #  stores the existing pawn in move object (for unmaking) and places a new Queen.
+    class PawnPromotion < MoveStrategy # Stores the existing pawn in move object and places a new Queen.
+      def make!(position, piece, from, to)
+        relocate_piece!(position, Pieces::Queen.new(@position.side_to_move) , from, to)
+      end
+
+      def unmake!(position, piece, from, to)
+        relocate_piece!(position, piece, to, from)
+      end
     end
 
-    class Castle < MoveStrategy
-      # Stores movement info for the rook to be moved.
+    class Castle < MoveStrategy  # Stores movement info for the rook to be moved.
       # King movement information will be stored in the Move class properties.
-
       def initialize(castle_from, castle_to, rook)
         @castle_from, @castle_to, @rook = castle_from, castle_to, rook
+      end
+
+      def make!(position, piece, from, to)
+        relocate_piece!(position, piece, from, to)
+        relocate_piece!(position, rook, @castle_from, @castle_to)
+
+        # remove castling option for the appropriate side
+      end
+
+      def unmake!(position, piece, from, to)
+        relocate_piece!(position, piece, to, from)
+        relocate_piece!(position, rook, @castle_to, @castle_from)
+
+        # add back castling option for the appropriate side
+      end
+
+      def hash
+
       end
 
     end
@@ -95,16 +161,20 @@ module Application
       end
 
       def make!(position)
-        @strategy.make!(position)  # delegate to the strategy class.
+        @strategy.make!(position, @moved_piece, @from, @to)  # delegate to the strategy class.
       end
 
       def unmake!(position)
-        @strategy.unmake!(position)
+        @strategy.unmake!(position, @moved_piece, @from, @to)
       end
 
+      def strategy
+        @strategy.class
+      end
 
       def hash
         # Uses Zobrist hashing to represent the move as a 64-bit unsigned long int.
+        @strategy.hash
       end
 
     end
@@ -119,24 +189,26 @@ module Application
 
       end
 
-      def next_move
-        # return the next move from the move stack
+      def next_move  # return the next move from the move stack
       end
     end
 
 
-
-    def self.make!(position, move)
-      # Mutates position by making the specified move.
+    def self.make!(position, move) # Mutates position by making the specified move. 
       # Converts the position into a child position.
-
+      move.make!(position)
+      switch(position, move)
     end
 
-
-    def self.unmake!(position, move)
-      # mutates position by reversing the specified move.  
+    def self.unmake!(position, move) # Mutates position by reversing the specified move.  
       # Converts the position into its parent position.
+      move.unmake!(position)
+      switch(position, move)
+    end
 
+    def self.switch(position, move)
+      position.side_to_move = position.side_to_move == :w ? :b : :w
+      position.hash = position.hash ^ move.hash 
     end
 
 

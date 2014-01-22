@@ -25,12 +25,13 @@ module Application
     class ChessPosition    # Complete description of the game state as of a specific turn.
       include Application::Movement
       
-      attr_accessor :board, :pieces,  :side_to_move, :halfmove_clock, :previous_move, :options, :hash
+      attr_accessor :board, :pieces,  :side_to_move, :enemy, :halfmove_clock, :previous_move, :options, :hash
       # option flags: :en_passant_target, :castle
 
       def initialize(board, pieces, side_to_move, halfmove_clock, previous_move = nil, options = {})
         @board, @pieces, @side_to_move, @previous_move = board, pieces, side_to_move, previous_move
         @options, @hash = options, nil
+        @enemy = @side_to_move == :w ? :b : :w
       end
 
       def setup
@@ -48,16 +49,16 @@ module Application
         @pieces[@side_to_move]
       end
 
+      def enemy_pieces
+        @pieces[@enemy]
+      end
+
       def value
         @value ||= Evaluation::evaluate(self)
       end
 
       def value=(value)
         @value = value
-      end
-
-      def enemy
-        @enemy ||= @side_to_move == :w ? :b : :w
       end
 
       def in_check?
@@ -75,7 +76,7 @@ module Application
       end
 
       def enemy_in_check?
-        @board.king_in_check?(enemy)
+        @board.king_in_check?(@enemy)
       end
 
       def avoids_check?(from, to)
