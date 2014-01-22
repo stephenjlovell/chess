@@ -24,38 +24,20 @@ module Application
 
     module MakesCapture # Any behavior shared between capture strategies 
       # i.e. (RegularCapture and EnPassantCapture) is defined in Mixin methods here.
-      def initialize(captured_piece)
-        @captured_piece = captured_piece
-      end
-      
-      def make!(position, piece, from, to)
-        relocate_piece!(position, piece, from, to)
-        position.enemy_pieces.delete(to)
-      end
-
-      def unmake!(position, piece, from, to)
-        relocate_piece!(position, piece, to, from)
-        position.enemy_pieces[to] = @captured_piece
-      end
-
       def mvv_lva_value(moved_piece)
         @captured_piece.class.value / @moved_piece.class.value
       end
-
-      def hash
-
-      end
     end
 
-
-    class MoveStrategy  # Generic template for move strategies. Shared strategy behavior is defined here.
-      def initialize
-      end
-
+    class MoveStrategy  # Generic template and shared behavior for move strategies.
       def make!(position, piece, from, to)
       end
 
       def unmake!(position, piece, from, to)
+      end
+
+      def hash(piece, from, to)
+        hash_piece(piece, from, to)
       end
 
       def relocate_piece!(position, piece, from, to)
@@ -63,6 +45,10 @@ module Application
         position.active_pieces[to] = piece
         position.board[from] = nil  # relocate piece on board.
         position.board[to] = piece.symbol
+      end
+
+      def hash_piece(piece, from, to)
+        (from, to).inject(0){ |key, loc| key ^= Memory::get_key(piece, loc) }
       end
     end
 
@@ -78,6 +64,24 @@ module Application
 
     class RegularCapture < MoveStrategy #  Stores captured piece for unmake purposes.
       include MakesCapture
+
+      def initialize(captured_piece)
+        @captured_piece = captured_piece
+      end
+      
+      def make!(position, piece, from, to)
+        relocate_piece!(position, piece, from, to)
+        position.enemy_pieces.delete(to)
+      end
+
+      def unmake!(position, piece, from, to)
+        relocate_piece!(position, piece, to, from)
+        position.enemy_pieces[to] = @captured_piece
+      end
+
+      def hash(piece, from, to)
+        hash_piece(piece, from, to) ^ Memory::get_key(@captured_piece, to)
+      end
     end
 
     class EnPassantCapture < MoveStrategy
@@ -99,10 +103,9 @@ module Application
         position.enemy_pieces[@en_passant_target] = @captured_piece
       end
 
-      def hash
-
+      def hash(piece, from, to)
+        hash_piece(piece, from, to) ^ Memory::get_key(@captured_piece, @en_passant_target)
       end
-
     end
 
     class EnPassantAdvance < MoveStrategy # Sets or removes the en_passant_target from position object.
@@ -118,12 +121,20 @@ module Application
     end
 
     class PawnPromotion < MoveStrategy # Stores the existing pawn in move object and places a new Queen.
+      def initialize(position)
+        @queen = Pieces::Queen.new(@position.side_to_move)
+      end
+
       def make!(position, piece, from, to)
-        relocate_piece!(position, Pieces::Queen.new(@position.side_to_move) , from, to)
+        relocate_piece!(position, @queen, from, to)
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece!(position, piece, to, from)
+      end
+
+      def hash(piece, from, to)
+        Memory::get_key(piece, from) ^ Memory::get_key(@queen, to)
       end
     end
 
@@ -135,22 +146,19 @@ module Application
 
       def make!(position, piece, from, to)
         relocate_piece!(position, piece, from, to)
-        relocate_piece!(position, rook, @castle_from, @castle_to)
-
+        relocate_piece!(position, @rook, @castle_from, @castle_to)
         # remove castling option for the appropriate side
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece!(position, piece, to, from)
-        relocate_piece!(position, rook, @castle_to, @castle_from)
-
+        relocate_piece!(position, @rook, @castle_to, @castle_from)
         # add back castling option for the appropriate side
       end
 
-      def hash
-
+      def hash(piece, from, to)
+        hash_piece(piece, from, to) ^ hash_piece(@castle_from, @castle_to, @rook)
       end
-
     end
 
     class Move
@@ -172,27 +180,22 @@ module Application
         @strategy.class
       end
 
-      def hash
-        # Uses Zobrist hashing to represent the move as a 64-bit unsigned long int.
-        @strategy.hash
+      def hash # Uses Zobrist hashing to represent the move as a 64-bit unsigned long int.
+        @hash ||= @strategy.hash
       end
-
     end
 
-
-    class MoveList
-      # notional place to store, organize, and sort moves.
-
+    class MoveList  # Notional place to store, organize, and sort moves.
       attr_accessor :captures, :regular_moves, :castles, :checks
 
       def get_moves(position)
-
       end
 
       def next_move  # return the next move from the move stack
       end
     end
 
+    # Module interface
 
     def self.make!(position, move) # Mutates position by making the specified move. 
       # Converts the position into a child position.
@@ -208,9 +211,8 @@ module Application
 
     def self.switch(position, move)
       position.side_to_move = position.side_to_move == :w ? :b : :w
-      position.hash = position.hash ^ move.hash 
+      position.hash ^= move.hash 
     end
-
 
   end
 end

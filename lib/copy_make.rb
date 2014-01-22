@@ -82,14 +82,12 @@ module Application
 
     end
 
-
     class PawnMove < Move
       def move!(pos)
         super(pos)
         pos.promote_pawn!(@to)
       end
     end
-
 
     class Castle < Move
       attr_reader :side

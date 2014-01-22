@@ -1,25 +1,21 @@
 module Application
   module Memory
     require 'SecureRandom'
-
-    def self.create_bytestring_array
-      arr = []
-      (0..8).each do |i|
-        row = []
-        (0..8).each { |j| row[j] = piece_hash }
-        arr[i] = row
-      end
-      return arr
-    end
     
     def self.piece_hash # creates a 12 element hash associating each piece to a 
-      hsh = {}          # set of 16 random bytes packed in a string.
-      [ :wP, :wN, :wB, :wR, :wQ, :wK, 
-        :bP, :bN, :bB, :bR, :bQ, :bK ].each { |sym| hsh[sym] = SecureRandom::random_bytes }
+      hsh = {}          # random 64 bit unsigned long integer.
+      [:wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK].each do |sym| 
+        hsh[sym] = SecureRandom::random_bytes.unpack('L*').inject(0) { |key, i| key ^= i }
+      end
       return hsh
     end
 
-    BSTR = create_bytestring_array
+    BSTR = Array.new(10) { Array.new(10) { piece_hash } } # only the last 8x8 will be used.
+
+    def self.get_key(piece, location)
+      BSTR[location.r][location.c][piece.symbol]
+    end
+
 
     class PVStack
       include Enumerable
