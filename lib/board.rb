@@ -106,7 +106,7 @@ module Application
 
     def hash # used to provide an additional hash value for position object.
       key = 0
-      each_square_with_location { |r,c,s| key ^= Memory::get_key_by_square(r,c,s) unless s.nil? }
+      each_square_with_location { |r,c,s| key ^= Memory::psq_key_by_square(r,c,s) unless s.nil? }
       return key
     end
 

@@ -1,31 +1,45 @@
 module Application
   module Memory
     require 'SecureRandom'
+
+    def self.create_key_array
+      arr = Array.new(10) { Array.new(10) }
+      (2..9).each { |r| (2..9).each { |c| arr[r][c] = yield() } }
+      return arr
+    end
     
     def self.piece_hash # creates a 12 element hash associating each piece to a 
       hsh = {}          # random 64 bit unsigned long integer.
       [:wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK].each do |sym| 
-        hsh[sym] = SecureRandom::random_bytes.unpack('L*').inject(0) { |key, i| key ^= i }
+        hsh[sym] = create_key
       end
       return hsh
     end
 
-    def self.create_bytestring_array
-      arr = Array.new(10) { Array.new(10) }
-      (2..9).each { |r| (2..9).each { |c| arr[r][c] = piece_hash } }
-      return arr
+    def self.create_key
+      SecureRandom::random_bytes.unpack('L*').inject(0) { |key, i| key ^= i }
     end
 
-    BSTR = create_bytestring_array
+    PSQ = create_key_array { piece_hash }
+    ENP = create_key_array { create_key }
+    SIDE = create_key
 
-    def self.get_key(piece, location)
-      BSTR[location.r][location.c][piece.symbol]
+    def self.side_key
+      SIDE
     end
 
-    def self.get_key_by_square(r, c, sym)  # alternative method for use with board object. 
-      BSTR[r][c][sym]
+    def self.enp_key(location)
+      return 0 if location.nil?
+      ENP[location.r][location.c]
     end
 
+    def self.psq_key(piece, location)
+      PSQ[location.r][location.c][piece.symbol]
+    end
+
+    def self.psq_key_by_square(r, c, sym)  # alternative method for use with board object. 
+      PSQ[r][c][sym]
+    end
 
     class PVStack
       include Enumerable

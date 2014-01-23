@@ -19,31 +19,49 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-require 'spec_helper'
+module Application
+  module MoveGen
 
-# number of possible games for each ply (http://oeis.org/A048987/list)
-MAX_TREE = [1,20,400,8902,197281,4865609,119060324,3195901860,84998978956,2439530234167,69352859712417]
+    class MoveList  # Notional place to store, organize, and sort moves more easily.
+      attr_accessor :captures, :regular_moves, :castles, :checks
 
-describe Application::Movement do
-  
-  before do 
-    @game = FactoryGirl.build(:game)
-    @root = @game.position
-  end
+      def get_moves(position)
+      end
 
-  describe "move generation" do
+      def next_move  # return the next move from the move stack
+      end
+    end
 
-    it "should generate the correct number of nodes" do
-      t0 = Time.now
-      node_count = Perft(@root, 5) # first castling moves would occur at minimum ply 5.
-      t1 = Time.now
-      print "#{node_count} nodes in #{t1-t0} seconds (#{node_count/(t1-t0)} NPS)"
-      node_count.should == MAX_TREE[5]
+    # Module interface
+
+    def self.make_unmake!(position, move)
+      make!(position, move)
+      yield 
+      unmake!(position, move)
+    end
+
+    def self.make!(position, move) # Mutates position by making the specified move. 
+      move.make!(position)         # Converts the position into a child position.
+      flip(position, move)
+    end
+
+    def self.unmake!(position, move) # Mutates position by reversing the specified move.  
+      flip(position, move)           # Converts the position into its parent position.
+      move.unmake!(position)
+    end
+
+    def self.flip(pos, move)
+      if pos.side_to_move == :w
+        pos.side_to_move, pos.enemy = :b, :w
+      else
+        pos.side_to_move, pos.enemy = :w, :b
+      end
+      pos.hash ^= move.hash ^ Memory::side_key
     end
 
   end
-
 end
+
 
 
 

@@ -26,7 +26,7 @@ module Application
       include Application::Movement
       
       attr_accessor :board, :pieces,  :side_to_move, :enemy, :halfmove_clock, :options, :hash
-      # option flags: :en_passant_target, :castle
+      # option flags: :enp_target, :castle
 
       def initialize(board, pieces, side_to_move, halfmove_clock, options = {})
         @board, @pieces, @side_to_move, @halfmove_clock = board, pieces, side_to_move, halfmove_clock

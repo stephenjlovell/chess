@@ -107,7 +107,7 @@ module Application
           $main_calls += 1
           mate_possible = false
 
-          Movement::make_unmake!(@root, pv_move) do
+          MoveGen::make_unmake!(@root, pv_move) do
             result = -alpha_beta_main(@root, depth-3, -beta, -alpha, previous_pv, current_pv, true)
           end
           if result > best_value
@@ -125,7 +125,7 @@ module Application
           $main_calls += 1
           mate_possible = false
 
-          Movement::make_unmake!(@root, move) do
+          MoveGen::make_unmake!(@root, move) do
             extension = 4  # start with a full ply extension.
             extension -= 1 if move.capture_value >= 1.5
             extension -= 2 if @root.in_check?
@@ -176,7 +176,7 @@ module Application
           if pv_move
             mate_possible = false
             
-            Movement::make_unmake!(node, pv_move) do
+            MoveGen::make_unmake!(node, pv_move) do
               result = -alpha_beta_main(node, depth-3, -beta, -alpha, previous_pv, current_pv, true)
             end
 
@@ -196,7 +196,7 @@ module Application
           $main_calls += 1
           mate_possible = false  # if legal moves are available, it's not checkmate.
 
-          Movement::make_unmake!(node, move) do
+          MoveGen::make_unmake!(node, move) do
             extension = 4  # start with a full ply extension.
             extension -= 1 if move.capture_value >= 1.5
             extension -= 2 if node.in_check?
@@ -239,7 +239,7 @@ module Application
         node.tactical_edges.each do |move|
           $quiescence_calls += 1
           mate_possible = false
-          Movement::make_unmake!(node, move) do
+          MoveGen::make_unmake!(node, move) do
             result = -quiescence(node, depth-4, -beta, -alpha)
           end
           if result > best_value

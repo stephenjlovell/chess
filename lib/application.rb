@@ -22,6 +22,7 @@
 require './lib/board.rb'
 require './lib/location.rb'
 require './lib/movement.rb'
+require './lib/move_gen.rb'
 require './lib/pieces.rb'
 require './lib/position.rb'
 require './lib/evaluation.rb'

@@ -22,38 +22,6 @@
 module Application
   module Movement
 
-    module MakesCapture # Mixes in methods shared among capture strategies 
-      def initialize(captured_piece)
-        @captured_piece = captured_piece
-      end
-
-      def make!(position, piece, from, to)
-        relocate_piece(position, piece, from, to)
-        make_clock_adjustment(position)
-        position.enemy_pieces.delete(to)
-      end
-
-      def unmake!(position, piece, from, to)
-        relocate_piece(position, piece, to, from)
-        unmake_clock_adjustment(position)
-        position.board[to] = @captured_piece.symbol
-        position.enemy_pieces[to] = @captured_piece
-      end
-
-      def capture?
-        true
-      end
-
-      def hash(piece, from, to)
-        puts self.class if @captured_piece.nil?
-        hash_piece(piece, from, to) ^ Memory::get_key(@captured_piece, to)
-      end
-
-      def mvv_lva_value(moved_piece)
-        @captured_piece.class.value / @moved_piece.class.value
-      end
-    end
-
     module Reversible # Moves other than pawn moves and captures
       def make_clock_adjustment(position)
         position.halfmove_clock += 1
@@ -83,6 +51,39 @@ module Application
       end
     end
 
+    module MakesCapture # Mixes in methods shared among capture strategies 
+      include Irreversible
+      def initialize(captured_piece)
+        @captured_piece = captured_piece
+      end
+
+      def make!(position, piece, from, to)
+        relocate_piece(position, piece, from, to)
+        make_clock_adjustment(position)
+        position.enemy_pieces.delete(to)
+      end
+
+      def unmake!(position, piece, from, to)
+        relocate_piece(position, piece, to, from)
+        unmake_clock_adjustment(position)
+        position.board[to] = @captured_piece.symbol
+        position.enemy_pieces[to] = @captured_piece
+      end
+
+      def capture?
+        true
+      end
+
+      def hash(piece, from, to)
+        puts self.class if @captured_piece.nil?
+        from_to_key(piece, from, to) ^ Memory::psq_key(@captured_piece, to)
+      end
+
+      def mvv_lva_value(moved_piece)
+        @captured_piece.class.value / @moved_piece.class.value
+      end
+    end
+
     class MoveStrategy  # Generic template and shared behavior for move strategies.
       # concrete strategy classes must include either Reversible or Irreversible module.
       def make!(position, piece, from, to)
@@ -100,7 +101,7 @@ module Application
       end
 
       def hash(piece, from, to)
-        hash_piece(piece, from, to)
+        from_to_key(piece, from, to)
       end
 
       def relocate_piece(position, piece, from, to)
@@ -110,8 +111,8 @@ module Application
         position.board[to] = piece.symbol
       end
 
-      def hash_piece(piece, from, to)
-        Memory::get_key(piece, from) ^ Memory::get_key(piece, to)
+      def from_to_key(piece, from, to)
+        Memory::psq_key(piece, from) ^ Memory::psq_key(piece, to)
       end
     end
 
@@ -120,39 +121,36 @@ module Application
     end
 
     class RegularCapture < MoveStrategy #  Stores captured piece for unmake purposes.
-      include Irreversible
       include MakesCapture
     end
 
     # class PawnCapture < MoveStrategy
-    #   include Irreversible
     #   include MakesCapture
     # end
 
     class EnPassantCapture < MoveStrategy
-      include Irreversible
       include MakesCapture
 
-      def initialize(captured_piece, en_passant_target)
-        @captured_piece, @en_passant_target = captured_piece, en_passant_target
+      def initialize(captured_piece, enp_target)
+        @captured_piece, @enp_target = captured_piece, enp_target
       end
 
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
-        position.board[@en_passant_target] = nil
-        position.enemy_pieces.delete(@en_passant_target)
+        position.board[@enp_target] = nil
+        position.enemy_pieces.delete(@enp_target)
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         unmake_clock_adjustment(position)
-        position.board[@en_passant_target] = @captured_piece.symbol
-        position.enemy_pieces[@en_passant_target] = @captured_piece
+        position.board[@enp_target] = @captured_piece.symbol
+        position.enemy_pieces[@enp_target] = @captured_piece
       end
 
       def hash(piece, from, to)
-        hash_piece(piece, from, to) ^ Memory::get_key(@captured_piece, @en_passant_target)
+        from_to_key(piece, from, to) ^ Memory::psq_key(@captured_piece, @enp_target)
       end
     end
 
@@ -160,18 +158,22 @@ module Application
       include Irreversible
     end
 
-    class EnPassantAdvance < MoveStrategy # Sets or removes the en_passant_target from position object.
+    class EnPassantAdvance < MoveStrategy # Sets or removes the enp_target from position object.
       include Irreversible
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
-        position.options[:en_passant_target] = to
+        position.options[:enp_target] = to # Set enp_target to new target square
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         unmake_clock_adjustment(position)
-        position.options[:en_passant_target] = nil
+        position.options[:enp_target] = nil
+      end
+
+      def hash(piece, from, to)
+        from_to_key(piece, from, to) ^ Memory::enp_key(to)
       end
     end
 
@@ -192,7 +194,7 @@ module Application
       end
 
       def hash(piece, from, to)
-        Memory::get_key(piece, from) ^ Memory::get_key(@queen, to)
+        Memory::psq_key(piece, from) ^ Memory::psq_key(@queen, to)
       end
     end
 
@@ -217,24 +219,27 @@ module Application
       end
 
       def hash(piece, from, to)
-        hash_piece(piece, from, to) ^ hash_piece(@castle_from, @castle_to, @rook)
+        from_to_key(piece, from, to) ^ from_to_key(@castle_from, @castle_to, @rook)
       end
     end
 
 
     class Move
-      attr_reader :moved_piece, :from, :to
+      attr_reader :moved_piece, :from, :to, :enp_target
 
       def initialize(moved_piece, from, to, strategy)
         @moved_piece, @from, @to, @strategy = moved_piece, from, to, strategy
       end
 
       def make!(position)
+        @enp_target = position.options[:enp_target]  # save old enp_target for make/unmake
+        position.options.delete(:enp_target)
         @strategy.make!(position, @moved_piece, @from, @to)  # delegate to the strategy class.
       end
 
       def unmake!(position)
         @strategy.unmake!(position, @moved_piece, @from, @to)
+        # position.options[:enp_target] = @enp_target
       end
 
       def capture_value
@@ -243,6 +248,10 @@ module Application
 
       def strategy
         @strategy.class
+      end
+
+      def hash # Uses Zobrist hashing to represent the move as a 64-bit unsigned long int.
+        @hash ||= @strategy.hash(@moved_piece, @from, @to) ^ Memory::enp_key(@enp_target)
       end
 
       def to_s
@@ -257,47 +266,6 @@ module Application
           "#{@moved_piece} #{@from} to #{@to}"
         end
       end
-
-      def hash # Uses Zobrist hashing to represent the move as a 64-bit unsigned long int.
-        @hash ||= @strategy.hash(@moved_piece, @from, @to)
-      end
-    end
-
-    class MoveList  # Notional place to store, organize, and sort moves more easily.
-      attr_accessor :captures, :regular_moves, :castles, :checks
-
-      def get_moves(position)
-      end
-
-      def next_move  # return the next move from the move stack
-      end
-    end
-
-    # Module interface
-
-    def self.make_unmake!(position, move)
-      make!(position, move)
-      yield 
-      unmake!(position, move)
-    end
-
-    def self.make!(position, move) # Mutates position by making the specified move. 
-      move.make!(position)         # Converts the position into a child position.
-      flip(position, move)
-    end
-
-    def self.unmake!(position, move) # Mutates position by reversing the specified move.  
-      flip(position, move)           # Converts the position into its parent position.
-      move.unmake!(position)
-    end
-
-    def self.flip(pos, move)
-      if pos.side_to_move == :w
-        pos.side_to_move, pos.enemy = :b, :w
-      else
-        pos.side_to_move, pos.enemy = :w, :b
-      end
-      pos.hash ^= move.hash 
     end
 
   end
