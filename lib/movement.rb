@@ -56,6 +56,8 @@ module Application
     class MoveStrategy  # Generic template and shared behavior for move strategies.
       # concrete strategy classes must include either Reversible or Irreversible module.
       def make!(position, piece, from, to)
+        puts position
+        puts self.class
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
       end
