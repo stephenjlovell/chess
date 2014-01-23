@@ -48,9 +48,9 @@ module Application
         @symbol = (@color.to_s + self.class.type.to_s).to_sym
       end
 
-      def copy # return a deep copy of self
-        self.class.new(@color)
-      end
+      # def copy # return a deep copy of self
+      #   self.class.new(@color)
+      # end
 
       def to_s
         @symbol.to_s
@@ -67,23 +67,20 @@ module Application
       end
 
       private 
-        def explore_direction(from, current_location, direction, position, until_blocked, moves = [] )
-          to = current_location + direction
-          board = position.board
-          if board.pseudo_legal?(to, @color)
-            if board.avoids_check?(from, to, @color)
-              moves << Movement::Move.new(position, from, to, mvv_lva_value(to, board))
-            end
-            if until_blocked && board.empty?(to)
-              explore_direction(from, to, direction, position, until_blocked, moves) 
-            end
+      def explore_direction(from, current_location, direction, position, until_blocked, moves = [] )
+        to = current_location + direction
+        board = position.board
+        if board.pseudo_legal?(to, @color)
+          if board.avoids_check?(from, to, @color)
+            strategy = board.enemy?(to, @color) ? Movement::RegularCapture.new : Movement::RegularMove.new
+            moves << Movement::Move.new(self, from, to, strategy)
           end
-          return moves
+          if until_blocked && board.empty?(to)
+            explore_direction(from, to, direction, position, until_blocked, moves) 
+          end
         end
-
-        def mvv_lva_value(to, board)
-          board.enemy?(to, @color) ? (Pieces::get_value_by_sym(board[to])/self.class.value) : 0.0
-        end
+        return moves
+      end
     end
 
     class Pawn < Piece
@@ -120,7 +117,8 @@ module Application
         self.class.directions[@color][:attack].each do |pair|  # normal attacks
           to = from + pair
           if board.enemy?(to, @color) && board.avoids_check?(from, to, @color)
-            moves << Movement::PawnMove.new(position, from, to, mvv_lva_value(to, board))
+            enemy = position.enemy_pieces[to]
+            moves << Movement::Move.new(self, from, to, Movement::PawnCapture.new(enemy))
           end
         end
       end
@@ -132,7 +130,8 @@ module Application
             offset = self.class.directions[@color][:enp_offset]
             to = target + offset
             if board.avoids_check?(from, to, @color)
-              moves << Movement::EnPassantAttack.new(position, from, to)
+              enemy = position.enemy_pieces[to]
+              moves << Movement::Move.new(self, from, to, Movement::EnPassantCapture.new(enemy, target))
             end 
           end
         end
@@ -143,21 +142,17 @@ module Application
         to = from + dir[:advance]
         if board.empty?(to)
           if board.avoids_check?(from, to, @color)
-            moves << Movement::PawnMove.new(position, from, to, 0.0) 
+            moves << Movement::Move.new(self, from, to, Movement::PawnMove.new)
           end
           if from.r == dir[:start_row]
             to = from + dir[:initial]
             if board.empty?(to)
               if board.avoids_check?(from, to, @color)
-                moves << Movement::EnPassantTarget.new(position, from, to) 
+                moves << Movement::Move.new(self, from, to, Movement::EnPassantAdvance.new)
               end
             end
           end
         end
-      end
-
-      def mvv_lva_value(to, board) # most valuable victim / least valuable attacker heuristic
-        (Pieces::get_value_by_sym(board[to])/self.class.value)
       end
     end
 
@@ -278,12 +273,10 @@ module Application
 
     def self.setup(board)        # returns a collection of chess pieces 
       pieces = { w: {}, b: {} }  # corresponding to the specified board representation.
-      board.each_with_index do |row, r|
-        row.each_with_index do |sym, c|
-          unless sym == nil || sym == :XX
-            piece = self.create_piece_by_sym(sym)
-            pieces[piece.color][Location::get_location(r, c)] = piece
-          end
+      board.each_square_with_location do |r,c,sym|
+        unless sym.nil?
+          piece = self.create_piece_by_sym(sym)
+          pieces[piece.color][Location::get_location(r,c)] = piece
         end
       end
       return pieces

@@ -84,14 +84,9 @@ module Application
     end
 
     def each
-      @squares.each { |row| yield(row) }
-    end
-
-    alias :each_row :each
-
-    def each_square
       each_square_with_location { |r,c,s| yield (@squares[r][c]) }
     end
+    alias :each_square :each
 
     def each_square_with_location
       (2..9).each do |r|
@@ -109,10 +104,10 @@ module Application
       end
     end
 
-    def copy # return a deep copy of self.
-      board = Board.new
-      self.each_square_with_location { |r,c,s| board.squares[r][c] = s }
-      return board
+    def hash # used to provide an additional hash value for position object.
+      key = 0
+      each_square_with_location { |r,c,s| key ^= Memory::get_key_by_square(r,c,s) unless s.nil? }
+      return key
     end
 
     def coordinates(r, c)

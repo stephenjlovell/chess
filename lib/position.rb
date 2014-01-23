@@ -41,7 +41,7 @@ module Application
         @side_to_move = :w  # white always goes first.
         @options = {}
         @options[:castle] = { low: true, high: true }
-        @hash = get_initial_hash
+        @hash = @board.hash
         return self
       end
 
@@ -54,25 +54,29 @@ module Application
       end
 
       def value
-        @value ||= Evaluation::evaluate(self)
+        Evaluation::evaluate(self)
       end
 
-      def value=(value)
-        @value = value
-      end
+      # def value=(value)
+      #   @value = value
+      # end
+
+      # def in_check?
+      #   if @in_check.nil?
+      #     in_check = @board.king_in_check?(@side_to_move)
+      #     if in_check.nil?
+      #       self.value = -$INF  # The king is dead, long live the king.
+      #       @in_check = true
+      #     else 
+      #       @in_check = in_check
+      #     end
+      #   else
+      #     @in_check
+      #   end
+      # end
 
       def in_check?
-        if @in_check.nil?
-          in_check = @board.king_in_check?(@side_to_move)
-          if in_check.nil?
-            self.value = -$INF  # The king is dead, long live the king.
-            @in_check = true
-          else 
-            @in_check = in_check
-          end
-        else
-          @in_check
-        end
+        @board.king_in_check?(@side_to_move)
       end
 
       def enemy_in_check?
@@ -83,17 +87,6 @@ module Application
         @board.avoids_check?(from, to, @side_to_move)
       end
 
-      def copy # perform a deep copy of self.
-        new_pieces = { w: {}, b: {} }
-        options = Marshal.load(Marshal.dump(@options))  # expensive operation. replace options hash with object properties.
-        @pieces.each do |color, hsh|
-          hsh.each do |location, piece|
-            new_pieces[color][location] = piece
-          end
-        end
-        ChessPosition.new(@board.copy, new_pieces, @side_to_move, @halfmove_clock, @previous_move, options) 
-      end
-
       def to_s
         # return a string decribing the position in Forsyth-Edwards Notation.
       end
@@ -102,25 +95,23 @@ module Application
         "<Application::Position::ChessPosition <@board:#{@board.inspect}> <@pieces:#{@pieces.inspect}>, <@side_to_move:#{@side_to_move}>>"
       end
 
-      def parent
-        return nil if @previous_move.nil?
-        @previous_move.position
-      end
+
+      # These methods will be re-written to make use of Movement::MoveList class:
 
       def tactical_edges(pv_move=nil)
         in_check? ? get_moves : get_moves.select{ |m| m.capture_value > 0.0 }
       end
 
-      def get_children
-        get_moves.collect { |m| m.create_position }
-      end
+      # def get_children
+      #   get_moves.collect { |m| m.create_position }
+      # end
 
       def get_moves(pv_move=nil) # returns a sorted array of all possible moves for the current player.
         unless @moves
           @moves = []
           active_pieces.each { |key, piece| @moves += piece.get_moves(key, self) }
-          @moves += get_castles if !in_check? && @options[:castle]
-          sort_moves!(@moves, pv_move)
+          # @moves += get_castles if !in_check? && @options[:castle]
+          # sort_moves!(@moves, pv_move)
         end
         return @moves      
       end
@@ -128,39 +119,19 @@ module Application
 
       def sort_moves!(moves, pv_move)
         moves.sort! { |x,y| y.capture_value <=> x.capture_value }  # also sort non-captures by Killer Heuristic?
-        # if pv_move
-        #   pv_hash = pv_move.hash
-        #   puts "previous move: #{@previous_move}"
-        #   puts "pv_hash: #{pv_move.to_s}"
-        #   moves.each { |m| puts "#{m.to_s}" }
-
-        #   moves.sort! do |x,y|
-        #     if x.hash == pv_hash
-        #       1
-        #     elsif y.hash == pv_hash
-        #       -1
-        #     else
-        #       0
-        #     end
-        #   end
-        # end
-        # The block must implement a comparison between x and y, and return -1, 
-        # when x follows y, 0 when x and y are equivalent, or +1 if y follows x.
-      end
-
-      def get_initial_hash
-        key = 0
-        bstr = Memory::BSTR
-        @board.each_square_with_location do |r, c, sym|
-          bstr[r-2][c-2][sym].unpack('L*').each { |i| key ^= i } unless sym.nil? 
-        end  # unpack to 64-bit unsigned long ints and merge into key via bitwise XOR.
-        return key
       end
 
     end
 
   end
 end
+
+
+
+
+
+
+
 
 
 

@@ -10,10 +10,20 @@ module Application
       return hsh
     end
 
-    BSTR = Array.new(10) { Array.new(10) { piece_hash } } # only the last 8x8 will be used.
+    def self.create_bytestring_array
+      arr = Array.new(10) { Array.new(10) }
+      (2..9).each { |r| (2..9).each { |c| arr[r][c] = piece_hash } }
+      return arr
+    end
+
+    BSTR = create_bytestring_array
 
     def self.get_key(piece, location)
       BSTR[location.r][location.c][piece.symbol]
+    end
+
+    def self.get_key_by_square(r, c, sym)  # alternative method for use with board object. 
+      BSTR[r][c][sym]
     end
 
 
@@ -73,10 +83,10 @@ module Application
 
 
     class Entry # this class contains the information to be stored in each bucket.
-      attr_reader :depth, :type, :value, :best_node
+      attr_reader :depth, :type, :value, :best_move
       # @type may be :upper_bound, :lower_bound, :exact_match
-      def initialize(depth, type, value, best_node)
-        @depth, @type, @value, @best_node = depth, type, value, best_node
+      def initialize(depth, type, value, best_move)
+        @depth, @type, @value, @best_move = depth, type, value, best_move
       end
     end
 
@@ -87,15 +97,17 @@ module Application
         @table = {}
       end
 
-      def store_result(root, max_depth, mate_possible, node, depth, best_value, alpha, beta, best_node=nil)
+      # will need to refactor this 
+
+      def store_result(max_depth, mate_possible, node, depth, best_value, alpha, beta, best_move=nil)
         if mate_possible && node.in_check?
-          store_checkmate(root, max_depth, node)
+          store_checkmate(node, max_depth)
         else
-          store_node(node, depth, best_value, alpha, beta, best_node)
+          store_node(node, depth, best_value, alpha, beta, best_move)
         end
       end
   
-      def store_node(node, depth, best_value, alpha, beta, best_node=nil)
+      def store_node(node, depth, best_value, alpha, beta, best_move=nil)
         flag = if best_value <= alpha
           :lower_bound
         elsif best_value >= beta
@@ -103,18 +115,17 @@ module Application
         else
           :exact_value
         end
-        store_entry(node, depth, flag, best_value, best_node)
+        store_entry(node, depth, flag, best_value, best_move)
       end
 
-      def store_checkmate(root, max_depth, node)
-        value = root.side_to_move == node.side_to_move ? -$INF : $INF
-        store_entry(node, max_depth+1, :exact_value, value)
+      def store_checkmate(node, max_depth)
+        store_entry(node, max_depth+1, :exact_value, -$INF)
       end
 
-      def store_entry(node, depth, type, value, best_node=nil)
+      def store_entry(node, depth, type, value, best_move=nil)
         h = node.hash
         if @table[h].nil? || depth >= @table[h].depth   # simple depth-based replacement scheme.
-          @table[h] = Entry.new(depth, type, value, best_node)
+          @table[h] = Entry.new(depth, type, value, best_move)
         end
         return @table[h].value
       end
