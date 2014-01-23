@@ -40,6 +40,10 @@ module Application
         position.enemy_pieces[to] = @captured_piece
       end
 
+      def capture?
+        true
+      end
+
       def hash(piece, from, to)
         puts self.class if @captured_piece.nil?
         hash_piece(piece, from, to) ^ Memory::get_key(@captured_piece, to)
@@ -58,16 +62,24 @@ module Application
       def unmake_clock_adjustment(position)
         position.halfmove_clock -= 1
       end
+
+      def reversible?
+        true
+      end
     end
 
     module Irreversible # Pawn moves and captures
-      def make_clock_adjustment(position) # reset halfmove clock to zero. Store halfmove score for unmake.
+      def make_clock_adjustment(position) # reset halfmove clock to zero. 
         @halfmove_clock = position.halfmove_clock
         position.halfmove_clock = 0
       end
 
       def unmake_clock_adjustment(position)
-        position.halfmove_clock = @halfmove_clock
+        position.halfmove_clock = @halfmove_clock # Store halfmove clock for unmake.
+      end
+
+      def reversible?
+        false
       end
     end
 
@@ -81,6 +93,10 @@ module Application
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         unmake_clock_adjustment(position)
+      end
+
+      def capture?
+        false
       end
 
       def hash(piece, from, to)
@@ -108,10 +124,10 @@ module Application
       include MakesCapture
     end
 
-    class PawnCapture < MoveStrategy
-      include Irreversible
-      include MakesCapture
-    end
+    # class PawnCapture < MoveStrategy
+    #   include Irreversible
+    #   include MakesCapture
+    # end
 
     class EnPassantCapture < MoveStrategy
       include Irreversible
@@ -229,6 +245,19 @@ module Application
         @strategy.class
       end
 
+      def to_s
+        s = @strategy
+        if s.capture?
+          "#{@moved_piece} x #{s.captured_piece} #{@from} to #{@to}"
+        elsif strategy == Castle
+          "Castle {@moved_piece} #{@from} to #{@to}, #{s.rook} #{s.castle_from} to #{s.castle_to}"
+        elsif strategy == PawnPromotion
+          "#{s.queen} Promotion #{@moved_piece} #{@from} to #{@to}"
+        else
+          "#{@moved_piece} #{@from} to #{@to}"
+        end
+      end
+
       def hash # Uses Zobrist hashing to represent the move as a 64-bit unsigned long int.
         @hash ||= @strategy.hash(@moved_piece, @from, @to)
       end
@@ -253,14 +282,12 @@ module Application
     end
 
     def self.make!(position, move) # Mutates position by making the specified move. 
-      # Converts the position into a child position.
-      move.make!(position)
+      move.make!(position)         # Converts the position into a child position.
       flip(position, move)
     end
 
     def self.unmake!(position, move) # Mutates position by reversing the specified move.  
-      # Converts the position into its parent position.
-      flip(position, move)
+      flip(position, move)           # Converts the position into its parent position.
       move.unmake!(position)
     end
 

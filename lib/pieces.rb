@@ -48,10 +48,6 @@ module Application
         @symbol = (@color.to_s + self.class.type.to_s).to_sym
       end
 
-      # def copy # return a deep copy of self
-      #   self.class.new(@color)
-      # end
-
       def to_s
         @symbol.to_s
       end
@@ -73,10 +69,6 @@ module Application
         if board.pseudo_legal?(to, @color)
           if board.avoids_check?(from, to, @color)
             strategy = if board.enemy?(to, @color)
-            if position.enemy_pieces[to].nil?
-              board.print
-              print position.pieces
-            end
               Movement::RegularCapture.new(position.enemy_pieces[to])
             else
               Movement::RegularMove.new
@@ -126,7 +118,7 @@ module Application
           to = from + pair
           if board.enemy?(to, @color) && board.avoids_check?(from, to, @color)
             enemy = position.enemy_pieces[to]
-            moves << Movement::Move.new(self, from, to, Movement::PawnCapture.new(enemy))
+            moves << Movement::Move.new(self, from, to, Movement::RegularCapture.new(enemy))
           end
         end
       end
@@ -138,7 +130,7 @@ module Application
             offset = self.class.directions[@color][:enp_offset]
             to = target + offset
             if board.avoids_check?(from, to, @color)
-              enemy = position.enemy_pieces[to]
+              enemy = position.enemy_pieces[target]
               moves << Movement::Move.new(self, from, to, Movement::EnPassantCapture.new(enemy, target))
             end 
           end

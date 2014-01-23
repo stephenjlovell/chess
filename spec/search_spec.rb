@@ -44,20 +44,20 @@ describe "Search" do
     let(:pos) { game.position }
     describe "mtdf" do
       # it "as a standalone algorithm" do
-      #   puts "--mtdf--#{@s::select_position(pos, :mtdf).previous_move}"
+      #   puts "--mtdf--#{@s::select_position(pos, :mtdf)}"
       # end
-      # it "from within an iterative deepening framework" do
-      #   puts "--iterative_deepening_mtdf-- #{@s::select_position(pos, :iterative_deepening_mtdf).previous_move}"
-      # end
+      it "from within an iterative deepening framework" do
+        puts "--iterative_deepening_mtdf-- #{@s::select_position(pos, :iterative_deepening_mtdf)}"
+      end
     end
     describe "alpha beta" do
       # it "as a standalone algorithm" do
-      #   puts "--alpha_beta--#{@s::select_position(pos, :alpha_beta, 5).previous_move}"
+      #   puts "--alpha_beta--#{@s::select_position(pos, :alpha_beta, 5)}"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
-      it "from within an iterative deepening framework" do
-        puts "--iterative_deepening_alpha_beta--#{@s::select_position(pos, :iterative_deepening_alpha_beta).previous_move}"
-      end
+      # it "from within an iterative deepening framework" do
+      #   puts "--iterative_deepening_alpha_beta--#{@s::select_position(pos, :iterative_deepening_alpha_beta)}"
+      # end
     end
   end
 

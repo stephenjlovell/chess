@@ -88,9 +88,9 @@ module Application # define application-level behavior in this module and file.
     attr_reader :ai_player, :opponent
     
     def initialize(ai_player = :b, time_limit = 120.0)
-      @position = Position::ChessPosition.allocate
-      @position.setup
-      @halfmove_clock = 0
+      board = Board.new
+      @position = Position::ChessPosition.new(board,Pieces::setup(board),:w,0)
+      @halfmove_count = 0
       @ai_player = ai_player
       @opponent = ai_player == :w ? :b : :w
       @tt = Memory::TranspositionTable.new
@@ -98,12 +98,12 @@ module Application # define application-level behavior in this module and file.
     end
 
     def move_clock
-      @halfmove_clock / 2
+      @halfmove_count / 2
     end
 
     def print # print game state info along with board representation
       opp_score, ai_score = score(@ai_player), score(@opponent)
-      scoreboard = "| Move: #{move_clock} | Ply: #{@halfmove_clock} " + 
+      scoreboard = "| Move: #{move_clock} | Ply: #{@halfmove_count} " + 
                    "| Turn: #{@position.side_to_move.to_s} " +
                    "| AI Score: #{ai_score} | Your Score: #{opp_score} |"
       separator = "-" * scoreboard.length
@@ -142,7 +142,7 @@ module Application # define application-level behavior in this module and file.
     def take_turn
       # add any code must run at beginning of each turn
       yield
-      @halfmove_clock += 1
+      @halfmove_count += 1
       self.print
       @clock.end_turn
     end

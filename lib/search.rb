@@ -65,7 +65,6 @@ module Application
           end
         end
         current_pv.print
-        best_move.board.print
         return best_move, value
       end
 
@@ -100,7 +99,7 @@ module Application
           return entry.best_move, entry.value if alpha >= beta # retrieve PV from entry.pv
         end
 
-        best_value, best_move, mate_possible = -$INF, nil, true
+        result, best_value, best_move, mate_possible = -$INF, -$INF, nil, true
         current_pv = Memory::PVStack.new
 
         pv_move = previous_pv.next_move if previous_pv
@@ -169,7 +168,7 @@ module Application
           return $tt.store_result(@max_depth, mate_possible, node, 0, best_value, alpha, beta)  
         end
 
-        best_value, best_move, mate_possible = -$INF, nil, true
+        result, best_value, best_move, mate_possible = -$INF, -$INF, nil, true
         current_pv = Memory::PVStack.new
 
         if on_pv
@@ -235,7 +234,7 @@ module Application
         return best_value if best_value >= beta  
         alpha = best_value if best_value > alpha
 
-        best_move, mate_possible = nil, true
+        result, best_move, mate_possible = -$INF, nil, true
 
         node.tactical_edges.each do |move|
           $quiescence_calls += 1

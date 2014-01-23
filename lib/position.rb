@@ -25,26 +25,15 @@ module Application
     class ChessPosition    # Complete description of the game state as of a specific turn.
       include Application::Movement
       
-      attr_accessor :board, :pieces,  :side_to_move, :enemy, :halfmove_clock, :previous_move, :options, :hash
+      attr_accessor :board, :pieces,  :side_to_move, :enemy, :halfmove_clock, :options, :hash
       # option flags: :en_passant_target, :castle
 
-      def initialize(board, pieces, side_to_move, halfmove_clock=0, previous_move = nil, options = {})
-        @board, @pieces, @side_to_move, @previous_move = board, pieces, side_to_move, previous_move
-        @options, @hash = options, nil
+      def initialize(board, pieces, side_to_move, halfmove_clock, options = {})
+        @board, @pieces, @side_to_move, @halfmove_clock = board, pieces, side_to_move, halfmove_clock
         @enemy = @side_to_move == :w ? :b : :w
-      end
-
-      def setup
-        @board = Application::Board.allocate
-        @board.setup
-        @pieces = Pieces::setup(board)
-        @side_to_move = :w  # white always goes first.
-        @enemy = :b
-        @halfmove_clock = 0
-        @options = {}
-        @options[:castle] = { low: true, high: true }
+        @options = options
+        @options[:castle] = { low: true, high: true } unless options.nil?
         @hash = @board.hash
-        return self
       end
 
       def active_pieces
