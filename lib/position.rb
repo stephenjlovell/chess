@@ -104,10 +104,6 @@ module Application
         in_check? ? get_moves : get_moves.select{ |m| m.capture_value > 0.0 }
       end
 
-      # def get_children
-      #   get_moves.collect { |m| m.create_position }
-      # end
-
       def get_moves(pv_move=nil) # returns a sorted array of all possible moves for the current player.
         moves = []
         active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
@@ -117,9 +113,9 @@ module Application
       end
       alias :edges :get_moves
 
-      def sort_moves!(moves, pv_move)
-        moves.sort! { |x,y| y.capture_value <=> x.capture_value }  # also sort non-captures by Killer Heuristic?
-      end
+      # def sort_moves!(moves, pv_move)
+      #   moves.sort! { |x,y| y.capture_value <=> x.capture_value }  # also sort non-captures by Killer Heuristic?
+      # end
 
     end
 

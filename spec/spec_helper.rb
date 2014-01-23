@@ -30,12 +30,12 @@ require 'factories.rb'
 
 def Perft(node, depth)  # Counts all leaf nodes to specified depth.
   return 1 if depth == 0
+  sum = 0
   moves = node.get_moves
-  moves.inject(0) do |sum, move|
-    Application::Movement::make_unmake!(node, move) do 
-      sum + Perft(node, depth-1)
-    end
+  moves.each do |move|
+    Application::Movement::make_unmake!(node, move) { sum += Perft(node, depth-1) }
   end
+  return sum
 end
 
 

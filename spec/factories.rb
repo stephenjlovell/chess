@@ -75,7 +75,7 @@ FactoryGirl.define do
     pieces { Application::Pieces::setup(board) }
     side_to_move :w
     halfmove_clock 0
-    hash { self.get_initial_hash }
+    hash { board.hash }
     initialize_with { new(board, pieces, side_to_move, halfmove_clock) }
 
     factory :test_position do
@@ -83,7 +83,7 @@ FactoryGirl.define do
       pieces { Application::Pieces::setup(board) }
       side_to_move :w
       halfmove_clock 20
-      hash { self.get_initial_hash }
+      hash { board.hashß }
       initialize_with { new(board, pieces, side_to_move, halfmove_clock) }
     end
   end

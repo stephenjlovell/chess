@@ -246,6 +246,12 @@ module Application
 
     # Module interface
 
+    def self.make_unmake!(position, move)
+      make!(position, move)
+      yield 
+      unmake!(position, move)
+    end
+
     def self.make!(position, move) # Mutates position by making the specified move. 
       # Converts the position into a child position.
       move.make!(position)
@@ -254,14 +260,8 @@ module Application
 
     def self.unmake!(position, move) # Mutates position by reversing the specified move.  
       # Converts the position into its parent position.
-      move.unmake!(position)
       flip(position, move)
-    end
-
-    def self.make_unmake!(position, move)
-      make!(position, move)
-      yield
-      unmake!(position, move)
+      move.unmake!(position)
     end
 
     def self.flip(pos, move)
