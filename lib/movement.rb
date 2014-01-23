@@ -27,6 +27,24 @@ module Application
         @captured_piece = captured_piece
       end
 
+      def make!(position, piece, from, to)
+        relocate_piece(position, piece, from, to)
+        make_clock_adjustment(position)
+        position.enemy_pieces.delete(to)
+      end
+
+      def unmake!(position, piece, from, to)
+        relocate_piece(position, piece, to, from)
+        unmake_clock_adjustment(position)
+        position.board[to] = @captured_piece.symbol
+        position.enemy_pieces[to] = @captured_piece
+      end
+
+      def hash(piece, from, to)
+        puts "captured piece: #{@captured_piece}"
+        hash_piece(piece, from, to) ^ Memory::get_key(@captured_piece, to)
+      end
+
       def mvv_lva_value(moved_piece)
         @captured_piece.class.value / @moved_piece.class.value
       end
@@ -56,8 +74,6 @@ module Application
     class MoveStrategy  # Generic template and shared behavior for move strategies.
       # concrete strategy classes must include either Reversible or Irreversible module.
       def make!(position, piece, from, to)
-        puts position
-        puts self.class
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
       end
@@ -90,22 +106,6 @@ module Application
     class RegularCapture < MoveStrategy #  Stores captured piece for unmake purposes.
       include Irreversible
       include MakesCapture
-      
-      def make!(position, piece, from, to)
-        relocate_piece(position, piece, from, to)
-        make_clock_adjustment(position)
-        position.enemy_pieces.delete(to)
-      end
-
-      def unmake!(position, piece, from, to)
-        relocate_piece(position, piece, to, from)
-        unmake_clock_adjustment(position)
-        position.enemy_pieces[to] = @captured_piece
-      end
-
-      def hash(piece, from, to)
-        hash_piece(piece, from, to) ^ Memory::get_key(@captured_piece, to)
-      end
     end
 
     class PawnCapture < MoveStrategy
@@ -149,13 +149,13 @@ module Application
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
-        position.en_passant_target = to
+        position.options[:en_passant_target] = to
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         unmake_clock_adjustment(position)
-        position.en_passant_target = nil
+        position.options[:en_passant_target] = nil
       end
     end
 

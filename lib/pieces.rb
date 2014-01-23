@@ -72,7 +72,12 @@ module Application
         board = position.board
         if board.pseudo_legal?(to, @color)
           if board.avoids_check?(from, to, @color)
-            strategy = board.enemy?(to, @color) ? Movement::RegularCapture.new : Movement::RegularMove.new
+            strategy = if board.enemy?(to, @color)
+              puts "enemy: #{position.enemy_pieces[to]}"
+              Movement::RegularCapture.new(position.enemy_pieces[to])
+            else
+              Movement::RegularMove.new
+            end
             moves << Movement::Move.new(self, from, to, strategy)
           end
           if until_blocked && board.empty?(to)
