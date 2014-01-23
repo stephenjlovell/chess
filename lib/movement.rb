@@ -41,7 +41,7 @@ module Application
       end
 
       def hash(piece, from, to)
-        puts "captured piece: #{@captured_piece}"
+        puts self.class if @captured_piece.nil?
         hash_piece(piece, from, to) ^ Memory::get_key(@captured_piece, to)
       end
 
