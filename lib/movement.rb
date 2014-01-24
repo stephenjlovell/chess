@@ -53,6 +53,8 @@ module Application
 
     module MakesCapture # Mixes in methods shared among capture strategies 
       include Irreversible
+      attr_accessor :captured_piece
+      
       def initialize(captured_piece)
         @captured_piece = captured_piece
       end
@@ -79,8 +81,8 @@ module Application
         from_to_key(piece, from, to) ^ Memory::psq_key(@captured_piece, to)
       end
 
-      def mvv_lva_value(moved_piece)
-        @captured_piece.class.value / @moved_piece.class.value
+      def mvv_lva(moved_piece)  # Most valuable victim, least valuable attacker heuristic.
+        @captured_piece.class.value - moved_piece.class.id  # Used for move ordering captures.
       end
     end
 
@@ -120,13 +122,44 @@ module Application
       include Reversible
     end
 
+    class KingMove < MoveStrategy
+      include Reversible
+
+      def make!(position, piece, from, to)
+        relocate_piece(position, piece, from, to)
+        position.active_king_location = to
+        make_clock_adjustment(position)
+      end
+
+      def unmake!(position, piece, from, to)
+        relocate_piece(position, piece, to, from)
+        position.active_king_location = from
+        unmake_clock_adjustment(position)
+      end
+    end
+
     class RegularCapture < MoveStrategy #  Stores captured piece for unmake purposes.
       include MakesCapture
     end
 
-    # class PawnCapture < MoveStrategy
-    #   include MakesCapture
-    # end
+    class KingCapture < MoveStrategy
+      include MakesCapture
+
+      def make!(position, piece, from, to)
+        relocate_piece(position, piece, from, to)
+        position.active_king_location = to
+        make_clock_adjustment(position)
+        position.enemy_pieces.delete(to)
+      end
+
+      def unmake!(position, piece, from, to)
+        relocate_piece(position, piece, to, from)
+        position.active_king_location = from
+        unmake_clock_adjustment(position)
+        position.board[to] = @captured_piece.symbol
+        position.enemy_pieces[to] = @captured_piece
+      end
+    end
 
     class EnPassantCapture < MoveStrategy
       include MakesCapture
@@ -241,8 +274,12 @@ module Application
         position.enp_target = @enp_target
       end
 
-      def capture_value
-        0 # need to be able to selectively extend moves with high mvv_lva during search.
+      def capture?
+        @strategy.respond_to?(:mvv_lva)
+      end
+
+      def mvv_lva
+        capture? ? @strategy.mvv_lva(@moved_piece) : 0
       end
 
       def strategy

@@ -34,10 +34,10 @@ describe Application::Board do
   it { should respond_to(:squares) }
 
   it 'should place pieces in the correct initial position' do
-    @board.coordinates(2,10).should == :XX  # square [2,10] should be out of bounds.
-    @board.coordinates(4,2).should == nil   # square [4,2] should be nil.
-    @board.coordinates(2,6).should == :wK   # white king should be located at [2,6]
-    @board.coordinates(9,5).should == :bQ   # black queen should be located at [9,5]
+    @board.square(2,10).should == :XX  # square [2,10] should be out of bounds.
+    @board.square(4,2).should == nil   # square [4,2] should be nil.
+    @board.square(2,6).should == :wK   # white king should be located at [2,6]
+    @board.square(9,5).should == :bQ   # black queen should be located at [9,5]
   end
 
   describe 'when inspecting a square, it can determine' do
@@ -70,8 +70,9 @@ describe Application::Board do
 
   describe 'king saftey' do
     before do
+      @position = FactoryGirl.build(:test_position)
       @board = FactoryGirl.build(:test_board)
-      @threat_board = @board.copy
+      @threat_board = FactoryGirl.build(:test_board)
       @threat_board.squares[3][7] = :bP
       @from = FactoryGirl.build(:location, r: 2, c: 6)
       @to = FactoryGirl.build(:location, r: 3, c: 7)
@@ -80,15 +81,15 @@ describe Application::Board do
     end
 
     it 'should know if the specified king is in check' do
-      @board.king_in_check?(:w).should be_false
-      @board.king_in_check?(:b).should be_false
-      @threat_board.king_in_check?(:w).should be_true
-      @threat_board.king_in_check?(:b).should be_false
+      @board.king_in_check?(@position, :w).should be_false
+      @board.king_in_check?(@position, :b).should be_false
+      @threat_board.king_in_check?(@position, :w).should be_true
+      @threat_board.king_in_check?(@position, :b).should be_false
     end
 
     it 'should test if a move would get specified side out of check' do
-      @threat_board.avoids_check?(@from, @to, :w).should be_true
-      @threat_board.avoids_check?(@alt_from, @alt_to, :w).should be_false
+      @threat_board.avoids_check?(@position, @from, @to, :w).should be_true
+      @threat_board.avoids_check?(@position, @alt_from, @alt_to, :w).should be_false
     end
 
   end

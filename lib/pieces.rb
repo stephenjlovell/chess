@@ -25,6 +25,9 @@ module Application
     PIECE_VALUES = { P: 100, N: 320, B: 333, 
                      R: 510, Q: 880, K: 100000 }
 
+    PIECE_ID = { P: 1, N: 2, B: 3, 
+                 R: 4, Q: 5, K: 6 } # Used for move ordering by MVV-LVA heuristic.
+
     DIRECTIONS = { straight: [[1,0],[-1,0],[0,1],[0,-1]], 
                    diagonal: [[1,1],[1,-1],[-1,1],[-1,-1]], 
                    N: [[2,1], [1,2], [-2,1], [-1,2], [-2,-1], [-1,-2], [2,-1], [1,-2]], 
@@ -67,7 +70,7 @@ module Application
         to = current_location + direction
         board = position.board
         if board.pseudo_legal?(to, @color)
-          if board.avoids_check?(from, to, @color)
+          if board.avoids_check?(position, from, to, @color)
             strategy = if board.enemy?(to, @color)
               Movement::RegularCapture.new(position.enemy_pieces[to])
             else
@@ -84,11 +87,15 @@ module Application
     end
 
     class Pawn < Piece
-
       class << self
         VALUE = PIECE_VALUES[:P]
         def value
           VALUE
+        end
+
+        ID = PIECE_ID[:P]
+        def id
+          ID
         end
 
         def type
@@ -116,7 +123,7 @@ module Application
       def get_attacks(from, position, board, moves)
         self.class.directions[@color][:attack].each do |pair|  # normal attacks
           to = from + pair
-          if board.enemy?(to, @color) && board.avoids_check?(from, to, @color)
+          if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
             enemy = position.enemy_pieces[to]
             moves << Movement::Move.new(self, from, to, Movement::RegularCapture.new(enemy))
           end
@@ -129,7 +136,7 @@ module Application
           if position.enp_target == target
             offset = self.class.directions[@color][:enp_offset]
             to = target + offset
-            if board.avoids_check?(from, to, @color)
+            if board.avoids_check?(position, from, to, @color)
               enemy = position.enemy_pieces[target]
               moves << Movement::Move.new(self, from, to, Movement::EnPassantCapture.new(enemy, target))
             end 
@@ -141,13 +148,13 @@ module Application
         dir = self.class.directions[@color]
         to = from + dir[:advance]
         if board.empty?(to)
-          if board.avoids_check?(from, to, @color)
+          if board.avoids_check?(position, from, to, @color)
             moves << Movement::Move.new(self, from, to, Movement::PawnMove.new)
           end
           if from.r == dir[:start_row]
             to = from + dir[:initial]
             if board.empty?(to)
-              if board.avoids_check?(from, to, @color)
+              if board.avoids_check?(position, from, to, @color)
                 moves << Movement::Move.new(self, from, to, Movement::EnPassantAdvance.new)
               end
             end
@@ -161,6 +168,11 @@ module Application
         VALUE = PIECE_VALUES[:N]
         def value
           VALUE
+        end
+
+        ID = PIECE_ID[:N]
+        def id
+          ID
         end
 
         def type
@@ -185,6 +197,11 @@ module Application
           VALUE
         end
 
+        ID = PIECE_ID[:B]
+        def id
+          ID
+        end
+
         def type
           :B
         end
@@ -205,6 +222,11 @@ module Application
         VALUE = PIECE_VALUES[:R]
         def value
           VALUE
+        end
+
+        ID = PIECE_ID[:R]
+        def id
+          ID
         end
 
         def type
@@ -229,6 +251,11 @@ module Application
           VALUE
         end
 
+        ID = PIECE_ID[:Q]
+        def id
+          ID
+        end
+
         def type
           :Q
         end
@@ -251,6 +278,11 @@ module Application
           VALUE
         end
 
+        ID = PIECE_ID[:K]
+        def id
+          ID
+        end
+
         def type
           :K
         end
@@ -263,6 +295,24 @@ module Application
         def directions
           KING_DIRECTIONS
         end
+      end
+
+
+      def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
+        moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
+        self.class.directions.each do |direction|
+          to = from + direction
+          board = position.board
+          if board.pseudo_legal?(to, @color) && board.avoids_check?(position, from, to, @color)
+            strategy = if board.enemy?(to, @color)
+              Movement::KingCapture.new(position.enemy_pieces[to])
+            else
+              Movement::KingMove.new
+            end
+            moves << Movement::Move.new(self, from, to, strategy)
+          end
+        end
+        return moves
       end
     end
 

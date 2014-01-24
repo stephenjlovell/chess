@@ -23,13 +23,15 @@ module Application
   module Position
 
     class ChessPosition # Mutable description of the game state as of a specific turn.
-      attr_accessor :board, :pieces,  :side_to_move, :enemy, :halfmove_clock, :castle, :enp_target, :hash
+      attr_accessor :board, :pieces, :side_to_move, :enemy, :halfmove_clock, :castle, :enp_target, 
+                    :hash, :king_location
 
       def initialize(board, pieces, side_to_move, halfmove_clock)
         @board, @pieces, @side_to_move, @halfmove_clock = board, pieces, side_to_move, halfmove_clock
         @enemy = @side_to_move == :w ? :b : :w
         @enp_target, @castle = nil, 0b1111
         @hash = @board.hash
+        @king_location = { w: Location::get_location(2,6), b: Location::get_location(9,6) }
       end
 
       def active_pieces
@@ -38,6 +40,18 @@ module Application
 
       def enemy_pieces
         @pieces[@enemy]
+      end
+
+      def active_king_location
+        @king_location[@side_to_move]
+      end
+
+      def active_king_location=(location)
+        @king_location[@side_to_move] = location
+      end
+
+      def enemy_king_location
+        @king_location[@enemy]
       end
 
       def value
@@ -63,15 +77,15 @@ module Application
       # end
 
       def in_check?
-        @board.king_in_check?(@side_to_move)
+        @board.king_in_check?(self, @side_to_move)
       end
 
       def enemy_in_check?
-        @board.king_in_check?(@enemy)
+        @board.king_in_check?(self, @enemy)
       end
 
       def avoids_check?(from, to)
-        @board.avoids_check?(from, to, @side_to_move)
+        @board.avoids_check?(self, from, to, @side_to_move)
       end
 
       def to_s
@@ -79,28 +93,27 @@ module Application
       end
 
       def inspect
-        "<Application::Position::ChessPosition <@board:#{@board.inspect}> <@pieces:#{@pieces.inspect}>, <@side_to_move:#{@side_to_move}>>"
+        "<Application::Position::ChessPosition <@board:#{@board.inspect}> 
+         <@pieces:#{@pieces.inspect}>, <@side_to_move:#{@side_to_move}>>"
       end
-
 
       # These methods will be re-written to make use of Movement::MoveList class:
 
       def tactical_edges(pv_move=nil)
-        in_check? ? get_moves : get_moves.select{ |m| m.capture_value > 0.0 }
+        in_check? ? get_moves : get_moves.select{ |m| m.capture? }
       end
 
       def get_moves(pv_move=nil) # returns a sorted array of all possible moves for the current player.
         moves = []
         active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
-        # moves += get_castles if !in_check? && @options[:castle]
-        # sort_moves!(moves, pv_move)
+        sort_moves!(moves)
         return moves      
       end
       alias :edges :get_moves
 
-      # def sort_moves!(moves, pv_move)
-      #   moves.sort! { |x,y| y.capture_value <=> x.capture_value }  # also sort non-captures by Killer Heuristic?
-      # end
+      def sort_moves!(moves)
+        moves.sort! { |x,y| y.mvv_lva <=> x.mvv_lva }  # also sort non-captures by Killer Heuristic?
+      end
 
     end
 

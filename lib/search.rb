@@ -127,7 +127,7 @@ module Application
 
           MoveGen::make_unmake!(@root, move) do
             extension = 4  # start with a full ply extension.
-            extension -= 1 if move.capture_value >= 1.5
+            # extension -= 1 if move.capture_value >= 1.5
             extension -= 2 if @root.in_check?
             result = -alpha_beta_main(@root, depth-extension, -beta, -alpha, previous_pv, current_pv)
           end
@@ -198,7 +198,7 @@ module Application
 
           MoveGen::make_unmake!(node, move) do
             extension = 4  # start with a full ply extension.
-            extension -= 1 if move.capture_value >= 1.5
+            # extension -= 1 if move.capture_value >= 1.5
             extension -= 2 if node.in_check?
             result = -alpha_beta_main(node, depth-extension, -beta, -alpha, previous_pv, current_pv)
           end

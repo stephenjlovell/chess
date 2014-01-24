@@ -26,25 +26,7 @@ module Application
 
   class Board
     include Enumerable
-
     attr_accessor :squares
-
-    # def initialize # generates a representation of an empty chessboard.             # row  board #
-    #   @squares = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
-    #                [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
-    #                [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 2    1
-    #                [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 3    2
-    #                [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 4    3
-    #                [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 5    4
-    #                [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
-    #                [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7    6
-    #                [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 8    7
-    #                [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 9    8
-    #                [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
-    #                [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
-    #         # column  0    1    2    3    4    5    6    7    8    9    10   11
-    #         # letter            A    B    C    D    E    F    G    H
-    # end
 
     def initialize  # sets initial configuration of board at start of game.         # row  board #
       @squares = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
@@ -110,7 +92,7 @@ module Application
       return key
     end
 
-    def coordinates(r, c)
+    def square(r, c)
       @squares[r][c]
     end
 
@@ -126,7 +108,7 @@ module Application
       @squares[location.r][location.c] == nil
     end
 
-    def coordinates_empty?(r,c)
+    def square_empty?(r,c)
       @squares[r][c] == nil
     end
 
@@ -134,7 +116,7 @@ module Application
       @squares[location.r][location.c] == :XX
     end
 
-    def coordinates_out_of_bounds?(r, c)
+    def square_out_of_bounds?(r, c)
       @squares[r][c] == :XX
     end
 
@@ -151,12 +133,12 @@ module Application
       empty?(location) || enemy?(location, color)
     end
 
-    def avoids_check?(from, to, color)
+    def avoids_check?(position, from, to, color)
       piece_sym = self[from]
       target_sym = self[to]
       self[from] = nil  # simulate making the specified regular move
       self[to] = piece_sym
-      avoids_check = king_in_check?(color) == false  # No moves are legal if king has been killed.
+      avoids_check = king_in_check?(position, color) == false  # No moves are legal if king has been killed.
       self[from] = piece_sym  # undo changes to board
       self[to] = target_sym
       return avoids_check
@@ -165,9 +147,10 @@ module Application
     THREATS = { w: { P: [:bP], N: [:bN], straight: [:bR, :bQ], diagonal: [:bB, :bQ] }, 
                 b: { P: [:wP], N: [:wN], straight: [:wR, :wQ], diagonal: [:wB, :wQ] } }
 
-    def king_in_check?(color)
+    def king_in_check?(position, color)
       threats = THREATS[color]
-      from = find_king(color) # get location of king for color.
+      from = position.king_location[color] # get location of king for color.
+
       return nil if from.nil?
       dir = Pieces::DIRECTIONS
       check_each_direction(from, dir[:P][color][:attack], false, threats[:P]) || # pawns
@@ -177,15 +160,7 @@ module Application
     end
 
     private
-    
-    def find_king(color)  # alternatively, store king location in instance var and update on king move
-      if color == :w      # King is more likely to be at its own end of the board.
-        each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :wK }
-      else
-        reverse_each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :bK }
-      end
-      return nil
-    end
+
 
     def check_each_direction(from, directions, until_blocked, threat_pieces)
       directions.each { |d| return true if check_direction(from, d, until_blocked, threat_pieces) }

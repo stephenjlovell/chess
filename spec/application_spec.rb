@@ -36,7 +36,7 @@ describe Application do
     before { @game = Application::Game.new(:b) }
     subject { @game }
     it { should respond_to :position }    
-    it { should respond_to :halfmove_counter }
+    it { should respond_to :halfmove_clock }
     it { should respond_to :tt }
     it { should respond_to :clock }
     it { should respond_to :ai_player }

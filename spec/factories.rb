@@ -76,6 +76,9 @@ FactoryGirl.define do
     side_to_move :w
     halfmove_clock 0
     hash { board.hash }
+    # king { { w: Location::get_location(2,6), b: Location::get_location(9,6) } }
+    king_location { { w: FactoryGirl.build(:location, r: 2, c: 6),
+                      b: FactoryGirl.build(:location, r: 9, c: 6) } }
     initialize_with { new(board, pieces, side_to_move, halfmove_clock) }
 
     factory :test_position do
@@ -84,6 +87,8 @@ FactoryGirl.define do
       side_to_move :w
       halfmove_clock 20
       hash { board.hash }
+      king_location { { w: FactoryGirl.build(:location, r: 2, c: 6),
+                        b: FactoryGirl.build(:location, r: 9, c: 6) } }
       initialize_with { new(board, pieces, side_to_move, halfmove_clock) }
     end
   end
