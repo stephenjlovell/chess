@@ -6,8 +6,8 @@ module Application
     LETTER_TO_NUMBER = { "a" => 2, "b" => 3, "c" => 4, "d" => 5,
                          "e" => 6, "f" => 7, "g" => 8, "h" => 9 }
 
-    class Location
-      attr_reader :r, :c
+    class Location  # Immutable class. An array of location objects are created at
+      attr_reader :r, :c, :hash  # startup and passed around by reference.
 
       class << self
         def include(sym, &proc)
@@ -16,48 +16,39 @@ module Application
       end
       
       def initialize(r,c)
-        @r, @c = r,c
+        @r, @c = r, c
+        @symbol = to_s.to_sym
+        @hash = to_a.hash
       end
 
       def eql?(other)
         @r.eql?(other.r) && @c.eql?(other.c)
       end
-
       alias :== :eql? 
-
-      def hash
-        to_a.hash
-      end
-
-      def copy
-        self.class.new(@r, @c)
-      end
 
       def to_s
         (NUMBER_TO_LETTER[@c]) + (@r - 1).to_s
       end
 
       def to_sym
-        to_s.to_sym
+        @symbol
       end
 
       def to_a
         [@r, @c]
       end
-
     end
-
 
     def self.create_locations
       arr = Array.new(12) { Array.new(12) }
       arr.each_with_index { |row, r| row.each_with_index { |loc, c| row[c] = Location.new(r,c) } }
-      Application::Location::Location.include(:+) do |arr|
-        LOCATIONS[@r+arr[0]][@c+arr[1]]
-      end
       return arr
     end
 
     LOCATIONS = create_locations
+    Application::Location::Location.include(:+) do |arr|  # Append + method to Location class.
+      LOCATIONS[@r+arr[0]][@c+arr[1]]  # This is to avoid a circular definition when LOCATIONS
+    end                                # constant is set at startup.
 
     def self.get_location(r, c)
       LOCATIONS[r][c]

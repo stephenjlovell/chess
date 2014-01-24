@@ -34,11 +34,12 @@ describe Application::Movement do
   describe "move generation" do
 
     it "should generate the correct number of nodes" do
+      depth = 4
       t0 = Time.now
-      node_count = Perft(@root, 5) # first castling moves would occur at minimum ply 5.
+      node_count = Perft(@root, depth) # first castling moves would occur at minimum ply 5.
       t1 = Time.now
       print "#{node_count} nodes in #{t1-t0} seconds (#{node_count/(t1-t0)} NPS)"
-      node_count.should == MAX_TREE[5]
+      node_count.should == MAX_TREE[depth]
     end
 
   end

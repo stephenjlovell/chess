@@ -108,7 +108,7 @@ module Application
       def get_moves(from, position) # supercedes the generic get_moves function 
         moves = []                  # provided by the Piece class.
         get_attacks(from, position, position.board, moves)
-        get_en_passant(from, position, position.board, moves) if position.options[:enp_target]
+        get_en_passant(from, position, position.board, moves) if position.enp_target
         get_advances(from, position, position.board, moves)
         return moves
       end
@@ -126,7 +126,7 @@ module Application
       def get_en_passant(from, position, board, moves)
         self.class.directions[:en_passant].each do |pair|
           target = from + pair
-          if position.options[:enp_target] == target
+          if position.enp_target == target
             offset = self.class.directions[@color][:enp_offset]
             to = target + offset
             if board.avoids_check?(from, to, @color)

@@ -163,13 +163,13 @@ module Application
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
-        position.options[:enp_target] = to # Set enp_target to new target square
+        position.enp_target = to # Set enp_target to new target square
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         unmake_clock_adjustment(position)
-        position.options[:enp_target] = nil
+        position.enp_target = nil
       end
 
       def hash(piece, from, to)
@@ -223,7 +223,6 @@ module Application
       end
     end
 
-
     class Move
       attr_reader :moved_piece, :from, :to, :enp_target
 
@@ -232,14 +231,14 @@ module Application
       end
 
       def make!(position)
-        @enp_target = position.options[:enp_target]  # save old enp_target for make/unmake
-        position.options.delete(:enp_target)
+        @enp_target = position.enp_target  # save old enp_target for make/unmake
+        position.enp_target = nil
         @strategy.make!(position, @moved_piece, @from, @to)  # delegate to the strategy class.
       end
 
       def unmake!(position)
         @strategy.unmake!(position, @moved_piece, @from, @to)
-        position.options[:enp_target] = @enp_target
+        position.enp_target = @enp_target
       end
 
       def capture_value

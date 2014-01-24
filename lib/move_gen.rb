@@ -22,6 +22,13 @@
 module Application
   module MoveGen
 
+
+    # Castling rights
+    C_WQ = 0b1000  # White castle queen side
+    C_WK = 0b0100  # White castle king side
+    C_BQ = 0b0010  # Black castle queen side
+    C_BK = 0b0001  # Black castle king side
+
     class MoveList  # Notional place to store, organize, and sort moves more easily.
       attr_accessor :captures, :regular_moves, :castles, :checks
 
@@ -35,6 +42,7 @@ module Application
       def next_move  # return the next move from the move stack
       end
     end
+
 
 
 
@@ -64,6 +72,29 @@ module Application
       end
       pos.hash ^= move.hash ^ Memory::side_key
     end
+
+
+    def self.get_castles(pos)
+      castle = pos.castle
+      if pos.side_to_move == :w
+        if castle & C_WK
+          
+        end
+        if castle & C_WQ
+
+        end
+      else
+        if castle & C_BK
+
+        end
+        if castle & C_BQ
+          
+        end
+      end
+
+    end
+
+
 
   end
 end

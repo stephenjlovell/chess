@@ -22,17 +22,13 @@
 module Application
   module Position
 
-    class ChessPosition    # Complete description of the game state as of a specific turn.
-      include Application::Movement
-      
-      attr_accessor :board, :pieces,  :side_to_move, :enemy, :halfmove_clock, :options, :hash
-      # option flags: :enp_target, :castle
+    class ChessPosition # Mutable description of the game state as of a specific turn.
+      attr_accessor :board, :pieces,  :side_to_move, :enemy, :halfmove_clock, :castle, :enp_target, :hash
 
-      def initialize(board, pieces, side_to_move, halfmove_clock, options = {})
+      def initialize(board, pieces, side_to_move, halfmove_clock)
         @board, @pieces, @side_to_move, @halfmove_clock = board, pieces, side_to_move, halfmove_clock
         @enemy = @side_to_move == :w ? :b : :w
-        @options = options
-        @options[:castle] = { low: true, high: true } unless options.nil?
+        @enp_target, @castle = nil, 0b1111
         @hash = @board.hash
       end
 
