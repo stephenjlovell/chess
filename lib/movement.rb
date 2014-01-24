@@ -239,7 +239,7 @@ module Application
 
       def unmake!(position)
         @strategy.unmake!(position, @moved_piece, @from, @to)
-        # position.options[:enp_target] = @enp_target
+        position.options[:enp_target] = @enp_target
       end
 
       def capture_value

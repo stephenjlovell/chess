@@ -28,52 +28,28 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
 
 To Do ----
 
-  Add separate PSTs for early- and late-game.
+  Refactor storage of enp_target and castle options in position object
 
-  Add Killer Heuristic to move ordering.
-  Allow incremental calculation of hash values based on previous move of the Transposition Table.
+  Add hashing of castling rights?
 
-  Principal Variation - 
+  Replace move generator for castles
 
+  Refactor the TT probing logic into TT class, and call it from move_gen.
 
-  Explore adding search extensions to "interesting" branches:
+  Move ordering (priority high to low):
+    -PV move
+    -Hash Move
+    -Killer Moves
+    -Captures sorted by MVV-LVA
+    -Non-captures sorted by History Heuristic
+
+  Search extensions:
+    -Principal Variation
     -checks
-    -moves with MVV-LVA ratio greater than 2
+    -captures with MVV-LVA ratio greater than 1.5
     -pawn promotions
 
-  If capture or pawn move, reset halfmove_clock.  If any other move, increment halfmove_clock by 1.
-
-
-
-  Add en-passant information to hashing:
-  
-  MAKE enp move example:
-                      move.make
-  pos.enp => b4       # an old enp_target exists prior to making move
-  move.enp = b4       # original enp_target saved in move object (for make/unmake)
-  pos.enp = nil       # All moves start with removal of existing en_passant key
-    -XOR b4           # XOR out the old enp_target
-
-                      @strategy.make
-  pos.enp = c4        # Set enp_target to new target square
-    -XOR c4           # XOR in the new enp_target
-
-
-  UNMAKE
-                      @strategy.unmake
-  pos.enp = nil       # remove the new enp_target
-    -XOR c4           # XOR out the new enp_target
-
-                      move.unmake
-  pos.enp = move.enp  # add back the previous enp_target value
-    -XOR b4           # XOR in the old enp_target
-
-
-  in move hash:
-    ^ c4 ^ b4
-
-
-
+  Add separate PSTs for early- and late-game in Evaluation module.
 
 
 

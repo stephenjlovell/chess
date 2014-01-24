@@ -25,12 +25,18 @@ module Application
     class MoveList  # Notional place to store, organize, and sort moves more easily.
       attr_accessor :captures, :regular_moves, :castles, :checks
 
+      # Generate moves by category of move, then append categories together.
+      # use arr.uniq{ |m| m.hash } to eliminate duplicate moves.
+
+
       def get_moves(position)
       end
 
       def next_move  # return the next move from the move stack
       end
     end
+
+
 
     # Module interface
 
