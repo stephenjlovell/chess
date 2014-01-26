@@ -22,7 +22,7 @@ module Application
 
     PSQ = create_key_array { piece_hash }
     ENP = create_key_array { create_key }
-    SIDE = create_key
+    SIDE = 0b1  # faster, but does this increase risk of collisions vs. using a complete 64-bit key?
 
     def self.side_key
       SIDE
@@ -149,7 +149,6 @@ module Application
         $memory_calls += 1 if @table[h]
         @table[h]
       end
-
     end # end TranspostionTable class
 
   end

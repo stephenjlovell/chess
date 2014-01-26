@@ -297,13 +297,12 @@ module Application
         end
       end
 
-
       def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
         moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
         self.class.directions.each do |direction|
           to = from + direction
           board = position.board
-          if board.pseudo_legal?(to, @color) && board.avoids_check?(position, from, to, @color)
+          if board.pseudo_legal?(to, @color) && board.avoids_check?(position, from, to, @color, to)
             strategy = if board.enemy?(to, @color)
               Movement::KingCapture.new(position.enemy_pieces[to])
             else

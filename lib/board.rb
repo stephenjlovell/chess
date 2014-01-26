@@ -133,25 +133,38 @@ module Application
       empty?(location) || enemy?(location, color)
     end
 
-    def avoids_check?(position, from, to, color)
+    def avoids_check?(position, from, to, color, king_location=nil)
       piece_sym = self[from]
       target_sym = self[to]
       self[from] = nil  # simulate making the specified regular move
       self[to] = piece_sym
-      avoids_check = king_in_check?(position, color) == false  # No moves are legal if king has been killed.
+
+      avoids_check = king_in_check?(position, color, king_location) == false  # No moves are legal if king has been killed.
+
       self[from] = piece_sym  # undo changes to board
       self[to] = target_sym
       return avoids_check
     end
 
+    def find_king(color) # alternatively, store king location in instance var and update on king move
+      if color == :w # King is more likely to be at its own end of the board.
+        each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :wK }
+      else
+        reverse_each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :bK }
+      end
+      # return nil
+      raise "king not found"
+    end
+
     THREATS = { w: { P: [:bP], N: [:bN], straight: [:bR, :bQ], diagonal: [:bB, :bQ] }, 
                 b: { P: [:wP], N: [:wN], straight: [:wR, :wQ], diagonal: [:wB, :wQ] } }
 
-    def king_in_check?(position, color)
+    def king_in_check?(position, color, king_location=nil)
       threats = THREATS[color]
-      from = position.king_location[color] # get location of king for color.
-
-      return nil if from.nil?
+      from = king_location || position.king_location[color] # get location of king for color.
+      if from.nil?
+        puts "the king is dead."; position.board.print; return nil 
+      end
       dir = Pieces::DIRECTIONS
       check_each_direction(from, dir[:P][color][:attack], false, threats[:P]) || # pawns
       check_each_direction(from, dir[:N], false, threats[:N]) || # knights

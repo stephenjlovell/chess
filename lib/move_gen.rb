@@ -22,7 +22,6 @@
 module Application
   module MoveGen
 
-
     # Castling rights
     C_WQ = 0b1000  # White castle queen side
     C_WK = 0b0100  # White castle king side
@@ -34,7 +33,6 @@ module Application
 
       # Generate moves by category of move, then append categories together.
       # use arr.uniq{ |m| m.hash } to eliminate duplicate moves.
-
 
       def get_moves(position)
       end
@@ -71,7 +69,17 @@ module Application
       pos.hash ^= move.hash ^ Memory::side_key
     end
 
-    # private
+    WATCH = { Location::get_location(2,2) => Proc.new { |pos| pos.castle &= ~C_WK },
+              Location::get_location(2,6) => Proc.new { |pos| pos.castle &= ~(C_WK|C_WQ) },
+              Location::get_location(2,8) => Proc.new { |pos| pos.castle &= ~C_WQ },
+              Location::get_location(9,2) => Proc.new { |pos| pos.castle &= ~C_BK },
+              Location::get_location(9,6) => Proc.new { |pos| pos.castle &= ~(C_BK|C_BQ) },
+              Location::get_location(9,8) => Proc.new { |pos| pos.castle &= ~C_BQ } }
+
+    def self.set_castle_flag(pos, move)
+      WATCH[from].call(pos) if WATCH[from]
+      WATCH[to].call(pos) if WATCH[to]
+    end
 
     def self.get_castles(pos)
       castle, b = pos.castle, pos.board
@@ -83,7 +91,8 @@ module Application
             castle = position.active_pieces[castle_from]
             king_from, king_to = Location::get_location(2,6), Location::get_location(2,4)
             king = position.active_pieces[king_from]
-            Movement::Move.new(king, king_from, king_to, Movement::Castle.new(castle, castle_from, castle_to))
+            Movement::Move.new(king, king_from, king_to, 
+                               Movement::Castle.new(castle, castle_from, castle_to))
           end 
         end
         if castle & C_WQ
@@ -93,7 +102,8 @@ module Application
             castle = position.active_pieces[castle_from]
             king_from, king_to = Location::get_location(2,6), Location::get_location(2,8)
             king = position.active_pieces[king_from]
-            Movement::Move.new(king, king_from, king_to, Movement::Castle.new(castle, castle_from, castle_to))
+            Movement::Move.new(king, king_from, king_to, 
+                               Movement::Castle.new(castle, castle_from, castle_to))
           end
         end
       else
@@ -104,7 +114,8 @@ module Application
             castle = position.active_pieces[castle_from]
             king_from, king_to = Location::get_location(9,6), Location::get_location(9,4)
             king = position.active_pieces[king_from]
-            Movement::Move.new(king, king_from, king_to, Movement::Castle.new(castle, castle_from, castle_to))
+            Movement::Move.new(king, king_from, king_to, 
+                               Movement::Castle.new(castle, castle_from, castle_to))
           end 
         end
         if castle & C_BQ
@@ -114,7 +125,8 @@ module Application
             castle = position.active_pieces[castle_from]
             king_from, king_to = Location::get_location(9,6), Location::get_location(9,4)
             king = position.active_pieces[king_from]
-            Movement::Move.new(king, king_from, king_to, Movement::Castle.new(castle, castle_from, castle_to))
+            Movement::Move.new(king, king_from, king_to, 
+                               Movement::Castle.new(castle, castle_from, castle_to))
           end
         end
       end

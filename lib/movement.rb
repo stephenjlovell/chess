@@ -242,13 +242,13 @@ module Application
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         relocate_piece(position, @rook, @castle_from, @castle_to)
-        # remove castling option for the appropriate side
+        position.active_king_location = to
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         relocate_piece(position, @rook, @castle_to, @castle_from)
-        # add back castling option for the appropriate side
+        position.active_king_location = from
       end
 
       def hash(piece, from, to)

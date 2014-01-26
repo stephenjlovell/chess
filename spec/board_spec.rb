@@ -81,6 +81,8 @@ describe Application::Board do
     end
 
     it 'should know if the specified king is in check' do
+      @board.print
+      @threat_board.print
       @board.king_in_check?(@position, :w).should be_false
       @board.king_in_check?(@position, :b).should be_false
       @threat_board.king_in_check?(@position, :w).should be_true

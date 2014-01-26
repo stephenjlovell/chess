@@ -58,10 +58,6 @@ module Application
         Evaluation::evaluate(self)
       end
 
-      # def value=(value)
-      #   @value = value
-      # end
-
       # def in_check?
       #   if @in_check.nil?
       #     in_check = @board.king_in_check?(@side_to_move)
