@@ -95,17 +95,21 @@ module Application
 
       # These methods will be re-written to make use of Movement::MoveList class:
 
-      def tactical_edges(pv_move=nil)
-        in_check? ? get_moves : get_moves.select{ |m| m.capture? }
-      end
-
-      def get_moves(pv_move=nil) # returns a sorted array of all possible moves for the current player.
+      def get_moves # returns a sorted array of all possible moves for the current player.
         moves = []
         active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
         sort_moves!(moves)
         return moves      
       end
       alias :edges :get_moves
+
+      def get_captures # returns a sorted array of all possible moves for the current player.
+        moves = []
+        active_pieces.each { |key, piece| moves += piece.get_captures(key, self) }
+        sort_moves!(moves)
+        return moves      
+      end
+      alias :tactical_edges :get_captures
 
       def sort_moves!(moves)
         moves.sort! { |x,y| y.mvv_lva <=> x.mvv_lva }  # also sort non-captures by Killer Heuristic?

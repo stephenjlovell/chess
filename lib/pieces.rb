@@ -57,18 +57,25 @@ module Application
 
       def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
         moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
-        until_blocked = self.class.move_until_blocked?
         self.class.directions.each do |direction|
-          move = explore_direction(from, from, direction, position, until_blocked)
-          moves += move
+          more_moves = explore_direction(from, from, direction, position, position.board)
+          moves += more_moves
+        end
+        return moves
+      end
+
+      def get_captures(from, position)
+        moves = []                  
+        self.class.directions.each do |direction|
+          more_moves = explore_direction_for_captures(from, from, direction, position, position.board)
+          moves += more_moves
         end
         return moves
       end
 
       private 
-      def explore_direction(from, current_location, direction, position, until_blocked, moves = [] )
+      def explore_direction(from, current_location, direction, position, board, moves = [])
         to = current_location + direction
-        board = position.board
         if board.pseudo_legal?(to, @color)
           if board.avoids_check?(position, from, to, @color)
             strategy = if board.enemy?(to, @color)
@@ -78,12 +85,23 @@ module Application
             end
             moves << Movement::Move.new(self, from, to, strategy)
           end
-          if until_blocked && board.empty?(to)
-            explore_direction(from, to, direction, position, until_blocked, moves) 
-          end
+          explore_direction(from, to, direction, position, board, moves) if board.empty?(to)
         end
         return moves
       end
+
+      def explore_direction_for_captures(from, current_location, direction, position, board, moves = [])
+        to = current_location + direction
+        if board.pseudo_legal?(to, @color)
+          if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color) 
+            moves << Movement::Move.new(self, from, to, 
+                                        Movement::RegularCapture.new(position.enemy_pieces[to]))
+          end
+          explore_direction_for_captures(from, to, direction, position, board, moves) if board.empty?(to)
+        end
+        return moves
+      end
+
     end
 
     class Pawn < Piece
@@ -119,6 +137,15 @@ module Application
         get_advances(from, position, position.board, moves)
         return moves
       end
+
+      def get_captures(from, position)
+        moves = []                  
+        get_attacks(from, position, position.board, moves)
+        get_en_passant(from, position, position.board, moves) if position.enp_target
+        return moves
+      end
+
+      private
 
       def get_attacks(from, position, board, moves)
         self.class.directions[@color][:attack].each do |pair|  # normal attacks
@@ -188,6 +215,36 @@ module Application
           KNIGHT_DIRECTIONS
         end
       end
+
+      def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
+        moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
+        board = position.board
+        self.class.directions.each do |direction|
+          to = from + direction
+          if board.pseudo_legal?(to, @color) && board.avoids_check?(position, from, to, @color)
+            strategy = if board.enemy?(to, @color)
+              Movement::RegularCapture.new(position.enemy_pieces[to])
+            else
+              Movement::RegularMove.new
+            end
+            moves << Movement::Move.new(self, from, to, strategy)
+          end
+        end
+        return moves
+      end
+
+      def get_captures(from, position) # returns a collection of all pseudo-legal moves for the current piece.
+        moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
+        board = position.board
+        self.class.directions.each do |direction|
+          to = from + direction
+          if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
+            moves << Movement::Move.new(self, from, to, Movement::RegularCapture.new(position.enemy_pieces[to]))
+          end
+        end
+        return moves
+      end
+
     end
 
     class Bishop < Piece
@@ -299,9 +356,9 @@ module Application
 
       def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
         moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
+        board = position.board
         self.class.directions.each do |direction|
           to = from + direction
-          board = position.board
           if board.pseudo_legal?(to, @color) && board.avoids_check?(position, from, to, @color, to)
             strategy = if board.enemy?(to, @color)
               Movement::KingCapture.new(position.enemy_pieces[to])
@@ -313,6 +370,19 @@ module Application
         end
         return moves
       end
+
+      def get_captures(from, position) # returns a collection of all pseudo-legal moves for the current piece.
+        moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
+        board = position.board
+        self.class.directions.each do |direction|
+          to = from + direction
+          if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color, to)
+            moves << Movement::Move.new(self, from, to, Movement::KingCapture.new(position.enemy_pieces[to]))
+          end
+        end
+        return moves
+      end
+
     end
 
     def self.get_value_by_sym(sym)

@@ -275,7 +275,7 @@ module Application
       end
 
       def capture?
-        @strategy.respond_to?(:mvv_lva)
+        @strategy.capture?
       end
 
       def mvv_lva

@@ -28,11 +28,11 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
 
 To Do ----
 
-  Refactor storage of enp_target and castle options in position object
+  Add separate move generators in piece classes for captures -> quiescence search.
+
+  Remove calls to pseudo_legal? during move generation.
 
   Add hashing of castling rights?
-
-  Replace move generator for castles
 
   Refactor the TT probing logic into TT class, and call it from move_gen.
 
