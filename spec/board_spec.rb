@@ -71,9 +71,8 @@ describe Application::Board do
   describe 'king saftey' do
     before do
       @position = FactoryGirl.build(:test_position)
-      @board = FactoryGirl.build(:test_board)
-      @threat_board = FactoryGirl.build(:test_board)
-      @threat_board.squares[3][7] = :bP
+      @board = @position.board
+      @board.squares[3][7] = :bP
       @from = FactoryGirl.build(:location, r: 2, c: 6)
       @to = FactoryGirl.build(:location, r: 3, c: 7)
       @alt_from = FactoryGirl.build(:location, r: 2, c: 3)
@@ -81,17 +80,13 @@ describe Application::Board do
     end
 
     it 'should know if the specified king is in check' do
-      @board.print
-      @threat_board.print
-      @board.king_in_check?(@position, :w).should be_false
+      @board.king_in_check?(@position, :w).should be_true
       @board.king_in_check?(@position, :b).should be_false
-      @threat_board.king_in_check?(@position, :w).should be_true
-      @threat_board.king_in_check?(@position, :b).should be_false
     end
 
     it 'should test if a move would get specified side out of check' do
-      @threat_board.avoids_check?(@position, @from, @to, :w).should be_true
-      @threat_board.avoids_check?(@position, @alt_from, @alt_to, :w).should be_false
+      @board.avoids_check?(@position, @from, @to, :w).should be_true
+      @board.avoids_check?(@position, @alt_from, @alt_to, :w).should be_false
     end
 
   end
