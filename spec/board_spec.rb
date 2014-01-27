@@ -61,11 +61,6 @@ describe Application::Board do
       @board.enemy?(@occupied,:w).should be_false
       @board.enemy?(@enemy,:w).should be_true
     end
-    it 'if a move target is pseudo-legal' do
-      @board.pseudo_legal?(@out,:w).should be_false
-      @board.pseudo_legal?(@enemy,:W).should be_true
-      @board.pseudo_legal?(@empty,:w).should be_true
-    end
   end
 
   describe 'king saftey' do
@@ -91,7 +86,27 @@ describe Application::Board do
 
   end
 
+  describe 'when finding pieces that attack a given square' do
+    before do
+      @board = FactoryGirl.build(:test_board)
+      @location = Application::Location::get_location(5,8)
+    end
+
+    it 'should generate a list of squares holding pieces that attack the given square' do
+      @board.attackers(@location, :w).should == [Application::Location::get_location(2,5)]
+      @board.attackers(@location, :b).should == [Application::Location::get_location(7,7)]
+    end
+
+  end
+
+
+
 end
+
+
+
+
+
 
 
 

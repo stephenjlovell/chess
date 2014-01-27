@@ -58,20 +58,6 @@ module Application
         Evaluation::evaluate(self)
       end
 
-      # def in_check?
-      #   if @in_check.nil?
-      #     in_check = @board.king_in_check?(@side_to_move)
-      #     if in_check.nil?
-      #       self.value = -$INF  # The king is dead, long live the king.
-      #       @in_check = true
-      #     else 
-      #       @in_check = in_check
-      #     end
-      #   else
-      #     @in_check
-      #   end
-      # end
-
       def in_check?
         @board.king_in_check?(self, @side_to_move)
       end
@@ -98,6 +84,7 @@ module Application
       def get_moves # returns a sorted array of all possible moves for the current player.
         moves = []
         active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
+        moves += MoveGen::get_castles(self)
         sort_moves!(moves)
         return moves      
       end
@@ -110,6 +97,13 @@ module Application
         return moves      
       end
       alias :tactical_edges :get_captures
+
+      def get_enemy_captures
+        moves = []
+        enemy_pieces.each { |key, piece| moves += piece.get_captures(key, self) }
+        sort_moves!(moves)
+        return moves      
+      end
 
       def sort_moves!(moves)
         moves.sort! { |x,y| y.mvv_lva <=> x.mvv_lva }  # also sort non-captures by Killer Heuristic?

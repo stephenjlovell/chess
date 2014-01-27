@@ -55,8 +55,9 @@ module Application
         (1..depth).each do |d|
           Search::reset_counters
           current_pv = Memory::PVStack.new
-          best_move, value = yield(guess, d*2, previous_pv, current_pv)
-          puts "#{d} |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
+          best_move, value = yield(guess, d*4, previous_pv, current_pv)
+          total_calls = 0.0 + $main_calls + $quiescence_calls
+          puts "#{d} |m #{$main_calls/total_calls} |q #{$quiescence_calls/total_calls} |t #{total_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
           guess = value
           # current_pv.print
           previous_pv = current_pv
@@ -86,6 +87,29 @@ module Application
       def alpha_beta(depth=@max_depth/4, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil)
         depth ||= @max_depth
         parent_pv ||= Memory::PVStack.new
+        # puts "initial value: #{@root.value}"
+
+        result, best_value, best_move, mate_possible = -$INF, -$INF, nil, true
+        current_pv = Memory::PVStack.new
+
+        pv_move = previous_pv.next_move if previous_pv
+        if pv_move
+          $main_calls += 1
+          mate_possible = false
+
+          MoveGen::make_unmake!(@root, pv_move) do
+            result = -alpha_beta_main(@root, depth-4, -beta, -alpha, previous_pv, current_pv, true)
+            # puts "#{pv_move.to_s}: #{result}"
+          end
+          if result > best_value
+            best_value = result 
+            best_move = pv_move
+          end
+          if best_value > alpha  # child node now a PV node.
+            alpha = best_value
+            append_pv(parent_pv, current_pv, pv_move)
+          end
+        end
 
         entry = $tt.retrieve(@root)
         if entry && entry.depth >= depth
@@ -99,29 +123,7 @@ module Application
           return entry.best_move, entry.value if alpha >= beta # retrieve PV from entry.pv
         end
 
-        result, best_value, best_move, mate_possible = -$INF, -$INF, nil, true
-        current_pv = Memory::PVStack.new
-
-        pv_move = previous_pv.next_move if previous_pv
-        if pv_move
-          $main_calls += 1
-          mate_possible = false
-
-          MoveGen::make_unmake!(@root, pv_move) do
-            result = -alpha_beta_main(@root, depth-3, -beta, -alpha, previous_pv, current_pv, true)
-          end
-          if result > best_value
-            best_value = result 
-            best_move = pv_move
-          end
-          if best_value > alpha  # child node now a PV node.
-            alpha = best_value
-            append_pv(parent_pv, current_pv, pv_move)
-          end
-        end
-
         @root.edges.each do |move|
-          next if pv_move && move.hash == pv_move.hash
           $main_calls += 1
           mate_possible = false
 
@@ -130,6 +132,7 @@ module Application
             # extension -= 1 if move.capture_value >= 1.5
             # extension -= 2 if @root.in_check?
             result = -alpha_beta_main(@root, depth-extension, -beta, -alpha, previous_pv, current_pv)
+            # puts "#{move.to_s}: #{result}"
           end
 
           if result > best_value
@@ -148,7 +151,31 @@ module Application
 
       def alpha_beta_main(node, depth, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil, on_pv=false)
 
-        entry = $tt.retrieve(node)
+        result, best_value, best_move, mate_possible = -$INF, -$INF, nil, true
+        current_pv = Memory::PVStack.new
+
+        
+        if on_pv  # try the PV move first
+          pv_move = previous_pv.next_move
+          if pv_move
+            mate_possible = false
+            
+            MoveGen::make_unmake!(node, pv_move) do
+              result = -alpha_beta_main(node, depth-4, -beta, -alpha, previous_pv, current_pv, true)
+            end
+
+            if result > best_value
+              best_value = result 
+              best_move = pv_move
+            end
+            if best_value > alpha # child node now a PV node.
+              alpha = best_value
+              append_pv(parent_pv, current_pv, pv_move)
+            end
+          end
+        end
+        
+        entry = $tt.retrieve(node)  # then probe the transposition table for a hash move:
         if entry && entry.depth >= depth
           if entry.type == :exact_value
             return entry.value
@@ -168,38 +195,14 @@ module Application
           return $tt.store_result(@max_depth, mate_possible, node, 0, best_value, alpha, beta)  
         end
 
-        result, best_value, best_move, mate_possible = -$INF, -$INF, nil, true
-        current_pv = Memory::PVStack.new
-
-        if on_pv
-          pv_move = previous_pv.next_move
-          if pv_move
-            mate_possible = false
-            
-            MoveGen::make_unmake!(node, pv_move) do
-              result = -alpha_beta_main(node, depth-3, -beta, -alpha, previous_pv, current_pv, true)
-            end
-
-            if result > best_value
-              best_value = result 
-              best_move = pv_move
-            end
-            if best_value > alpha # child node now a PV node.
-              alpha = best_value
-              append_pv(parent_pv, current_pv, pv_move)
-            end
-          end
-        end
-
         node.edges.each do |move|
-          next if pv_move && move.hash == pv_move.hash
           $main_calls += 1
           mate_possible = false  # if legal moves are available, it's not checkmate.
 
           MoveGen::make_unmake!(node, move) do
             extension = 4  # start with a full ply extension.
             # extension -= 1 if move.capture_value >= 1.5
-            extension -= 2 if node.in_check?
+            # extension -= 2 if node.in_check?
             result = -alpha_beta_main(node, depth-extension, -beta, -alpha, previous_pv, current_pv)
           end
           if result > best_value
@@ -234,23 +237,63 @@ module Application
         return best_value if best_value >= beta  
         alpha = best_value if best_value > alpha
 
-        result, best_move, mate_possible = -$INF, nil, true
+        result, best_move, see_squares, mate_possible = -$INF, nil, {}, true
 
         node.tactical_edges.each do |move|
+
+          see_squares[move.to] ||= get_see_score(node, move.to)
+          next if see_squares[move.to] <= 0
+
           $quiescence_calls += 1
           mate_possible = false
+
           MoveGen::make_unmake!(node, move) do
             result = -quiescence(node, depth-4, -beta, -alpha)
           end
+          
           if result > best_value
             best_value = result 
             best_move = move
           end
           alpha = best_value if best_value > alpha
           break if best_value >= beta
+
         end
+
         $tt.store_result(@max_depth, mate_possible, node, depth, best_value, alpha, beta, best_move)
       end
+
+
+      def get_see_score(position, to)
+        attack_squares = { w: position.board.attackers(to, :w), 
+                           b: position.board.attackers(to, :b) }
+        attack_squares.each do |key, arr| 
+          arr.sort! { |x,y| Pieces::PIECE_SYM_ID[y] <=> Pieces::PIECE_SYM_ID[x] }
+        end
+        static_exchange_evaluation(position.board, to, position.side_to_move, attack_squares)
+      end
+
+
+      def static_exchange_evaluation(board, to, side, attack_squares)
+        value = 0
+        from = attack_squares[side].pop # get the next attacking square
+        if from
+          # simulate making the capture
+          sym = board[to]  # save the captured symbol for unmake
+          board[to] = board[from]
+          board[from] = nil 
+
+          side == :w ? :b : :w
+          capture_value = Pieces::get_value_by_sym(sym)
+          value = capture_value - static_exchange_evaluation(board, to, side, attack_squares)
+
+          # simulate unmaking the capture
+          board[from] = board[to]
+          board[to] = sym
+        end
+        return value
+      end
+
 
       def append_pv(parent_pv, current_pv, move)
         parent_pv.clear
@@ -261,11 +304,12 @@ module Application
 
     # Module helper methods
 
-    def self.select_position(root, algorithm = :iterative_deepening_mtdf, max_depth=5)
+    def self.select_position(node, algorithm = :iterative_deepening_mtdf, max_depth=4)
       reset_counters
       $tt = Application::current_game.tt
-      strategy = Strategy.new(root, max_depth, algorithm)
+      strategy = Strategy.new(node, max_depth, algorithm)
       best_move, value = strategy.select_position
+      puts value
       return best_move
     end 
 

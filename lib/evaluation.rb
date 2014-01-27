@@ -109,9 +109,10 @@ module Application
     private
 
     def self.mobility(position)  # should really check this for both sides.
-      if position.in_check?
+      side, enemy = Application::current_game.ai_player, Application::current_game.opponent
+      if position.board.king_in_check?(position, side)
         -90
-      elsif position.enemy_in_check?
+      elsif position.board.king_in_check?(position, enemy)
         90
       else
         0
@@ -119,7 +120,8 @@ module Application
     end
 
     def self.net_material(position) # net material value for side to move.
-      material(position, position.side_to_move) - material(position, position.enemy)
+      side, enemy = Application::current_game.ai_player, Application::current_game.opponent
+      material(position, side) - material(position, enemy)
     end
 
     def self.material(position, side) # =~ 1,040 at start
@@ -131,8 +133,8 @@ module Application
     end
 
     def self.pst_value(piece, location)
-      pst = PST[piece.class.type]
-      piece.color == :w ? pst[SQUARES[location.to_sym]] : pst[MIRROR[SQUARES[location.to_sym]]]
+      pst, sym = PST[piece.class.type], location.to_sym
+      piece.color == :w ? pst[SQUARES[sym]] : pst[MIRROR[SQUARES[sym]]]
     end
 
   end

@@ -51,12 +51,13 @@ module Application
     end
 
     def self.make!(position, move) # Mutates position by making the specified move. 
-      move.make!(position)         # Converts the position into a child position.
+      move.make!(position)        
+      set_castle_flag(position, move)  # Old castle flag is stored in move for unmake.
       flip(position, move)
     end
 
     def self.unmake!(position, move) # Mutates position by reversing the specified move.  
-      flip(position, move)           # Converts the position into its parent position.
+      flip(position, move)          
       move.unmake!(position)
     end
 
@@ -76,34 +77,35 @@ module Application
               Location::get_location(9,6) => Proc.new { |pos| pos.castle &= ~(C_BK|C_BQ) },
               Location::get_location(9,8) => Proc.new { |pos| pos.castle &= ~C_BQ } }
 
-    def self.set_castle_flag(pos, move)
-      WATCH[from].call(pos) if WATCH[from]
-      WATCH[to].call(pos) if WATCH[to]
+    def self.set_castle_flag(position, move)
+      WATCH[move.from].call(position) if WATCH[move.from]
+      WATCH[move.to].call(position) if WATCH[move.to]
     end
 
     def self.get_castles(pos)
       castle, b = pos.castle, pos.board
+      castles = []
       if pos.side_to_move == :w
         if castle & C_WK
           if b.square_empty?(2,3) && b.square_empty?(2,4) && b.square_empty?(2,5)
             # also need to check if enemy controls these squares.
             castle_from, castle_to = Location::get_location(2,2), Location::get_location(2,5)
-            castle = position.active_pieces[castle_from]
+            castle = pos.active_pieces[castle_from]
             king_from, king_to = Location::get_location(2,6), Location::get_location(2,4)
-            king = position.active_pieces[king_from]
-            Movement::Move.new(king, king_from, king_to, 
-                               Movement::Castle.new(castle, castle_from, castle_to))
+            king = pos.active_pieces[king_from]
+            castles << Movement::Move.new(king, king_from, king_to, 
+                       Movement::Castle.new(castle, castle_from, castle_to))
           end 
         end
         if castle & C_WQ
           if b.square_empty?(2,7) && b.square_empty?(2,8)
             # also need to check if enemy controls these squares.
             castle_from, castle_to = Location::get_location(2,9), Location::get_location(2,7)
-            castle = position.active_pieces[castle_from]
+            castle = pos.active_pieces[castle_from]
             king_from, king_to = Location::get_location(2,6), Location::get_location(2,8)
-            king = position.active_pieces[king_from]
-            Movement::Move.new(king, king_from, king_to, 
-                               Movement::Castle.new(castle, castle_from, castle_to))
+            king = pos.active_pieces[king_from]
+            castles << Movement::Move.new(king, king_from, king_to, 
+                       Movement::Castle.new(castle, castle_from, castle_to))
           end
         end
       else
@@ -111,26 +113,26 @@ module Application
           if b.square_empty?(9,3) && b.square_empty?(9,4) && b.square_empty?(9,5)
             # also need to check if enemy controls these squares.
             castle_from, castle_to = Location::get_location(9,2), Location::get_location(9,5)
-            castle = position.active_pieces[castle_from]
+            castle = pos.active_pieces[castle_from]
             king_from, king_to = Location::get_location(9,6), Location::get_location(9,4)
-            king = position.active_pieces[king_from]
-            Movement::Move.new(king, king_from, king_to, 
-                               Movement::Castle.new(castle, castle_from, castle_to))
+            king = pos.active_pieces[king_from]
+            castles << Movement::Move.new(king, king_from, king_to, 
+                       Movement::Castle.new(castle, castle_from, castle_to))
           end 
         end
         if castle & C_BQ
           if b.square_empty?(9,7) && b.square_empty?(9,8)
             # also need to check if enemy controls these squares.
             castle_from, castle_to = Location::get_location(9,2), Location::get_location(9,5)
-            castle = position.active_pieces[castle_from]
+            castle = pos.active_pieces[castle_from]
             king_from, king_to = Location::get_location(9,6), Location::get_location(9,4)
-            king = position.active_pieces[king_from]
-            Movement::Move.new(king, king_from, king_to, 
-                               Movement::Castle.new(castle, castle_from, castle_to))
+            king = pos.active_pieces[king_from]
+            castles << Movement::Move.new(king, king_from, king_to, 
+                       Movement::Castle.new(castle, castle_from, castle_to))
           end
         end
       end
-
+      return castles
     end
 
 

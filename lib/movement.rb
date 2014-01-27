@@ -235,6 +235,7 @@ module Application
       # King movement information will be stored in the Move class properties.
       include Reversible
 
+      attr_accessor :rook, :castle_from, :castle_to
       def initialize(rook, castle_from, castle_to)
         @rook, @castle_from, @castle_to = rook, castle_from, castle_to
       end
@@ -252,7 +253,7 @@ module Application
       end
 
       def hash(piece, from, to)
-        from_to_key(piece, from, to) ^ from_to_key(@castle_from, @castle_to, @rook)
+        from_to_key(piece, from, to) ^ from_to_key(@rook, @castle_from, @castle_to)
       end
     end
 
@@ -264,14 +265,14 @@ module Application
       end
 
       def make!(position)
-        @enp_target = position.enp_target  # save old enp_target for make/unmake
+        @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
         position.enp_target = nil
         @strategy.make!(position, @moved_piece, @from, @to)  # delegate to the strategy class.
       end
 
       def unmake!(position)
         @strategy.unmake!(position, @moved_piece, @from, @to)
-        position.enp_target = @enp_target
+        position.enp_target, position.castle = @enp_target, @castle_rights
       end
 
       def capture?
@@ -295,7 +296,7 @@ module Application
         if s.capture?
           "#{@moved_piece} x #{s.captured_piece} #{@from} to #{@to}"
         elsif strategy == Castle
-          "Castle {@moved_piece} #{@from} to #{@to}, #{s.rook} #{s.castle_from} to #{s.castle_to}"
+          "Castle #{@moved_piece} #{@from} to #{@to}, #{s.rook} #{s.castle_from} to #{s.castle_to}"
         elsif strategy == PawnPromotion
           "#{s.queen} Promotion #{@moved_piece} #{@from} to #{@to}"
         else

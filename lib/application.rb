@@ -80,7 +80,6 @@ module Application # define application-level behavior in this module and file.
     def restart
       @turn_start = Time.now
     end
-
     alias :end_turn :restart 
   end
 
@@ -117,31 +116,38 @@ module Application # define application-level behavior in this module and file.
     end
 
     def stage # return :early or :late
-      
     end
 
     def human_move(description)  # for now, just assume human moves are valid.
-      # puts "human_move(#{description})"
       take_turn do
-        from = Location::get_location_from_string(description[0..1]) # Eventually, handle exception if human provides invalid move.
+        from = Location::get_location_from_string(description[0..1])
         to = Location::get_location_from_string(description[-2..-1])
-        capture_value = Pieces::get_value_by_sym(Application::current_board[to])
-        move = Movement::Move.new(@position, from, to, capture_value)
-        @position = move.create_position
+        piece = @position.active_pieces[from]
+        enemy = @position.enemy_pieces[to]
+        m = Movement
+        case piece.class.type
+        when :P then strategy = enemy ? m::RegularCapture.new(enemy) : m::PawnMove.new
+        when :K then strategy = enemy ? m::KingCapture.new(enemy) : m::KingMove.new
+        else strategy = enemy ? m::RegularCapture.new(enemy) : m::RegularMove.new
+        end
+        move = Movement::Move.new(piece, from, to, strategy)
+        MoveGen::make!(@position, move)
       end
     end
 
     def opponent_move
-      # get move selected by opponent AI via UCI,
-      # and pass to take_turn as a position object
+      # get move selected by opponent AI via UCI, and pass to take_turn as a position object
     end
 
     def make_move
-      take_turn { @position = Search::select_position(Application::current_position) }
+      take_turn do 
+        move = Search::select_position(@position)
+        MoveGen::make!(@position, move)
+      end
     end
 
     def take_turn
-      # add any code must run at beginning of each turn
+      # add any code that must run at beginning of each turn
       yield
       @halfmove_count += 1
       self.print

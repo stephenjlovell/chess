@@ -28,11 +28,9 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
 
 To Do ----
 
-  Add separate move generators in piece classes for captures -> quiescence search.
+  Add hashing of castling rights
 
-  Remove calls to pseudo_legal? during move generation.
-
-  Add hashing of castling rights?
+  Write a Static Exchange Evaluator for Quiescence search pruning.
 
   Refactor the TT probing logic into TT class, and call it from move_gen.
 

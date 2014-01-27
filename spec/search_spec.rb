@@ -23,9 +23,7 @@ require 'spec_helper'
 
 describe "Search" do
 
-  before do
-    @s = Application::Search 
-  end
+  before { @s = Application::Search }
 
   # describe "when AI king is not in check" do
   #   it "will select the most valuable move" do
@@ -47,7 +45,7 @@ describe "Search" do
       #   puts "--mtdf--#{@s::select_position(pos, :mtdf)}"
       # end
       # it "from within an iterative deepening framework" do
-      #   puts "--iterative_deepening_mtdf-- #{@s::select_position(pos, :iterative_deepening_mtdf)}"
+      #   puts "--iterative_deepening_mtdf-- #{@s::select_position(pos, :iterative_deepening_mtdf, 4)}"
       # end
     end
     describe "alpha beta" do
@@ -56,7 +54,7 @@ describe "Search" do
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
       it "from within an iterative deepening framework" do
-        puts "--iterative_deepening_alpha_beta--#{@s::select_position(pos, :iterative_deepening_alpha_beta, 4)}"
+        puts "--iterative_deepening_alpha_beta--#{@s::select_position(pos, :iterative_deepening_alpha_beta, 6)}"
       end
     end
   end

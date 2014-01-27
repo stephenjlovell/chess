@@ -22,11 +22,15 @@
 module Application
   module Pieces
 
-    PIECE_VALUES = { P: 100, N: 320, B: 333, 
-                     R: 510, Q: 880, K: 100000 }
+    PIECE_VALUES = { P: 100, N: 320, B: 333, R: 510, Q: 880, K: 100000 }
 
-    PIECE_ID = { P: 1, N: 2, B: 3, 
-                 R: 4, Q: 5, K: 6 } # Used for move ordering by MVV-LVA heuristic.
+    PIECE_SYM_VALUES = { wP: 100, wN: 320, wB: 333, wR: 510, wQ: 880, wK: 100000,
+                         bP: 100, bN: 320, bB: 333, bR: 510, bQ: 880, bK: 100000, }
+
+    PIECE_ID = { P: 1, N: 2, B: 3, R: 4, Q: 5, K: 6 } # Used for move ordering by MVV-LVA heuristic.
+
+    PIECE_SYM_ID = { wP: 1, wN: 2, wB: 3, wR: 4, wQ: 5, wK: 6,
+                     bP: 1, bN: 2, bB: 3, bR: 4, bQ: 5, bK: 6 }
 
     DIRECTIONS = { straight: [[1,0],[-1,0],[0,1],[0,-1]], 
                    diagonal: [[1,1],[1,-1],[-1,1],[-1,-1]], 
@@ -76,29 +80,26 @@ module Application
       private 
       def explore_direction(from, current_location, direction, position, board, moves = [])
         to = current_location + direction
-        if board.pseudo_legal?(to, @color)
-          if board.avoids_check?(position, from, to, @color)
-            strategy = if board.enemy?(to, @color)
-              Movement::RegularCapture.new(position.enemy_pieces[to])
-            else
-              Movement::RegularMove.new
-            end
-            moves << Movement::Move.new(self, from, to, strategy)
+        enemy, empty = board.enemy?(to, @color), board.empty?(to)
+        if (empty || enemy) && board.avoids_check?(position, from, to, @color)
+          if enemy
+            moves << Movement::Move.new(self, from, to, Movement::RegularCapture.new(position.enemy_pieces[to]))
+          elsif empty
+            moves << Movement::Move.new(self, from, to, Movement::RegularMove.new)
           end
-          explore_direction(from, to, direction, position, board, moves) if board.empty?(to)
         end
+        explore_direction(from, to, direction, position, board, moves) if empty
         return moves
       end
 
       def explore_direction_for_captures(from, current_location, direction, position, board, moves = [])
         to = current_location + direction
-        if board.pseudo_legal?(to, @color)
-          if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color) 
-            moves << Movement::Move.new(self, from, to, 
-                                        Movement::RegularCapture.new(position.enemy_pieces[to]))
-          end
-          explore_direction_for_captures(from, to, direction, position, board, moves) if board.empty?(to)
+        enemy, empty = board.enemy?(to, @color), board.empty?(to)
+        if enemy && board.avoids_check?(position, from, to, @color) 
+          moves << Movement::Move.new(self, from, to, 
+                                      Movement::RegularCapture.new(position.enemy_pieces[to]))
         end
+        explore_direction_for_captures(from, to, direction, position, board, moves) if empty
         return moves
       end
 
@@ -221,13 +222,13 @@ module Application
         board = position.board
         self.class.directions.each do |direction|
           to = from + direction
-          if board.pseudo_legal?(to, @color) && board.avoids_check?(position, from, to, @color)
-            strategy = if board.enemy?(to, @color)
-              Movement::RegularCapture.new(position.enemy_pieces[to])
-            else
-              Movement::RegularMove.new
+          enemy, empty = board.enemy?(to, @color), board.empty?(to)
+          if (enemy || empty) && board.avoids_check?(position, from, to, @color)
+            if enemy
+              moves << Movement::Move.new(self, from, to, Movement::RegularCapture.new(position.enemy_pieces[to]))
+            elsif empty
+              moves << Movement::Move.new(self, from, to, Movement::RegularMove.new)
             end
-            moves << Movement::Move.new(self, from, to, strategy)
           end
         end
         return moves
@@ -359,8 +360,9 @@ module Application
         board = position.board
         self.class.directions.each do |direction|
           to = from + direction
-          if board.pseudo_legal?(to, @color) && board.avoids_check?(position, from, to, @color, to)
-            strategy = if board.enemy?(to, @color)
+          enemy, empty = board.enemy?(to, @color), board.empty?(to)
+          if (enemy || empty) && board.avoids_check?(position, from, to, @color, to)
+            strategy = if enemy
               Movement::KingCapture.new(position.enemy_pieces[to])
             else
               Movement::KingMove.new
@@ -386,8 +388,8 @@ module Application
     end
 
     def self.get_value_by_sym(sym)
-      return 0.0 if sym == nil || sym == :XX
-      PIECE_VALUES[sym[1].to_sym]
+      return 0 if sym == nil || sym == :XX
+      PIECE_SYM_VALUES[sym]
     end
 
     def self.setup(board)        # returns a collection of chess pieces 

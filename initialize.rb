@@ -42,7 +42,4 @@ puts "Chess library loaded. \n\n"
 
 
 
-
-
-
   

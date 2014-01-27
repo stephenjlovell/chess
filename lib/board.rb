@@ -129,10 +129,6 @@ module Application
       occupied?(location) && @squares[location.r][location.c][0].to_sym != color
     end
 
-    def pseudo_legal?(location, color)
-      empty?(location) || enemy?(location, color)
-    end
-
     def avoids_check?(position, from, to, color, king_location=nil)
       piece_sym = self[from]
       target_sym = self[to]
@@ -146,25 +142,17 @@ module Application
       return avoids_check
     end
 
-    def find_king(color) # alternatively, store king location in instance var and update on king move
-      if color == :w # King is more likely to be at its own end of the board.
-        each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :wK }
-      else
-        reverse_each_square_with_location { |r,c,s| return Location::get_location(r,c) if s == :bK }
-      end
-      # return nil
-      raise "king not found"
-    end
 
     THREATS = { w: { P: [:bP], N: [:bN], straight: [:bR, :bQ], diagonal: [:bB, :bQ] }, 
                 b: { P: [:wP], N: [:wN], straight: [:wR, :wQ], diagonal: [:wB, :wQ] } }
 
     def king_in_check?(position, color, king_location=nil)
-      threats = THREATS[color]
       from = king_location || position.king_location[color] # get location of king for color.
+      
       if from.nil?
         puts "the king is dead."; position.board.print; return nil 
       end
+      threats = THREATS[color]
       dir = Pieces::DIRECTIONS
       check_each_direction(from, dir[:P][color][:attack], false, threats[:P]) || # pawns
       check_each_direction(from, dir[:N], false, threats[:N]) || # knights
@@ -172,7 +160,34 @@ module Application
       check_each_direction(from, dir[:diagonal], true, threats[:diagonal]) # queens, bishops
     end
 
+
+    def attackers(location, color)
+      dir = Pieces::DIRECTIONS
+      threat_color = color == :w ? :b : :w
+      threats = THREATS[threat_color]
+      get_attackers(location, dir[:P][color][:attack], false, threats[:P]) + # pawns
+      get_attackers(location, dir[:N], false, threats[:N]) + # knights
+      get_attackers(location, dir[:straight], true, threats[:straight]) + # queens, rooks
+      get_attackers(location, dir[:diagonal], true, threats[:diagonal]) # queens, bishops
+    end
+
     private
+
+    def get_attackers(location, directions, until_blocked, threat_pieces)
+      squares = []
+      directions.each { |d| check_attack_direction(location, d, until_blocked, threat_pieces, squares) }
+      return squares
+    end
+
+    def check_attack_direction(current_location, direction, until_blocked, threat_pieces, squares)
+      to = current_location + direction
+      
+      squares << to if is_threat?(to, threat_pieces)
+
+      if until_blocked && empty?(to)  # check ray attacks recursively until blocked
+        check_attack_direction(to, direction, until_blocked, threat_pieces, squares)
+      end
+    end
 
 
     def check_each_direction(from, directions, until_blocked, threat_pieces)
@@ -182,14 +197,14 @@ module Application
 
     def check_direction(current_location, direction, until_blocked, threat_pieces)
       to = current_location + direction
-      return true if threat_to_king?(to, threat_pieces)
+      return true if is_threat?(to, threat_pieces)
       if until_blocked && empty?(to)  # check ray attacks recursively until blocked
         return check_direction(to, direction, until_blocked, threat_pieces)
       end
       return false
     end
 
-    def threat_to_king?(location, threat_pieces)
+    def is_threat?(location, threat_pieces)
       sym = self[location]
       threat_pieces.each { |piece| return true if piece == sym }
       return false
