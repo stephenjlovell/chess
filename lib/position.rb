@@ -79,7 +79,7 @@ module Application
          <@pieces:#{@pieces.inspect}>, <@side_to_move:#{@side_to_move}>>"
       end
 
-      # These methods will be re-written to make use of Movement::MoveList class:
+      # These methods will be re-written to make use of Move::MoveList class:
 
       def get_moves # returns a sorted array of all possible moves for the current player.
         moves = []

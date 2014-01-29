@@ -20,7 +20,7 @@
 #-----------------------------------------------------------------------------------
 
 module Application
-  module Movement
+  module Move
 
     module Reversible # Moves other than pawn moves and captures
       def make_clock_adjustment(position)
@@ -87,7 +87,7 @@ module Application
     end
 
     class MoveStrategy  # Generic template and shared behavior for move strategies.
-      # concrete strategy classes must include either Reversible or Irreversible module.
+      # Concrete strategy classes must include either Reversible or Irreversible module.
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
@@ -212,8 +212,8 @@ module Application
 
     class PawnPromotion < MoveStrategy # Stores the existing pawn in move object and places a new Queen.
       include Irreversible
-      def initialize(position)
-        @queen = Pieces::Queen.new(@position.side_to_move)
+      def initialize(side_to_move)
+        @queen = Pieces::Queen.new(side_to_move)
       end
 
       def make!(position, piece, from, to)
@@ -231,29 +231,50 @@ module Application
       end
     end
 
-    class Castle < MoveStrategy  # Stores movement info for the rook to be moved.
-      # King movement information will be stored in the Move class properties.
+    class PawnPromotionCapture < MoveStrategy
+      include MakesCapture
+
+      def initialize(captured_piece, side_to_move)
+        @queen, @captured_piece = Pieces::Queen.new(side_to_move), captured_piece
+      end
+
+      def make!(position, piece, from, to)
+        relocate_piece(position, @queen, from, to)
+        make_clock_adjustment(position)
+        position.enemy_pieces.delete(to)
+      end
+
+      def unmake!(position, piece, from, to)
+        relocate_piece(position, piece, to, from)
+        unmake_clock_adjustment(position)
+        position.board[to] = @captured_piece.symbol
+        position.enemy_pieces[to] = @captured_piece
+      end
+    end
+
+    class Castle < MoveStrategy  # Stores Move info for the rook to be moved.
+      # King Move information will be stored in the Move class properties.
       include Reversible
 
-      attr_accessor :rook, :castle_from, :castle_to
-      def initialize(rook, castle_from, castle_to)
-        @rook, @castle_from, @castle_to = rook, castle_from, castle_to
+      attr_accessor :rook, :rook_from, :rook_to
+      def initialize(rook, rook_from, rook_to)
+        @rook, @rook_from, @rook_to = rook, rook_from, rook_to
       end
 
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
-        relocate_piece(position, @rook, @castle_from, @castle_to)
+        relocate_piece(position, @rook, @rook_from, @rook_to)
         position.active_king_location = to
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
-        relocate_piece(position, @rook, @castle_to, @castle_from)
+        relocate_piece(position, @rook, @rook_to, @rook_from)
         position.active_king_location = from
       end
 
       def hash(piece, from, to)
-        from_to_key(piece, from, to) ^ from_to_key(@rook, @castle_from, @castle_to)
+        from_to_key(piece, from, to) ^ from_to_key(@rook, @rook_from, @rook_to)
       end
     end
 
@@ -296,12 +317,32 @@ module Application
         if s.capture?
           "#{@moved_piece} x #{s.captured_piece} #{@from} to #{@to}"
         elsif strategy == Castle
-          "Castle #{@moved_piece} #{@from} to #{@to}, #{s.rook} #{s.castle_from} to #{s.castle_to}"
+          "Castle #{@moved_piece} #{@from} to #{@to}, #{s.rook} #{s.rook_from} to #{s.rook_to}"
         elsif strategy == PawnPromotion
           "#{s.queen} Promotion #{@moved_piece} #{@from} to #{@to}"
         else
           "#{@moved_piece} #{@from} to #{@to}"
         end
+      end
+    end
+
+    class Factory  # this class provides a simplified interface for instantiating Move objects.
+      PROCS = { 
+        regular_move: Proc.new { |*args| RegularMove.new },
+        king_move: Proc.new { |*args| KingMove.new },
+        regular_capture: Proc.new { |*args| RegularCapture.new(*args) },
+        king_capture: Proc.new { |*args| KingCapture.new(*args) },
+        enp_capture: Proc.new { |*args| EnPassantCapture.new(*args) },
+        pawn_move: Proc.new { |*args| PawnMove.new },
+        enp_advance: Proc.new { |*args| EnPassantAdvance.new },
+        pawn_promotion: Proc.new { |*args| PawnPromotion.new(*args) },
+        pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args) },
+        castle: Proc.new { |*args| Castle.new(*args) }
+      } 
+
+      def self.build(moved_piece, from, to, sym, *args)  # create a Move object containing the specified strategy.
+        raise "no product strategy #{sym} available for Move::MoveFactory" unless PROCS[sym]
+        Move.new(moved_piece, from, to, PROCS[sym].call(*args)) 
       end
     end
 

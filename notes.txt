@@ -30,7 +30,9 @@ To Do ----
 
   Add hashing of castling rights
 
-  Write a Static Exchange Evaluator for Quiescence search pruning.
+  Add a Factory class to simplify Move module interface.
+
+  Debug Static Exchange Evaluator 
 
   Refactor the TT probing logic into TT class, and call it from move_gen.
 
@@ -48,6 +50,11 @@ To Do ----
     -pawn promotions
 
   Add separate PSTs for early- and late-game in Evaluation module.
+
+
+  
+
+
 
 
 

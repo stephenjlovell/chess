@@ -21,7 +21,7 @@
 
 require './lib/board.rb'
 require './lib/location.rb'
-require './lib/movement.rb'
+require './lib/move.rb'
 require './lib/move_gen.rb'
 require './lib/pieces.rb'
 require './lib/position.rb'
@@ -124,13 +124,13 @@ module Application # define application-level behavior in this module and file.
         to = Location::get_location_from_string(description[-2..-1])
         piece = @position.active_pieces[from]
         enemy = @position.enemy_pieces[to]
-        m = Movement
+        m = Move
         case piece.class.type
         when :P then strategy = enemy ? m::RegularCapture.new(enemy) : m::PawnMove.new
         when :K then strategy = enemy ? m::KingCapture.new(enemy) : m::KingMove.new
         else strategy = enemy ? m::RegularCapture.new(enemy) : m::RegularMove.new
         end
-        move = Movement::Move.new(piece, from, to, strategy)
+        move = Move::Move.new(piece, from, to, strategy)
         MoveGen::make!(@position, move)
       end
     end

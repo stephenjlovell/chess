@@ -241,7 +241,7 @@ module Application
 
         node.tactical_edges.each do |move|
 
-          see_squares[move.to] ||= get_see_score(node, move.to)
+          see_squares[move.to] ||= Search::get_see_score(node, move.to) # perform static exchange evaluation
           next if see_squares[move.to] <= 0
 
           $quiescence_calls += 1
@@ -263,38 +263,6 @@ module Application
         $tt.store_result(@max_depth, mate_possible, node, depth, best_value, alpha, beta, best_move)
       end
 
-
-      def get_see_score(position, to)
-        attack_squares = { w: position.board.attackers(to, :w), 
-                           b: position.board.attackers(to, :b) }
-        attack_squares.each do |key, arr| 
-          arr.sort! { |x,y| Pieces::PIECE_SYM_ID[y] <=> Pieces::PIECE_SYM_ID[x] }
-        end
-        static_exchange_evaluation(position.board, to, position.side_to_move, attack_squares)
-      end
-
-
-      def static_exchange_evaluation(board, to, side, attack_squares)
-        value = 0
-        from = attack_squares[side].pop # get the next attacking square
-        if from
-          # simulate making the capture
-          sym = board[to]  # save the captured symbol for unmake
-          board[to] = board[from]
-          board[from] = nil 
-
-          side == :w ? :b : :w
-          capture_value = Pieces::get_value_by_sym(sym)
-          value = capture_value - static_exchange_evaluation(board, to, side, attack_squares)
-
-          # simulate unmaking the capture
-          board[from] = board[to]
-          board[to] = sym
-        end
-        return value
-      end
-
-
       def append_pv(parent_pv, current_pv, move)
         parent_pv.clear
         parent_pv[0] = move
@@ -315,6 +283,39 @@ module Application
 
     def self.reset_counters
       $main_calls, $quiescence_calls, $evaluation_calls, $memory_calls, $non_replacements = 0, 0, 0, 0, 0
+    end
+
+    def self.get_see_score(position, to)
+      attack_squares = { w: position.board.attackers(to, :w), 
+                         b: position.board.attackers(to, :b) }
+      attack_squares.each do |key, arr|  # more valuable pieces are listed first
+        arr.sort! { |x,y| Pieces::PIECE_SYM_ID[position.board[y]] <=> Pieces::PIECE_SYM_ID[position.board[x]] } 
+      end
+      position.board.print
+      puts to, attack_squares
+      value = static_exchange_evaluation(position.board, to, position.side_to_move, attack_squares)
+      puts value
+      return value
+    end
+
+    def self.static_exchange_evaluation(board, to, side, attack_squares)
+      value = 0
+      from = attack_squares[side].pop # get the next attacking square
+      if from
+        # simulate making the capture
+        sym = board[to]  # save the captured symbol for unmake
+        board[to] = board[from]
+        board[from] = nil 
+
+        side == :w ? :b : :w
+        capture_value = Pieces::get_value_by_sym(sym)
+        value = capture_value - static_exchange_evaluation(board, to, side, attack_squares)
+
+        # simulate unmaking the capture
+        board[from] = board[to]
+        board[to] = sym
+      end
+      return value
     end
 
   end

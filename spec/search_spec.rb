@@ -24,6 +24,8 @@ require 'spec_helper'
 describe "Search" do
 
   before { @s = Application::Search }
+  let(:game) { FactoryGirl.build(:test_game) }
+  let(:pos) { game.position }
 
   # describe "when AI king is not in check" do
   #   it "will select the most valuable move" do
@@ -38,8 +40,6 @@ describe "Search" do
   # end
 
   describe "strategy pattern permits use of" do
-    let(:game) { FactoryGirl.build(:test_game) }
-    let(:pos) { game.position }
     describe "mtdf" do
       # it "as a standalone algorithm" do
       #   puts "--mtdf--#{@s::select_position(pos, :mtdf)}"
@@ -53,11 +53,20 @@ describe "Search" do
       #   puts "--alpha_beta--#{@s::select_position(pos, :alpha_beta, 5)}"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
-      it "from within an iterative deepening framework" do
-        puts "--iterative_deepening_alpha_beta--#{@s::select_position(pos, :iterative_deepening_alpha_beta, 6)}"
-      end
+      # it "from within an iterative deepening framework" do
+      #   puts "--iterative_deepening_alpha_beta--#{@s::select_position(pos, :iterative_deepening_alpha_beta, 4)}"
+      # end
     end
   end
+
+  describe "static exchange evaluation" do
+    let(:loc) { Application::Location::get_location(5,6) }
+    let(:see_pos) { FactoryGirl.build(:see_position) }
+    it "should correctly value an exchange over a single square" do
+      puts @s.get_see_score(see_pos, loc)
+    end
+  end
+
 
 end
 

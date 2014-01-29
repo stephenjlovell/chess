@@ -24,6 +24,8 @@ module Application
   GRAPHICS = { wP: "\u2659", wN: "\u2658", wB: "\u2657", wR: "\u2656", wQ: "\u2655", wK: "\u2654" , 
                bP: "\u265F", bN: "\u265E", bB: "\u265D", bR: "\u265C", bQ: "\u265B", bK: "\u265A" }
 
+  ENEMY_BACK_ROW = { w: 9, b: 2 }
+
   class Board
     include Enumerable
     attr_accessor :squares
@@ -165,7 +167,7 @@ module Application
       dir = Pieces::DIRECTIONS
       threat_color = color == :w ? :b : :w
       threats = THREATS[threat_color]
-      get_attackers(location, dir[:P][color][:attack], false, threats[:P]) + # pawns
+      get_attackers(location, dir[:P][threat_color][:attack], false, threats[:P]) + # pawns
       get_attackers(location, dir[:N], false, threats[:N]) + # knights
       get_attackers(location, dir[:straight], true, threats[:straight]) + # queens, rooks
       get_attackers(location, dir[:diagonal], true, threats[:diagonal]) # queens, bishops
