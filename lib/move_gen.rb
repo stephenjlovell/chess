@@ -93,8 +93,6 @@ module Application
             rook = pos.active_pieces[rook_from]
             king_from, king_to = Location::get_location(2,6), Location::get_location(2,4)
             king = pos.active_pieces[king_from]
-            # castles << Move::Move.new(king, king_from, king_to, 
-            #            Move::Castle.new(rook, rook_from, rook_to)) if king
             castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
           end 
         end
@@ -105,8 +103,6 @@ module Application
             rook = pos.active_pieces[rook_from]
             king_from, king_to = Location::get_location(2,6), Location::get_location(2,8)
             king = pos.active_pieces[king_from]
-            # castles << Move::Move.new(king, king_from, king_to, 
-            #            Move::Castle.new(rook, rook_from, rook_to)) if king
             castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
           end
         end
@@ -118,8 +114,6 @@ module Application
             rook = pos.active_pieces[rook_from]
             king_from, king_to = Location::get_location(9,6), Location::get_location(9,4)
             king = pos.active_pieces[king_from]
-            # castles << Move::Move.new(king, king_from, king_to, 
-            #            Move::Castle.new(rook, rook_from, rook_to)) if king
             castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
           end 
         end
@@ -130,8 +124,6 @@ module Application
             rook = pos.active_pieces[rook_from]
             king_from, king_to = Location::get_location(9,6), Location::get_location(9,8)
             king = pos.active_pieces[king_from]
-            # castles << Move::Move.new(king, king_from, king_to, 
-            #            Move::Castle.new(rook, rook_from, rook_to)) if king
             castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
           end
         end

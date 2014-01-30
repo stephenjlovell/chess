@@ -21,7 +21,7 @@
 
 require 'spec_helper'
 
-describe "Search" do
+describe Application::Search do
 
   before { @s = Application::Search }
   let(:game) { FactoryGirl.build(:test_game) }
@@ -29,43 +29,45 @@ describe "Search" do
 
   # describe "when AI king is not in check" do
   #   it "will select the most valuable move" do
-  #     Application::Search::select_position(@pos)
+  #     Application::Search::select_move(@pos)
   #   end
   # end
 
   # describe "when AI king is in check" do    # king captures cannot be permitted
   #   it "will move out of check if possible" do
-  #     Application::Search::select_position(@check_pos)
+  #     Application::Search::select_move(@check_pos)
   #   end
   # end
 
-  describe "strategy pattern permits use of" do
+  describe "permits use of" do
     describe "mtdf" do
       # it "as a standalone algorithm" do
-      #   puts "--mtdf--#{@s::select_position(pos, :mtdf)}"
+      #   puts "--mtdf--#{@s::select_move(pos, 4){ @s::mtdf } }"
+      #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
       # it "from within an iterative deepening framework" do
-      #   puts "--iterative_deepening_mtdf-- #{@s::select_position(pos, :iterative_deepening_mtdf, 4)}"
+      #   puts "--iterative_deepening_mtdf-- #{@s::select_move(pos, 4) { @s::iterative_deepening_mtdf } }"
       # end
     end
     describe "alpha beta" do
       # it "as a standalone algorithm" do
-      #   puts "--alpha_beta--#{@s::select_position(pos, :alpha_beta, 5)}"
+      #   puts "--alpha_beta--#{@s::select_move(pos, 4) { @s::alpha_beta } }"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
-      # it "from within an iterative deepening framework" do
-      #   puts "--iterative_deepening_alpha_beta--#{@s::select_position(pos, :iterative_deepening_alpha_beta, 4)}"
-      # end
+      it "from within an iterative deepening framework" do
+        puts "--iterative_deepening_alpha_beta--#{@s::select_move(pos, 4) { @s::iterative_deepening_alpha_beta } }"
+      puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
+      end
     end
   end
 
-  describe "static exchange evaluation" do
-    let(:loc) { Application::Location::get_location(5,6) }
-    let(:see_pos) { FactoryGirl.build(:see_position) }
-    it "should correctly value an exchange over a single square" do
-      puts @s.get_see_score(see_pos, loc)
-    end
-  end
+  # describe "static exchange evaluation" do
+  #   let(:loc) { Application::Location::get_location(5,6) }
+  #   let(:see_pos) { FactoryGirl.build(:see_position) }
+  #   it "should correctly value an exchange over a single square" do
+  #     puts @s.get_see_score(see_pos, loc)
+  #   end
+  # end
 
 
 end

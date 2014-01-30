@@ -326,19 +326,17 @@ module Application
       end
     end
 
-    class Factory  # this class provides a simplified interface for instantiating Move objects.
-      PROCS = { 
-        regular_move: Proc.new { |*args| RegularMove.new },
-        king_move: Proc.new { |*args| KingMove.new },
-        regular_capture: Proc.new { |*args| RegularCapture.new(*args) },
-        king_capture: Proc.new { |*args| KingCapture.new(*args) },
-        enp_capture: Proc.new { |*args| EnPassantCapture.new(*args) },
-        pawn_move: Proc.new { |*args| PawnMove.new },
-        enp_advance: Proc.new { |*args| EnPassantAdvance.new },
-        pawn_promotion: Proc.new { |*args| PawnPromotion.new(*args) },
-        pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args) },
-        castle: Proc.new { |*args| Castle.new(*args) }
-      } 
+    class Factory  # A simplified interface for instantiating Move objects.
+      PROCS = { regular_move: Proc.new { |*args| RegularMove.new },
+                king_move: Proc.new { |*args| KingMove.new },
+                regular_capture: Proc.new { |*args| RegularCapture.new(*args) },
+                king_capture: Proc.new { |*args| KingCapture.new(*args) },
+                enp_capture: Proc.new { |*args| EnPassantCapture.new(*args) },
+                pawn_move: Proc.new { |*args| PawnMove.new },
+                enp_advance: Proc.new { |*args| EnPassantAdvance.new },
+                pawn_promotion: Proc.new { |*args| PawnPromotion.new(*args) },
+                pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args) },
+                castle: Proc.new { |*args| Castle.new(*args) } } 
 
       def self.build(moved_piece, from, to, sym, *args)  # create a Move object containing the specified strategy.
         raise "no product strategy #{sym} available for Move::MoveFactory" unless PROCS[sym]

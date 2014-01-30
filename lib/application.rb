@@ -94,6 +94,7 @@ module Application # define application-level behavior in this module and file.
       @ai_player = ai_player
       @opponent = ai_player == :w ? :b : :w
       @tt = Memory::TranspositionTable.new
+      $tt = @tt
       @clock = Clock.new(time_limit)
     end
 
@@ -141,7 +142,7 @@ module Application # define application-level behavior in this module and file.
 
     def make_move
       take_turn do 
-        move = Search::select_position(@position)
+        move = Search::select_move(@position)
         MoveGen::make!(@position, move)
       end
     end

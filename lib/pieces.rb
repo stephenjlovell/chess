@@ -83,10 +83,8 @@ module Application
         enemy, empty = board.enemy?(to, @color), board.empty?(to)
         if (empty || enemy) && board.avoids_check?(position, from, to, @color)
           if enemy
-            # moves << Move::Move.new(self, from, to, Move::RegularCapture.new(position.enemy_pieces[to]))
             moves << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
           elsif empty
-            # moves << Move::Move.new(self, from, to, Move::RegularMove.new)
             moves << Move::Factory.build(self, from, to, :regular_move)
           end
         end
@@ -98,8 +96,6 @@ module Application
         to = current_location + direction
         enemy, empty = board.enemy?(to, @color), board.empty?(to)
         if enemy && board.avoids_check?(position, from, to, @color) 
-          # moves << Move::Move.new(self, from, to, 
-          #                             Move::RegularCapture.new(position.enemy_pieces[to]))
           moves << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
         end
         explore_direction_for_captures(from, to, direction, position, board, moves) if empty
@@ -157,13 +153,10 @@ module Application
           if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
             enemy = position.enemy_pieces[to]
             if to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
-              # Move::PawnPromotionCapture.new(enemy, @color)
               moves << Move::Factory.build(self, from, to, :pawn_promotion_capture, enemy, @color)
             else
-              # Move::RegularCapture.new(enemy)
               moves << Move::Factory.build(self, from, to, :regular_capture, enemy)
             end
-            # moves << Move::Move.new(self, from, to, strategy)
           end
         end
       end
@@ -176,7 +169,6 @@ module Application
             to = target + offset
             if board.avoids_check?(position, from, to, @color)
               enemy = position.enemy_pieces[target]
-              # moves << Move::Move.new(self, from, to, Move::EnPassantCapture.new(enemy, target))
               moves << Move::Factory.build(self, from, to, :enp_capture, enemy, target)
             end 
           end
@@ -189,19 +181,15 @@ module Application
         if board.empty?(to)
           if board.avoids_check?(position, from, to, @color)
             if to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
-              # Move::PawnPromotion.new(@color)
               moves << Move::Factory.build(self, from, to, :pawn_promotion, @color)
             else
-              # Move::RegularMove.new
               moves << Move::Factory.build(self, from, to, :regular_move)
             end
-            # moves << Move::Move.new(self, from, to, strategy)
           end
           if from.r == dir[:start_row]
             to = from + dir[:initial]
             if board.empty?(to)
               if board.avoids_check?(position, from, to, @color)
-                # moves << Move::Move.new(self, from, to, Move::EnPassantAdvance.new)
                 moves << Move::Factory.build(self, from, to, :enp_advance)
               end
             end
@@ -244,11 +232,9 @@ module Application
           is_enemy, empty = board.enemy?(to, @color), board.empty?(to)
           if (is_enemy || empty) && board.avoids_check?(position, from, to, @color)
             if is_enemy
-              # moves << Move::Move.new(self, from, to, Move::RegularCapture.new(position.enemy_pieces[to]))
               moves << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
             elsif empty
-              # moves << Move::Move.new(self, from, to, Move::RegularMove.new)
-                moves << Move::Factory.build(self, from, to, :regular_move)
+              moves << Move::Factory.build(self, from, to, :regular_move)
             end
           end
         end
@@ -261,7 +247,6 @@ module Application
         self.class.directions.each do |direction|
           to = from + direction
           if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
-            # moves << Move::Move.new(self, from, to, Move::RegularCapture.new(position.enemy_pieces[to]))
             moves << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
           end
         end
@@ -385,13 +370,10 @@ module Application
           is_enemy, empty = board.enemy?(to, @color), board.empty?(to)
           if (is_enemy || empty) && board.avoids_check?(position, from, to, @color, to)
             if is_enemy
-              # Move::KingCapture.new(position.enemy_pieces[to])
               moves << Move::Factory.build(self, from, to, :king_capture, position.enemy_pieces[to])
             else
-              # Move::KingMove.new
               moves << Move::Factory.build(self, from, to, :king_move)
             end
-            # moves << Move::Move.new(self, from, to, strategy)
           end
         end
         return moves
@@ -403,7 +385,6 @@ module Application
         self.class.directions.each do |direction|
           to = from + direction
           if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color, to)
-            # moves << Move::Move.new(self, from, to, Move::KingCapture.new(position.enemy_pieces[to]))
             moves << Move::Factory.build(self, from, to, :king_capture, position.enemy_pieces[to])
           end
         end
