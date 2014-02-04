@@ -29,7 +29,7 @@ describe Application::Board do
   it { should respond_to(:each) }
   it { should respond_to(:[]) }
   it { should respond_to(:empty?) }
-  it { should respond_to(:out_of_bounds?) }
+  it { should respond_to(:on_board?) }
   it { should respond_to(:enemy?) }
   it { should respond_to(:squares) }
 
@@ -52,7 +52,7 @@ describe Application::Board do
       @board.empty?(@empty).should be_true
     end
     it 'if out of bounds' do
-      @board.out_of_bounds?(@out).should be_true
+      @board.on_board?(@out).should be_false
     end 
     it 'if occupied' do
       @board.occupied?(@occupied).should be_true
@@ -65,39 +65,38 @@ describe Application::Board do
 
   describe 'king saftey' do
     before do
-      @position = FactoryGirl.build(:test_position)
+      @position = FactoryGirl.build(:check_position)
       @board = @position.board
-      @board.squares[3][7] = :bP
-      @from = FactoryGirl.build(:location, r: 2, c: 6)
-      @to = FactoryGirl.build(:location, r: 3, c: 7)
+      @from = FactoryGirl.build(:location, r: 3, c: 8)
+      @to = FactoryGirl.build(:location, r: 4, c: 8)
       @alt_from = FactoryGirl.build(:location, r: 2, c: 3)
       @alt_to = FactoryGirl.build(:location, r: 2, c: 4)
     end
 
     it 'should know if the specified king is in check' do
       @board.king_in_check?(@position, :w).should be_true
-      @board.king_in_check?(@position, :b).should be_false
+      @board.king_in_check?(@position, :b).should be_true
     end
 
-    it 'should test if a move would get specified side out of check' do
+    it 'should test if a move would get specified side out of check' do    
       @board.avoids_check?(@position, @from, @to, :w).should be_true
       @board.avoids_check?(@position, @alt_from, @alt_to, :w).should be_false
     end
 
   end
 
-  describe 'when finding pieces that attack a given square' do
-    before do
-      @board = FactoryGirl.build(:test_board)
-      @location = Application::Location::get_location(5,8)
-    end
+  # describe 'when finding pieces that attack a given square' do
+  #   before do
+  #     @board = FactoryGirl.build(:test_board)
+  #     @location = Application::Location::get_location(5,8)
+  #   end
 
-    it 'should generate a list of squares holding pieces that attack the given square' do
-      @board.attackers(@location, :w).should == [Application::Location::get_location(2,5)]
-      @board.attackers(@location, :b).should == [Application::Location::get_location(7,7)]
-    end
+  #   it 'should generate a list of squares holding pieces that attack the given square' do
+  #     @board.attackers(@location, :w).should == [Application::Location::get_location(2,5)]
+  #     @board.attackers(@location, :b).should == [Application::Location::get_location(7,7)]
+  #   end
 
-  end
+  # end
 
 
 

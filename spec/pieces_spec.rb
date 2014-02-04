@@ -49,7 +49,7 @@ describe Application::Pieces do
 
       it "should generate a list of valid moves" do  # position, square, target, capture_value, options
         targets = moves.collect { |m| m.to.to_a }
-        targets.should == [[7, 6], [6, 7], [3, 6], [4, 7], [3, 4], [4, 3], [7, 4], [6, 3]]
+        targets.should == [[7, 4], [7, 6], [6, 7], [4, 7], [3, 6], [3, 4], [4, 3], [6, 3]]
       end
 
     end

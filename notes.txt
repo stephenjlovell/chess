@@ -28,9 +28,9 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
 
 To Do ----
 
-  Add hashing of castling rights
+  Use "Vector Attacks" for faster move generation, king saftey checking, and SEE.  Read up on vector space basics.
 
-  Add a Factory class to simplify Move module interface.
+  Add hashing of castling rights
 
   Debug Static Exchange Evaluator 
 

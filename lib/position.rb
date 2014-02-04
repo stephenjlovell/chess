@@ -28,7 +28,7 @@ module Application
 
       def initialize(board, pieces, side_to_move, halfmove_clock)
         @board, @pieces, @side_to_move, @halfmove_clock = board, pieces, side_to_move, halfmove_clock
-        @enemy = @side_to_move == :w ? :b : :w
+        @enemy = FLIP_COLOR[@side_to_move]
         @enp_target, @castle = nil, 0b1111
         @hash = @board.hash
         @king_location = { w: Location::get_location(2,6), b: Location::get_location(9,6) }

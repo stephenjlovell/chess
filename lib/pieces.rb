@@ -16,7 +16,7 @@
 # FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# CONORTH_NECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
 module Application
@@ -27,25 +27,64 @@ module Application
     PIECE_SYM_VALUES = { wP: 100, wN: 320, wB: 333, wR: 510, wQ: 880, wK: 100000,
                          bP: 100, bN: 320, bB: 333, bR: 510, bQ: 880, bK: 100000, }
 
+    PIECE_COLOR = { wP: :w, wN: :w, wB: :w, wR: :w, wQ: :w, wK: :w,
+                    bP: :b, bN: :b, bB: :b, bR: :b, bQ: :b, bK: :b }
+
+    PIECES_BY_COLOR = { w: { P: :wP, N: :wN, B: :wB, R: :wR, Q: :wQ, K: :wK }, 
+                        b: { P: :bP, N: :bN, B: :bB, R: :bR, Q: :bQ, K: :bK } }
+
     PIECE_ID = { P: 1, N: 2, B: 3, R: 4, Q: 5, K: 6 } # Used for move ordering by MVV-LVA heuristic.
 
     PIECE_SYM_ID = { wP: 1, wN: 2, wB: 3, wR: 4, wQ: 5, wK: 6,
                      bP: 1, bN: 2, bB: 3, bR: 4, bQ: 5, bK: 6 }
 
-    DIRECTIONS = { straight: [[1,0],[-1,0],[0,1],[0,-1]], 
-                   diagonal: [[1,1],[1,-1],[-1,1],[-1,-1]], 
-                   N: [[2,1], [1,2], [-2,1], [-1,2], [-2,-1], [-1,-2], [2,-1], [1,-2]], 
-                   P: { w: { attack: [[1,1],[1,-1]],
-                             advance: [1,0],
+
+    # Increment vectors used for move generation:
+
+    NORTH = [1,0]
+    NE = [1,1]
+    EAST = [0,1]
+    SE = [-1,1]
+    SOUTH = [-1,0]
+    SW = [-1,-1]
+    WEST = [0,-1]
+    NW = [1,-1]
+
+    NORTH_NW = [2,-1]
+    NORTH_NE = [2,1]
+    EAST_NE = [1,2]
+    EAST_SE = [-1,2]
+    SOUTH_SE = [-2,1]
+    SOUTH_SW = [-2,-1]
+    WEST_SW = [-1,-2]
+    WEST_NW = [1,-2]
+
+    # order the directions so that directions "facing the enemy" are tried first by default.
+
+    # ordering for white:
+
+    # { w: { straight: [NORTH, EAST, WEST, SOUTH],
+    #        diagonal: [NE, NW, SE, SW],
+    #        ray: [NORTH, NE, NW, EAST, WEST, SE, SW, SOUTH] },
+    #   b: { straight: [SOUTH, WEST, EAST, NORTH],
+    #        diagonal: [SE, SW, NE, NW],
+    #        ray: [SOUTH, SE, SW, WEST, EAST, NW, NE, NORTH] } }
+
+    DIRECTIONS = { straight: [NORTH, SOUTH, EAST, WEST], 
+                   diagonal: [NE, NW, SE, SW],
+                   ray: [NORTH, NE, EAST, SE, SOUTH, SW, WEST, NW], 
+                   N: [NORTH_NW, NORTH_NE, EAST_NE, EAST_SE, SOUTH_SE, SOUTH_SW, WEST_SW, WEST_NW], 
+                   P: { w: { attack: [NE, NW],
+                             advance: NORTH,
                              initial: [2,0],
-                             enp_offset: [1,0], 
+                             enp_offset: NORTH, 
                              start_row: 3 },
-                        b: { attack: [[-1,-1],[-1,1]],
-                             advance: [-1,0],                               
+                        b: { attack: [SE, SW],
+                             advance: SOUTH,                               
                              initial: [-2,0],
-                             enp_offset: [-1,0],  
+                             enp_offset: SOUTH,  
                              start_row: 8 }, 
-                        en_passant: [[0,1],[0,-1]]} }
+                        en_passant: [EAST, WEST]} }
 
     class Piece  # Provides a common template used by each concrete chess piece class.
       attr_reader :color, :symbol
@@ -148,8 +187,8 @@ module Application
       private
 
       def get_attacks(from, position, board, moves)
-        self.class.directions[@color][:attack].each do |pair|  # normal attacks
-          to = from + pair
+        self.class.directions[@color][:attack].each do |direction|  # normal attacks
+          to = from + direction
           if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
             enemy = position.enemy_pieces[to]
             if to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
@@ -399,7 +438,7 @@ module Application
     end
 
     def self.setup(board)        # returns a collection of chess pieces 
-      pieces = { w: {}, b: {} }  # corresponding to the specified board representation.
+      pieces = { w: {}, b: {} }  # corresponding to the specified board reprEAST_SEntation.
       board.each_square_with_location do |r,c,sym|
         unless sym.nil?
           piece = self.create_piece_by_sym(sym)

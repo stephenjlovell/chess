@@ -46,9 +46,9 @@ module Application
     end
 
     LOCATIONS = create_locations
-    Application::Location::Location.include(:+) do |arr|  # Append + method to Location class.
-      LOCATIONS[@r+arr[0]][@c+arr[1]]  # This is to avoid a circular definition when LOCATIONS
-    end                                # constant is set at startup.
+    Location.include(:+) do |arr|  # Append + method to Location class.
+      LOCATIONS[@r+arr[0]][@c+arr[1]]  # Hack to avoid a circular definition when LOCATIONS
+    end                                # constant is created at startup.
 
     def self.get_location(r, c)
       LOCATIONS[r][c]

@@ -22,7 +22,7 @@
 module Application
   module Move
 
-    module Reversible # Moves other than pawn moves and captures
+    module Reversible # moves other than pawn moves and captures
       def make_clock_adjustment(position)
         position.halfmove_clock += 1
       end
@@ -36,14 +36,14 @@ module Application
       end
     end
 
-    module Irreversible # Pawn moves and captures
+    module Irreversible # pawn moves and captures
       def make_clock_adjustment(position) # reset halfmove clock to zero. 
-        @halfmove_clock = position.halfmove_clock
+        @halfmove_clock = position.halfmove_clock # store halfmove clock for unmake.
         position.halfmove_clock = 0
       end
 
       def unmake_clock_adjustment(position)
-        position.halfmove_clock = @halfmove_clock # Store halfmove clock for unmake.
+        position.halfmove_clock = @halfmove_clock 
       end
 
       def reversible?
@@ -51,7 +51,7 @@ module Application
       end
     end
 
-    module MakesCapture # Mixes in methods shared among capture strategies 
+    module MakesCapture # mixes in methods shared among capture strategies 
       include Irreversible
       attr_accessor :captured_piece
       
@@ -262,14 +262,22 @@ module Application
       end
 
       def make!(position, piece, from, to)
-        relocate_piece(position, piece, from, to)
-        relocate_piece(position, @rook, @rook_from, @rook_to)
-        position.active_king_location = to
+        begin
+          relocate_piece(position, piece, from, to)
+          relocate_piece(position, @rook, @rook_from, @rook_to)
+          make_clock_adjustment(position)
+          position.active_king_location = to
+        rescue
+          position.board.print
+          puts self
+          raise "rook not found"
+        end
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         relocate_piece(position, @rook, @rook_to, @rook_from)
+        unmake_clock_adjustment(position)
         position.active_king_location = from
       end
 
@@ -286,9 +294,14 @@ module Application
       end
 
       def make!(position)
-        @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
-        position.enp_target = nil
-        @strategy.make!(position, @moved_piece, @from, @to)  # delegate to the strategy class.
+        begin
+          @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
+          position.enp_target = nil
+          @strategy.make!(position, @moved_piece, @from, @to)  # delegate to the strategy class.
+        rescue
+          puts self
+          raise "unknown error"
+        end
       end
 
       def unmake!(position)

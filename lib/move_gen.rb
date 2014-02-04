@@ -70,12 +70,12 @@ module Application
       pos.hash ^= move.hash ^ Memory::side_key
     end
 
-    WATCH = { Location::get_location(2,2) => Proc.new { |pos| pos.castle &= ~C_WK },
+    WATCH = { Location::get_location(2,2) => Proc.new { |pos| pos.castle &= ~C_WQ },
               Location::get_location(2,6) => Proc.new { |pos| pos.castle &= ~(C_WK|C_WQ) },
-              Location::get_location(2,8) => Proc.new { |pos| pos.castle &= ~C_WQ },
-              Location::get_location(9,2) => Proc.new { |pos| pos.castle &= ~C_BK },
+              Location::get_location(2,8) => Proc.new { |pos| pos.castle &= ~C_WK },
+              Location::get_location(9,2) => Proc.new { |pos| pos.castle &= ~C_BQ },
               Location::get_location(9,6) => Proc.new { |pos| pos.castle &= ~(C_BK|C_BQ) },
-              Location::get_location(9,8) => Proc.new { |pos| pos.castle &= ~C_BQ } }
+              Location::get_location(9,8) => Proc.new { |pos| pos.castle &= ~C_BK } }
 
     def self.set_castle_flag(position, move)
       WATCH[move.from].call(position) if WATCH[move.from]

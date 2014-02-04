@@ -48,7 +48,7 @@ describe Application::Position::ChessPosition do
       end
       it "to tactical edges involving captures" do
         tactical_edges = @position.tactical_edges
-        tactical_edges.count.should == 2
+        tactical_edges.count.should == 4
         tactical_edges.each do |m|
           m.should respond_to :make!
           m.should respond_to :unmake!

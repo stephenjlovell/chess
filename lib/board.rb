@@ -26,8 +26,11 @@ module Application
 
   ENEMY_BACK_ROW = { w: 9, b: 2 }
 
+  FLIP_COLOR = { w: :b, b: :w }
+
   class Board
     include Enumerable
+    include Attack
     attr_accessor :squares
 
     def initialize  # sets initial configuration of board at start of game.         # row  board #
@@ -88,7 +91,7 @@ module Application
       end
     end
 
-    def hash # used to provide an additional hash value for position object.
+    def hash # used when providing an initial hash value for position object.
       key = 0
       each_square_with_location { |r,c,s| key ^= Memory::psq_key_by_square(r,c,s) unless s.nil? }
       return key
@@ -107,28 +110,30 @@ module Application
     end
 
     def empty?(location)
-      @squares[location.r][location.c] == nil
+      self[location] == nil
     end
 
     def square_empty?(r,c)
       @squares[r][c] == nil
     end
 
-    def out_of_bounds?(location)
-      @squares[location.r][location.c] == :XX
+    def on_board?(location)
+      self[location] != :XX
     end
 
-    def square_out_of_bounds?(r, c)
-      @squares[r][c] == :XX
+    def square_on_board?(r, c)
+      @squares[r][c] != :XX
     end
 
     def occupied?(location)
-      sym = @squares[location.r][location.c]
+      sym = self[location]
       sym != nil && sym != :XX
     end
 
-    def enemy?(location, color)
-      occupied?(location) && @squares[location.r][location.c][0].to_sym != color
+    # refactor this method to reduce cost using a constant hash:
+
+    def enemy?(location, color)      
+      occupied?(location) && Pieces::PIECE_COLOR[self[location]] != color
     end
 
     def avoids_check?(position, from, to, color, king_location=nil)
@@ -144,73 +149,66 @@ module Application
       return avoids_check
     end
 
-
-    THREATS = { w: { P: [:bP], N: [:bN], straight: [:bR, :bQ], diagonal: [:bB, :bQ] }, 
-                b: { P: [:wP], N: [:wN], straight: [:wR, :wQ], diagonal: [:wB, :wQ] } }
-
     def king_in_check?(position, color, king_location=nil)
-      from = king_location || position.king_location[color] # get location of king for color.
-      
-      if from.nil?
-        puts "the king is dead."; position.board.print; return nil 
-      end
-      threats = THREATS[color]
-      dir = Pieces::DIRECTIONS
-      check_each_direction(from, dir[:P][color][:attack], false, threats[:P]) || # pawns
-      check_each_direction(from, dir[:N], false, threats[:N]) || # knights
-      check_each_direction(from, dir[:straight], true, threats[:straight]) || # queens, rooks
-      check_each_direction(from, dir[:diagonal], true, threats[:diagonal]) # queens, bishops
+      king_location ||= position.king_location[color] # get location of king for color.
+      king_attacked?(king_location, FLIP_COLOR[color])
     end
 
 
-    def attackers(location, color)
+
+    
+
+    def attackers(location, color, hidden_attackers)
       dir = Pieces::DIRECTIONS
-      threat_color = color == :w ? :b : :w
+      threat_color = FLIP_COLOR[color]
       threats = THREATS[threat_color]
-      get_attackers(location, dir[:P][threat_color][:attack], false, threats[:P]) + # pawns
-      get_attackers(location, dir[:N], false, threats[:N]) + # knights
-      get_attackers(location, dir[:straight], true, threats[:straight]) + # queens, rooks
-      get_attackers(location, dir[:diagonal], true, threats[:diagonal]) # queens, bishops
+      attack_squares = get_attackers(location, dir[:P][threat_color][:attack], false, threats[:P], hidden_attackers) + # pawns
+      get_attackers(location, dir[:N], false, threats[:N], hidden_attackers) + # knights
+      get_attackers(location, dir[:straight], true, threats[:straight], hidden_attackers) + # queens, rooks
+      get_attackers(location, dir[:diagonal], true, threats[:diagonal], hidden_attackers) # queens, bishops
+
+      # what about king attacks?
+
+      attack_squares.sort!{ |x,y| Pieces::PIECE_SYM_ID[self[y]] <=> Pieces::PIECE_SYM_ID[self[x]] }
+      return attack_squares 
     end
 
     private
 
-    def get_attackers(location, directions, until_blocked, threat_pieces)
+    def get_attackers(location, directions, until_blocked, threat_pieces, hidden_attackers)
       squares = []
-      directions.each { |d| check_attack_direction(location, d, until_blocked, threat_pieces, squares) }
+      directions.each do |d| 
+        check_attack_direction(location, d, until_blocked, threat_pieces, squares, hidden_attackers)
+      end
       return squares
     end
 
-    def check_attack_direction(current_location, direction, until_blocked, threat_pieces, squares)
+    def check_attack_direction(current_location, direction, until_blocked, threat_pieces, squares, hidden_attackers, hidden_by=nil)
       to = current_location + direction
-      
-      squares << to if is_threat?(to, threat_pieces)
 
-      if until_blocked && empty?(to)  # check ray attacks recursively until blocked
-        check_attack_direction(to, direction, until_blocked, threat_pieces, squares)
+      if is_threat?(to, threat_pieces) 
+        
+        if hidden_by
+          hidden_attackers[hidden_by] = to
+        else
+          squares << to 
+        end
+
+        if until_blocked
+        
+        # if threat pieces are pawns, change threat pieces to diagonals.
+          check_attack_direction(to, direction, until_blocked, threat_pieces, squares, hidden_attackers, to)
+        end
+
+      elsif until_blocked 
+      # else
+        if empty?(to)  # check ray attacks recursively until blocked
+          check_attack_direction(to, direction, until_blocked, threat_pieces, squares, hidden_attackers, hidden_by)
+        end
       end
+
     end
 
-
-    def check_each_direction(from, directions, until_blocked, threat_pieces)
-      directions.each { |d| return true if check_direction(from, d, until_blocked, threat_pieces) }
-      return false
-    end
-
-    def check_direction(current_location, direction, until_blocked, threat_pieces)
-      to = current_location + direction
-      return true if is_threat?(to, threat_pieces)
-      if until_blocked && empty?(to)  # check ray attacks recursively until blocked
-        return check_direction(to, direction, until_blocked, threat_pieces)
-      end
-      return false
-    end
-
-    def is_threat?(location, threat_pieces)
-      sym = self[location]
-      threat_pieces.each { |piece| return true if piece == sym }
-      return false
-    end
 
   end
 end

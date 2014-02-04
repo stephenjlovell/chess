@@ -45,7 +45,7 @@ module Application
           current_pv = Memory::PVStack.new
           best_move, value = yield(guess, d*4, previous_pv, current_pv)
           total_calls = 0.0 + $main_calls + $quiescence_calls
-          puts "#{d} |m #{$main_calls/total_calls} |q #{$quiescence_calls/total_calls} |t #{total_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
+          puts "#{d} |m #{($main_calls/total_calls).round(4)} |q #{($quiescence_calls/total_calls).round(4)} |t #{total_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
           guess = value
           # current_pv.print
           previous_pv = current_pv
@@ -227,8 +227,8 @@ module Application
 
         @node.tactical_edges.each do |move|
 
-          see_squares[move.to] ||= Search::get_see_score(@node, move.to) # perform static exchange evaluation
-          next if see_squares[move.to] <= 0
+          # see_squares[move.to] ||= Search::get_see_score(@node, move.to) # perform static exchange evaluation
+          # next if see_squares[move.to] <= 0
 
           $quiescence_calls += 1
           mate_possible = false
@@ -256,33 +256,29 @@ module Application
     end
 
     def self.get_see_score(position, to)
-      attack_squares = { w: position.board.attackers(to, :w), 
-                         b: position.board.attackers(to, :b) }
-      attack_squares.each do |key, arr|  # more valuable pieces are listed first
-        arr.sort! { |x,y| Pieces::PIECE_SYM_ID[position.board[y]] <=> Pieces::PIECE_SYM_ID[position.board[x]] } 
-      end
-      # position.board.print
-      # puts to, attack_squares
+      hidden_attackers = {}
+      attack_squares = { w: position.board.attackers(to, :w, hidden_attackers), 
+                         b: position.board.attackers(to, :b, hidden_attackers),
+                         hidden: hidden_attackers }
+      print attack_squares
       value = static_exchange_evaluation(position.board, to, position.side_to_move, attack_squares)
-      # puts value
       return value
     end
 
-    def self.static_exchange_evaluation(board, to, side, attack_squares)
+    def self.static_exchange_evaluation(board, to, side, attack_squares, target_sym=nil)
       value = 0
-      from = attack_squares[side].pop # get the next attacking square
-      if from
-        sym = board[to]  # simulate making the capture. Save the captured symbol for unmake
-        board[to] = board[from]
-        board[from] = nil 
+      from = attack_squares[side].pop # get next attacking piece symbol.
+      return 0 unless from # current side can gain nothing more from exchange if out of attacking pieces.
 
-        side == :w ? :b : :w
-        capture_value = Pieces::get_value_by_sym(sym)
-        value = capture_value - static_exchange_evaluation(board, to, side, attack_squares)
+      target_sym ||= board[to]
+      capture_value = Pieces::get_value_by_sym(target_sym)
 
-        board[from] = board[to]  # simulate unmaking the capture
-        board[to] = sym
-      end
+      return capture_value if target_sym == :wK || target_sym == :bK  # King capture indicates checkmate.
+
+      side = FLIP_COLOR[side]
+      value = capture_value - static_exchange_evaluation(board, to, side, attack_squares, board[from])
+      # value = 0 if value < 0
+
       return value
     end
 
@@ -295,11 +291,7 @@ module Application
     def self.select_move(node, max_depth=4)
       @node, @max_depth = node, max_depth*4  # Use class instance variables rather than class variables.
       reset_counters
-      best_move, value = if block_given?
-        yield
-      else
-        iterative_deepening_alpha_beta
-      end    
+      best_move, value = block_given? ? yield : iterative_deepening_alpha_beta # use 
       return best_move
     end 
 

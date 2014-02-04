@@ -18,7 +18,7 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
-
+require './lib/attack.rb'
 require './lib/board.rb'
 require './lib/location.rb'
 require './lib/move.rb'
@@ -91,8 +91,7 @@ module Application # define application-level behavior in this module and file.
       board = Board.new
       @position = Position::ChessPosition.new(board,Pieces::setup(board),:w,0)
       @halfmove_count = 0
-      @ai_player = ai_player
-      @opponent = ai_player == :w ? :b : :w
+      @ai_player, @opponent = ai_player, FLIP_COLOR[ai_player]
       @tt = Memory::TranspositionTable.new
       $tt = @tt
       @clock = Clock.new(time_limit)

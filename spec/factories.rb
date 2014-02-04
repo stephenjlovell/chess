@@ -55,7 +55,7 @@ INITIAL = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
                                                                               # row  board #
 SEE_TEST = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1
-             [ :XX, :XX, nil, nil, nil, nil, :wR, nil, nil, nil, :XX, :XX ],  # 2 1
+             [ :XX, :XX, nil, nil, nil, nil, :wR, nil, nil, :wB, :XX, :XX ],  # 2 1
              [ :XX, :XX, nil, nil, nil, :wN, nil, nil, nil, nil, :XX, :XX ],  # 3 2
              [ :XX, :XX, nil, nil, nil, nil, nil, :wP, nil, nil, :XX, :XX ],  # 4 3
              [ :XX, :XX, nil, nil, nil, nil, :bP, nil, nil, nil, :XX, :XX ],  # 5 4
@@ -67,6 +67,22 @@ SEE_TEST = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 
              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11
       # column  0    1    2    3    4    5    6    7    8    9    10   11
       # letter            A    B    C    D    E    F    G    H
+
+# sets up a board to test king safety methods.
+CHECK = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
+          [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
+          [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, nil, nil, :wR, :XX, :XX ],  # 2    1
+          [ :XX, :XX, :wP, :wP, :wP, :wP, nil, nil, :wP, :wP, :XX, :XX ],  # 3    2
+          [ :XX, :XX, nil, nil, :bP, nil, :wP, nil, nil, nil, :XX, :XX ],  # 4    3
+          [ :XX, :XX, :wB, nil, nil, nil, nil, nil, nil, :bB, :XX, :XX ],  # 5    4
+          [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
+          [ :XX, :XX, nil, nil, nil, :bP, nil, :bN, nil, nil, :XX, :XX ],  # 7    6
+          [ :XX, :XX, :bP, :bP, nil, nil, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
+          [ :XX, :XX, :bR, :bN, nil, :bQ, :bK, :bB, nil, :bR, :XX, :XX ],  # 9    8
+          [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
+          [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
+    # column  0    1    2    3    4    5    6    7    8    9    10   11
+    # letter            A    B    C    D    E    F    G    H
 
 FactoryGirl.define do
 
@@ -104,6 +120,10 @@ FactoryGirl.define do
     factory :see_position do
       board { FactoryGirl.build(:see_board) }
     end
+
+    factory :check_position do
+      board { FactoryGirl.build(:check_board) }
+    end
   end
 
   factory :board, class: Application::Board do  
@@ -115,6 +135,10 @@ FactoryGirl.define do
 
     factory :see_board do
       squares SEE_TEST
+    end
+
+    factory :check_board do
+      squares CHECK
     end
   end
 
