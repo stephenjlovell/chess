@@ -91,21 +91,49 @@ module Application
       get_ray_attackers(attackers, location, bishop, queen, Pieces::DIRECTIONS[:diagonal]) # queens and bishops
       get_single_attackers(attackers, location, knight, Pieces::DIRECTIONS[:N]) # knights
       get_single_attackers(attackers, location, threat_piece, king, Pieces::DIRECTIONS[:ray]) # kings
-      return attackers
+
+      return attackers.collect { |arr| arr[0] } # discard hidden piece flags from attacker list.
     end
 
     def get_pawn_attackers(attackers, location, color)
 
-
+      if color == :w
+        square = location + Pieces::SE
+        if self[square] == :wP
+          insert_and_sort(attackers, square)
+          get_ray_attackers_by_direction(attackers, square, :wB, :wQ, Pieces::SE ) # check for hidden attackers 
+        end
+        square = location + Pieces::SW
+        if self[square] == :wP
+          insert_and_sort(attackers, square)
+          get_ray_attackers_by_direction(attackers, square, :wB, :wQ, Pieces::SW )
+        end
+      else
+        square = location + Pieces::NE
+        if self[square] == :bP
+          insert_and_sort(attackers, square)
+          get_ray_attackers_by_direction(attackers, square, :bB, :bQ, Pieces::NE )
+        end
+        square = location + Pieces::NW
+        if self[square] == :bP
+          insert_and_sort(attackers, square)
+          get_ray_attackers_by_direction(attackers, square, :bB, :bQ, Pieces::NW )
+        end
+      end
     end
 
     def get_ray_attackers(attackers, location, threat_piece, queen, directions)
-
-
+      directions.each { |vector| get_ray_attackers_by_direction(attackers, location, threat_piece, queen, vector) }
     end
 
-    def get_ray_attackers_by_direction(attackers, location, threat_piece, queen, vector)
-
+    def get_ray_attackers_by_direction(attackers, location, threat_piece, queen, vector, blocking_square=nil)
+      square = location + vector
+      while self.on_board?(square)
+        unless self.empty?(square)
+          return self[square] == threat_piece || self[square] == queen
+        end
+        square += vector
+      end
 
     end
 
@@ -114,8 +142,19 @@ module Application
 
     end
 
-    def insert_and_sort(attackers, square)
+    def insert_direct_attacker(attackers, square)
+      # when applied to each attack square, attackers should be in order of ID.
 
+
+    end
+
+    def insert_hidden_attacker(attackers, square, blocking_square)
+      # hidden attackers must come after the piece by which they were blocked, 
+      # but should otherwise be sorted normally.
+
+      # Insert hidden attackers in list:
+        # scan list until reaching the piece that blocked hidden attacker at index b
+        # perform normal insertion sort on attackers[b..attackers.length]
 
     end
 

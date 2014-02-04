@@ -82,7 +82,7 @@ module Application
       end
 
       def mvv_lva(moved_piece)  # Most valuable victim, least valuable attacker heuristic.
-        @captured_piece.class.value - moved_piece.class.id  # Used for move ordering captures.
+        @mvv_lva ||= @captured_piece.class.value - moved_piece.class.id  # Used for move ordering captures.
       end
     end
 
