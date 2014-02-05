@@ -21,7 +21,10 @@
 
 source 'https://rubygems.org'
 
-# add a gem that wraps one of the open-source Chess UI options.
+
+ruby '2.1.0'
+
+gem 'table_print'
 
 group :test do
   gem 'rspec'

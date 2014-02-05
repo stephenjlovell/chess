@@ -25,6 +25,7 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
                           after adding king safety 1/6/14: 25.213673 seconds
                           after ensuring legal move generation: 33.068109 seconds
                           after switching to incremental update: 9.475452 seconds
+                          after switching to iterative move gen and king saftey: 
 
 To Do ----
 

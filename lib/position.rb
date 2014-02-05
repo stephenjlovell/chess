@@ -82,31 +82,36 @@ module Application
       # These methods will be re-written to make use of Move::MoveList class:
 
       def get_moves # returns a sorted array of all possible moves for the current player.
-        moves = []
-        active_pieces.each { |key, piece| moves += piece.get_moves(key, self) }
-        moves += MoveGen::get_castles(self)
-        sort_moves!(moves)
-        return moves      
+        promotion_captures, captures, promotions, moves = [], [], [], []
+
+        active_pieces.each do |key, piece| 
+          piece.get_moves(self, key, moves, captures, promotions, promotion_captures)
+        end
+        sort_captures!(captures) # sort captures by MVV-LVA heuristic
+        sort_moves!(moves)  # sort regular moves by History or Killer heuristic
+
+        promotion_captures + captures + promotions + moves # append move lists together in reasonable order.
       end
       alias :edges :get_moves
 
       def get_captures # returns a sorted array of all possible moves for the current player.
-        moves = []
-        active_pieces.each { |key, piece| moves += piece.get_captures(key, self) }
-        sort_moves!(moves)
-        return moves      
+        captures, promotion_captures = [], []
+        active_pieces.each do |key, piece| 
+          piece.get_captures(self, key, captures, promotion_captures)
+        end
+        sort_captures!(captures)
+        
+        promotion_captures + captures
       end
       alias :tactical_edges :get_captures
+      
 
-      def get_enemy_captures
-        moves = []
-        enemy_pieces.each { |key, piece| moves += piece.get_captures(key, self) }
-        sort_moves!(moves)
-        return moves      
+      def sort_captures!(captures)
+        captures.sort! { |x,y| y.mvv_lva <=> x.mvv_lva }  # also sort non-captures by Killer Heuristic?
       end
 
       def sort_moves!(moves)
-        moves.sort! { |x,y| y.mvv_lva <=> x.mvv_lva }  # also sort non-captures by Killer Heuristic?
+        # moves.sort! {  }
       end
 
     end

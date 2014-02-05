@@ -28,6 +28,8 @@ module Application
     C_BQ = 0b0010  # Black castle queen side
     C_BK = 0b0001  # Black castle king side
 
+    
+
     class MoveList  # Notional place to store, organize, and sort moves more easily.
       attr_accessor :captures, :regular_moves, :castles, :checks
 

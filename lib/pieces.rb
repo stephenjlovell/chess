@@ -98,47 +98,48 @@ module Application
         @symbol.to_s
       end
 
-      def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
-        moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
-        self.class.directions.each do |direction|
-          more_moves = explore_direction(from, from, direction, position, position.board)
-          moves += more_moves
-        end
-        return moves
+      def get_moves(position, from, moves, captures, promotions, promotion_captures) # returns a collection of all pseudo-legal moves for the current piece.
+        self.class.directions.each { |vector| get_moves_for_direction(position, position.board, from, vector, moves, captures) }
       end
 
-      def get_captures(from, position)
-        moves = []                  
-        self.class.directions.each do |direction|
-          more_moves = explore_direction_for_captures(from, from, direction, position, position.board)
-          moves += more_moves
-        end
-        return moves
+      def get_captures(position, from, captures, promotion_captures) # returns a collection of all pseudo-legal moves for the current piece.
+        self.class.directions.each { |vector| get_captures_for_direction(position, position.board, from, vector, captures) }
       end
 
       private 
-      def explore_direction(from, current_location, direction, position, board, moves = [])
-        to = current_location + direction
-        enemy, empty = board.enemy?(to, @color), board.empty?(to)
-        if (empty || enemy) && board.avoids_check?(position, from, to, @color)
-          if enemy
-            moves << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
-          elsif empty
-            moves << Move::Factory.build(self, from, to, :regular_move)
+
+      def get_moves_for_direction(position, board, from, vector, moves, captures)
+        to = from + vector
+        while board.on_board?(to)
+          if (board.empty?(to) || board.enemy?(to, @color)) 
+            if board.avoids_check?(position, from, to, @color)
+              if board.empty?(to)
+                moves << Move::Factory.build(self, from, to, :regular_move)
+              else
+                captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
+                break
+              end
+            end
+          else
+            break # if path blocked by friendly piece, stop evaluating this direction.
           end
+          to += vector
         end
-        explore_direction(from, to, direction, position, board, moves) if empty
-        return moves
       end
 
-      def explore_direction_for_captures(from, current_location, direction, position, board, moves = [])
-        to = current_location + direction
-        enemy, empty = board.enemy?(to, @color), board.empty?(to)
-        if enemy && board.avoids_check?(position, from, to, @color) 
-          moves << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
+      def get_captures_for_direction(position, board, from, vector, captures)
+        to = from + vector
+        while board.on_board?(to)
+          if (board.empty?(to) || board.enemy?(to, @color)) 
+            if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
+              captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
+            end
+            break
+          else
+            break # if path blocked by friendly piece, stop evaluating this direction.
+          end
+          to += vector
         end
-        explore_direction_for_captures(from, to, direction, position, board, moves) if empty
-        return moves
       end
 
     end
@@ -169,38 +170,34 @@ module Application
         end
       end
 
-      def get_moves(from, position) # supercedes the generic get_moves function 
-        moves = []                  # provided by the Piece class.
-        get_attacks(from, position, position.board, moves)
-        get_en_passant(from, position, position.board, moves) if position.enp_target
-        get_advances(from, position, position.board, moves)
-        return moves
+      def get_moves(position, from, moves, captures, promotions, promotion_captures) 
+        get_attacks(position, position.board, from, captures, promotion_captures)
+        get_en_passant(position, position.board, from, captures) if position.enp_target
+        get_advances(position, position.board, from, moves, promotions)
       end
 
-      def get_captures(from, position)
-        moves = []                  
-        get_attacks(from, position, position.board, moves)
-        get_en_passant(from, position, position.board, moves) if position.enp_target
-        return moves
+      def get_captures(position, from, captures, promotion_captures)         
+        get_attacks(position, position.board, from, captures, promotion_captures)
+        get_en_passant(position, position.board, from, captures) if position.enp_target
       end
 
       private
 
-      def get_attacks(from, position, board, moves)
-        self.class.directions[@color][:attack].each do |direction|  # normal attacks
-          to = from + direction
+      def get_attacks(position, board, from, captures, promotion_captures)
+        self.class.directions[@color][:attack].each do |vector|  # normal attacks
+          to = from + vector
           if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
             enemy = position.enemy_pieces[to]
             if to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
-              moves << Move::Factory.build(self, from, to, :pawn_promotion_capture, enemy, @color)
+              promotion_captures << Move::Factory.build(self, from, to, :pawn_promotion_capture, enemy, @color)
             else
-              moves << Move::Factory.build(self, from, to, :regular_capture, enemy)
+              captures << Move::Factory.build(self, from, to, :regular_capture, enemy)
             end
           end
         end
       end
 
-      def get_en_passant(from, position, board, moves)
+      def get_en_passant(position, board, from, captures)
         self.class.directions[:en_passant].each do |pair|
           target = from + pair
           if position.enp_target == target
@@ -208,19 +205,19 @@ module Application
             to = target + offset
             if board.avoids_check?(position, from, to, @color)
               enemy = position.enemy_pieces[target]
-              moves << Move::Factory.build(self, from, to, :enp_capture, enemy, target)
+              captures << Move::Factory.build(self, from, to, :enp_capture, enemy, target)
             end 
           end
         end
       end
 
-      def get_advances(from, position, board, moves)
+      def get_advances(position, board, from, moves, promotions)
         dir = self.class.directions[@color]
         to = from + dir[:advance]
         if board.empty?(to)
           if board.avoids_check?(position, from, to, @color)
             if to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
-              moves << Move::Factory.build(self, from, to, :pawn_promotion, @color)
+              promotions << Move::Factory.build(self, from, to, :pawn_promotion, @color)
             else
               moves << Move::Factory.build(self, from, to, :regular_move)
             end
@@ -235,6 +232,7 @@ module Application
           end
         end
       end
+
     end
 
     class Knight < Piece
@@ -263,33 +261,28 @@ module Application
         end
       end
 
-      def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
-        moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
+      def get_moves(position, from, moves, captures, promotions, promotion_captures)              
         board = position.board
-        self.class.directions.each do |direction|
-          to = from + direction
-          is_enemy, empty = board.enemy?(to, @color), board.empty?(to)
-          if (is_enemy || empty) && board.avoids_check?(position, from, to, @color)
-            if is_enemy
-              moves << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
-            elsif empty
+        self.class.directions.each do |vector|
+          to = from + vector
+          if (board.empty?(to) || board.enemy?(to, @color)) && board.avoids_check?(position, from, to, @color)
+            if board.empty?(to)
               moves << Move::Factory.build(self, from, to, :regular_move)
+            else
+              captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
             end
           end
         end
-        return moves
       end
 
-      def get_captures(from, position) # returns a collection of all pseudo-legal moves for the current piece.
-        moves = []                     # each move contains the piece, to, capture value, and en_passant flag.
+      def get_captures(position, from, captures, promotion_captures) # returns a collection of all pseudo-legal moves for the current piece.
         board = position.board
-        self.class.directions.each do |direction|
-          to = from + direction
+        self.class.directions.each do |vector|
+          to = from + vector
           if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
-            moves << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
+            captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
           end
         end
-        return moves
       end
 
     end
@@ -401,33 +394,28 @@ module Application
         end
       end
 
-      def get_moves(from, position) # returns a collection of all pseudo-legal moves for the current piece.
-        moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
+      def get_moves(position, from, moves, captures, promotions, promotion_captures)   
         board = position.board
-        self.class.directions.each do |direction|
-          to = from + direction
-          is_enemy, empty = board.enemy?(to, @color), board.empty?(to)
-          if (is_enemy || empty) && board.avoids_check?(position, from, to, @color, to)
-            if is_enemy
-              moves << Move::Factory.build(self, from, to, :king_capture, position.enemy_pieces[to])
-            else
+        self.class.directions.each do |vector|
+          to = from + vector
+          if (board.empty?(to) || board.enemy?(to, @color)) && board.avoids_check?(position, from, to, @color, to)
+            if board.empty?(to)
               moves << Move::Factory.build(self, from, to, :king_move)
+            else
+              captures << Move::Factory.build(self, from, to, :king_capture, position.enemy_pieces[to])
             end
           end
         end
-        return moves
       end
 
-      def get_captures(from, position) # returns a collection of all pseudo-legal moves for the current piece.
-        moves = []                  # each move contains the piece, to, capture value, and en_passant flag.
+      def get_captures(position, from, captures, promotion_captures) 
         board = position.board
         self.class.directions.each do |direction|
           to = from + direction
           if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color, to)
-            moves << Move::Factory.build(self, from, to, :king_capture, position.enemy_pieces[to])
+            captures << Move::Factory.build(self, from, to, :king_capture, position.enemy_pieces[to])
           end
         end
-        return moves
       end
 
     end
