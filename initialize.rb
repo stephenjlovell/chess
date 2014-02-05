@@ -19,15 +19,16 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-load './lib/application.rb'
+Dir['./lib/*.rb'].each { |f| require f }  # require all 
+
 puts "Chess library loaded. \n\n"
 
 # # Play the game!
-# Application::CLI::play
+# Chess::CLI::play
 
 
 # test Transposition Table hash function efficiency.
-  # g = Application::new_game(:w)
+  # g = Chess::new_game(:w)
   # h = 0
   # t0 = Time.now
   # 1000.times do 

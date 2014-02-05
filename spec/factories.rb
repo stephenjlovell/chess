@@ -86,13 +86,13 @@ CHECK = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
 
 FactoryGirl.define do
 
-  factory :clock, class: Application::Clock do
+  factory :clock, class: Chess::Clock do
     initialize_with { new(120) }
   end
 
-  factory :transposition_table, class: Application::Memory::TranspositionTable 
+  factory :transposition_table, class: Chess::Memory::TranspositionTable 
 
-  factory :game, class: Application::Game do
+  factory :game, class: Chess::Game do
     position { FactoryGirl.build(:position) }
     tt { FactoryGirl.build(:transposition_table) }
     clock { FactoryGirl.build(:clock)}
@@ -103,9 +103,9 @@ FactoryGirl.define do
     end
   end
 
-  factory :position, class: Application::Position::ChessPosition do
+  factory :position, class: Chess::Position::ChessPosition do
     board  { FactoryGirl.build(:board) }
-    pieces { Application::Pieces::setup(board) }
+    pieces { Chess::Pieces::setup(board) }
     side_to_move :w
     halfmove_clock 0
     hash { board.hash }
@@ -126,7 +126,7 @@ FactoryGirl.define do
     end
   end
 
-  factory :board, class: Application::Board do  
+  factory :board, class: Chess::Board do  
     squares INITIAL
 
     factory :test_board do  
@@ -142,7 +142,7 @@ FactoryGirl.define do
     end
   end
 
-  factory :location, class: Application::Location::Location do
+  factory :location, class: Chess::Location::Location do
     r 0
     c 0
     initialize_with { new(r,c) }

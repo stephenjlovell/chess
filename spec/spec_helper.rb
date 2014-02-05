@@ -25,7 +25,7 @@ RSpec.configure do |config|
   config.include FactoryGirl::Syntax::Methods
 end
 
-load './lib/application.rb'
+require './initialize.rb'
 require 'factories.rb'
 
 def Perft(node, depth)  # Performance tester. Counts all leaf nodes to specified depth.
@@ -33,7 +33,7 @@ def Perft(node, depth)  # Performance tester. Counts all leaf nodes to specified
   sum = 0
   moves = node.get_moves
   moves.each do |move|
-    Application::MoveGen::make_unmake!(node, move) { sum += Perft(node, depth-1) }
+    Chess::MoveGen::make_unmake!(node, move) { sum += Perft(node, depth-1) }
   end
   return sum
 end

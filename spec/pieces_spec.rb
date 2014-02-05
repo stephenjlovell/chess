@@ -21,13 +21,13 @@
 
 require 'spec_helper'
 
-describe Application::Pieces do
+describe Chess::Pieces do
   describe "chess pieces" do
     before do
-      @game = Application::Game.new
+      @game = Chess::Game.new
       @position = @game.position
       @board = @position.board 
-      @knight  = Application::Pieces::Knight.new(:b) # D4
+      @knight  = Chess::Pieces::Knight.new(:b) # D4
     end
 
     subject { @knight }
@@ -61,7 +61,7 @@ describe Application::Pieces do
     describe "pawns" do
       before do
         @from = FactoryGirl.build(:location, r: 7, c: 5) 
-        @pawn = Application::Pieces::Pawn.new(:w) # D5
+        @pawn = Chess::Pieces::Pawn.new(:w) # D5
       end
       
       subject { @pawn }
@@ -78,7 +78,7 @@ describe Application::Pieces do
     end
   end
 
-  # describe Application::Pieces helper methods
+  # describe Chess::Pieces helper methods
 
 end
 

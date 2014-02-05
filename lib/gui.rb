@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-module Application
+module Chess
   module GUI # This module serves as a wrapper for the Universal Chess Interface (UCI) GUI.
 
     

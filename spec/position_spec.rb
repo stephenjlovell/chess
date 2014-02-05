@@ -21,7 +21,7 @@
 
 require 'spec_helper'
 
-describe Application::Position::ChessPosition do
+describe Chess::Position::ChessPosition do
 
   before { @position = FactoryGirl.build(:test_position) }
   subject { @position }

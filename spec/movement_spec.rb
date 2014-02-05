@@ -24,7 +24,7 @@ require 'spec_helper'
 # number of possible games for each ply (http://oeis.org/A048987/list)
 MAX_TREE = [1,20,400,8902,197281,4865609,119060324,3195901860,84998978956,2439530234167,69352859712417]
 
-describe Application::Move do
+describe Chess::Move do
   
   before do 
     @game = FactoryGirl.build(:game)

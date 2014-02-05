@@ -29,9 +29,9 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
 
 To Do ----
 
-  Add hashing of castling rights
+  
 
-  Debug Static Exchange Evaluator 
+  Add hashing of castling rights
 
   Refactor the TT probing logic into TT class, and call it from move_gen.
 

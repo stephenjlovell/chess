@@ -1,4 +1,4 @@
-module Application
+module Chess
   module Memory
     require 'SecureRandom'
 
@@ -82,8 +82,9 @@ module Application
       end
 
       def print
-        puts "------Principal Variation (#{self.count} moves)------"
+        puts "\n------Principal Variation (#{self.count} moves)------"
         each { |m| puts m.to_s }
+        puts "\n"
       end
     
       def print_details
@@ -106,7 +107,7 @@ module Application
 
     class TranspositionTable # this class generates a hash code for each explored position  
       # using a Zobrist hashing algorithm, and stores the value of each position.
-      # A single instance of this class is contained in Application::Game instances.
+      # A single instance of this class is contained in Chess::Game instances.
       def initialize
         @table = {}
       end

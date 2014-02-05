@@ -21,8 +21,8 @@
 
 require 'spec_helper'
 
-describe Application do  
-  before { @app = Application }
+describe Chess do  
+  before { @app = Chess }
   subject { @app }
 
   it { should respond_to :current_game }    
@@ -32,8 +32,8 @@ describe Application do
   it { should respond_to :current_board }
   it { should respond_to :print }
 
-  describe Application::Game do
-    before { @game = Application::Game.new(:b) }
+  describe Chess::Game do
+    before { @game = Chess::Game.new(:b) }
     subject { @game }
     it { should respond_to :position }    
     it { should respond_to :halfmove_clock }
@@ -48,14 +48,14 @@ describe Application do
     end
 
     describe "should contain objects of the right class" do
-      its("clock.class") { should == Application::Clock }
-      its("tt.class") { should == Application::Memory::TranspositionTable }
-      its("position.class") { should == Application::Position::ChessPosition }
+      its("clock.class") { should == Chess::Clock }
+      its("tt.class") { should == Chess::Memory::TranspositionTable }
+      its("position.class") { should == Chess::Position::ChessPosition }
     end
   end
 
-  describe Application::Clock do
-    before { @clock = Application::Clock.new }
+  describe Chess::Clock do
+    before { @clock = Chess::Clock.new }
     subject { @clock }
     it { should respond_to :game_start }
     it { should respond_to :time_up? }

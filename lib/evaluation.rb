@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-module Application
+module Chess
   module Evaluation # this module will contain all helper methods related to determining 
                     # the heuristic value of a given chess position.
       
@@ -33,6 +33,8 @@ module Application
            20, 20, 20,  30,  30, 20, 20, 20,
             0,  0,  0,   0,   0,  0,  0,  0 ],  # base value of piece increases upon promotion
 
+
+        #  A   B    C   D   E   F   G   H
       N: [ 0, -10,  0,  0,  0,  0, -10, 0,
            0,   0,  0,  5,  5,  0,   0, 0,
            0,   0, 10, 10, 10, 10,   0, 0,
@@ -51,7 +53,7 @@ module Application
            0,  0,   0, 10, 10,   0,  0, 0,
            0,  0,   0,  0,  0,   0,  0, 0 ],
 
-      R: [  0,  0,  5, 10, 10,  5,  0,  0,
+      R: [  0,  0,  5, 10, 10,  10,  0,  0,
             0,  0,  5, 10, 10,  5,  0,  0,
             0,  0,  5, 10, 10,  5,  0,  0,
             0,  0,  5, 10, 10,  5,  0,  0,
@@ -69,14 +71,14 @@ module Application
            0, 0, 0, 0, 0, 0, 0, 0,
            0, 0, 0, 0, 0, 0, 0, 0 ],
 
-      K: [ 0, 0, 0, 0, 0, 0, 0, 0, # placeholder table
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0 ] 
+      K: [ 0, 5, 15, 0, 5, 0, 15, 0, # placeholder table
+           0, 0,  0, 0, 0, 0,  0, 0,
+           0, 0,  0, 0, 0, 0,  0, 0,
+           0, 0,  0, 0, 0, 0,  0, 0,
+           0, 0,  0, 0, 0, 0,  0, 0,
+           0, 0,  0, 0, 0, 0,  0, 0,
+           0, 0,  0, 0, 0, 0,  0, 0,
+           0, 0,  0, 0, 0, 0,  0, 0 ] 
     }
 
     MIRROR = [ 56, 57, 58, 59, 60, 61, 62, 63,
@@ -109,7 +111,7 @@ module Application
     private
 
     def self.mobility(position)  # should really check this for both sides.
-      side, enemy = Application::current_game.ai_player, Application::current_game.opponent
+      side, enemy = Chess::current_game.ai_player, Chess::current_game.opponent
       if position.board.king_in_check?(position, side)
         -90
       elsif position.board.king_in_check?(position, enemy)
@@ -120,7 +122,7 @@ module Application
     end
 
     def self.net_material(position) # net material value for side to move.
-      side, enemy = Application::current_game.ai_player, Application::current_game.opponent
+      side, enemy = Chess::current_game.ai_player, Chess::current_game.opponent
       material(position, side) - material(position, enemy)
     end
 

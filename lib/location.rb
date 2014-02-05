@@ -1,4 +1,4 @@
-module Application
+module Chess
   module Location
     
     NUMBER_TO_LETTER = { 0 => "XX", 1 => "XX", 2 => "a", 3 => "b", 4 => "c",   5 => "d", 

@@ -21,21 +21,21 @@
 
 require 'spec_helper'
 
-describe Application::Search do
+describe Chess::Search do
 
-  before { @s = Application::Search }
+  before { @s = Chess::Search }
   let(:game) { FactoryGirl.build(:test_game) }
   let(:pos) { game.position }
 
   # describe "when AI king is not in check" do
   #   it "will select the most valuable move" do
-  #     Application::Search::select_move(@pos)
+  #     Chess::Search::select_move(@pos)
   #   end
   # end
 
   # describe "when AI king is in check" do    # king captures cannot be permitted
   #   it "will move out of check if possible" do
-  #     Application::Search::select_move(@check_pos)
+  #     Chess::Search::select_move(@check_pos)
   #   end
   # end
 
@@ -61,7 +61,7 @@ describe Application::Search do
   end
 
   # describe "static exchange evaluation" do
-  #   let(:loc) { Application::Location::get_location(5,6) }
+  #   let(:loc) { Chess::Location::get_location(5,6) }
   #   let(:see_pos) { FactoryGirl.build(:see_position) }
   #   it "should correctly value an exchange over a single square" do
   #     see_pos.board.print

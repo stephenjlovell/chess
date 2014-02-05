@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-module Application
+module Chess
   module Position
 
     class ChessPosition # Mutable description of the game state as of a specific turn.
@@ -75,7 +75,7 @@ module Application
       end
 
       def inspect
-        "<Application::Position::ChessPosition <@board:#{@board.inspect}> 
+        "<Chess::Position::ChessPosition <@board:#{@board.inspect}> 
          <@pieces:#{@pieces.inspect}>, <@side_to_move:#{@side_to_move}>>"
       end
 
@@ -91,8 +91,8 @@ module Application
         sort_moves!(moves)  # sort regular moves by History or Killer heuristic
 
         # ideally, killer moves should be searched before captures...
-
-        promotion_captures + captures + promotions + moves # append move lists together in reasonable order.
+        # append move lists together in reasonable order:
+        promotion_captures + captures + promotions + MoveGen::get_castles(self) + moves 
       end
       alias :edges :get_moves
 
@@ -109,10 +109,10 @@ module Application
 
 
       def sort_captures!(captures)
-        captures.sort! { |x,y| y.mvv_lva <=> x.mvv_lva }  # also sort non-captures by Killer Heuristic?
+        captures.sort! { |x,y| y.mvv_lva <=> x.mvv_lva } 
       end
 
-      def sort_moves!(moves)
+      def sort_moves!(moves) # sort remaining (non-capture)
         # moves.sort! {  }
       end
 

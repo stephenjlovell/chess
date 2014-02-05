@@ -18,27 +18,15 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
-require './lib/attack.rb'
-require './lib/board.rb'
-require './lib/location.rb'
-require './lib/move.rb'
-require './lib/move_gen.rb'
-require './lib/pieces.rb'
-require './lib/position.rb'
-require './lib/evaluation.rb'
-require './lib/search.rb'
-require './lib/gui.rb'
-require './lib/cli.rb'
-require './lib/memory.rb'
 
-module Application # define application-level behavior in this module and file.
+module Chess # define Chess-level behavior in this module and file.
 
-  # application-level global constants:
+  # Chess-level global constants:
   $INF = 1.0/0.0
 
   class << self
     def current_game
-      @current_game ||= Application::Game.new
+      @current_game ||= Chess::Game.new
     end
 
     def current_game=(game)
@@ -46,7 +34,7 @@ module Application # define application-level behavior in this module and file.
     end
 
     def new_game(ai_player = :b, time_limit = 60.0)
-      @current_game = Application::Game.new(ai_player, time_limit)
+      @current_game = Chess::Game.new(ai_player, time_limit)
     end
 
     def current_position # represents the root node in current search tree.
@@ -103,7 +91,7 @@ module Application # define application-level behavior in this module and file.
 
     def print # print game state info along with board representation
       opp_score, ai_score = score(@ai_player), score(@opponent)
-      scoreboard = "| Move: #{move_clock} | Ply: #{@halfmove_count} " + 
+      scoreboard = "| Move: #{move_clock} | Ply: #{@halfmove_count} " + s
                    "| Turn: #{@position.side_to_move.to_s} " +
                    "| AI Score: #{ai_score} | Your Score: #{opp_score} |"
       separator = "-" * scoreboard.length

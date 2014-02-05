@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
  
-module Application
+module Chess
   module Attack  # Mixin module for use with Board object.
 
     def king_attacked?(location, attacker_color)

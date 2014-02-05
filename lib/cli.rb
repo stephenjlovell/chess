@@ -1,4 +1,4 @@
-module Application
+module Chess
   module CLI  # this module provides a basic command-line interface for playing human vs AI
               # games.  Mainly for demo / debug purposes prior to building out main UCI GUI.
     
@@ -9,15 +9,15 @@ module Application
       if human_color == "w" || human_color == "b"
         time_limit = 20.0
         ai_color = human_color == "w" ? :b : :w
-        Application::new_game(ai_color, time_limit)
+        Chess::new_game(ai_color, time_limit)
       end 
-      Application::print
+      Chess::print
       input = ""
       until input == "quit" || input == "q" || input == "exit" do
         unless input == ""
-          Application::current_game.human_move(input) if human_color == "w"
-          Application::current_game.make_move
-          Application::current_game.human_move(input) if human_color != "w"
+          Chess::current_game.human_move(input) if human_color == "w"
+          Chess::current_game.make_move
+          Chess::current_game.human_move(input) if human_color != "w"
         end
         print "where would you like to move?  "
         $stdout.flush

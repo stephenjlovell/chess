@@ -21,7 +21,7 @@
 
 require 'spec_helper'
 
-describe Application::Board do
+describe Chess::Board do
 
   before { @board = FactoryGirl.build(:board) }
   subject { @board }
@@ -88,12 +88,12 @@ describe Application::Board do
   # describe 'when finding pieces that attack a given square' do
   #   before do
   #     @board = FactoryGirl.build(:test_board)
-  #     @location = Application::Location::get_location(5,8)
+  #     @location = Chess::Location::get_location(5,8)
   #   end
 
   #   it 'should generate a list of squares holding pieces that attack the given square' do
-  #     @board.get_square_attackers(@location, :w).should == [Application::Location::get_location(2,5)]
-  #     @board.attackers(@location, :b).should == [Application::Location::get_location(7,7)]
+  #     @board.get_square_attackers(@location, :w).should == [Chess::Location::get_location(2,5)]
+  #     @board.attackers(@location, :b).should == [Chess::Location::get_location(7,7)]
   #   end
 
   # end
