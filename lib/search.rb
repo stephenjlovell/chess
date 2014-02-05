@@ -227,8 +227,8 @@ module Application
 
         @node.tactical_edges.each do |move|
 
-          # see_squares[move.to] ||= Search::get_see_score(@node, move.to) # perform static exchange evaluation
-          # next if see_squares[move.to] <= 0
+          see_squares[move.to] ||= Search::get_see_score(@node, move.to) # perform static exchange evaluation
+          next if see_squares[move.to] <= 0
 
           $quiescence_calls += 1
           mate_possible = false

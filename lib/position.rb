@@ -90,6 +90,8 @@ module Application
         sort_captures!(captures) # sort captures by MVV-LVA heuristic
         sort_moves!(moves)  # sort regular moves by History or Killer heuristic
 
+        # ideally, killer moves should be searched before captures...
+
         promotion_captures + captures + promotions + moves # append move lists together in reasonable order.
       end
       alias :edges :get_moves
@@ -104,7 +106,7 @@ module Application
         promotion_captures + captures
       end
       alias :tactical_edges :get_captures
-      
+
 
       def sort_captures!(captures)
         captures.sort! { |x,y| y.mvv_lva <=> x.mvv_lva }  # also sort non-captures by Killer Heuristic?

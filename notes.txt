@@ -25,11 +25,9 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
                           after adding king safety 1/6/14: 25.213673 seconds
                           after ensuring legal move generation: 33.068109 seconds
                           after switching to incremental update: 9.475452 seconds
-                          after switching to iterative move gen and king saftey: 
+                          after switching to iterative move gen and king saftey: 7.3749 seconds (26750.2707 NPS)
 
 To Do ----
-
-  Use "Vector Attacks" for faster move generation, king saftey checking, and SEE.  Read up on vector space basics.
 
   Add hashing of castling rights
 
