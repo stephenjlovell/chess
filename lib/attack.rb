@@ -76,6 +76,7 @@ module Application
       return false
     end
 
+
     def get_square_attackers(location)
       { w: get_square_attackers_by_color(location, :w),
         b: get_square_attackers_by_color(location, :b) }
@@ -90,33 +91,31 @@ module Application
       get_ray_attackers(attackers, location, rook, queen, Pieces::DIRECTIONS[:straight]) # queens and rooks
       get_ray_attackers(attackers, location, bishop, queen, Pieces::DIRECTIONS[:diagonal]) # queens and bishops
       get_single_attackers(attackers, location, knight, Pieces::DIRECTIONS[:N]) # knights
-      get_single_attackers(attackers, location, threat_piece, king, Pieces::DIRECTIONS[:ray]) # kings
-
-      return attackers.collect { |arr| arr[0] } # discard hidden piece flags from attacker list.
+      get_single_attackers(attackers, location, king, Pieces::DIRECTIONS[:ray]) # kings
+      return attackers
     end
 
     def get_pawn_attackers(attackers, location, color)
-
       if color == :w
         square = location + Pieces::SE
         if self[square] == :wP
-          insert_and_sort(attackers, square)
+          insert_attacker(attackers, square)
           get_ray_attackers_by_direction(attackers, square, :wB, :wQ, Pieces::SE ) # check for hidden attackers 
         end
         square = location + Pieces::SW
         if self[square] == :wP
-          insert_and_sort(attackers, square)
+          insert_attacker(attackers, square)
           get_ray_attackers_by_direction(attackers, square, :wB, :wQ, Pieces::SW )
         end
       else
         square = location + Pieces::NE
         if self[square] == :bP
-          insert_and_sort(attackers, square)
+          insert_attacker(attackers, square)
           get_ray_attackers_by_direction(attackers, square, :bB, :bQ, Pieces::NE )
         end
         square = location + Pieces::NW
         if self[square] == :bP
-          insert_and_sort(attackers, square)
+          insert_attacker(attackers, square)
           get_ray_attackers_by_direction(attackers, square, :bB, :bQ, Pieces::NW )
         end
       end
@@ -130,7 +129,17 @@ module Application
       square = location + vector
       while self.on_board?(square)
         unless self.empty?(square)
-          return self[square] == threat_piece || self[square] == queen
+          # if square is occupied, it's either a threat piece, a non-attacker of same color, or a piece of opposite color.
+          if self[square] == threat_piece || self[square] == queen
+            if blocking_square   # insert the threat piece by the appropriate method
+              insert_hidden_attacker(attackers, square, blocking_square)
+            else
+              insert_attacker(attackers, square)
+            end
+            blocking_square = square
+          else
+            return  # if occupied by non-threat piece, stop searching this direction
+          end
         end
         square += vector
       end
@@ -138,14 +147,26 @@ module Application
     end
 
     def get_single_attackers(attackers, location, threat_piece, directions)
-
-
+      directions.each do |vector|
+        insert_attacker(attackers, location + vector) if self[location + vector] == threat_piece
+      end  # knights and kings cannot block other attackers.
     end
 
-    def insert_direct_attacker(attackers, square)
+    def insert_attacker(attackers, square, insert_index=0)
       # when applied to each attack square, attackers should be in order of ID.
+      # existing attackers have already been sorted.
+      if attackers.empty?
+        attackers << square
+        return
+      end
+      square_value = Pieces::PIECE_SYM_ID[self[square]]
 
-
+      max = attackers.count - 1
+      (insert_index..max).each do |i|
+        break if Pieces::PIECE_SYM_ID[self[attackers[i]]] >= square_value
+        insert_index += 1
+      end
+      attackers.insert(insert_index, square) # [ 1, 3, 5 ].insert(2,4)  => [1,3,4,5]
     end
 
     def insert_hidden_attacker(attackers, square, blocking_square)
@@ -155,10 +176,15 @@ module Application
       # Insert hidden attackers in list:
         # scan list until reaching the piece that blocked hidden attacker at index b
         # perform normal insertion sort on attackers[b..attackers.length]
+      insert_index = 0
+      max = attackers.count - 1
 
+      (0..max).each do |i|
+        break if attackers[i] == blocking_square
+        insert_index += 1
+      end
+      insert_attacker(attackers, square, insert_index)
     end
-
-
 
   end
 end

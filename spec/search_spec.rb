@@ -61,14 +61,15 @@ describe Application::Search do
     end
   end
 
-  # describe "static exchange evaluation" do
-  #   let(:loc) { Application::Location::get_location(5,6) }
-  #   let(:see_pos) { FactoryGirl.build(:see_position) }
-  #   it "should correctly value an exchange over a single square" do
-  #     see_pos.board.print
-  #     puts @s.get_see_score(see_pos, loc, )
-  #   end
-  # end
+  describe "static exchange evaluation" do
+    let(:loc) { Application::Location::get_location(5,6) }
+    let(:see_pos) { FactoryGirl.build(:see_position) }
+    it "should correctly value an exchange over a single square" do
+      see_pos.board.print
+      puts see_pos.board.get_square_attackers(loc)
+      puts @s.get_see_score(see_pos, loc)
+    end
+  end
 
 
 end

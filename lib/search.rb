@@ -256,30 +256,46 @@ module Application
     end
 
     def self.get_see_score(position, to)
-      hidden_attackers = {}
-      attack_squares = { w: position.board.attackers(to, :w, hidden_attackers), 
-                         b: position.board.attackers(to, :b, hidden_attackers),
-                         hidden: hidden_attackers }
-      print attack_squares
-      value = static_exchange_evaluation(position.board, to, position.side_to_move, attack_squares)
-      return value
+      attackers = position.board.get_square_attackers(to)
+      static_exchange_evaluation(position.board, to, position.side_to_move, attackers)
     end
 
-    def self.static_exchange_evaluation(board, to, side, attack_squares, target_sym=nil)
-      value = 0
-      from = attack_squares[side].pop # get next attacking piece symbol.
-      return 0 unless from # current side can gain nothing more from exchange if out of attacking pieces.
+    def self.static_exchange_evaluation(board, to, side, attackers)
+      score = 0
+      victim = board[to]
+      alpha = -$INF
+      beta = $INF
+      other_side = FLIP_COLOR[side]
 
-      target_sym ||= board[to]
-      capture_value = Pieces::get_value_by_sym(target_sym)
+      counters = { w: 0, b: 0 }
+      attacker_count = { w: attackers[:w].count, b: attackers[:b].count }
 
-      return capture_value if target_sym == :wK || target_sym == :bK  # King capture indicates checkmate.
+      while true
+        score += Pieces::get_value_by_sym(victim)
+        puts score
+        if score <= alpha  # stand pat produces (fail-hard) cutoff
+          result = alpha
+          break
+        end
+        
+        break if counters[side] >= attacker_count[side]
 
-      side = FLIP_COLOR[side]
-      value = capture_value - static_exchange_evaluation(board, to, side, attack_squares, board[from])
-      # value = 0 if value < 0
+        victim = board[attackers[side][counters[side]]]  # attacker is now on target square
+        counters[side] += 1
+        beta = score if score < beta # beta update
+        score -= Pieces::get_value_by_sym(victim)
+        if score >= beta  # stand pat produces fail-hard cutoff
+          result = beta
+          break
+        end
 
-      return value
+        break if counters[other_side] >= attacker_count[other_side]
+
+        victim = board[attackers[other_side][counters[other_side]]]  # # attacker is now on target square
+        counters[side] += 1
+        alpha = score if score > alpha  # alpha update
+      end
+      return result
     end
 
     # Module interface

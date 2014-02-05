@@ -438,7 +438,7 @@ module Application
     end
 
     def self.setup(board)        # returns a collection of chess pieces 
-      pieces = { w: {}, b: {} }  # corresponding to the specified board reprEAST_SEntation.
+      pieces = { w: {}, b: {} }  # corresponding to the specified board representation.
       board.each_square_with_location do |r,c,sym|
         unless sym.nil?
           piece = self.create_piece_by_sym(sym)

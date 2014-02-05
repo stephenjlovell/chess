@@ -92,7 +92,7 @@ describe Application::Board do
   #   end
 
   #   it 'should generate a list of squares holding pieces that attack the given square' do
-  #     @board.attackers(@location, :w).should == [Application::Location::get_location(2,5)]
+  #     @board.get_square_attackers(@location, :w).should == [Application::Location::get_location(2,5)]
   #     @board.attackers(@location, :b).should == [Application::Location::get_location(7,7)]
   #   end
 

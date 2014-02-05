@@ -154,60 +154,7 @@ module Application
       king_attacked?(king_location, FLIP_COLOR[color])
     end
 
-
-
     
-
-    def attackers(location, color, hidden_attackers)
-      dir = Pieces::DIRECTIONS
-      threat_color = FLIP_COLOR[color]
-      threats = THREATS[threat_color]
-      attack_squares = get_attackers(location, dir[:P][threat_color][:attack], false, threats[:P], hidden_attackers) + # pawns
-      get_attackers(location, dir[:N], false, threats[:N], hidden_attackers) + # knights
-      get_attackers(location, dir[:straight], true, threats[:straight], hidden_attackers) + # queens, rooks
-      get_attackers(location, dir[:diagonal], true, threats[:diagonal], hidden_attackers) # queens, bishops
-
-      # what about king attacks?
-
-      attack_squares.sort!{ |x,y| Pieces::PIECE_SYM_ID[self[y]] <=> Pieces::PIECE_SYM_ID[self[x]] }
-      return attack_squares 
-    end
-
-    private
-
-    def get_attackers(location, directions, until_blocked, threat_pieces, hidden_attackers)
-      squares = []
-      directions.each do |d| 
-        check_attack_direction(location, d, until_blocked, threat_pieces, squares, hidden_attackers)
-      end
-      return squares
-    end
-
-    def check_attack_direction(current_location, direction, until_blocked, threat_pieces, squares, hidden_attackers, hidden_by=nil)
-      to = current_location + direction
-
-      if is_threat?(to, threat_pieces) 
-        
-        if hidden_by
-          hidden_attackers[hidden_by] = to
-        else
-          squares << to 
-        end
-
-        if until_blocked
-        
-        # if threat pieces are pawns, change threat pieces to diagonals.
-          check_attack_direction(to, direction, until_blocked, threat_pieces, squares, hidden_attackers, to)
-        end
-
-      elsif until_blocked 
-      # else
-        if empty?(to)  # check ray attacks recursively until blocked
-          check_attack_direction(to, direction, until_blocked, threat_pieces, squares, hidden_attackers, hidden_by)
-        end
-      end
-
-    end
 
 
   end
