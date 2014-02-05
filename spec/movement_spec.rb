@@ -34,7 +34,7 @@ describe Application::Move do
   describe "move generation" do
 
     it "should generate the correct number of nodes" do
-      depth = 5
+      depth = 4
       t0 = Time.now
       node_count = Perft(@root, depth) # first castling moves would occur at minimum ply 7.
       t1 = Time.now

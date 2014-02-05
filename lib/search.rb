@@ -262,40 +262,29 @@ module Application
 
     def self.static_exchange_evaluation(board, to, side, attackers)
       score = 0
-      victim = board[to]
-      alpha = -$INF
-      beta = $INF
+      alpha, beta = -$INF, $INF
       other_side = FLIP_COLOR[side]
 
       counters = { w: 0, b: 0 }
       attacker_count = { w: attackers[:w].count, b: attackers[:b].count }
 
+      victim = board[to]
       while true
         score += Pieces::get_value_by_sym(victim)
-        puts score
-        if score <= alpha  # stand pat produces (fail-hard) cutoff
-          result = alpha
-          break
-        end
+        # puts score
+        return alpha if score <= alpha || counters[side] >= attacker_count[side]  # stand pat produces fail-hard cutoff
         
-        break if counters[side] >= attacker_count[side]
-
         victim = board[attackers[side][counters[side]]]  # attacker is now on target square
         counters[side] += 1
         beta = score if score < beta # beta update
         score -= Pieces::get_value_by_sym(victim)
-        if score >= beta  # stand pat produces fail-hard cutoff
-          result = beta
-          break
-        end
 
-        break if counters[other_side] >= attacker_count[other_side]
-
+        return beta if score >= beta || counters[other_side] >= attacker_count[other_side]  # stand pat produces fail-hard cutoff
+        
         victim = board[attackers[other_side][counters[other_side]]]  # # attacker is now on target square
-        counters[side] += 1
+        counters[other_side] += 1
         alpha = score if score > alpha  # alpha update
       end
-      return result
     end
 
     # Module interface
