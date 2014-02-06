@@ -111,17 +111,15 @@ module Chess
       def get_moves_for_direction(position, board, from, vector, moves, captures)
         to = from + vector
         while board.on_board?(to)
-          if (board.empty?(to) || board.enemy?(to, @color)) 
+          if board.occupied?(to)
             if board.avoids_check?(position, from, to, @color)
               if board.empty?(to)
                 moves << Move::Factory.build(self, from, to, :regular_move)
               else
                 captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
-                break
               end
             end
-          else
-            break # if path blocked by friendly piece, stop evaluating this direction.
+            break # if path blocked by any piece, stop evaluating this direction.
           end
           to += vector
         end
@@ -130,13 +128,11 @@ module Chess
       def get_captures_for_direction(position, board, from, vector, captures)
         to = from + vector
         while board.on_board?(to)
-          if (board.empty?(to) || board.enemy?(to, @color)) 
+          if board.occupied?(to) 
             if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
               captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
             end
-            break
-          else
-            break # if path blocked by friendly piece, stop evaluating this direction.
+            break # if path blocked by any piece, stop evaluating this direction.
           end
           to += vector
         end
