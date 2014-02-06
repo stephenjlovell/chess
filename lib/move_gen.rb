@@ -54,7 +54,7 @@ module Chess
 
     def self.make!(position, move) # Mutates position by making the specified move. 
       move.make!(position)        
-      set_castle_flag(position, move)  # Old castle flag is stored in move for unmake.
+      set_castle_flag(position, move)  # Old castle rights are stored in move for unmake.
       flip(position, move)
     end
 

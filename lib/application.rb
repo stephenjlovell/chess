@@ -102,7 +102,7 @@ module Chess # top-level application namespace.
 
     def print # print game state info along with board representation
       opp_score, ai_score = score(@ai_player), score(@opponent)
-      scoreboard = "| Move: #{move_clock} | Ply: #{@halfmove_count} " + s
+      scoreboard = "| Move: #{move_clock} | Ply: #{@halfmove_count} " +
                    "| Turn: #{@position.side_to_move.to_s} " +
                    "| AI Score: #{ai_score} | Your Score: #{opp_score} |"
       separator = "-" * scoreboard.length
@@ -124,23 +124,6 @@ module Chess # top-level application namespace.
       end
     end
 
-    def human_move(description)  # for now, just assume human moves are valid.
-      take_turn do
-        from = Location::get_location_from_string(description[0..1])
-        to = Location::get_location_from_string(description[-2..-1])
-        piece = @position.own_pieces[from]
-        enemy = @position.enemy_pieces[to]
-        m = Move
-        case piece.class.type
-        when :P then strategy = enemy ? m::RegularCapture.new(enemy) : m::PawnMove.new
-        when :K then strategy = enemy ? m::KingCapture.new(enemy) : m::KingMove.new
-        else strategy = enemy ? m::RegularCapture.new(enemy) : m::RegularMove.new
-        end
-        move = Move::Move.new(piece, from, to, strategy)
-        MoveGen::make!(@position, move)
-      end
-    end
-
     def undo_move
       @move_history.undo(@position)
     end
@@ -149,12 +132,17 @@ module Chess # top-level application namespace.
       @move_history.redo(@position)
     end
 
-
     def save_move(move)
       @move_history.save(move)
     end
 
-    def make_move
+    def human_move(move)  
+      take_turn do
+        MoveGen::make!(@position, move)
+      end
+    end
+
+    def ai_move
       take_turn do 
         move = Search::select_move(@position)
         MoveGen::make!(@position, move)

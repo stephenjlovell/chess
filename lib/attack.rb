@@ -128,8 +128,8 @@ module Chess
     def get_ray_attackers_by_direction(attackers, location, threat_piece, queen, vector, blocking_square=nil)
       square = location + vector
       while self.on_board?(square)
-        unless self.empty?(square)
-          # if square is occupied, it's either a threat piece, a non-attacker of same color, or a piece of opposite color.
+        unless self.empty?(square) # if square is occupied, it's either a threat piece, 
+          # a non-attacker of same color, or a piece of opposite color.
           if self[square] == threat_piece || self[square] == queen
             if blocking_square   # insert the threat piece by the appropriate method
               insert_hidden_attacker(attackers, square, blocking_square)

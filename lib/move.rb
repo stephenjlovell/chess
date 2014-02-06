@@ -307,6 +307,8 @@ module Chess
       end
     end
 
+
+
     class Move
       attr_reader :moved_piece, :from, :to, :enp_target
 

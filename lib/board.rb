@@ -143,8 +143,6 @@ module Chess
       sym != nil && sym != :XX
     end
 
-    # refactor this method to reduce cost using a constant hash:
-
     def enemy?(location, color)      
       occupied?(location) && Pieces::PIECE_COLOR[self[location]] != color
     end

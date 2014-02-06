@@ -59,6 +59,7 @@ module Chess
           puts "evaluation time ran out after depth #{d}"; break
         end
       end
+      puts "\n"
       tp performance_data  # print out performance data as a table.
       current_pv.print
       # puts "Average effective branching factor: #{total_calls**(1r/depth)}"
@@ -67,7 +68,7 @@ module Chess
     end
 
     def self.mtdf(g=nil, depth=nil, previous_pv=nil, parent_pv=nil) # incrementally sets the alpha-beta search window and call alpha_beta.
-      g ||= @node.value  # do an initial fixed
+      g ||= alpha_beta(PLY_VALUE, -$INF, +$INF) # do a fixed-depth search for first guess
       depth ||= @max_depth
       upper_bound = $INF
       lower_bound = -$INF
@@ -269,8 +270,7 @@ module Chess
       static_exchange_evaluation(position.board, to, position.side_to_move, attackers)
     end
 
-    def self.static_exchange_evaluation(board, to, side, attackers) 
-      # An iterative SEE algorithm based on alpha beta pruning.
+    def self.static_exchange_evaluation(board, to, side, attackers) # Iterative SEE algorithm based on alpha beta pruning.
       score = 0
       alpha, beta = -$INF, $INF
       other_side = FLIP_COLOR[side]
@@ -306,7 +306,8 @@ module Chess
     def self.select_move(node, max_depth=4)
       @node, @max_depth = node, max_depth * PLY_VALUE  # Use class instance variables rather than class variables.
       reset_counters
-      best_move, value = block_given? ? yield : iterative_deepening_alpha_beta # use vanilla alpha beta by default.
+      best_move, value = block_given? ? yield : iterative_deepening_mtdf # use mtdf by default
+      puts "Eval score: #{value}"
       return best_move
     end 
 

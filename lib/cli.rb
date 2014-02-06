@@ -11,13 +11,14 @@ module Chess
         ai_color = human_color == "w" ? :b : :w
         Chess::new_game(ai_color, time_limit)
       end 
-      Chess::print
+      Chess::current_game.print
       input = ""
       until input == "quit" || input == "q" || input == "exit" do
         unless input == ""
-          Chess::current_game.human_move(input) if human_color == "w"
-          Chess::current_game.make_move
-          Chess::current_game.human_move(input) if human_color != "w"
+          move = parse_move(input)
+          Chess::current_game.human_move(move) if human_color == "w"
+          Chess::current_game.ai_move
+          Chess::current_game.human_move(move) if human_color != "w"
         end
         print "where would you like to move?  "
         $stdout.flush
@@ -26,5 +27,30 @@ module Chess
       puts "Thanks for playing!  See you soon."
     end
 
+
+
+    def self.parse_move(input)
+      position = Chess::current_game.position
+      from = Location::get_location_from_string(input[0..1])
+      to = Location::get_location_from_string(input[-2..-1])
+
+      # select a move strategy based on input
+
+
+      Move::Factory.build(piece, from, to, )
+      # compose a move object that uses the appropriate strategy.
+    end
+
   end
 end
+
+
+
+
+
+
+
+
+
+
+
