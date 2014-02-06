@@ -99,6 +99,7 @@ module Chess
                 a7: 48, b7: 49, c7: 50, d7: 51, e7: 52, f7: 53, g7: 54, h7: 55,
                 a8: 56, b8: 57, c8: 58, d8: 59, e8: 60, f8: 61, g8: 62, h8: 63 }
 
+
     def self.evaluate(position)
       $evaluation_calls += 1 
       net_material(position) + mobility(position)
@@ -110,31 +111,32 @@ module Chess
 
     private
 
-    def self.mobility(position)  # should really check this for both sides.
-      side, enemy = Chess::current_game.ai_player, Chess::current_game.opponent
-      if position.board.king_in_check?(position, side)
-        -90
-      elsif position.board.king_in_check?(position, enemy)
-        90
-      else
+    def self.mobility(position)  # if possible, 
+      # side, enemy = Chess::current_game.ai_player, Chess::current_game.opponent
+      # if position.board.king_in_check?(position, side)
+      #   -90
+      # elsif position.board.king_in_check?(position, enemy)
+      #   90
+      # else
         0
-      end
+      # end
     end
 
     def self.net_material(position) # net material value for side to move.
       side, enemy = Chess::current_game.ai_player, Chess::current_game.opponent
-      material(position, side) - material(position, enemy)
+      # material(position, side) - material(position, enemy)
+      position.material[side] - position.material[enemy]
     end
 
     def self.material(position, side) # =~ 1,040 at start
       position.pieces[side].inject(0) { |total, (key, piece)| total += adjusted_value(piece, key) }
     end
 
-    def self.adjusted_value(piece, location)
+    def self.adjusted_value(piece, location, game_stage=nil)
       return piece.class.value + pst_value(piece, location)
     end
 
-    def self.pst_value(piece, location)
+    def self.pst_value(piece, location, game_stage = nil)
       pst, sym = PST[piece.class.type], location.to_sym
       piece.color == :w ? pst[SQUARES[sym]] : pst[MIRROR[SQUARES[sym]]]
     end

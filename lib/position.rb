@@ -24,22 +24,39 @@ module Chess
 
     class ChessPosition # Mutable description of the game state as of a specific turn.
       attr_accessor :board, :pieces, :side_to_move, :enemy, :halfmove_clock, :castle, :enp_target, 
-                    :hash, :king_location
+                    :hash, :king_location, :material
 
       def initialize(board, pieces, side_to_move, halfmove_clock)
         @board, @pieces, @side_to_move, @halfmove_clock = board, pieces, side_to_move, halfmove_clock
         @enemy = FLIP_COLOR[@side_to_move]
         @enp_target, @castle = nil, 0b1111
-        @hash = @board.hash
+        @hash = @board.hash  # add hash of initial castling rights
         @king_location = { w: Location::get_location(2,6), b: Location::get_location(9,6) }
+        @material = { w: Evaluation::material(self, :w), b: Evaluation::material(self, :b) } 
       end
 
-      def active_pieces
+      def own_pieces
         @pieces[@side_to_move]
       end
 
       def enemy_pieces
         @pieces[@enemy]
+      end
+
+      def own_material
+        @material[@side_to_move]
+      end
+
+      def enemy_material
+        @material[@enemy]
+      end
+
+      def own_material=(value)
+        @material[@side_to_move] = value
+      end
+
+      def enemy_material=(value)
+        @material[@enemy] = value
       end
 
       def active_king_location
@@ -84,7 +101,7 @@ module Chess
       def get_moves # returns a sorted array of all possible moves for the current player.
         promotion_captures, captures, promotions, moves = [], [], [], []
 
-        active_pieces.each do |key, piece| 
+        own_pieces.each do |key, piece| 
           piece.get_moves(self, key, moves, captures, promotions, promotion_captures)
         end
         sort_captures!(captures) # sort captures by MVV-LVA heuristic
@@ -98,7 +115,7 @@ module Chess
 
       def get_captures # returns a sorted array of all possible moves for the current player.
         captures, promotion_captures = [], []
-        active_pieces.each do |key, piece| 
+        own_pieces.each do |key, piece| 
           piece.get_captures(self, key, captures, promotion_captures)
         end
         sort_captures!(captures)

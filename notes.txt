@@ -29,6 +29,19 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
 
 To Do ----
   
+  Switch to incremental update of material balance:
+    MAKE:
+    all moves:
+      own_material: subtract the PST value of each from square, add PST value of each to square
+    captures:
+      subtract value of piece from enemy_material
+    promotions:
+      own_material: add value of Queen - value of pawn on make, subtract same value on unmake.
+    UNMAKE:
+    subtract cached changes made during make.
+
+
+
 
   Add hashing of castling rights
 
@@ -52,6 +65,8 @@ To Do ----
     -pawn promotions
 
   Add separate PSTs for early- and late-game in Evaluation module.
+
+
 
 
   

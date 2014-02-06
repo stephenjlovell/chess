@@ -128,7 +128,7 @@ module Chess # top-level application namespace.
       take_turn do
         from = Location::get_location_from_string(description[0..1])
         to = Location::get_location_from_string(description[-2..-1])
-        piece = @position.active_pieces[from]
+        piece = @position.own_pieces[from]
         enemy = @position.enemy_pieces[to]
         m = Move
         case piece.class.type

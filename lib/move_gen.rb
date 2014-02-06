@@ -92,9 +92,9 @@ module Chess
           if b.square_empty?(2,3) && b.square_empty?(2,4) && b.square_empty?(2,5)
             # also need to check if enemy controls these squares.
             rook_from, rook_to = Location::get_location(2,2), Location::get_location(2,5)
-            rook = pos.active_pieces[rook_from]
+            rook = pos.own_pieces[rook_from]
             king_from, king_to = Location::get_location(2,6), Location::get_location(2,4)
-            king = pos.active_pieces[king_from]
+            king = pos.own_pieces[king_from]
             castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
           end 
         end
@@ -102,9 +102,9 @@ module Chess
           if b.square_empty?(2,7) && b.square_empty?(2,8)
             # also need to check if enemy controls these squares.
             rook_from, rook_to = Location::get_location(2,9), Location::get_location(2,7)
-            rook = pos.active_pieces[rook_from]
+            rook = pos.own_pieces[rook_from]
             king_from, king_to = Location::get_location(2,6), Location::get_location(2,8)
-            king = pos.active_pieces[king_from]
+            king = pos.own_pieces[king_from]
             castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
           end
         end
@@ -113,9 +113,9 @@ module Chess
           if b.square_empty?(9,3) && b.square_empty?(9,4) && b.square_empty?(9,5)
             # also need to check if enemy controls these squares.
             rook_from, rook_to = Location::get_location(9,2), Location::get_location(9,5)
-            rook = pos.active_pieces[rook_from]
+            rook = pos.own_pieces[rook_from]
             king_from, king_to = Location::get_location(9,6), Location::get_location(9,4)
-            king = pos.active_pieces[king_from]
+            king = pos.own_pieces[king_from]
             castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
           end 
         end
@@ -123,9 +123,9 @@ module Chess
           if b.square_empty?(9,7) && b.square_empty?(9,8)
             # also need to check if enemy controls these squares.
             rook_from, rook_to = Location::get_location(9,9), Location::get_location(9,7)
-            rook = pos.active_pieces[rook_from]
+            rook = pos.own_pieces[rook_from]
             king_from, king_to = Location::get_location(9,6), Location::get_location(9,8)
-            king = pos.active_pieces[king_from]
+            king = pos.own_pieces[king_from]
             castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
           end
         end

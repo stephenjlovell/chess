@@ -56,13 +56,14 @@ module Chess
       attr_accessor :captured_piece
       
       def initialize(captured_piece)
-        @captured_piece = captured_piece
+        @captured_piece, @own_material, @enemy_material = captured_piece, 0, 0
       end
 
       def make!(position, piece, from, to)
-        relocate_piece(position, piece, from, to)
+        make_relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
         position.enemy_pieces.delete(to)
+        @enemy_material -= Evaluation::adjusted_value(@captured_piece, to)
       end
 
       def unmake!(position, piece, from, to)
@@ -88,8 +89,14 @@ module Chess
 
     class MoveStrategy  # Generic template and shared behavior for move strategies.
       # Concrete strategy classes must include either Reversible or Irreversible module.
+      attr_reader :own_material, :enemy_material
+
+      def initialize
+        @own_material, @enemy_material = 0, 0
+      end
+
       def make!(position, piece, from, to)
-        relocate_piece(position, piece, from, to)
+        make_relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
       end
 
@@ -106,9 +113,14 @@ module Chess
         from_to_key(piece, from, to)
       end
 
+      def make_relocate_piece(position, piece, from, to)
+        relocate_piece(position, piece, from, to)
+        @own_material += (Evaluation::pst_value(piece, to) - Evaluation::pst_value(piece, from))
+      end
+
       def relocate_piece(position, piece, from, to)
-        position.active_pieces.delete(from) # relocate piece within piece list
-        position.active_pieces[to] = piece
+        position.own_pieces.delete(from) # relocate piece within piece list
+        position.own_pieces[to] = piece
         position.board[from] = nil  # relocate piece on board.
         position.board[to] = piece.symbol
       end
@@ -126,7 +138,7 @@ module Chess
       include Reversible
 
       def make!(position, piece, from, to)
-        relocate_piece(position, piece, from, to)
+        make_relocate_piece(position, piece, from, to)
         position.active_king_location = to
         make_clock_adjustment(position)
       end
@@ -146,10 +158,11 @@ module Chess
       include MakesCapture
 
       def make!(position, piece, from, to)
-        relocate_piece(position, piece, from, to)
+        make_relocate_piece(position, piece, from, to)
         position.active_king_location = to
         make_clock_adjustment(position)
         position.enemy_pieces.delete(to)
+        @enemy_material -= Evaluation::adjusted_value(@captured_piece, to)
       end
 
       def unmake!(position, piece, from, to)
@@ -166,13 +179,15 @@ module Chess
 
       def initialize(captured_piece, enp_target)
         @captured_piece, @enp_target = captured_piece, enp_target
+        @own_material, @enemy_material = 0, 0
       end
 
       def make!(position, piece, from, to)
-        relocate_piece(position, piece, from, to)
+        make_relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
         position.board[@enp_target] = nil
         position.enemy_pieces.delete(@enp_target)
+        @enemy_material -= Evaluation::adjusted_value(@captured_piece, @enp_target)
       end
 
       def unmake!(position, piece, from, to)
@@ -194,7 +209,7 @@ module Chess
     class EnPassantAdvance < MoveStrategy # Sets or removes the enp_target from position object.
       include Irreversible
       def make!(position, piece, from, to)
-        relocate_piece(position, piece, from, to)
+        make_relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
         position.enp_target = to # Set enp_target to new target square
       end
@@ -214,11 +229,13 @@ module Chess
       include Irreversible
       def initialize(side_to_move)
         @queen = Pieces::Queen.new(side_to_move)
+        @own_material, @enemy_material = 0, 0
       end
 
       def make!(position, piece, from, to)
         relocate_piece(position, @queen, from, to)
         make_clock_adjustment(position)
+        @own_material += (Evaluation::adjusted_value(@queen, to) - Evaluation::adjusted_value(piece, from))
       end
 
       def unmake!(position, piece, from, to)
@@ -236,12 +253,15 @@ module Chess
 
       def initialize(captured_piece, side_to_move)
         @queen, @captured_piece = Pieces::Queen.new(side_to_move), captured_piece
+        @own_material, @enemy_material = 0, 0
       end
 
       def make!(position, piece, from, to)
         relocate_piece(position, @queen, from, to)
         make_clock_adjustment(position)
         position.enemy_pieces.delete(to)
+        @own_material += (Evaluation::adjusted_value(@queen, to) - Evaluation::adjusted_value(piece, from))
+        @enemy_material -= Evaluation::adjusted_value(@captured_piece, to)
       end
 
       def unmake!(position, piece, from, to)
@@ -259,12 +279,13 @@ module Chess
       attr_accessor :rook, :rook_from, :rook_to
       def initialize(rook, rook_from, rook_to)
         @rook, @rook_from, @rook_to = rook, rook_from, rook_to
+        @own_material, @enemy_material = 0, 0
       end
 
       def make!(position, piece, from, to)
         begin
-          relocate_piece(position, piece, from, to)
-          relocate_piece(position, @rook, @rook_from, @rook_to)
+          make_relocate_piece(position, piece, from, to)
+          make_relocate_piece(position, @rook, @rook_from, @rook_to)
           make_clock_adjustment(position)
           position.active_king_location = to
         rescue
@@ -294,18 +315,17 @@ module Chess
       end
 
       def make!(position)
-        begin
-          @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
-          position.enp_target = nil
-          @strategy.make!(position, @moved_piece, @from, @to)  # delegate to the strategy class.
-        rescue
-          puts self
-          raise "unknown error"
-        end
+        @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
+        position.enp_target = nil
+        @strategy.make!(position, @moved_piece, @from, @to)  # delegate to the strategy class.
+        position.own_material += @strategy.own_material
+        position.enemy_material += @strategy.enemy_material
       end
 
       def unmake!(position)
-        @strategy.unmake!(position, @moved_piece, @from, @to)
+        position.own_material -= @strategy.own_material
+        position.enemy_material -= @strategy.enemy_material
+        @strategy.unmake!(position, @moved_piece, @from, @to)  # delegate to the strategy class.
         position.enp_target, position.castle = @enp_target, @castle_rights
       end
 

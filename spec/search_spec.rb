@@ -55,7 +55,7 @@ describe Chess::Search do
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
       it "from within an iterative deepening framework" do
-        puts "--iterative_deepening_alpha_beta--#{@s::select_move(pos, 4) { @s::iterative_deepening_alpha_beta } }"
+        puts "--iterative_deepening_alpha_beta--#{@s::select_move(pos, 5) { @s::iterative_deepening_alpha_beta } }"
       end
     end
   end
