@@ -91,6 +91,19 @@ module Chess
       end
     end
 
+    def each_row  # read-only
+      (2..9).each do |r|
+        yield @squares[r][2..9]
+      end
+    end
+
+    def reverse_each_row  # read-only
+      (2..9).reverse_each do |r|
+        yield @squares[r][2..9]
+      end
+    end
+
+
     def hash # used when providing an initial hash value for position object.
       key = 0
       each_square_with_location { |r,c,s| key ^= Memory::psq_key_by_square(r,c,s) unless s.nil? }

@@ -22,7 +22,7 @@
 module Chess
   module Search # this module defines tree traversal algorithms for move selection.
 
-    Performance = Struct.new(:depth, :m_nodes, :q_nodes, :all_nodes, :evals, :memory, :branching_factor)
+    Performance = Struct.new(:depth, :m_nodes, :q_nodes, :all_nodes, :evals, :memory, :avg_eff_branching)
 
     def self.iterative_deepening_mtdf
       iterative_deepening(@max_depth/4) do |guess, d, previous_pv, current_pv|
@@ -39,7 +39,7 @@ module Chess
     def self.iterative_deepening(depth)
       guess = @node.value
       best_move, value = nil, -$INF
-      performance_data = []
+      total_calls, performance_data = 0, []
       previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
       (1..depth).each do |d|
         previous_total = $quiescence_calls + $main_calls
@@ -47,8 +47,8 @@ module Chess
         current_pv = Memory::PVStack.new
         best_move, value = yield(guess, d*4, previous_pv, current_pv)
         total_calls = $main_calls + $quiescence_calls
-        effective_branching_factor = previous_total == 0.0 ? total_calls : (total_calls / previous_total)
-        performance_data << Performance.new(d, $main_calls, $quiescence_calls, total_calls, $evaluation_calls, $memory_calls, effective_branching_factor)
+        branching = previous_total == 0.0 ? total_calls + 0.0 : (total_calls**(1r/d))
+        performance_data << Performance.new(d, $main_calls, $quiescence_calls, total_calls, $evaluation_calls, $memory_calls, branching)
         guess = value
 
         previous_pv = current_pv
@@ -56,8 +56,9 @@ module Chess
           puts "evaluation time ran out after depth #{d}"; break
         end
       end
-      tp performance_data, :depth, :m_nodes, :q_nodes, :all_nodes, :evals, :memory, :branching_factor  # print out performance data as a table.
+      tp performance_data  # print out performance data as a table.
       current_pv.print
+      # puts "Average effective branching factor: #{total_calls**(1r/depth)}"
 
       return best_move, value
     end
@@ -265,7 +266,8 @@ module Chess
       static_exchange_evaluation(position.board, to, position.side_to_move, attackers)
     end
 
-    def self.static_exchange_evaluation(board, to, side, attackers)
+    def self.static_exchange_evaluation(board, to, side, attackers) 
+      # An iterative SEE algorithm based on alpha beta pruning.
       score = 0
       alpha, beta = -$INF, $INF
       other_side = FLIP_COLOR[side]
@@ -301,7 +303,7 @@ module Chess
     def self.select_move(node, max_depth=4)
       @node, @max_depth = node, max_depth*4  # Use class instance variables rather than class variables.
       reset_counters
-      best_move, value = block_given? ? yield : iterative_deepening_alpha_beta # use 
+      best_move, value = block_given? ? yield : iterative_deepening_alpha_beta # use vanilla alpha beta by default.
       return best_move
     end 
 

@@ -19,6 +19,8 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
+require 'table_print'
+
 Dir['./lib/*.rb'].each { |f| require f }  # require all 
 
 puts "Chess library loaded. \n\n"

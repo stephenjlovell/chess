@@ -28,12 +28,15 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
                           after switching to iterative move gen and king saftey: 7.3749 seconds (26750.2707 NPS)
 
 To Do ----
-
   
 
   Add hashing of castling rights
 
   Refactor the TT probing logic into TT class, and call it from move_gen.
+
+
+  Pruning:
+    -Null move pruning (null move heuristic)
 
   Move ordering (priority high to low):
     -PV move

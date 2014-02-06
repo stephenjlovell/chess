@@ -70,8 +70,8 @@ module Chess
         @board.avoids_check?(self, from, to, @side_to_move)
       end
 
-      def to_s
-        # return a string decribing the position in Forsyth-Edwards Notation.
+      def to_s  # return a string decribing the position in Forsyth-Edwards Notation.
+        GUI::position_to_fen(self)
       end
 
       def inspect

@@ -152,9 +152,8 @@ module Chess
       end  # knights and kings cannot block other attackers.
     end
 
-    def insert_attacker(attackers, square, insert_index=0)
-      # when applied to each attack square, attackers should be in order of ID.
-      # existing attackers have already been sorted.
+    def insert_attacker(attackers, square, insert_index=0) # when applied to each attack square, 
+      # attackers should be in order of ID. Existing attackers have already been sorted.
       if attackers.empty?
         attackers << square
         return
@@ -169,13 +168,8 @@ module Chess
       attackers.insert(insert_index, square) # [ 1, 3, 5 ].insert(2,4)  => [1,3,4,5]
     end
 
-    def insert_hidden_attacker(attackers, square, blocking_square)
-      # hidden attackers must come after the piece by which they were blocked, 
-      # but should otherwise be sorted normally.
-
-      # Insert hidden attackers in list:
-        # scan list until reaching the piece that blocked hidden attacker at index b
-        # perform normal insertion sort on attackers[b..attackers.length]
+    def insert_hidden_attacker(attackers, square, blocking_square) # hidden attackers must come after 
+      # the piece by which they were blocked, but are otherwise sorted normally.
       insert_index = 0
       max = attackers.count - 1
 
@@ -183,7 +177,7 @@ module Chess
         break if attackers[i] == blocking_square
         insert_index += 1
       end
-      insert_attacker(attackers, square, insert_index)
+      insert_attacker(attackers, square, insert_index) # normal iterative insertion sort.
     end
 
   end

@@ -38,6 +38,15 @@ describe Chess::Position::ChessPosition do
     it { should respond_to :get_moves } 
   end
 
+  describe "forsyth-edwards notation" do
+    let(:pos) { FactoryGirl.build(:position) }
+
+    it "should be correct for the initial position" do
+      pos.to_s.should == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    end
+
+  end
+
   describe "move generation" do
     describe "generates a list of edges" do
       it "containing valid moves" do
@@ -47,7 +56,9 @@ describe Chess::Position::ChessPosition do
         end
       end
       it "to tactical edges involving captures" do
+        @position.board.print
         tactical_edges = @position.tactical_edges
+        puts tactical_edges
         tactical_edges.count.should == 4
         tactical_edges.each do |m|
           m.should respond_to :make!

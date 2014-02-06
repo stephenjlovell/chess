@@ -19,13 +19,14 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
+require './initialize.rb'
+
 require 'factory_girl'
 
 RSpec.configure do |config|
   config.include FactoryGirl::Syntax::Methods
 end
 
-require './initialize.rb'
 require 'factories.rb'
 
 def Perft(node, depth)  # Performance tester. Counts all leaf nodes to specified depth.

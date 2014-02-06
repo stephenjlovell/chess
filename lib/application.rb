@@ -19,40 +19,25 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-module Chess # define Chess-level behavior in this module and file.
+module Chess # top-level application namespace.
 
-  # Chess-level global constants:
+  # Application-level globals:
   $INF = 1.0/0.0
+  $tt = nil  # global access to transposition table instance.
 
-  class << self
-    def current_game
-      @current_game ||= Chess::Game.new
-    end
 
-    def current_game=(game)
-      @current_game = game  # may be needed in a future load_game method.
-    end
-
-    def new_game(ai_player = :b, time_limit = 60.0)
-      @current_game = Chess::Game.new(ai_player, time_limit)
-    end
-
-    def current_position # represents the root node in current search tree.
-      current_game.position
-    end
-
-    def current_side
-      current_position.side_to_move
-    end
-
-    def current_board
-      current_position.board
-    end
-
-    def print
-      current_game.print
-    end
+  def self.current_game
+    @current_game ||= Chess::Game.new
   end
+
+  def self.current_game=(game)
+    @current_game = game  # may be needed in a future load_game method.
+  end
+
+  def self.new_game(ai_player = :b, time_limit = 60.0)
+    @current_game = Chess::Game.new(ai_player, time_limit)
+  end
+
 
   class Clock
     attr_reader :game_start
@@ -71,14 +56,40 @@ module Chess # define Chess-level behavior in this module and file.
     alias :end_turn :restart 
   end
 
+  class MoveHistory
+    attr_accessor :history
+
+    def initialize
+      @index = 0
+      @history = []
+    end
+
+    def save(move)
+      @history.slice!(@index..-1) if @index < @history.count
+      @history << move
+      @index += 1
+    end
+
+    def undo(position)
+      @index -= 1
+      MoveGen::unmake!(position, @history[@index])
+    end
+
+    def redo(position)
+      MoveGen::make!(position, @history[@index])
+      @index += 1
+    end
+  end
+
   class Game
-    attr_accessor :position, :halfmove_clock, :tt, :clock
+    attr_accessor :position, :halfmove_clock, :tt, :clock, :move_history
     attr_reader :ai_player, :opponent
     
     def initialize(ai_player = :b, time_limit = 120.0)
       board = Board.new
       @position = Position::ChessPosition.new(board,Pieces::setup(board),:w,0)
       @halfmove_count = 0
+      @move_history = MoveHistory.new
       @ai_player, @opponent = ai_player, FLIP_COLOR[ai_player]
       @tt = Memory::TranspositionTable.new
       $tt = @tt
@@ -103,7 +114,14 @@ module Chess # define Chess-level behavior in this module and file.
       [(1040 - (Evaluation::base_material(@position, enemy_color)/100)),0].max
     end
 
-    def stage # return :early or :late
+    def stage  # used during evaluation
+      if @halfmove_count > 60
+        :late_game
+      elsif @halfmove_count > 30
+        :mid_game
+      else
+        :opening
+      end
     end
 
     def human_move(description)  # for now, just assume human moves are valid.
@@ -123,8 +141,17 @@ module Chess # define Chess-level behavior in this module and file.
       end
     end
 
-    def opponent_move
-      # get move selected by opponent AI via UCI, and pass to take_turn as a position object
+    def undo_move
+      @move_history.undo(@position)
+    end
+
+    def redo_move
+      @move_history.redo(@position)
+    end
+
+
+    def save_move(move)
+      @move_history.save(move)
     end
 
     def make_move
