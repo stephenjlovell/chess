@@ -10,12 +10,14 @@ module Chess
         time_limit = 20.0
         ai_color = human_color == "w" ? :b : :w
         Chess::new_game(ai_color, time_limit)
-      end 
+      end
+
       Chess::current_game.print
+      
       input = ""
       until input == "quit" || input == "q" || input == "exit" do
         unless input == ""
-          move = parse_move(input)
+          move = parse_input(input)
           Chess::current_game.human_move(move) if human_color == "w"
           Chess::current_game.ai_move
           Chess::current_game.human_move(move) if human_color != "w"
@@ -25,6 +27,20 @@ module Chess
         input = gets.chomp
       end
       puts "Thanks for playing!  See you soon."
+    end
+
+
+# Move format used by UCI:
+
+# Examples:  e2e4, e7e5, e1g1 (white short castling), e7e8q (for promotion)
+
+
+
+    def self.parse_input(input)
+      # in addition to making valid moves, this should let the player undo/redo their previous move
+
+
+
     end
 
 

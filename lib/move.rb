@@ -251,7 +251,7 @@ module Chess
     class PawnPromotionCapture < MoveStrategy
       include MakesCapture
 
-      def initialize(captured_piece, side_to_move)
+      def initialize(captured_piece, side_to_move)  # get rid of side_to_move here.  get color by flipping captured piece color.
         @queen, @captured_piece = Pieces::Queen.new(side_to_move), captured_piece
         @own_material, @enemy_material = 0, 0
       end
@@ -336,7 +336,12 @@ module Chess
       end
 
       def mvv_lva
-        capture? ? @strategy.mvv_lva(@moved_piece) : 0
+        begin
+          @strategy.mvv_lva(@moved_piece)
+        rescue
+          puts self.to_s
+          raise "moved piece missing from #{strategy}"
+        end
       end
 
       def strategy

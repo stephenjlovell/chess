@@ -1,4 +1,4 @@
-  #-----------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------
 # Copyright (c) 2013 Stephen J. Lovell
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -31,7 +31,7 @@ module Chess
         @enemy = FLIP_COLOR[@side_to_move]
         @enp_target, @castle = nil, 0b1111
         @hash = @board.hash  # add hash of initial castling rights
-        @king_location = { w: Location::get_location(2,6), b: Location::get_location(9,6) }
+        @king_location = set_king_location
         @material = { w: Evaluation::material(self, :w), b: Evaluation::material(self, :b) } 
       end
 
@@ -131,6 +131,20 @@ module Chess
 
       def sort_moves!(moves) # sort remaining (non-capture)
         # moves.sort! {  }
+      end
+
+      private 
+
+      def set_king_location
+        kings = {}
+        @board.each_square_with_location do |r,c,s|
+          if s == :wK
+            kings[:w] = Location::get_location(r,c)
+          elsif s == :bK
+            kings[:b] = Location::get_location(r,c)
+          end
+        end
+        return kings
       end
 
     end

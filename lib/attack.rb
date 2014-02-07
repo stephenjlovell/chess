@@ -156,16 +156,16 @@ module Chess
       # attackers should be in order of ID. Existing attackers have already been sorted.
       if attackers.empty?
         attackers << square
-        return
-      end
-      square_value = Pieces::PIECE_SYM_ID[self[square]]
+      else
+        square_value = Pieces::PIECE_SYM_ID[self[square]]
 
-      max = attackers.count - 1
-      (insert_index..max).each do |i|
-        break if Pieces::PIECE_SYM_ID[self[attackers[i]]] >= square_value
-        insert_index += 1
+        max = attackers.count - 1
+        (insert_index..max).each do |i|
+          break if Pieces::PIECE_SYM_ID[self[attackers[i]]] >= square_value
+          insert_index += 1
+        end
+        attackers.insert(insert_index, square) # [ 1, 3, 5 ].insert(2,4)  => [1,3,4,5]
       end
-      attackers.insert(insert_index, square) # [ 1, 3, 5 ].insert(2,4)  => [1,3,4,5]
     end
 
     def insert_hidden_attacker(attackers, square, blocking_square) # hidden attackers must come after 

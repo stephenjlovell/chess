@@ -25,20 +25,11 @@ Dir['./lib/*.rb'].each { |f| require f }  # require all
 
 puts "Chess library loaded. \n\n"
 
-# # Play the game!
-# Chess::CLI::play
 
+def play
+  Chess::CLI::play
+end
 
-# test Transposition Table hash function efficiency.
-  # g = Chess::new_game(:w)
-  # h = 0
-  # t0 = Time.now
-  # 1000.times do 
-  #   h = g.tt.hash(g.position.board)
-  # end # 0.053708 seconds
-  # t1 = Time.now
-  # puts "The hash value for initial position is: #{h}"
-  # puts t1-t0
 
 
 

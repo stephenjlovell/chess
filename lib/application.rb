@@ -35,9 +35,10 @@ module Chess # top-level application namespace.
   end
 
   def self.new_game(ai_player = :b, time_limit = 60.0)
+    puts "Starting a new game." 
+    puts "AI color: #{ai_player}, Your color: #{FLIP_COLOR[ai_player]}"
     @current_game = Chess::Game.new(ai_player, time_limit)
   end
-
 
   class Clock
     attr_reader :game_start
@@ -76,9 +77,19 @@ module Chess # top-level application namespace.
     end
 
     def redo(position)
-      MoveGen::make!(position, @history[@index])
-      @index += 1
+      if @index == @history.count
+        MoveGen::make!(position, @history[@index])
+        @index += 1
+      else
+        puts "no more moves to redo."
+      end
     end
+
+    def print
+      puts "------Move History (#{@history.count} total)------"
+      @history.each_with_index { |m,i| puts "#{i}  #{m}"  }
+    end
+
   end
 
   class Game
@@ -104,6 +115,7 @@ module Chess # top-level application namespace.
       opp_score, ai_score = score(@ai_player), score(@opponent)
       scoreboard = "| Move: #{move_clock} | Ply: #{@halfmove_count} " +
                    "| Turn: #{@position.side_to_move.to_s} " +
+                   "| Castling: #{GUI::castling_availability(@position.castle)} " +
                    "| AI Score: #{ai_score} | Your Score: #{opp_score} |"
       separator = "-" * scoreboard.length
       puts separator, scoreboard, separator, "\n"
