@@ -19,8 +19,11 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
+require './lib/utilities.rb'
+
 module Chess
   module GUI # This module serves as a wrapper for a Universal Chess Interface (UCI) based GUI.
+    extend Notation
 
     SYM_TO_FEN = { wP: 'P', wN: 'N', wB: 'B', wR: 'R', wQ: 'Q', wK: 'K',
                    bP: 'p', bN: 'n', bB: 'b', bR: 'r', bQ: 'q', bK: 'k' }
@@ -57,16 +60,15 @@ module Chess
       end.reject{ |r| r.empty? }.reverse.join('/')
     end
 
-
     def self.castling_availability(castle)
       fen_castle = ''
-      if castle == 0b0000
+      if castle == 0
         fen_castle = '-'
       else
-        fen_castle += 'K' if (castle & MoveGen::C_WK) != 0b0
-        fen_castle += 'Q' if (castle & MoveGen::C_WQ) != 0b0
-        fen_castle += 'k' if (castle & MoveGen::C_BK) != 0b0
-        fen_castle += 'q' if (castle & MoveGen::C_BQ) != 0b0
+        fen_castle += 'K' if (castle & MoveGen::C_WK) != 0
+        fen_castle += 'Q' if (castle & MoveGen::C_WQ) != 0
+        fen_castle += 'k' if (castle & MoveGen::C_BK) != 0
+        fen_castle += 'q' if (castle & MoveGen::C_BQ) != 0
       end
       fen_castle
     end
@@ -109,7 +111,7 @@ module Chess
     end
 
     def self.fen_to_castle(fen_castle)
-      castle = 0b0000
+      castle = 0
       unless fen_castle[0] == '-'
         castle |= MoveGen::C_WK if fen_castle[0] == 'K'
         castle |= MoveGen::C_WQ if fen_castle[1] == 'Q'
@@ -122,77 +124,6 @@ module Chess
     def self.fen_to_enp(fen_enp)
       return nil if fen_enp == '-'
       Location::string_to_location(fen_enp)
-    end
-
-    # Move format used by UCI:
-    # Examples:  e2e4, e7e5, e1g1 (white short castling), e7e8q (for promotion)
-
-    def self.algebraic_to_move(pos, str) # create a move object from algebraic chess notation.
-      from = Location::string_to_location(str[0..1])
-      to = Location::string_to_location(str[2..3])
-      raise 'invalid square coordinates given' if from.nil? || to.nil?
-
-      piece, enemy = pos.own_pieces[from], pos.enemy_pieces[to]
-      raise "no piece available at square #{from}" if piece.nil?
-
-      own_type = piece.class.type
-      if enemy # move is a capture, but not an en-passant capture.
-        if own_type== :K
-          return Move::Factory.build(piece, from, to, :king_capture, enemy)
-        elsif own_type == :P && to.r == Pieces::ENEMY_BACK_ROW[piece.color]
-          return Move::Factory.build(piece, from, to, :pawn_promotion_capture, enemy) # implicit pawn promotion
-        else
-          return Move::Factory.build(piece, from, to, :regular_capture, enemy)
-        end
-      else
-        case own_type
-        when :P
-          if to + [0,1] == from || to + [0,-1] == from
-            if to.r == Pieces::ENEMY_BACK_ROW[piece.color]
-              return Move::Factory.build(piece, from, to, :pawn_promotion) 
-            else
-              return Move::Factory.build(piece, from, to, :pawn_move)     
-            end
-          elsif to + [0,2] == from || to + [0,-2] == from
-            return Move::Factory.build(piece, from, to, :enp_advance)    
-          else
-            target = pos.enp_target
-            enemy = pos.enemy_pieces[target]
-            if enemy.nil? || (from + [0,1] != target && from + [0,-1] != target)
-              raise 'invalid en-passant attack' 
-            else
-              return Move::Factory.build(piece, from, to, :enp_capture, enemy)
-            end    
-          end
-        when :K
-          if to + [0,2] == from || to + [0,-2] == from
-            if to + [0,-2] == from # castle queen-side
-              if from == MoveGen::WK_INIT
-                rook_from, rook_to = MoveGen::WRQ_INIT, Location::get_location(2,5)
-                rook = pos.own_pieces[rook_from]
-              else
-                rook_from, rook_to = MoveGen::BRQ_INIT, Location::get_location(9,5)
-                rook = pos.own_pieces[rook_from]
-              end
-            else # castle king-side
-              if from == MoveGen::WK_INIT
-                rook_from, rook_to = MoveGen::WRK_INIT, Location::get_location(2,7)
-                rook = pos.own_pieces[rook_from]
-              else
-                rook_from, rook_to = MoveGen::BRK_INIT, Location::get_location(9,7)
-                rook = pos.own_pieces[rook_from]
-              end
-            end
-            raise 'invalid castle move' if rook.nil?
-            return Move::Factory.build(piece, from, to, :castle, rook, rook_from, rook_to) 
-          else
-            return Move::Factory.build(piece, from, to, :king_move)
-          end
-        else
-          return Move::Factory.build(piece, from, to, :regular_move)
-        end
-      end
-
     end
 
   end

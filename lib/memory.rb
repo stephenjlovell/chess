@@ -83,7 +83,7 @@ module Chess
 
       def print
         puts "\n------Principal Variation (#{self.count} moves)------"
-        each { |m| puts m.to_s }
+        each { |m| m.print }
         puts "\n"
       end
     

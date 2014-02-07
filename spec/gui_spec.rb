@@ -21,43 +21,40 @@
 
 require 'spec_helper'
 
-describe Chess do  
-  before { @app = Chess }
-  subject { @app }
+INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
-  it { should respond_to :current_game }    
-  it { should respond_to :new_game }
+describe Chess::GUI do
 
-  describe Chess::Game do
-    before { @game = Chess::Game.new(:b) }
-    subject { @game }
-    it { should respond_to :position }    
-    it { should respond_to :halfmove_clock }
-    it { should respond_to :tt }
-    it { should respond_to :clock }
-    it { should respond_to :ai_player }
-    it { should respond_to :opponent }
+  let(:test_pos) { FactoryGirl.build(:test_position) }
 
-    describe "should assign teams correctly" do
-      its(:ai_player) { should == :b }
-      its(:opponent) { should == :w }
-    end
+  it 'can accurately translate to and from Forsyth-Edwards Notation' do
+    pos = Chess::GUI::fen_to_position(INITIAL_FEN) # FEN to position
+    pos.to_s.should == INITIAL_FEN  # position to FEN
 
-    describe "should contain objects of the right class" do
-      its("clock.class") { should == Chess::Clock }
-      its("tt.class") { should == Chess::Memory::TranspositionTable }
-      its("position.class") { should == Chess::Position::ChessPosition }
-    end
+    midgame_fen = test_pos.to_s  # position to FEN
+    new_pos = Chess::GUI::fen_to_position(midgame_fen) # back to position
+    new_pos.to_s.should == midgame_fen
   end
 
-  describe Chess::Clock do
-    before { @clock = Chess::Clock.new }
-    subject { @clock }
-    it { should respond_to :game_start }
-    it { should respond_to :time_up? }
-    it { should respond_to :restart }
-    it { should respond_to :end_turn }
+  describe 'when translating long algebraic chess notation' do
+    pending '' do
+
+    end
+
   end
-  
+
+
 end
+
+
+
+
+
+
+
+
+
+
+
+
 

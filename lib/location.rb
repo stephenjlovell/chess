@@ -1,3 +1,24 @@
+#-----------------------------------------------------------------------------------
+# Copyright (c) 2013 Stephen J. Lovell
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#-----------------------------------------------------------------------------------
+
 module Chess
   module Location
     
@@ -9,10 +30,8 @@ module Chess
     class Location  # Immutable class. An array of location objects are created at
       attr_reader :r, :c, :hash  # startup and passed around by reference.
 
-      class << self
-        def include(sym, &proc)
-          define_method(sym, &proc)
-        end
+      def self.include(sym, &proc)
+        define_method(sym, &proc)
       end
       
       def initialize(r,c)
@@ -42,7 +61,7 @@ module Chess
     def self.create_locations
       arr = Array.new(12) { Array.new(12) }
       arr.each_with_index { |row, r| row.each_with_index { |loc, c| row[c] = Location.new(r,c) } }
-      return arr
+      arr
     end
 
     LOCATIONS = create_locations
@@ -51,11 +70,14 @@ module Chess
     end                                # constant is created at startup.
 
     def self.get_location(r, c)
+      return nil unless LOCATIONS[r]  # add warning?
       LOCATIONS[r][c]
     end
 
     def self.string_to_location(str)
-      get_location(str[1].to_i + 1, LETTER_TO_NUMBER[str[0]])
+      location = get_location(str[1].to_i + 1, LETTER_TO_NUMBER[str[0]])
+      raise "invalid location for #{str}" unless location
+      location
     end
 
   end

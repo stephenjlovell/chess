@@ -307,7 +307,7 @@ module Chess
     def self.select_move(node, max_depth=4)
       @node, @max_depth = node, max_depth * PLY_VALUE  # Use class instance variables rather than class variables.
       reset_counters
-      best_move, value = block_given? ? yield : iterative_deepening_mtdf # use mtdf by default
+      best_move, value = block_given? ? yield : iterative_deepening_alpha_beta # use mtdf by default
       puts "Eval score: #{value}"
       return best_move
     end 

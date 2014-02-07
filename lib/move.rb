@@ -73,17 +73,17 @@ module Chess
         position.enemy_pieces[to] = @captured_piece
       end
 
-      def capture?
-        true
+      def print(piece, from, to)
+        puts "#{piece} x #{@captured_piece} #{from} to #{to}"
       end
 
+
       def hash(piece, from, to)
-        puts self.class if @captured_piece.nil?
         from_to_key(piece, from, to) ^ Memory::psq_key(@captured_piece, to)
       end
 
-      def mvv_lva(moved_piece)  # Most valuable victim, least valuable attacker heuristic.
-        @mvv_lva ||= @captured_piece.class.value - moved_piece.class.id  # Used for move ordering captures.
+      def mvv_lva(piece)  # Most valuable victim, least valuable attacker heuristic.
+        @mvv_lva ||= @captured_piece.class.value - piece.class.id  # Used for move ordering captures.
       end
     end
 
@@ -105,8 +105,8 @@ module Chess
         unmake_clock_adjustment(position)
       end
 
-      def capture?
-        false
+      def print(piece, from, to)
+        puts "#{piece} #{from} to #{to}"
       end
 
       def hash(piece, from, to)
@@ -200,6 +200,11 @@ module Chess
       def hash(piece, from, to)
         from_to_key(piece, from, to) ^ Memory::psq_key(@captured_piece, @enp_target)
       end
+
+      def print(piece, from, to)
+        puts "#{piece} enp x #{@captured_piece} #{from} to #{to}"
+      end
+
     end
 
     class PawnMove < MoveStrategy
@@ -233,14 +238,18 @@ module Chess
       end
 
       def make!(position, piece, from, to)
-        relocate_piece(position, @queen, from, to)
-        make_clock_adjustment(position)
+        relocate_piece(position, @queen, from, to) # do not add PST delta for this move, since the moved piece
+        make_clock_adjustment(position)            # is replaced by a new queen.
         @own_material += (Evaluation::adjusted_value(@queen, to) - Evaluation::adjusted_value(piece, from))
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         unmake_clock_adjustment(position)
+      end
+
+      def print(piece, from, to)
+        puts "#{piece} promotion #{from} to #{to}"
       end
 
       def hash(piece, from, to)
@@ -257,8 +266,8 @@ module Chess
       end
 
       def make!(position, piece, from, to)
-        relocate_piece(position, @queen, from, to)
-        make_clock_adjustment(position)
+        relocate_piece(position, @queen, from, to) # do not add PST delta for this move, since the moved piece
+        make_clock_adjustment(position)            # is replaced by a new queen.
         position.enemy_pieces.delete(to)
         @own_material += (Evaluation::adjusted_value(@queen, to) - Evaluation::adjusted_value(piece, from))
         @enemy_material -= Evaluation::adjusted_value(@captured_piece, to)
@@ -270,6 +279,15 @@ module Chess
         position.board[to] = @captured_piece.symbol
         position.enemy_pieces[to] = @captured_piece
       end
+
+      def print(piece, from, to)
+        puts "#{piece} x #{@captured_piece} promotion #{from} to #{to}"
+      end
+
+      def hash(piece, from, to)
+        Memory::psq_key(piece, from) ^ Memory::psq_key(@captured_piece, to) ^ Memory::psq_key(@queen, to)
+      end
+
     end
 
     class Castle < MoveStrategy  # Stores Move info for the rook to be moved.
@@ -283,16 +301,10 @@ module Chess
       end
 
       def make!(position, piece, from, to)
-        begin
-          make_relocate_piece(position, piece, from, to)
-          make_relocate_piece(position, @rook, @rook_from, @rook_to)
-          make_clock_adjustment(position)
-          position.active_king_location = to
-        rescue
-          position.board.print
-          puts self
-          raise "rook not found"
-        end
+        make_relocate_piece(position, piece, from, to)
+        make_relocate_piece(position, @rook, @rook_from, @rook_to)
+        make_clock_adjustment(position)
+        position.active_king_location = to
       end
 
       def unmake!(position, piece, from, to)
@@ -302,24 +314,27 @@ module Chess
         position.active_king_location = from
       end
 
+      def print(piece, from, to)
+        puts "#{piece} castle #{from} to #{to}"
+      end
+
       def hash(piece, from, to)
         from_to_key(piece, from, to) ^ from_to_key(@rook, @rook_from, @rook_to)
       end
     end
 
 
-
     class Move
-      attr_reader :moved_piece, :from, :to, :enp_target
+      attr_reader :piece, :from, :to, :enp_target
 
-      def initialize(moved_piece, from, to, strategy)
-        @moved_piece, @from, @to, @strategy = moved_piece, from, to, strategy
+      def initialize(piece, from, to, strategy)
+        @piece, @from, @to, @strategy = piece, from, to, strategy
       end
 
       def make!(position)
         @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
         position.enp_target = nil
-        @strategy.make!(position, @moved_piece, @from, @to)  # delegate to the strategy class.
+        @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
         position.own_material += @strategy.own_material
         position.enemy_material += @strategy.enemy_material
       end
@@ -327,21 +342,12 @@ module Chess
       def unmake!(position)
         position.own_material -= @strategy.own_material
         position.enemy_material -= @strategy.enemy_material
-        @strategy.unmake!(position, @moved_piece, @from, @to)  # delegate to the strategy class.
+        @strategy.unmake!(position, @piece, @from, @to)  # delegate to the strategy class.
         position.enp_target, position.castle = @enp_target, @castle_rights
       end
 
-      def capture?
-        @strategy.capture?
-      end
-
       def mvv_lva
-        begin
-          @strategy.mvv_lva(@moved_piece)
-        rescue
-          puts self.to_s
-          raise "moved piece missing from #{strategy}"
-        end
+        @strategy.mvv_lva(@piece)
       end
 
       def strategy
@@ -349,21 +355,17 @@ module Chess
       end
 
       def hash # Uses Zobrist hashing to represent the move as a 64-bit unsigned long int.
-        @hash ||= @strategy.hash(@moved_piece, @from, @to) ^ Memory::enp_key(@enp_target)
+        @hash ||= @strategy.hash(@piece, @from, @to) ^ Memory::enp_key(@enp_target)
+      end
+
+      def print
+        @strategy.print(@piece, @from, @to)
       end
 
       def to_s
-        s = @strategy
-        if s.capture?
-          "#{@moved_piece} x #{s.captured_piece} #{@from} to #{@to}"
-        elsif strategy == Castle
-          "Castle #{@moved_piece} #{@from} to #{@to}, #{s.rook} #{s.rook_from} to #{s.rook_to}"
-        elsif strategy == PawnPromotion
-          "#{s.queen} Promotion #{@moved_piece} #{@from} to #{@to}"
-        else
-          "#{@moved_piece} #{@from} to #{@to}"
-        end
+        @from.to_s + @to.to_s
       end
+
     end
 
     class Factory  # A simplified interface for instantiating Move objects.
@@ -378,9 +380,9 @@ module Chess
                 pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args) },
                 castle: Proc.new { |*args| Castle.new(*args) } } 
 
-      def self.build(moved_piece, from, to, sym, *args)  # create a Move object containing the specified strategy.
+      def self.build(piece, from, to, sym, *args)  # create a Move object containing the specified strategy.
         raise "no product strategy #{sym} available for Move::MoveFactory" unless PROCS[sym]
-        Move.new(moved_piece, from, to, PROCS[sym].call(*args)) 
+        Move.new(piece, from, to, PROCS[sym].call(*args)) 
       end
     end
 

@@ -21,11 +21,6 @@
 
 module Chess # top-level application namespace.
 
-  # Application-level globals:
-  $INF = 1.0/0.0
-  $tt = nil  # global access to transposition table instance.
-
-
   def self.current_game
     @current_game ||= Chess::Game.new
   end
@@ -38,6 +33,7 @@ module Chess # top-level application namespace.
     puts "Starting a new game." 
     puts "AI color: #{ai_player}, Your color: #{FLIP_COLOR[ai_player]}"
     @current_game = Chess::Game.new(ai_player, time_limit)
+    return @current_game
   end
 
   class Clock
@@ -66,20 +62,26 @@ module Chess # top-level application namespace.
     end
 
     def save(move)
-      @history.slice!(@index..-1) if @index < @history.count
+      @history.slice!(@index+1..-1) if @index < @history.count-1
       @history << move
-      @index += 1
+      @index = @history.count-1
     end
 
-    def undo(position)
-      @index -= 1
-      MoveGen::unmake!(position, @history[@index])
+    def undo(position)    
+      if @index >= 1
+        MoveGen::unmake!(position, @history[@index])
+        MoveGen::unmake!(position, @history[@index-1])
+        @index -= 2
+      else
+        puts "no more moves to undo."
+      end
     end
 
     def redo(position)
-      if @index == @history.count
-        MoveGen::make!(position, @history[@index])
-        @index += 1
+      if @index <= @history.count-2
+        MoveGen::make!(position, @history[@index+1])
+        MoveGen::make!(position, @history[@index+2])
+        @index += 2
       else
         puts "no more moves to redo."
       end
@@ -89,7 +91,6 @@ module Chess # top-level application namespace.
       puts "------Move History (#{@history.count} total)------"
       @history.each_with_index { |m,i| puts "#{i}  #{m}"  }
     end
-
   end
 
   class Game
