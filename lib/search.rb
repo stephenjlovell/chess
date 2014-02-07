@@ -51,7 +51,8 @@ module Chess
         best_move, value = yield(guess, d*PLY_VALUE, previous_pv, current_pv)
         total_calls = $main_calls + $quiescence_calls
         branching = previous_total == 0.0 ? total_calls + 0.0 : (total_calls**(1r/d))
-        performance_data << Performance.new(d, $main_calls, $quiescence_calls, total_calls, $evaluation_calls, $memory_calls, branching)
+        performance_data << Performance.new(d, $main_calls, $quiescence_calls, total_calls, 
+                                            $evaluation_calls, $memory_calls, branching)
         guess = value
 
         previous_pv = current_pv

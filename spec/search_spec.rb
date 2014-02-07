@@ -27,18 +27,6 @@ describe Chess::Search do
   let(:game) { FactoryGirl.build(:test_game) }
   let(:pos) { game.position }
 
-  # describe "when AI king is not in check" do
-  #   it "will select the most valuable move" do
-  #     Chess::Search::select_move(@pos)
-  #   end
-  # end
-
-  # describe "when AI king is in check" do    # king captures cannot be permitted
-  #   it "will move out of check if possible" do
-  #     Chess::Search::select_move(@check_pos)
-  #   end
-  # end
-
   describe "permits use of" do
     describe "mtdf" do
       # it "as a standalone algorithm" do
@@ -54,20 +42,20 @@ describe Chess::Search do
       #   puts "--alpha_beta-- \n #{@s::select_move(pos, 4) { @s::alpha_beta } }"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
-      it "from within an iterative deepening framework" do
-        puts "--iterative_deepening_alpha_beta-- \n #{@s::select_move(pos, 4) { @s::iterative_deepening_alpha_beta } }"
-      end
+      # it "from within an iterative deepening framework" do
+      #   puts "--iterative_deepening_alpha_beta-- \n #{@s::select_move(pos, 4) { @s::iterative_deepening_alpha_beta } }"
+      # end
     end
   end
 
-  # describe "static exchange evaluation" do
-  #   let(:loc) { Chess::Location::get_location(5,6) }
-  #   let(:see_pos) { FactoryGirl.build(:see_position) }
-  #   it "should correctly value an exchange over a single square" do
-  #     see_pos.board.print
-  #     @s.get_see_score(see_pos, loc)
-  #   end
-  # end
+  describe "static exchange evaluation" do
+    let(:loc) { Chess::Location::get_location(5,6) }
+    let(:see_pos) { FactoryGirl.build(:see_position) }
+    it "should correctly value an exchange over a single square" do
+      see_pos.board.print
+      @s.get_see_score(see_pos, loc).should == 100
+    end
+  end
 
 
 end

@@ -251,8 +251,8 @@ module Chess
     class PawnPromotionCapture < MoveStrategy
       include MakesCapture
 
-      def initialize(captured_piece, side_to_move)  # get rid of side_to_move here.  get color by flipping captured piece color.
-        @queen, @captured_piece = Pieces::Queen.new(side_to_move), captured_piece
+      def initialize(captured_piece)  
+        @queen, @captured_piece = Pieces::Queen.new(FLIP_COLOR[captured_piece.color]), captured_piece
         @own_material, @enemy_material = 0, 0
       end
 

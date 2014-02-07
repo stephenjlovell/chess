@@ -54,7 +54,7 @@ module Chess
       LOCATIONS[r][c]
     end
 
-    def self.get_location_from_string(str)
+    def self.string_to_location(str)
       get_location(str[1].to_i + 1, LETTER_TO_NUMBER[str[0]])
     end
 

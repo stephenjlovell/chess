@@ -31,7 +31,7 @@ module Chess
             5,  5,  5,  10,  10,  5,  5,  5,
            10, 10, 10,  20,  20, 10, 10, 10,
            20, 20, 20,  30,  30, 20, 20, 20,
-            0,  0,  0,   0,   0,  0,  0,  0 ],  # base value of piece increases upon promotion
+           30, 30, 30,  35,  35, 30, 30, 30 ],  # 
 
 
         #  A   B    C   D   E   F   G   H

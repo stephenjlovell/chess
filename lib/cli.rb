@@ -30,9 +30,6 @@ module Chess
     end
 
 
-# Move format used by UCI:
-
-# Examples:  e2e4, e7e5, e1g1 (white short castling), e7e8q (for promotion)
 
 
 
@@ -47,8 +44,8 @@ module Chess
 
     def self.parse_move(input)
       position = Chess::current_game.position
-      from = Location::get_location_from_string(input[0..1])
-      to = Location::get_location_from_string(input[-2..-1])
+      from = Location::string_to_location(input[0..1])
+      to = Location::string_to_location(input[-2..-1])
 
       # select a move strategy based on input
 

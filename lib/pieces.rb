@@ -185,7 +185,7 @@ module Chess
           if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
             enemy = position.enemy_pieces[to]
             if to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
-              promotion_captures << Move::Factory.build(self, from, to, :pawn_promotion_capture, enemy, @color)
+              promotion_captures << Move::Factory.build(self, from, to, :pawn_promotion_capture, enemy)
             else
               captures << Move::Factory.build(self, from, to, :regular_capture, enemy)
             end
