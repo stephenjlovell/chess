@@ -23,7 +23,7 @@ require './lib/utilities.rb'
 
 module Chess
   module CLI  # this module provides a basic command-line interface for playing human vs AI games.  
-    extend Notation
+    # extend Chess::Notation
 
     HELP = [ { command: 'help', description: "displays a help screen with a list of valid commands... including this one." },
              { command: 'quit', description: 'ends the game and exits the program.  you may also enter "q" or "exit" to quit.' },
@@ -33,7 +33,6 @@ module Chess
     def self.play # main CLI method.  Gets and responds to user input.
       game = setup
       return if game.nil?
-      game.print
       input = ""
       until quit?(input) do
         parse_input(game, input)
@@ -55,11 +54,19 @@ module Chess
         if valid_color
           time_limit = 12.0
           ai_color = input == "w" || input == "white" ? :b : :w
-          Chess::new_game(ai_color, time_limit)
+          game = Chess::new_game(ai_color, time_limit)
+          
+          if game.ai_player == :w
+            puts "white always moves first..."
+            game.ai_move 
+          else
+            game.print
+          end
         elsif !help?(input)
           puts "#{input} is not a valid color.  Please choose white (w) or black (b):  "
         end
       end
+
       return Chess::current_game
     end
 
@@ -72,9 +79,8 @@ module Chess
       elsif !input.empty?
         move = parse_move(input)
         return nil unless move
-        game.human_move(move) if game.ai_player == :b
+        game.human_move(move)
         game.ai_move
-        game.human_move(move) if game.ai_player == :w
       end
     end
 
@@ -103,8 +109,8 @@ module Chess
 
     def self.parse_move(input) # translate the string into a move object.
       begin
-        GUI::str_to_move(Chess::current_game.position, input)
-      rescue InvalidMoveError => e
+        Notation::str_to_move(Chess::current_game.position, input)
+      rescue Notation::InvalidMoveError => e
         puts e.message
         return nil
       end

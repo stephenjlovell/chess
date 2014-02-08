@@ -22,6 +22,8 @@
 require 'spec_helper'
 
 INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+EPD =  '2rr3k/pp3pp1/1nnqbN1p/3pN3/2pP4/2P3Q1/PPB4P/R4RK1 w - - bm Qg6; id "WAC.001";' # example EPD record
+EPD_TO_FEN = EPD.split(' ')[0..3].join(' ')
 
 describe Chess::GUI do
 
@@ -34,6 +36,11 @@ describe Chess::GUI do
     midgame_fen = test_pos.to_s  # position to FEN
     new_pos = Chess::GUI::fen_to_position(midgame_fen) # back to position
     new_pos.to_s.should == midgame_fen
+  end
+
+  it 'can also handle EPD notation by treating it as FEN' do  # does not consider halfmove clock.
+    pos = Chess::GUI::fen_to_position(EPD) # EPD to position
+    pos.class.should == Chess::Position::ChessPosition
   end
 
   describe 'when translating long algebraic chess notation' do

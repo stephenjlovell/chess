@@ -23,7 +23,7 @@ require './lib/utilities.rb'
 
 module Chess
   module GUI # This module serves as a wrapper for a Universal Chess Interface (UCI) based GUI.
-    extend Notation
+    # extend Chess::Notation
 
     SYM_TO_FEN = { wP: 'P', wN: 'N', wB: 'B', wR: 'R', wQ: 'Q', wK: 'K',
                    bP: 'p', bN: 'n', bB: 'b', bR: 'r', bQ: 'q', bK: 'k' }

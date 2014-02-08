@@ -95,9 +95,12 @@ module Chess
         $main_calls += 1
         mate_possible = false
 
-        MoveGen::make_unmake!(@node, pv_move) do
+        MoveGen::make!(@node, pv_move)
+        # MoveGen::make_unmake!(@node, pv_move) do
           result = -alpha_beta_main(@node, depth-PLY_VALUE, -beta, -alpha, previous_pv, current_pv, true)
-        end
+        # end
+        MoveGen::unmake!(@node, pv_move)
+
         if result > best_value
           best_value = result 
           best_move = pv_move
@@ -124,13 +127,15 @@ module Chess
         $main_calls += 1
         mate_possible = false
 
-        MoveGen::make_unmake!(@node, move) do
+        MoveGen::make!(@node, move)
+        # MoveGen::make_unmake!(@node, move) do
           extension = PLY_VALUE  # start with a full ply extension.
           # extension -= 1 if move.capture_value >= 1.5
           # extension -= 2 if @node.in_check?
           result = -alpha_beta_main(@node, depth-extension, -beta, -alpha, previous_pv, current_pv)
           # puts "#{move.to_s}: #{result}"
-        end
+        # end
+        MoveGen::unmake!(@node, move)
 
         if result > best_value
           best_value = result 
@@ -157,9 +162,11 @@ module Chess
         if pv_move
           mate_possible = false
           
-          MoveGen::make_unmake!(@node, pv_move) do
+          MoveGen::make!(@node, pv_move)
+          # MoveGen::make_unmake!(@node, pv_move) do
             result = -alpha_beta_main(@node, depth-PLY_VALUE, -beta, -alpha, previous_pv, current_pv, true)
-          end
+          # end
+          MoveGen::unmake!(@node, pv_move)
 
           if result > best_value
             best_value = result 
@@ -196,12 +203,15 @@ module Chess
         $main_calls += 1
         mate_possible = false  # if legal moves are available, it's not checkmate.
 
-        MoveGen::make_unmake!(@node, move) do
+        MoveGen::make!(@node, move)
+        # MoveGen::make_unmake!(@node, move) do
           extension = PLY_VALUE  # start with a full ply extension.
           # extension -= 1 if move.capture_value >= 1.5
           # extension -= 2 if @node.in_check?
           result = -alpha_beta_main(@node, depth-extension, -beta, -alpha, previous_pv, current_pv)
-        end
+        # end
+        MoveGen::unmake!(@node, move)
+
         if result > best_value
           best_value = result 
           best_move = move
@@ -244,9 +254,11 @@ module Chess
         $quiescence_calls += 1
         mate_possible = false
 
-        MoveGen::make_unmake!(@node, move) do
+        MoveGen::make!(@node, move)
+        # MoveGen::make_unmake!(@node, move) do
           result = -quiescence(@node, depth-PLY_VALUE, -beta, -alpha)
-        end
+        # end
+        MoveGen::unmake!(@node, move)
         
         if result > best_value
           best_value = result 
@@ -283,16 +295,16 @@ module Chess
       while true
         score += Pieces::get_value_by_sym(victim)
         # puts score
-        return alpha if score <= alpha || counters[side] >= attacker_count[side]  # stand pat produces fail-hard cutoff
+        return alpha if score <= alpha || counters[side] >= attacker_count[side]  # stand pat 
         
-        victim = board[attackers[side][counters[side]]]  # attacker is now on target square
+        victim = board[attackers[side][counters[side]]]
         counters[side] += 1
         beta = score if score < beta # beta update
         score -= Pieces::get_value_by_sym(victim)
 
-        return beta if score >= beta || counters[other_side] >= attacker_count[other_side]  # stand pat produces fail-hard cutoff
+        return beta if score >= beta || counters[other_side] >= attacker_count[other_side]  # stand pat
         
-        victim = board[attackers[other_side][counters[other_side]]]  # # attacker is now on target square
+        victim = board[attackers[other_side][counters[other_side]]]  
         counters[other_side] += 1
         alpha = score if score > alpha  # alpha update
       end

@@ -22,8 +22,8 @@
 module Chess
   module Location
     
-    NUMBER_TO_LETTER = { 0 => "XX", 1 => "XX", 2 => "a", 3 => "b", 4 => "c",   5 => "d", 
-                         6 => "e",  7 => "f",  8 => "g", 9 => "h", 10 => "XX", 11 => "XX" }
+    NUMBER_TO_LETTER = { 2 => "a", 3 => "b", 4 => "c",   5 => "d", 
+                         6 => "e",  7 => "f",  8 => "g", 9 => "h" }
     LETTER_TO_NUMBER = { "a" => 2, "b" => 3, "c" => 4, "d" => 5,
                          "e" => 6, "f" => 7, "g" => 8, "h" => 9 }
 
@@ -46,7 +46,11 @@ module Chess
       alias :== :eql? 
 
       def to_s
-        (NUMBER_TO_LETTER[@c]) + (@r - 1).to_s
+        if NUMBER_TO_LETTER[@c]
+          (NUMBER_TO_LETTER[@c]) + (@r - 1).to_s 
+        else
+          "XX_#{@r}_#{@c}"
+        end
       end
 
       def to_sym
