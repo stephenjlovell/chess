@@ -33,18 +33,18 @@ describe Chess::Search do
       #   puts "mtdf \n #{@s::select_move(pos, 4){ @s::mtdf } }"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
-      # it "from within an iterative deepening framework" do
-      #   puts "iterative_deepening_mtdf \n #{@s::select_move(pos, 4) { @s::iterative_deepening_mtdf } }"
-      # end
+      it "from within an iterative deepening framework" do
+        puts "iterative_deepening_mtdf \n #{@s::select_move(pos, 5) { @s::iterative_deepening_mtdf } }"
+      end
     end
     describe "alpha beta" do
       # it "as a standalone algorithm" do
       #   puts "alpha_beta \n #{@s::select_move(pos, 4) { @s::alpha_beta } }"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
-      it "from within an iterative deepening framework" do
-        puts "iterative_deepening_alpha_beta \n #{@s::select_move(pos, 4) { @s::iterative_deepening_alpha_beta } }"
-      end
+      # it "from within an iterative deepening framework" do
+      #   puts "iterative_deepening_alpha_beta \n #{@s::select_move(pos, 5) { @s::iterative_deepening_alpha_beta } }"
+      # end
     end
   end
 
@@ -55,6 +55,33 @@ describe Chess::Search do
   #     see_pos.board.print
   #     @s.get_see_score(see_pos, loc).should == 100
   #   end
+  # end
+
+  # describe "should make obvious optimal moves" do
+  #   let(:game) { FactoryGirl.build(:game) }
+  #   let(:sanity_check) { Chess::Notation::fen_to_position("1nbqkbnr/1ppppppp/8/8/1p1P2P1/8/r1P1PP1P/RNBQKBNR w KQk - 0 1") }
+
+  #   it do
+  #     game.position = sanity_check
+  #     @s::select_move(sanity_check,4).to_s.should == "a1a2"
+  #   end
+  # end
+
+  # describe "playing strength" do
+  #   let(:problems) { load_test_suite('./test_suites/kaufman.epd') }
+
+  #   it "should be able to take standardized tests" do
+  #     problems[0..9].each do |prob|
+  #       move = @s::select_move(prob.position,4)
+  #       prob.ai_response = move
+  #       prob.position.board.print
+  #       print prob.best_moves, "  ", prob.avoid_moves, " ", prob.ai_response, "\n" 
+  #     end
+  #     problems.each do |prob|  # print a summary comparison
+  #       print prob.best_moves, "  ", prob.avoid_moves, " ", prob.ai_response, "\n" 
+  #     end
+  #   end
+
   # end
 
 

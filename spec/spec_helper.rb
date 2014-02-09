@@ -29,18 +29,39 @@ end
 
 require 'factories.rb'
 
-def Perft(node, depth)  # Performance tester. Counts all leaf nodes to specified depth.
+def perft(node, depth)  # Performance tester. Counts all leaf nodes to specified depth.
   return 1 if depth == 0
   sum = 0
   moves = node.get_moves
   moves.each do |move|
-    Chess::MoveGen::make_unmake!(node, move) { sum += Perft(node, depth-1) }
+    Chess::MoveGen::make_unmake!(node, move) { sum += perft(node, depth-1) }
   end
   return sum
 end
 
+Problem = Struct.new(:position, :best_moves, :avoid_moves, :ai_response)
 
+def load_test_suite(file)
+  raise "file #{file} not found" unless File.exists?(file)
+  problems = []
+  File.readlines(file).each do |line|
+    pos = Chess::Notation::epd_to_position(line)
+    best_moves = best_moves_from_epd(line)
+    avoid_moves = avoid_moves_from_epd(line)
+    problems << Problem.new(pos, best_moves)
+  end
+  return problems
+end
 
+def best_moves_from_epd(epd)
+  return nil if epd.index('bm').nil?
+  moves = epd[epd.index('bm')+3..epd.index(';')-1].split(' ') # scan string for "bm <move>;"
+end
+
+def avoid_moves_from_epd(epd)
+  return nil if epd.index('am').nil?
+  moves = epd[epd.index('am')+3..epd.index(';')-1].split(' ') # scan string for "am <move>;"
+end
 
 
 

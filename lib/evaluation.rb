@@ -123,9 +123,7 @@ module Chess
     end
 
     def self.net_material(position) # net material value for side to move.
-      side, enemy = Chess::current_game.ai_player, Chess::current_game.opponent
-      # material(position, side) - material(position, enemy)
-      position.material[side] - position.material[enemy]
+      position.own_material - position.enemy_material
     end
 
     def self.material(position, side) # =~ 1,040 at start

@@ -21,30 +21,43 @@
 
 require 'spec_helper'
 
-# number of possible games for each ply (http://oeis.org/A048987/list)
-MAX_TREE = [1,20,400,8902,197281,4865609,119060324,3195901860,84998978956,2439530234167,69352859712417]
+INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+EPD =  '2rr3k/pp3pp1/1nnqbN1p/3pN3/2pP4/2P3Q1/PPB4P/R4RK1 w - - bm Qg6; id "WAC.001";' # example EPD record
+EPD_TO_FEN = EPD.split(' ')[0..3].join(' ')
 
-describe Chess::Move do
-  
-  before do 
-    @game = FactoryGirl.build(:game)
-    @root = @game.position
+describe Chess::Notation do
+
+  let(:test_pos) { FactoryGirl.build(:test_position) }
+
+  it 'can accurately translate to and from Forsyth-Edwards Notation' do
+    pos = Chess::Notation::fen_to_position(INITIAL_FEN) # FEN to position
+    pos.to_s.should == INITIAL_FEN  # position to FEN
+
+    midgame_fen = test_pos.to_s  # position to FEN
+    new_pos = Chess::Notation::fen_to_position(midgame_fen) # back to position
+    new_pos.to_s.should == midgame_fen
   end
 
-  describe "move generation" do
+  it 'can also convert from EPD notation' do  # does not consider halfmove clock.
+    pos = Chess::Notation::epd_to_position(EPD) # EPD to position
+    pos.class.should == Chess::Position::ChessPosition
+  end
 
-    it "should generate the correct number of nodes" do
-      depth = 4
-      t0 = Time.now
-      node_count = perft(@root, depth) # first castling moves would occur at minimum ply 7.
-      t1 = Time.now
-      print "#{node_count} nodes in #{t1-t0} seconds (#{node_count/(t1-t0)} NPS)"
-      node_count.should == MAX_TREE[depth]
+  describe 'when translating long algebraic chess notation' do
+    pending '' do
+
     end
 
   end
 
+
 end
+
+
+
+
+
+
 
 
 

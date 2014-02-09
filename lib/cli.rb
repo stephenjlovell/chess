@@ -28,8 +28,10 @@ module Chess
     HELP = [ { command: 'help', description: "displays a help screen with a list of valid commands... including this one." },
              { command: 'quit', description: 'ends the game and exits the program.  you may also enter "q" or "exit" to quit.' },
              { command: 'undo', description: 'undoes the most recent full move (undoing the most recent action for each side).' },
-             { command: 'redo', description: 'replays the next full move.  Only available if move(s) have been undone.' } ]
-    
+             { command: 'redo', description: 'replays the next full move.  Only available if move(s) have been undone.' },
+             { command: 'print history', description: 'prints a list of the moves made by each player.' }, 
+             { command: 'print history details', description: 'prints the move list, along with the position in FEN format.' } ]
+
     def self.play # main CLI method.  Gets and responds to user input.
       game = setup
       return if game.nil?
@@ -74,8 +76,14 @@ module Chess
       return nil if help?(input)
       if input == "undo"
         game.undo_move
+        game.print
       elsif input == "redo"
         game.redo_move
+        game.print
+      elsif input == "print history"
+        game.print_history
+      elsif input == "print history details"
+        game.print_history_details
       elsif !input.empty?
         move = parse_move(input)
         return nil unless move

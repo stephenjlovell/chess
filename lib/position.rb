@@ -88,7 +88,7 @@ module Chess
       end
 
       def to_s  # return a string decribing the position in Forsyth-Edwards Notation.
-        GUI::position_to_fen(self)
+        Notation::position_to_fen(self)
       end
 
       def inspect

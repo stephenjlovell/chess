@@ -74,7 +74,7 @@ module Chess
       end
 
       def print(piece, from, to)
-        puts "#{piece} x #{@captured_piece} #{from} to #{to}"
+        "#{piece} x #{@captured_piece} #{from} to #{to}"
       end
 
 
@@ -106,7 +106,7 @@ module Chess
       end
 
       def print(piece, from, to)
-        puts "#{piece} #{from} to #{to}"
+        "#{piece} #{from} to #{to}"
       end
 
       def hash(piece, from, to)
@@ -202,7 +202,7 @@ module Chess
       end
 
       def print(piece, from, to)
-        puts "#{piece} enp x #{@captured_piece} #{from} to #{to}"
+        "#{piece} enp x #{@captured_piece} #{from} to #{to}"
       end
 
     end
@@ -249,7 +249,7 @@ module Chess
       end
 
       def print(piece, from, to)
-        puts "#{piece} promotion #{from} to #{to}"
+        "#{piece} promotion #{from} to #{to}"
       end
 
       def hash(piece, from, to)
@@ -281,7 +281,7 @@ module Chess
       end
 
       def print(piece, from, to)
-        puts "#{piece} x #{@captured_piece} promotion #{from} to #{to}"
+        "#{piece} x #{@captured_piece} promotion #{from} to #{to}"
       end
 
       def hash(piece, from, to)
@@ -315,7 +315,7 @@ module Chess
       end
 
       def print(piece, from, to)
-        puts "#{piece} castle #{from} to #{to}"
+        "#{piece} castle #{from} to #{to}"
       end
 
       def hash(piece, from, to)

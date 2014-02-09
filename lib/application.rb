@@ -19,6 +19,8 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
+require 'table_print'
+
 module Chess # top-level application namespace.
 
   def self.current_game
@@ -32,14 +34,14 @@ module Chess # top-level application namespace.
   def self.new_game(ai_player = :b, time_limit = 60.0)
     puts "Starting a new game." 
     puts "AI color: #{ai_player}, Your color: #{FLIP_COLOR[ai_player]}"
-    @current_game = Chess::Game.new(ai_player, time_limit)
+    Chess::Game.new(ai_player, time_limit)
     return @current_game
   end
 
   class Clock
     attr_reader :game_start
 
-    def initialize(time_limit = 120.0) 
+    def initialize(time_limit = 60.0) 
       @game_start, @turn_start, @time_limit = Time.now, Time.now, time_limit
     end
 
@@ -50,8 +52,9 @@ module Chess # top-level application namespace.
     def restart
       @turn_start = Time.now
     end
-    alias :end_turn :restart 
   end
+
+  History = Struct.new(:index, :position, :move)
 
   class MoveHistory
     attr_accessor :history
@@ -61,16 +64,16 @@ module Chess # top-level application namespace.
       @history = []
     end
 
-    def save(move)
+    def save(position, move)
       @history.slice!(@index+1..-1) if @index < @history.count-1
-      @history << move
+      @history << History.new(@history.count, position.to_s, move)
       @index = @history.count-1
     end
 
     def undo(position)    
       if @index >= 1
-        MoveGen::unmake!(position, @history[@index])
-        MoveGen::unmake!(position, @history[@index-1])
+        MoveGen::unmake!(position, @history[@index].move)
+        MoveGen::unmake!(position, @history[@index-1].move)
         @index -= 2
       else
         puts "no more moves to undo."
@@ -79,8 +82,8 @@ module Chess # top-level application namespace.
 
     def redo(position)
       if @index <= @history.count-2
-        MoveGen::make!(position, @history[@index+1])
-        MoveGen::make!(position, @history[@index+2])
+        MoveGen::make!(position, @history[@index+1].move)
+        MoveGen::make!(position, @history[@index+2].move)
         @index += 2
       else
         puts "no more moves to redo."
@@ -89,7 +92,14 @@ module Chess # top-level application namespace.
 
     def print
       puts "------Move History (#{@history.count} total)------"
-      @history.each_with_index { |m,i| puts "#{i}  #{m}"  }
+      tp @history, :index, :move
+      puts "\n"
+    end
+
+    def print_details
+      puts "------Move History Details (#{@history.count} total)------"
+      tp @history, :index, :move, position: {width: 200}
+      puts "\n"
     end
   end
 
@@ -97,7 +107,7 @@ module Chess # top-level application namespace.
     attr_accessor :position, :halfmove_clock, :tt, :clock, :move_history
     attr_reader :ai_player, :opponent
     
-    def initialize(ai_player = :b, time_limit = 120.0)
+    def initialize(ai_player = :b, time_limit = 60.0)
       board = Board.new
       @position = Position::ChessPosition.new(board,Pieces::setup(board),:w,0)
       @halfmove_count = 0
@@ -106,6 +116,7 @@ module Chess # top-level application namespace.
       @tt = Memory::TranspositionTable.new
       $tt = @tt
       @clock = Clock.new(time_limit)
+      Chess::current_game = self
     end
 
     def move_clock
@@ -116,7 +127,7 @@ module Chess # top-level application namespace.
       opp_score, ai_score = score(@ai_player), score(@opponent)
       scoreboard = "| Move: #{move_clock} | Ply: #{@halfmove_count} " +
                    "| Turn: #{@position.side_to_move.to_s} " +
-                   "| Castling: #{GUI::castling_availability(@position.castle)} " +
+                   "| Castling: #{Notation::castling_availability(@position.castle)} " +
                    "| AI Score: #{ai_score} | Your Score: #{opp_score} |"
       separator = "-" * scoreboard.length
       puts separator, scoreboard, separator, "\n"
@@ -145,12 +156,21 @@ module Chess # top-level application namespace.
       @move_history.redo(@position)
     end
 
-    def save_move(move)
-      @move_history.save(move)
+    def save_move(position, move)
+      @move_history.save(position, move)
+    end
+
+    def print_history
+      @move_history.print
+    end
+
+    def print_history_details
+      @move_history.print_details
     end
 
     def human_move(move)  
       take_turn do
+        save_move(@position, move)
         MoveGen::make!(@position, move)
       end
     end
@@ -158,6 +178,7 @@ module Chess # top-level application namespace.
     def ai_move
       take_turn do 
         move = Search::select_move(@position)
+        save_move(@position, move)
         MoveGen::make!(@position, move)
       end
     end
@@ -167,7 +188,7 @@ module Chess # top-level application namespace.
       yield
       @halfmove_count += 1
       self.print
-      @clock.end_turn
+      @clock.restart
     end
 
   end
