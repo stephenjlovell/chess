@@ -23,28 +23,31 @@ require 'spec_helper'
 
 describe Chess::Search do
 
-  before { @s = Chess::Search }
+  before do 
+    @s = Chess::Search
+    @depth = 7
+  end
   let(:game) { FactoryGirl.build(:test_game) }
   let(:pos) { game.position }
 
   describe "permits use of" do
     describe "mtdf" do
       # it "as a standalone algorithm" do
-      #   puts "mtdf \n #{@s::select_move(pos, 4){ @s::mtdf } }"
-      #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
-      # end
-      it "from within an iterative deepening framework" do
-        puts "iterative_deepening_mtdf \n #{@s::select_move(pos, 5) { @s::iterative_deepening_mtdf } }"
-      end
-    end
-    describe "alpha beta" do
-      # it "as a standalone algorithm" do
-      #   puts "alpha_beta \n #{@s::select_move(pos, 4) { @s::alpha_beta } }"
+      #   puts "mtdf \n #{@s::select_move(pos, @depth){ @s::mtdf } }"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
       # it "from within an iterative deepening framework" do
-      #   puts "iterative_deepening_alpha_beta \n #{@s::select_move(pos, 5) { @s::iterative_deepening_alpha_beta } }"
+      #   puts "iterative_deepening_mtdf \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf } }"
       # end
+    end
+    describe "alpha beta" do
+      # it "as a standalone algorithm" do
+      #   puts "alpha_beta \n #{@s::select_move(pos, @depth) { @s::alpha_beta } }"
+      #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
+      # end
+      it "from within an iterative deepening framework" do
+        puts "iterative_deepening_alpha_beta \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_alpha_beta } }"
+      end
     end
   end
 
@@ -63,7 +66,7 @@ describe Chess::Search do
 
   #   it do
   #     game.position = sanity_check
-  #     @s::select_move(sanity_check,4).to_s.should == "a1a2"
+  #     @s::select_move(sanity_check,@depth).to_s.should == "a1a2"
   #   end
   # end
 
@@ -71,17 +74,8 @@ describe Chess::Search do
   #   let(:problems) { load_test_suite('./test_suites/kaufman.epd') }
 
   #   it "should be able to take standardized tests" do
-  #     problems[0..9].each do |prob|
-  #       move = @s::select_move(prob.position,4)
-  #       prob.ai_response = move
-  #       prob.position.board.print
-  #       print prob.best_moves, "  ", prob.avoid_moves, " ", prob.ai_response, "\n" 
-  #     end
-  #     problems.each do |prob|  # print a summary comparison
-  #       print prob.best_moves, "  ", prob.avoid_moves, " ", prob.ai_response, "\n" 
-  #     end
+  #     take_test(problems, @depth)
   #   end
-
   # end
 
 

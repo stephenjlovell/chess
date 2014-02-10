@@ -112,11 +112,11 @@ module Chess
         to = from + vector
         while board.on_board?(to)
           if board.empty?(to)
-            if board.avoids_check?(position, from, to, @color)
+            # if board.avoids_check?(position, from, to, @color)
               moves << Move::Factory.build(self, from, to, :regular_move)
-            end
+            # end
           else
-            if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
+            if board.enemy?(to, @color) # && board.avoids_check?(position, from, to, @color)
               captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
             end
             break  # if path blocked by any piece, stop evaluating this direction.
@@ -129,7 +129,7 @@ module Chess
         to = from + vector
         while board.on_board?(to)
           if board.occupied?(to) 
-            if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
+            if board.enemy?(to, @color) # && board.avoids_check?(position, from, to, @color)
               captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
             end
             break # if path blocked by any piece, stop evaluating this direction.
@@ -182,7 +182,7 @@ module Chess
       def get_attacks(position, board, from, captures, promotion_captures)
         self.class.directions[@color][:attack].each do |vector|  # normal attacks
           to = from + vector
-          if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
+          if board.enemy?(to, @color) # && board.avoids_check?(position, from, to, @color)
             enemy = position.enemy_pieces[to]
             if to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
               promotion_captures << Move::Factory.build(self, from, to, :pawn_promotion_capture, enemy)
@@ -199,10 +199,10 @@ module Chess
           if position.enp_target == target
             offset = self.class.directions[@color][:enp_offset]
             to = target + offset
-            if board.avoids_check?(position, from, to, @color)
+            # if board.avoids_check?(position, from, to, @color)
               enemy = position.enemy_pieces[target]
               captures << Move::Factory.build(self, from, to, :enp_capture, enemy, target)
-            end 
+            # end 
           end
         end
       end
@@ -211,19 +211,19 @@ module Chess
         dir = self.class.directions[@color]
         to = from + dir[:advance]
         if board.empty?(to)
-          if board.avoids_check?(position, from, to, @color)
+          # if board.avoids_check?(position, from, to, @color)
             if to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
               promotions << Move::Factory.build(self, from, to, :pawn_promotion, @color)
             else
               moves << Move::Factory.build(self, from, to, :regular_move)
             end
-          end
+          # end
           if from.r == dir[:start_row]
             to = from + dir[:initial]
             if board.empty?(to)
-              if board.avoids_check?(position, from, to, @color)
+              # if board.avoids_check?(position, from, to, @color)
                 moves << Move::Factory.build(self, from, to, :enp_advance)
-              end
+              # end
             end
           end
         end
@@ -263,11 +263,11 @@ module Chess
           to = from + vector
 
           if board.empty?(to)
-            if board.avoids_check?(position, from, to, @color)
+            # if board.avoids_check?(position, from, to, @color)
               moves << Move::Factory.build(self, from, to, :regular_move)
-            end
+            # end
           else
-            if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
+            if board.enemy?(to, @color) # && board.avoids_check?(position, from, to, @color)
               captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
             end
           end
@@ -279,7 +279,7 @@ module Chess
         board = position.board
         self.class.directions.each do |vector|
           to = from + vector
-          if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color)
+          if board.enemy?(to, @color) # && board.avoids_check?(position, from, to, @color)
             captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
           end
         end
@@ -399,11 +399,11 @@ module Chess
         self.class.directions.each do |vector|
           to = from + vector
           if board.empty?(to)
-            if board.avoids_check?(position, from, to, @color, to)
+            # if board.avoids_check?(position, from, to, @color, to)
               moves << Move::Factory.build(self, from, to, :king_move)
-            end
+            # end
           else
-            if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color, to)
+            if board.enemy?(to, @color) # && board.avoids_check?(position, from, to, @color, to)
               captures << Move::Factory.build(self, from, to, :king_capture, position.enemy_pieces[to])
             end
           end
@@ -414,7 +414,7 @@ module Chess
         board = position.board
         self.class.directions.each do |vector|
           to = from + vector
-          if board.enemy?(to, @color) && board.avoids_check?(position, from, to, @color, to)
+          if board.enemy?(to, @color) # && board.avoids_check?(position, from, to, @color, to)
             captures << Move::Factory.build(self, from, to, :king_capture, position.enemy_pieces[to])
           end
         end

@@ -25,7 +25,7 @@ module Chess
     PLY_VALUE = 4  # multiplier representing the depth value of 1 ply.  
                    # Used for fractional depth extensions / reductions.
 
-    Performance = Struct.new(:depth, :m_nodes, :q_nodes, :all_nodes, :evals, :memory, :avg_eff_branching)
+    Performance = Struct.new(:depth, :m_nodes, :q_nodes, :all_nodes, :evals, :memory, :eff_branching, :avg_eff_branching)
 
     def self.iterative_deepening_mtdf
       iterative_deepening(@max_depth/PLY_VALUE) do |guess, d, previous_pv, current_pv|
@@ -35,26 +35,25 @@ module Chess
 
     def self.iterative_deepening_alpha_beta
       iterative_deepening(@max_depth/PLY_VALUE) do |guess, d, previous_pv, current_pv|
-        alpha_beta(d, -$INF, $INF, previous_pv, current_pv)
+        alpha_beta_root(d, -$INF, $INF, previous_pv, current_pv)
       end
     end
 
     def self.iterative_deepening(depth)
       guess = @node.value
-      puts guess
       best_move, value = nil, -$INF
-      total_calls, performance_data = 0, []
+      total_calls, performance_data = 0.0, []
       previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
       (1..depth).each do |d|
-        # puts "#{d}"
         previous_total = $quiescence_calls + $main_calls
         Search::reset_counters
         current_pv = Memory::PVStack.new
         best_move, value = yield(guess, d*PLY_VALUE, previous_pv, current_pv)
         total_calls = $main_calls + $quiescence_calls
-        branching = previous_total == 0.0 ? total_calls + 0.0 : (total_calls**(1r/d))
+        eff_branching = previous_total == 0.0 ? total_calls : total_calls/previous_total
+        avg_branching = previous_total == 0.0 ? total_calls : (total_calls**(1r/d))
         performance_data << Performance.new(d, $main_calls, $quiescence_calls, total_calls, 
-                                            $evaluation_calls, $memory_calls, branching)
+                                            $evaluation_calls, $memory_calls, eff_branching, avg_branching)
         guess = value
 
         previous_pv = current_pv
@@ -65,13 +64,12 @@ module Chess
       puts "\n"
       tp performance_data  # print out performance data as a table.
       current_pv.print
-      # puts "Average effective branching factor: #{total_calls**(1r/depth)}"
 
       return best_move, value
     end
 
     def self.mtdf(g=nil, depth=nil, previous_pv=nil, parent_pv=nil) # incrementally sets the alpha-beta search window and call alpha_beta.
-      g ||= alpha_beta(PLY_VALUE, -$INF, +$INF) # do a fixed-depth search for first guess
+      g ||= alpha_beta_root(PLY_VALUE, -$INF, +$INF) # do a fixed-depth search for first guess
       depth ||= @max_depth
       upper_bound = $INF
       lower_bound = -$INF
@@ -79,13 +77,13 @@ module Chess
         beta = (g == lower_bound ? g+1 : g)
         current_pv = Memory::PVStack.new
         previous_pv.reset_counter if previous_pv
-        best_move, g = alpha_beta(depth, beta-1, beta, previous_pv, current_pv)
+        best_move, g = alpha_beta_root(depth, beta-1, beta, previous_pv, current_pv)
         if g < beta then upper_bound = g else lower_bound = g end
       end
       return best_move, g, current_pv
     end
 
-    def self.alpha_beta(depth=nil, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil)
+    def self.alpha_beta_root(depth=nil, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil)
       depth ||= @max_depth
       parent_pv ||= Memory::PVStack.new
 
@@ -98,8 +96,7 @@ module Chess
         mate_possible = false
 
         MoveGen::make!(@node, pv_move)
-        result = -alpha_beta_main(@node, depth-PLY_VALUE, -beta, -alpha, previous_pv, current_pv, true)
-        # puts "#{pv_move.print}: #{result}"
+        result = -alpha_beta(@node, depth-PLY_VALUE, -beta, -alpha, previous_pv, current_pv, true)
         MoveGen::unmake!(@node, pv_move)
 
         if result > best_value
@@ -136,8 +133,7 @@ module Chess
         extension = PLY_VALUE  # start with a full ply extension.
         # extension -= 1 if move.capture_value >= 1.5
         # extension -= 2 if @node.in_check?
-        result = -alpha_beta_main(@node, depth-extension, -beta, -alpha, previous_pv, current_pv)
-        # puts "#{move.print}: #{result}"
+        result = -alpha_beta(@node, depth-extension, -beta, -alpha, previous_pv, current_pv)
         MoveGen::unmake!(@node, move)
 
         if result > best_value
@@ -154,7 +150,7 @@ module Chess
       return best_move, result
     end
 
-    def self.alpha_beta_main(node, depth, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil, on_pv=false)
+    def self.alpha_beta(node, depth, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil, on_pv=false)
 
       result, best_value, best_move, mate_possible = -$INF, -$INF, nil, true
       current_pv = Memory::PVStack.new
@@ -165,7 +161,7 @@ module Chess
           mate_possible = false
           
           MoveGen::make!(@node, pv_move)
-          result = -alpha_beta_main(@node, depth-PLY_VALUE, -beta, -alpha, previous_pv, current_pv, true)
+          result = -alpha_beta(@node, depth-PLY_VALUE, -beta, -alpha, previous_pv, current_pv, true)
           MoveGen::unmake!(@node, pv_move)
 
           if result > best_value
@@ -198,8 +194,7 @@ module Chess
 
       if depth <= 0
         mate_possible = @node.edges.count == 0
-        best_value = quiescence(@node, depth-PLY_VALUE, alpha, beta) # not making or unmaking here.
-        # best_value = @node.value
+        best_value = quiescence(@node, depth, alpha, beta) # not making or unmaking here.
         return $tt.store_result(@max_depth, mate_possible, @node, 0, best_value, alpha, beta)  
       end
 
@@ -211,7 +206,7 @@ module Chess
         extension = PLY_VALUE  # start with a full ply extension.
         # extension -= 1 if move.capture_value >= 1.5
         # extension -= 2 if @node.in_check?
-        result = -alpha_beta_main(@node, depth-extension, -beta, -alpha, previous_pv, current_pv)
+        result = -alpha_beta(@node, depth-extension, -beta, -alpha, previous_pv, current_pv)
         MoveGen::unmake!(@node, move)
 
         if result > best_value
@@ -246,7 +241,8 @@ module Chess
       return best_value if best_value >= beta  
       alpha = best_value if best_value > alpha
 
-      result, best_move, see_squares, mate_possible = -$INF, nil, {}, true
+      result, best_move, mate_possible = -$INF, nil, true
+      see_squares = {}
 
       @node.tactical_edges.each do |move|
 
@@ -321,7 +317,7 @@ module Chess
       reset_counters
       Chess::current_game.clock.restart
       best_move, value = block_given? ? yield : iterative_deepening_alpha_beta # use mtdf by default?
-      puts "Eval score: #{value}"
+      puts "Move selected: #{best_move.print}, Eval score: #{value}"
       return best_move
     end 
 
