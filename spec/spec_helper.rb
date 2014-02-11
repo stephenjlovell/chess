@@ -58,7 +58,7 @@ end
 
 def id_from_epd(epd)
   return "" if epd.index('id').nil?
-  epd[epd.index('id')+3..epd.index(';')-1]
+  epd[epd.index('id')+4..epd.index(';')-2]
 end
 
 def best_moves_from_epd(epd)

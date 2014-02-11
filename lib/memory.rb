@@ -22,7 +22,7 @@ module Chess
 
     PSQ = create_key_array { piece_hash }
     ENP = create_key_array { create_key }
-    SIDE = 0b1  # faster, but does this increase risk of collisions vs. using a complete 64-bit key?
+    SIDE = 1  # faster, but does this increase risk of collisions vs. using a complete 64-bit key?
 
     def self.side_key
       SIDE
@@ -111,18 +111,8 @@ module Chess
       def initialize
         @table = {}
       end
-
-      # will need to refactor this 
-
-      def store_result(max_depth, mate_possible, node, depth, best_value, alpha, beta, best_move=nil)
-        if mate_possible && node.in_check?
-          store_checkmate(node, max_depth)
-        else
-          store_node(node, depth, best_value, alpha, beta, best_move)
-        end
-      end
   
-      def store_node(node, depth, best_value, alpha, beta, best_move=nil)
+      def flag_and_store(node, depth, best_value, alpha, beta, best_move=nil)
         flag = if best_value <= alpha
           :lower_bound
         elsif best_value >= beta
@@ -130,14 +120,10 @@ module Chess
         else
           :exact_value
         end
-        store_entry(node, depth, flag, best_value, best_move)
+        store(node, depth, flag, best_value, best_move)
       end
 
-      def store_checkmate(node, max_depth)
-        store_entry(node, max_depth+1, :exact_value, -$INF)
-      end
-
-      def store_entry(node, depth, type, value, best_move=nil)
+      def store(node, depth, type, value, best_move=nil)
         h = node.hash
         if @table[h].nil? || depth >= @table[h].depth   # simple depth-based replacement scheme.
           @table[h] = Entry.new(depth, type, value, best_move)

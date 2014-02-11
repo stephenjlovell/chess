@@ -45,6 +45,7 @@ module Chess
       from = Location::string_to_location(str[0..1])
       to = Location::string_to_location(str[2..3])
       raise InvalidMoveError, 'invalid square coordinates given' if from.nil? || to.nil?
+      raise InvalidMoveError, 'This square is already occupied by one of your pieces.' if pos.own_pieces[to]
 
       piece, enemy = pos.own_pieces[from], pos.enemy_pieces[to]
       raise InvalidMoveError, "no piece available at square #{from}" if piece.nil?

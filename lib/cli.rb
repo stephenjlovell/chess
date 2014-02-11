@@ -36,7 +36,7 @@ module Chess
       game = setup
       return if game.nil?
       input = ""
-      until quit?(input) do
+      until quit?(input) || endgame? do
         parse_input(game, input)
         print "where would you like to move?  "
         $stdout.flush
@@ -68,7 +68,6 @@ module Chess
           puts "#{input} is not a valid color.  Please choose white (w) or black (b):  "
         end
       end
-
       return Chess::current_game
     end
 
@@ -117,11 +116,23 @@ module Chess
 
     def self.parse_move(input) # translate the string into a move object.
       begin
-        Notation::str_to_move(Chess::current_game.position, input)
+        move = Notation::str_to_move(Chess::current_game.position, input)
+        if Chess::current_game.position.avoids_check?(move)
+          return move
+        else
+          raise Notation::InvalidMoveError, "That move would leave your king in check."
+        end
       rescue Notation::InvalidMoveError => e
         puts e.message
         return nil
       end
+    end
+
+    def self.endgame?
+
+      # return true if player is checkmated
+
+      false
     end
 
   end

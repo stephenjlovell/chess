@@ -25,7 +25,7 @@ describe Chess::Search do
 
   before do 
     @s = Chess::Search
-    @depth = 7
+    @depth = 6
   end
   let(:game) { FactoryGirl.build(:test_game) }
   let(:pos) { game.position }
@@ -36,18 +36,18 @@ describe Chess::Search do
       #   puts "mtdf \n #{@s::select_move(pos, @depth){ @s::mtdf } }"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
-      # it "from within an iterative deepening framework" do
-      #   puts "iterative_deepening_mtdf \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf } }"
-      # end
+      it "from within an iterative deepening framework" do
+        puts "iterative_deepening_mtdf \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf } }"
+      end
     end
     describe "alpha beta" do
       # it "as a standalone algorithm" do
       #   puts "alpha_beta \n #{@s::select_move(pos, @depth) { @s::alpha_beta } }"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
-      it "from within an iterative deepening framework" do
-        puts "iterative_deepening_alpha_beta \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_alpha_beta } }"
-      end
+      # it "from within an iterative deepening framework" do
+      #   puts "iterative_deepening_alpha_beta \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_alpha_beta } }"
+      # end
     end
   end
 
@@ -60,21 +60,28 @@ describe Chess::Search do
   #   end
   # end
 
-  # describe "should make obvious optimal moves" do
+  # describe "should make tactically sound moves" do
   #   let(:game) { FactoryGirl.build(:game) }
   #   let(:sanity_check) { Chess::Notation::fen_to_position("1nbqkbnr/1ppppppp/8/8/1p1P2P1/8/r1P1PP1P/RNBQKBNR w KQk - 0 1") }
+  #   let(:puzzle) { Chess::Notation::epd_to_position('1rbq1rk1/p1b1nppp/1p2p3/8/1B1pN3/P2B4/1P3PPP/2RQ1R1K w - - bm Nf6+; id "position 01";') }
 
   #   it do
   #     game.position = sanity_check
   #     @s::select_move(sanity_check,@depth).to_s.should == "a1a2"
   #   end
+
+  #   # it "should avoid search explosion on more challenging problems" do 
+  #   #   game.position = puzzle
+  #   #   @s::select_move(puzzle, @depth)
+  #   # end
+
   # end
 
   # describe "playing strength" do
   #   let(:problems) { load_test_suite('./test_suites/kaufman.epd') }
 
   #   it "should be able to take standardized tests" do
-  #     take_test(problems, @depth)
+  #     take_test([problems[0]], @depth)
   #   end
   # end
 

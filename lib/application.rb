@@ -132,6 +132,9 @@ module Chess # top-level application namespace.
       separator = "-" * scoreboard.length
       puts separator, scoreboard, separator, "\n"
       @position.board.print
+      if @position.in_check?
+
+      end
     end
 
     def score(enemy_color)

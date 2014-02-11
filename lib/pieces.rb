@@ -24,6 +24,13 @@ module Chess
 
     PIECE_VALUES = { P: 100, N: 320, B: 333, R: 510, Q: 880, K: 100000 }
 
+    NON_KING_VALUE = PIECE_VALUES[:P]*8 + PIECE_VALUES[:N]*2 + PIECE_VALUES[:B]*2 + 
+                     PIECE_VALUES[:R]*2 + PIECE_VALUES[:Q]
+
+    KING_LOSS = NON_KING_VALUE - PIECE_VALUES[:K] 
+
+    MATE = NON_KING_VALUE + PIECE_VALUES[:K] + 1
+
     PIECE_SYM_VALUES = { wP: 100, wN: 320, wB: 333, wR: 510, wQ: 880, wK: 100000,
                          bP: 100, bN: 320, bB: 333, bR: 510, bQ: 880, bK: 100000, }
 

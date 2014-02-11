@@ -139,13 +139,13 @@ module Chess
 
       def make!(position, piece, from, to)
         make_relocate_piece(position, piece, from, to)
-        position.active_king_location = to
+        position.own_king_location = to  # update king location
         make_clock_adjustment(position)
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
-        position.active_king_location = from
+        position.own_king_location = from  # update king location
         unmake_clock_adjustment(position)
       end
     end
@@ -159,7 +159,7 @@ module Chess
 
       def make!(position, piece, from, to)
         make_relocate_piece(position, piece, from, to)
-        position.active_king_location = to
+        position.own_king_location = to  # update king location
         make_clock_adjustment(position)
         position.enemy_pieces.delete(to)
         @enemy_material -= Evaluation::adjusted_value(@captured_piece, to)
@@ -167,7 +167,7 @@ module Chess
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
-        position.active_king_location = from
+        position.own_king_location = from  # update king location
         unmake_clock_adjustment(position)
         position.board[to] = @captured_piece.symbol
         position.enemy_pieces[to] = @captured_piece
@@ -304,14 +304,14 @@ module Chess
         make_relocate_piece(position, piece, from, to)
         make_relocate_piece(position, @rook, @rook_from, @rook_to)
         make_clock_adjustment(position)
-        position.active_king_location = to
+        position.own_king_location = to
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         relocate_piece(position, @rook, @rook_to, @rook_from)
         unmake_clock_adjustment(position)
-        position.active_king_location = from
+        position.own_king_location = from
       end
 
       def print(piece, from, to)
@@ -325,7 +325,7 @@ module Chess
 
 
     class Move
-      attr_reader :piece, :from, :to, :enp_target
+      attr_reader :piece, :from, :to, :enp_target, :see
 
       def initialize(piece, from, to, strategy)
         @piece, @from, @to, @strategy = piece, from, to, strategy
@@ -348,6 +348,10 @@ module Chess
 
       def mvv_lva
         @strategy.mvv_lva(@piece)
+      end
+
+      def see_score(position)
+        @see ||= Search::get_see_score(position, @to)
       end
 
       def strategy

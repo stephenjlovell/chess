@@ -59,11 +59,11 @@ module Chess
         @material[@enemy] = value
       end
 
-      def active_king_location
+      def own_king_location
         @king_location[@side_to_move]
       end
 
-      def active_king_location=(location)
+      def own_king_location=(location)
         @king_location[@side_to_move] = location
       end
 
@@ -83,8 +83,12 @@ module Chess
         @board.king_in_check?(self, @enemy)
       end
 
-      def avoids_check?(from, to)
-        @board.avoids_check?(self, from, to, @side_to_move)
+      def avoids_check?(move)
+        if move.from == own_king_location 
+          @board.avoids_check?(self, move.from, move.to, @side_to_move, move.to)
+        else
+          @board.avoids_check?(self, move.from, move.to, @side_to_move, own_king_location)
+        end
       end
 
       def to_s  # return a string decribing the position in Forsyth-Edwards Notation.
@@ -98,14 +102,17 @@ module Chess
 
       # These methods will be re-written to make use of Move::MoveList class:
 
-      def get_moves # returns a sorted array of all possible moves for the current player.
+      def get_moves(enhanced_sort = false) # returns a sorted array of all possible moves for the current player.
         promotion_captures, captures, promotions, moves = [], [], [], []
 
         own_pieces.each do |key, piece| 
           piece.get_moves(self, key, moves, captures, promotions, promotion_captures)
         end
-        sort_captures!(captures) # sort captures by MVV-LVA heuristic
-        sort_moves!(moves)  # sort regular moves by History or Killer heuristic
+
+        # if on the pv, invest some extra time ordering moves.  otherwise, use MVV-LVA
+        enhanced_sort ? sort_captures_by_see!(captures) : sort_captures!(captures) 
+
+        sort_moves!(moves)  
 
         # ideally, killer moves should be searched before captures...
         # append move lists together in reasonable order:
@@ -115,22 +122,31 @@ module Chess
 
       def get_captures # returns a sorted array of all possible moves for the current player.
         captures, promotion_captures = [], []
-        own_pieces.each do |key, piece| 
-          piece.get_captures(self, key, captures, promotion_captures)
-        end
-        sort_captures!(captures)
-        
+        own_pieces.each { |key, piece| piece.get_captures(self, key, captures, promotion_captures) }
+        sort_captures_by_see!(captures)
         promotion_captures + captures
       end
       alias :tactical_edges :get_captures
 
-
-      def sort_captures!(captures)
-        captures.sort! { |x,y| y.mvv_lva <=> x.mvv_lva } 
+      def sort_captures_by_see!(captures)
+        captures.each { |m| m.see_score(self) }
+        captures.sort! do |x,y|
+          if y.see > x.see
+            1
+          elsif y.see < x.see
+            -1
+          else
+            y.mvv_lva <=> x.mvv_lva  # rely on MVV-LVA in event of tie.
+          end
+        end
       end
 
-      def sort_moves!(moves) # sort remaining (non-capture)
-        # moves.sort! {  }
+      def sort_captures!(captures)
+        captures.sort! { |x,y| y.mvv_lva <=> x.mvv_lva } # Z-A
+      end
+
+      def sort_moves!(moves) # sort remaining (non-capture) moves
+        # sort regular moves by History or Killer heuristic
       end
 
       private 
