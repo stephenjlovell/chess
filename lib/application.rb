@@ -104,7 +104,7 @@ module Chess # top-level application namespace.
   end
 
   class Game
-    attr_accessor :position, :halfmove_clock, :tt, :clock, :move_history
+    attr_accessor :position, :halfmove_clock, :tt, :clock, :move_history, :game_over
     attr_reader :ai_player, :opponent
     
     def initialize(ai_player = :b, time_limit = 30.0)
@@ -115,6 +115,7 @@ module Chess # top-level application namespace.
       @ai_player, @opponent = ai_player, FLIP_COLOR[ai_player]
       @tt = Memory::TranspositionTable.new
       $tt = @tt
+      @game_over = false
       @clock = Clock.new(time_limit)
       Chess::current_game = self
     end
@@ -172,23 +173,26 @@ module Chess # top-level application namespace.
     end
 
     def human_move(move)  
-      take_turn do
-        save_move(@position, move)
-        MoveGen::make!(@position, move)
-      end
+      save_move(@position, move)
+      MoveGen::make!(@position, move)
+      end_turn
     end
 
     def ai_move
-      take_turn do 
-        move = Search::select_move(@position)
-        save_move(@position, move)
-        MoveGen::make!(@position, move)
+      move = Search::select_move(@position)
+      if move.nil?
+        game_over = true
+        end_turn
+        return nil
       end
+      save_move(@position, move)
+      MoveGen::make!(@position, move)
+      end_turn
     end
 
-    def take_turn
-      # add any code that must run at beginning of each turn
-      yield
+    private
+
+    def end_turn
       @halfmove_count += 1
       self.print
       @clock.restart

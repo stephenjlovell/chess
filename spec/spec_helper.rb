@@ -46,7 +46,9 @@ Problem = Struct.new(:id, :position, :best_moves, :avoid_moves, :ai_response, :s
 def load_test_suite(file)
   raise "file #{file} not found" unless File.exists?(file)
   problems = []
-  File.readlines(file).each do |line|
+  file = File.readlines(file)
+  file.each do |line|
+    line = %q{line.chomp} 
     pos = Chess::Notation::epd_to_position(line)
     best_moves = best_moves_from_epd(line)
     avoid_moves = avoid_moves_from_epd(line)
@@ -57,8 +59,8 @@ def load_test_suite(file)
 end
 
 def id_from_epd(epd)
-  return "" if epd.index('id').nil?
-  epd[epd.index('id')+4..epd.index(';')-2]
+  puts epd
+  return epd[epd.index('id')+4..epd.index(';',epd.index('id')+4)-2]
 end
 
 def best_moves_from_epd(epd)

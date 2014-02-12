@@ -99,6 +99,7 @@ module Chess
                 a7: 48, b7: 49, c7: 50, d7: 51, e7: 52, f7: 53, g7: 54, h7: 55,
                 a8: 56, b8: 57, c8: 58, d8: 59, e8: 60, f8: 61, g8: 62, h8: 63 }
 
+    EVAL_GRAIN = 10
 
     def self.evaluate(position)
       $evaluation_calls += 1 
@@ -123,7 +124,7 @@ module Chess
     end
 
     def self.net_material(position) # net material value for side to move.
-      position.own_material - position.enemy_material
+      (position.own_material - position.enemy_material) / EVAL_GRAIN
     end
 
     def self.material(position, side) # =~ 1,040 at start

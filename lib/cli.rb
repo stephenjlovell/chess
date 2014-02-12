@@ -129,9 +129,14 @@ module Chess
     end
 
     def self.endgame?
-
-      # return true if player is checkmated
-
+      if Chess::current_game.game_over || Search::checkmate?(Chess::current_game.position)
+        if Chess::current_game.game_over
+          puts "Checkmate! You win!"
+        else
+          puts "Checkmate.  You've been defeated."
+        end
+        return true
+      end
       false
     end
 

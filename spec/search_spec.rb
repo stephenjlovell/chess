@@ -36,9 +36,12 @@ describe Chess::Search do
       #   puts "mtdf \n #{@s::select_move(pos, @depth){ @s::mtdf } }"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
-      it "from within an iterative deepening framework" do
-        puts "iterative_deepening_mtdf \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf } }"
-      end
+      # it "from within an iterative deepening framework" do
+      #   puts "iterative_deepening_mtdf \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf } }"
+      # end
+      # it "_step from within an iterative deepening framework" do
+      #   puts "iterative_deepening_mtdf_step \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf_step } }"
+      # end
     end
     describe "alpha beta" do
       # it "as a standalone algorithm" do
@@ -77,13 +80,13 @@ describe Chess::Search do
 
   # end
 
-  # describe "playing strength" do
-  #   let(:problems) { load_test_suite('./test_suites/kaufman.epd') }
+  describe "playing strength" do
+    let(:problems) { load_test_suite('./test_suites/kaufman.epd') }
 
-  #   it "should be able to take standardized tests" do
-  #     take_test([problems[0]], @depth)
-  #   end
-  # end
+    it "should be able to take standardized tests" do
+      take_test(problems[0..1], @depth)
+    end
+  end
 
 
 end

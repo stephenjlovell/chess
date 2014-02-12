@@ -25,14 +25,21 @@ module Chess
     PLY_VALUE = 4  # multiplier representing the depth value of 1 ply.  
                    # Used for fractional depth extensions / reductions.
     
-    EXT_CHECK = 0  # extend search when side to move is in check.
+    EXT_CHECK = 1  # extend search when side to move is in check.
 
-    EXT_PV = 0     # extend search when on the principal variation from previous iterative deepening.
+    EXT_PV = 1     # extend search when on the principal variation from previous iterative deepening.
 
-    EVAL_GRAIN = 100
+
 
     Performance = Struct.new(:depth, :eval_score, :m_nodes, :q_nodes, :all_nodes, :evals, 
                              :memory, :eff_branching, :avg_eff_branching)
+
+    def self.iterative_deepening_mtdf_step(max_depth=nil)
+      depth = max_depth || @max_depth
+      iterative_deepening(@max_depth/PLY_VALUE) do |guess, d, previous_pv, current_pv|
+        mtdf_step(guess, d, previous_pv, current_pv)
+      end
+    end
 
     def self.iterative_deepening_mtdf(max_depth=nil)
       depth = max_depth || @max_depth
@@ -94,16 +101,71 @@ module Chess
     def self.mtdf(g=nil, depth=nil, previous_pv=nil, parent_pv=nil) # incrementally sets the alpha-beta search window and call alpha_beta.
       g ||= alpha_beta_root(PLY_VALUE, -$INF, +$INF) # do a fixed-depth search for first guess
       depth ||= @max_depth
-      upper_bound = $INF
-      lower_bound = -$INF
-      while lower_bound < upper_bound do
-        beta = (g == lower_bound ? g+1 : g)
+      @lower_bound, @upper_bound = -$INF, $INF
+      while @lower_bound < @upper_bound do
+        beta = (g == @lower_bound ? g+1 : g)
         current_pv = Memory::PVStack.new
         previous_pv.reset_counter if previous_pv
-        best_move, g = alpha_beta_root(depth, beta-EVAL_GRAIN, beta, previous_pv, current_pv)
-        if g < beta then upper_bound = g else lower_bound = g end
+        best_move, g = alpha_beta_root(depth, beta-1, beta, previous_pv, current_pv)
+        if g < beta then @upper_bound = g else @lower_bound = g end
       end
-      return best_move, g, current_pv
+      return best_move, g
+    end
+
+    MTD_STEP_SIZE = 10
+
+    def self.mtdf_step(f=nil, depth=nil, previous_pv=nil, parent_pv=nil) # MTD-f with "convergence accelerator"
+      f ||= @node.value 
+      depth ||= @max_depth
+      @lower_bound, @upper_bound, step = -$INF, $INF, MTD_STEP_SIZE
+      stepped_up, stepped_down = false, false
+
+      while @lower_bound != @upper_bound do
+        r = f == @lower_bound ? f+1 : f
+        current_pv = Memory::PVStack.new
+        previous_pv.reset_counter if previous_pv
+        
+        best_move, f = alpha_beta_root(depth, r-1, r, previous_pv, current_pv)
+        return nil, -$INF if best_move = nil
+
+        if f < r 
+          @upper_bound = f
+          f = max(f-step, @lower_bound+1)
+          stepped_down = true
+        else
+          @lower_bound = f
+          f = min(f+step, @upper_bound+1)
+          stepped_up = true
+        end
+
+        if stepped_up && stepped_down
+          step /= 2
+        else
+          step *= 2 if step < (@upper_bound - @lower_bound)/2
+        end
+
+        # if upper_bound != $INF && lower_bound != -$INF
+        #   step /= 2
+        #   step = 0 if step < 10
+        # end
+        if @upper_bound == f
+          f -= step
+        else
+          f += step
+        end
+        f = @upper_bound if @upper_bound < f
+        f = @lower_bound if @lower_bound > f
+      end
+      return best_move, f
+    end
+
+
+    def self.max(x,y)
+      x > y ? x : y
+    end
+
+    def self.min(x,y)
+      x < y ? x : y
     end
 
     def self.alpha_beta_root(depth=nil, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil)
@@ -362,7 +424,7 @@ module Chess
         MoveGen::make!(@node, move)
         result = -alpha_beta(@node, PLY_VALUE, -$INF, $INF, nil, nil)
         MoveGen::unmake!(@node, move)
-        legal_moves = true unless result <= Pieces::KING_LOSS
+        legal_moves = true unless result <= Pieces::KING_LOSS / Evaluation::EVAL_GRAIN
       end
       !legal_moves
     end
@@ -377,8 +439,8 @@ module Chess
       @iid_minimum = @max_depth-PLY_VALUE*2 > PLY_VALUE*4 ? @max_depth-PLY_VALUE*2 : PLY_VALUE*4
       reset_counters
       Chess::current_game.clock.restart
-      best_move, value = block_given? ? yield : iterative_deepening_alpha_beta # use mtdf by default?
-      puts "Move selected: #{best_move.print}, Eval score: #{value}"
+      best_move, value = block_given? ? yield : iterative_deepening_mtdf_step # use mtdf by default?
+      puts "Move selected: #{best_move.print}, Eval score: #{value}" unless best_move.nil?
       return best_move
     end 
 

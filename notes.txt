@@ -16,8 +16,6 @@ EVALUATION ----
   Piece Square Tables
 
 
-Current Issues ----
-
 Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
   baseline: 46.596299 seconds
   12/30/13: 35.324076 seconds
@@ -27,6 +25,10 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
   incremental update: 9.475452 seconds
   iterative move gen and king saftey: 7.3749 seconds (26750 NPS)
   2/10/14 pseudolegal with king-loss checking: 3.419017 seconds (57835 NPS)
+
+Current Issues ----
+
+  Infinite loop when human player checkmates AI (!)
 
 To Do ----
   
