@@ -47,12 +47,6 @@ module Chess
 
     # Module interface
 
-    def self.make_unmake!(position, move)
-      make!(position, move)
-      yield 
-      unmake!(position, move)
-    end
-
     def self.make!(position, move) # Mutates position by making the specified move. 
       move.make!(position)        
       set_castle_flag(position, move)  # Old castle rights are cached in move for unmake.
@@ -71,6 +65,16 @@ module Chess
         pos.side_to_move, pos.enemy = :w, :b
       end
       pos.hash ^= move.hash ^ Memory::side_key
+    end
+
+    def self.flip_null(pos, enp_target)
+      if pos.side_to_move == :w
+        pos.side_to_move, pos.enemy = :b, :w
+      else
+        pos.side_to_move, pos.enemy = :w, :b
+      end
+
+      pos.hash ^= Memory::side_key ^ Memory::enp_key(enp_target)
     end
 
     WRQ_INIT = Location::get_location(2,2) # a1

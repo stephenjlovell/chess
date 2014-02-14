@@ -44,11 +44,10 @@ end
 Problem = Struct.new(:id, :position, :best_moves, :avoid_moves, :ai_response, :score)
 
 def load_test_suite(file)
-  raise "file #{file} not found" unless File.exists?(file)
+  raise "test suite #{file} not found" unless File.exists?(file)
   problems = []
-  file = File.readlines(file)
-  file.each do |line|
-    line = %q{line.chomp} 
+  File.readlines(file).each do |line|
+    line = %Q{#{line}}
     pos = Chess::Notation::epd_to_position(line)
     best_moves = best_moves_from_epd(line)
     avoid_moves = avoid_moves_from_epd(line)
@@ -59,7 +58,6 @@ def load_test_suite(file)
 end
 
 def id_from_epd(epd)
-  puts epd
   return epd[epd.index('id')+4..epd.index(';',epd.index('id')+4)-2]
 end
 
@@ -74,10 +72,12 @@ def avoid_moves_from_epd(epd)
 end
 
 def take_test(problems, depth=nil)
+  Chess::Search::reset_counters
   problems.each do |prob|
     move = Chess::Search::select_move(prob.position, depth)
     prob.ai_response = move
     prob.score = score_question(prob)
+
     puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves}"
     puts "AI Answer: #{prob.ai_response.print} Score: #{prob.score}"   
   end

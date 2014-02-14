@@ -34,8 +34,7 @@ module Chess # top-level application namespace.
   def self.new_game(ai_player = :b, time_limit = 30.0)
     puts "Starting a new game." 
     puts "AI color: #{ai_player}, Your color: #{FLIP_COLOR[ai_player]}"
-    Chess::Game.new(ai_player, time_limit)
-    return @current_game
+    @current_game = Chess::Game.new(ai_player, time_limit)
   end
 
   class Clock
@@ -104,7 +103,7 @@ module Chess # top-level application namespace.
   end
 
   class Game
-    attr_accessor :position, :halfmove_clock, :tt, :clock, :move_history, :game_over
+    attr_accessor :position, :halfmove_clock, :tt, :clock, :move_history, :winner
     attr_reader :ai_player, :opponent
     
     def initialize(ai_player = :b, time_limit = 30.0)
@@ -115,7 +114,6 @@ module Chess # top-level application namespace.
       @ai_player, @opponent = ai_player, FLIP_COLOR[ai_player]
       @tt = Memory::TranspositionTable.new
       $tt = @tt
-      @game_over = false
       @clock = Clock.new(time_limit)
       Chess::current_game = self
     end
@@ -125,6 +123,8 @@ module Chess # top-level application namespace.
     end
 
     def print # print game state info along with board representation
+      puts @position.to_s
+      puts "\n"
       opp_score, ai_score = score(@ai_player), score(@opponent)
       scoreboard = "| Move: #{move_clock} | Ply: #{@halfmove_count} " +
                    "| Turn: #{@position.side_to_move.to_s} " +
@@ -142,22 +142,14 @@ module Chess # top-level application namespace.
       [(1040 - (Evaluation::base_material(@position, enemy_color)/100)),0].max
     end
 
-    def stage  # used during evaluation
-      if @halfmove_count > 60
-        :late_game
-      elsif @halfmove_count > 30
-        :mid_game
-      else
-        :opening
-      end
-    end
-
     def undo_move
       @move_history.undo(@position)
+      self.print
     end
 
     def redo_move
       @move_history.redo(@position)
+      self.print
     end
 
     def save_move(position, move)
@@ -181,13 +173,19 @@ module Chess # top-level application namespace.
     def ai_move
       move = Search::select_move(@position)
       if move.nil?
-        game_over = true
-        end_turn
+        @winner = @opponent
         return nil
+      else
+        save_move(@position, move)
+        MoveGen::make!(@position, move)
+        # if opponent in check, do a 1-play search to determine if checkmate.
+        if @position.in_check? && Search::select_move(@position,1).nil?
+          @winner = @ai_player
+          return nil
+        else
+          end_turn
+        end
       end
-      save_move(@position, move)
-      MoveGen::make!(@position, move)
-      end_turn
     end
 
     private

@@ -30,15 +30,17 @@ module Chess
              { command: 'undo', description: 'undoes the most recent full move (undoing the most recent action for each side).' },
              { command: 'redo', description: 'replays the next full move.  Only available if move(s) have been undone.' },
              { command: 'print history', description: 'prints a list of the moves made by each player.' }, 
-             { command: 'print history details', description: 'prints the move list, along with the position in FEN format.' } ]
+             { command: 'print history details', description: 'prints the move list, along with the position in FEN format.' },
+             { command: 'load <FEN>', description: 'loads the chess position specified by <FEN> in FEN format.' },
+               command: 'fen', description: 'prints out the current position in FEN notation' ]
 
     def self.play # main CLI method.  Gets and responds to user input.
-      game = setup
-      return if game.nil?
+      return if setup.nil?
       input = ""
-      until quit?(input) || endgame? do
-        parse_input(game, input)
-        print "where would you like to move?  "
+      until quit?(input) do
+        parse_input(Chess::current_game, input)
+        break if winner
+        print "It's your turn.  Enter a command:  "
         $stdout.flush
         input = gets.chomp
       end
@@ -75,24 +77,26 @@ module Chess
       return nil if help?(input)
       if input == "undo"
         game.undo_move
-        game.print
       elsif input == "redo"
         game.redo_move
-        game.print
       elsif input == "print history"
         game.print_history
       elsif input == "print history details"
         game.print_history_details
+      elsif input == "fen"
+        puts game.position.to_s
+      elsif input[0..3] == "load"
+        load(input[5..-1])
       elsif !input.empty?
         move = parse_move(input)
         return nil unless move
-        game.human_move(move)
-        game.ai_move
+        game.human_move(move) 
+        game.ai_move          # if ai_move returns nil, AI is in checkmate. game.winner flag will be set.
       end
     end
 
     def self.quit?(input)
-      if input == "quit" || input == "q" || input == "exit"
+      if input == "quit" || input == "q" || input == "-q" || input == "exit"
         puts "Thanks for playing!  See you soon."
         return true
       end
@@ -100,14 +104,14 @@ module Chess
     end
 
     def self.help?(input)
-      if input == "help" || input == "h"
-        separator = "-"*37
+      if input == "help" || input == "h" || input == "-h"
+        separator = "-"*44
         puts "\n#{separator} RubyChess Help #{separator}"
         puts "To move one of your pieces, enter the square you want to move from, \n" + 
              "and the square the piece is moving to.  For example: a1a2 \n" +
              "To castle, simply move your king 2 squares to the left or right. \n"
         puts "The following commands are also available:\n\n" 
-        tp HELP, :command, description: { width: 201 }
+        tp HELP, :command, description: { width: 202 }
         puts "\n"
         return true
       end
@@ -128,16 +132,28 @@ module Chess
       end
     end
 
-    def self.endgame?
-      if Chess::current_game.game_over || Search::checkmate?(Chess::current_game.position)
-        if Chess::current_game.game_over
-          puts "Checkmate! You win!"
-        else
-          puts "Checkmate.  You've been defeated."
-        end
-        return true
+    def self.load(input)
+      begin
+        pos = Notation::fen_to_position(input)
+      rescue Notation::NotationFormatError => e
+        puts e.message
+        puts e.backtrace
+        return nil
       end
-      false
+      Chess::new_game(pos.enemy)
+      Chess::current_game.position = pos
+      Chess::current_game.print
+    end
+
+    def self.winner
+      return false if Chess::current_game.winner.nil?
+      if Chess::current_game.winner == Chess::current_game.opponent
+        puts "\nCheckmate! You win!! \n\n"
+      else
+        puts "\nCheckmate.  You've been defeated. \n\n"
+      end
+      Chess::current_game.print_history_details
+      true
     end
 
   end

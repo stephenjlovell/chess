@@ -20,66 +20,80 @@
 #-----------------------------------------------------------------------------------
 
 module Chess
-  module Evaluation # this module will contain all helper methods related to determining 
-                    # the heuristic value of a given chess position.
-      
-    PST = {  # Piece Square Tables              # Piece Square Tables derived from the following sources:
-      P: [  0,  0,  0,   0,   0,  0,  0,  0,    # http://www.youtube.com/watch?v=zSJF6jZ61w0,
-           10, 10,  0, -10, -10,  0, 10, 10,    # http://www.bluefever.net/Downloads/CH56.zip
-            5,  0,  0,   5,   5,  0,  0,  5,
-            0,  0, 10,  20,  20, 10,  0,  0,
-            5,  5,  5,  10,  10,  5,  5,  5,
-           10, 10, 10,  20,  20, 10, 10, 10,
-           20, 20, 20,  30,  30, 20, 20, 20,
-           30, 30, 30,  35,  35, 30, 30, 30 ],  # 
+  module Evaluation # this module provides a heuristic value for a given chess position.
+
+    BASE_PST = {  # Piece Square Tables for black.           
+
+      P: [ 0,   0,   0,   0,   0,   0,   0,   0,
+          -6,  -4,   1,   1,   1,   1,  -4,  -6,
+          -6,  -4,   1,   2,   2,   1,  -4,  -6,
+          -6,  -4,   2,   8,   8,   2,  -4,  -6,
+          -6,  -4,   5,  10,  10,   5,  -4,  -6,
+          -4,  -4,   1,   5,   5,   1,  -4,  -4,
+          -6,  -4,   1, -24, -24,   1,  -4,  -6,
+           0,   0,   0,   0,   0,   0,   0,   0 ],
 
 
-        #  A   B    C   D   E   F   G   H
-      N: [ 0, -10,  0,  0,  0,  0, -10, 0,
-           0,   0,  0,  5,  5,  0,   0, 0,
-           0,   0, 10, 10, 10, 10,   0, 0,
-           0,   0, 10, 20, 20, 10,   5, 0,
-           5,  10, 15, 20, 20, 15,  10, 5,
-           5,  10, 10, 20, 20, 10,  10, 5,
-           0,   0,  5, 10, 10,  5,   0, 0,
-           0,   0,  0,  0,  0,  0,   0, 0 ],
+      N: [ -8,  -8,  -8,  -8,  -8,  -8,  -8,  -8,
+           -8,   0,   0,   0,   0,   0,   0,  -8,
+           -8,   0,   4,   4,   4,   4,   0,  -8,
+           -8,   0,   4,   8,   8,   4,   0,  -8,
+           -8,   0,   4,   8,   8,   4,   0,  -8,
+           -8,   0,   4,   4,   4,   4,   0,  -8,
+           -8,   0,   1,   2,   2,   1,   0,  -8,
+           -8,  -12, -8,  -8,  -8,  -8, -12,  -8 ],
 
-      B: [ 0,  0, -10,  0,  0, -10,  0, 0,
-           0,  0,   0, 10, 10,   0,  0, 0,
-           0,  0,  10, 15, 15,  10,  0, 0,
-           0, 10,  15, 20, 20,  15, 10, 0,
-           0, 10,  15, 20, 20,  15, 10, 0,
-           0,  0,  10, 15, 15,  10,  0, 0,
-           0,  0,   0, 10, 10,   0,  0, 0,
-           0,  0,   0,  0,  0,   0,  0, 0 ],
 
-      R: [  0,  0,  5, 10, 10,  10,  0,  0,
-            0,  0,  5, 10, 10,  5,  0,  0,
-            0,  0,  5, 10, 10,  5,  0,  0,
-            0,  0,  5, 10, 10,  5,  0,  0,
-            0,  0,  5, 10, 10,  5,  0,  0,
-            0,  0,  5, 10, 10,  5,  0,  0,
-           25, 25, 25, 25, 25, 25, 25, 25,
-            0,  0,  5, 10, 10,  5,  0,  0 ],
+      B: [ -4,  -4,  -4,  -4,  -4,  -4,  -4,  -4,
+           -4,   0,   0,   0,   0,   0,   0,  -4,
+           -4,   0,   2,   4,   4,   2,   0,  -4,
+           -4,   0,   4,   6,   6,   4,   0,  -4,
+           -4,   0,   4,   6,   6,   4,   0,  -4,
+           -4,   1,   2,   4,   4,   2,   1,  -4,
+           -4,   2,   1,   1,   1,   1,   2,  -4,
+           -4,  -4, -12,  -4,  -4, -12,  -4,  -4 ],
 
-      Q: [ 0, 0, 0, 0, 0, 0, 0, 0, # placeholder table
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0 ],
 
-      K: [ 0, 5, 15, 0, 5, 0, 15, 0, # placeholder table
-           0, 0,  0, 0, 0, 0,  0, 0,
-           0, 0,  0, 0, 0, 0,  0, 0,
-           0, 0,  0, 0, 0, 0,  0, 0,
-           0, 0,  0, 0, 0, 0,  0, 0,
-           0, 0,  0, 0, 0, 0,  0, 0,
-           0, 0,  0, 0, 0, 0,  0, 0,
-           0, 0,  0, 0, 0, 0,  0, 0 ] 
+      R: [  5,   5,   5,   5,   5,   5,   5,   5,
+           20,  20,  20,  20,  20,  20,  20,  20,
+           -5,   0,   0,   0,   0,   0,   0,  -5,
+           -5,   0,   0,   0,   0,   0,   0,  -5,
+           -5,   0,   0,   0,   0,   0,   0,  -5,
+           -5,   0,   0,   0,   0,   0,   0,  -5,
+           -5,   0,   0,   0,   0,   0,   0,  -5,
+            0,   0,   0,   2,   2,   0,   0,   0 ],
+
+
+      Q: [  0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   1,   1,   1,   1,   0,   0,
+            0,   0,   1,   2,   2,   1,   0,   0,
+            0,   0,   2,   3,   3,   2,   0,   0,
+            0,   0,   2,   3,   3,   2,   0,   0,
+            0,   0,   1,   2,   2,   1,   0,   0,
+            0,   0,   1,   1,   1,   1,   0,   0,
+           -5,  -5,  -5,  -5,  -5,  -5,  -5,  -5 ]
+
     }
+
+    KING_BASE = {
+      false => [ -40, -40, -40, -40, -40, -40, -40, -40,   # false game
+                 -40, -40, -40, -40, -40, -40, -40, -40,
+                 -40, -40, -40, -40, -40, -40, -40, -40,
+                 -40, -40, -40, -40, -40, -40, -40, -40,
+                 -40, -40, -40, -40, -40, -40, -40, -40,
+                 -40, -40, -40, -40, -40, -40, -40, -40,
+                 -15, -15, -20, -20, -20, -20, -15, -15,
+                   0,  20,  30, -30,   0, -20,  30,  20 ],
+
+      true => [ 0,  10,  20,  30,  30,  20,  10,   0,   # true game 
+               10,  20,  30,  40,  40,  30,  20,  10,
+               20,  30,  40,  50,  50,  40,  30,  20,
+               30,  40,  50,  60,  60,  50,  40,  30,
+               30,  40,  50,  60,  60,  50,  40,  30,
+               20,  30,  40,  50,  50,  40,  30,  20,
+               10,  20,  30,  40,  40,  30,  20,  10,
+                0,  10,  20,  30,  30,  20,  10,   0 ] }
+
 
     MIRROR = [ 56, 57, 58, 59, 60, 61, 62, 63,
                48, 49, 50, 51, 52, 53, 54, 55,
@@ -99,7 +113,35 @@ module Chess
                 a7: 48, b7: 49, c7: 50, d7: 51, e7: 52, f7: 53, g7: 54, h7: 55,
                 a8: 56, b8: 57, c8: 58, d8: 59, e8: 60, f8: 61, g8: 62, h8: 63 }
 
-    EVAL_GRAIN = 10
+
+    def self.create_pst
+      pst = { w: { false => {}, true => {} }, b: { false => {}, true => {} } }
+      BASE_PST.each do |type, arr|
+        pst[:b][false][type] = arr
+        pst[:b][true][type] = arr
+      end
+      pst[:b][false][:K] = KING_BASE[false]
+      pst[:b][true][:K] = KING_BASE[true]
+
+      BASE_PST.each do |type, arr|
+        mirror = mirror_table(arr)
+        pst[:w][false][type] = mirror
+        pst[:w][true][type] = mirror   
+      end
+      pst[:w][false][:K] = mirror_table(KING_BASE[false])
+      pst[:w][true][:K] = mirror_table(KING_BASE[true])
+      return pst
+    end
+
+    def self.mirror_table(arr)
+      new_arr = Array.new(64, nil)
+      (0..63).each { |i| new_arr[i] = arr[MIRROR[i]] }
+      return new_arr
+    end
+
+    PST = create_pst
+
+    EVAL_GRAIN = 2
 
     def self.evaluate(position)
       $evaluation_calls += 1 
@@ -112,33 +154,50 @@ module Chess
 
     private
 
-    def self.mobility(position)  # if possible, 
-      # side, enemy = Chess::current_game.ai_player, Chess::current_game.opponent
-      # if position.board.king_in_check?(position, side)
-      #   -90
-      # elsif position.board.king_in_check?(position, enemy)
-      #   90
-      # else
+    def self.mobility(position)  
+      side, enemy = Chess::current_game.ai_player, Chess::current_game.opponent
+      if position.board.king_in_check?(position, side)
+        -90
+      elsif position.board.king_in_check?(position, enemy)
+        90
+      else
         0
-      # end
+      end
     end
 
     def self.net_material(position) # net material value for side to move.
       (position.own_material - position.enemy_material) / EVAL_GRAIN
     end
 
-    def self.material(position, side) # =~ 1,040 at start
-      position.pieces[side].inject(0) { |total, (key, piece)| total += adjusted_value(piece, key) }
+    def self.material(position, side, endgame=nil) # =~ 1,040 at start
+      position.pieces[side].inject(0) do |total, (key, piece)| 
+        total += adjusted_value(position, piece, key, endgame)
+      end
     end
 
-    def self.adjusted_value(piece, location, game_stage=nil)
-      return piece.class.value + pst_value(piece, location)
+    def self.adjusted_value(position, piece, loc, endgame=nil)
+      piece.class.value + pst_value(position, piece, loc, endgame)
+    end    
+
+    def self.pst_value(position, piece, loc, endgame=nil)
+      endgame = position.endgame?(piece.color) if endgame.nil?
+      type, sq = piece.class.type, SQUARES[loc.to_sym]
+      PST[piece.color][endgame][type][sq]
     end
 
-    def self.pst_value(piece, location, game_stage = nil)
-      pst, sym = PST[piece.class.type], location.to_sym
-      piece.color == :w ? pst[SQUARES[sym]] : pst[MIRROR[SQUARES[sym]]]
-    end
+
+    # def self.adjusted_value(piece, location, game_stage=nil)
+
+    #   return piece.class.value + pst_value(piece, location)
+    
+    # end
+
+    # def self.pst_value(piece, location, game_stage = nil)
+    #   pst, sym = PST[piece.class.type], location.to_sym
+
+    #   # piece.color == :w ? pst[SQUARES[sym]] : pst[MIRROR[SQUARES[sym]]]
+    #   piece.color == :w ? pst[MIRROR[SQUARES[sym]]] : pst[SQUARES[sym]]
+    # end
 
   end
 end 

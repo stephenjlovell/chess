@@ -32,7 +32,7 @@ module Chess
         @enp_target, @castle = nil, 0b1111
         @hash = @board.hash  # add hash of initial castling rights
         @king_location = set_king_location
-        @material = { w: Evaluation::material(self, :w), b: Evaluation::material(self, :b) } 
+        @material = { w: Evaluation::material(self, :w, false), b: Evaluation::material(self, :b, false) } 
       end
 
       def own_pieces
@@ -73,6 +73,10 @@ module Chess
 
       def value
         Evaluation::evaluate(self)
+      end
+
+      def endgame?(side)
+        @material[side] <= Pieces::ENDGAME_VALUE
       end
 
       def in_check?

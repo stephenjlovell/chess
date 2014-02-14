@@ -113,7 +113,7 @@ FactoryGirl.define do
     position { FactoryGirl.build(:position) }
     tt { FactoryGirl.build(:transposition_table) }
     clock { FactoryGirl.build(:clock)}
-    initialize_with { new(:w, 180) }
+    initialize_with { new(:w, 30) }
 
     factory :test_game do
       position { FactoryGirl.build(:test_position) }

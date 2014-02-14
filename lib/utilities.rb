@@ -36,15 +36,23 @@ module Chess
     class InvalidMoveError < StandardError
     end
 
+    class NotationFormatError < StandardError
+    end
+
     def self.move_to_str(move)
       move.to_s
     end
 
     def self.str_to_move(pos, str) # create a move object from long algebraic chess notation (used by UCI).
       # Valid examples:  e2e4, e7e5, e1g1 (white short castling), e7e8q (for promotion)
-      from = Location::string_to_location(str[0..1])
-      to = Location::string_to_location(str[2..3])
-      raise InvalidMoveError, 'invalid square coordinates given' if from.nil? || to.nil?
+      begin
+        from = Location::string_to_location(str[0..1])
+        to = Location::string_to_location(str[2..3])
+        raise if from.nil? || to.nil?
+      rescue
+        raise InvalidMoveError, 'invalid square coordinates given' 
+      end
+
       raise InvalidMoveError, 'This square is already occupied by one of your pieces.' if pos.own_pieces[to]
 
       piece, enemy = pos.own_pieces[from], pos.enemy_pieces[to]
@@ -52,7 +60,7 @@ module Chess
 
       own_type = piece.class.type
       if enemy # move is a capture, but not an en-passant capture.
-        if own_type== :K
+        if own_type == :K
           return Move::Factory.build(piece, from, to, :king_capture, enemy)
         elsif own_type == :P && to.r == ENEMY_BACK_ROW[piece.color]
           return Move::Factory.build(piece, from, to, :pawn_promotion_capture, enemy) # implicit pawn promotion
@@ -80,8 +88,11 @@ module Chess
             end    
           end
         when :K
-          if to + [0,2] == from || to + [0,-2] == from
-            if to + [0,-2] == from # castle queen-side
+          if from + [0,2] == to || from + [0,-2] == to
+
+            # add checks for castling rights here.
+
+            if from + [0,-2] == to # castle queen-side
               if from == MoveGen::WK_INIT
                 rook_from, rook_to = MoveGen::WRQ_INIT, Location::get_location(2,5)
                 rook = pos.own_pieces[rook_from]
@@ -98,6 +109,7 @@ module Chess
                 rook = pos.own_pieces[rook_from]
               end
             end
+
             raise InvalidMoveError, 'invalid castle move' if rook.nil?
             return Move::Factory.build(piece, from, to, :castle, rook, rook_from, rook_to) 
           else
@@ -124,7 +136,6 @@ module Chess
       fen_enp = position.enp_target ? position.enp_target.to_s : '-'
       fen_half = position.halfmove_clock.to_s  
       fen_full = ((position.halfmove_clock/2)+1).to_s  # fullmove number
-
       [fen_board, fen_side, fen_castle, fen_enp, fen_half, fen_full].join(' ')
     end
 
@@ -159,22 +170,30 @@ module Chess
     end
 
     def self.epd_to_position(epd)
-      fen = epd.split(' ')[0..3].join(' ')
-      fen_to_position(fen)
+      begin
+        fen = epd.split(' ')[0..3].join(' ')
+        fen_to_position(fen)
+      rescue NotationFormatError => e
+        raise e
+      end
     end
 
 
     def self.fen_to_position(fen) # Parses a FEN string and returns an equivalent position object.
-      fields = fen.split(' ') # break the FEN string into its constituent fields
-      board = fen_to_board(fields[0])
-      pieces = Pieces::setup(board)
-      side_to_move = fields[1].to_sym
-      castle = fen_to_castle(fields[2])
-      enp_target = fen_to_enp(fields[3])
-      halfmove_clock = fields[4] ? fields[4].to_i : 0
-      position = Position::ChessPosition.new(board, pieces, side_to_move, halfmove_clock)
-      position.castle, position.enp_target = castle, enp_target
-      return position
+      begin
+        fields = fen.split(' ') # break the FEN string into its constituent fields
+        board = fen_to_board(fields[0])
+        pieces = Pieces::setup(board)
+        side_to_move = fields[1].to_sym
+        castle = fen_to_castle(fields[2])
+        enp_target = fen_to_enp(fields[3])
+        halfmove_clock = fields[4] ? fields[4].to_i : 0
+        position = Position::ChessPosition.new(board, pieces, side_to_move, halfmove_clock)
+        position.castle, position.enp_target = castle, enp_target
+        return position
+      rescue
+        raise NotationFormatError, "could not convert fen to position: #{fen}"
+      end
     end
 
     IS_NUMERIC = /\d/

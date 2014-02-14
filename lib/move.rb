@@ -63,7 +63,7 @@ module Chess
         make_relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
         position.enemy_pieces.delete(to)
-        @enemy_material -= Evaluation::adjusted_value(@captured_piece, to)
+        @enemy_material -= Evaluation::adjusted_value(position, @captured_piece, to)
       end
 
       def unmake!(position, piece, from, to)
@@ -115,7 +115,8 @@ module Chess
 
       def make_relocate_piece(position, piece, from, to)
         relocate_piece(position, piece, from, to)
-        @own_material += (Evaluation::pst_value(piece, to) - Evaluation::pst_value(piece, from))
+        @own_material += (Evaluation::pst_value(position, piece, to) 
+                          - Evaluation::pst_value(position, piece, from))
       end
 
       def relocate_piece(position, piece, from, to)
@@ -162,7 +163,7 @@ module Chess
         position.own_king_location = to  # update king location
         make_clock_adjustment(position)
         position.enemy_pieces.delete(to)
-        @enemy_material -= Evaluation::adjusted_value(@captured_piece, to)
+        @enemy_material -= Evaluation::adjusted_value(position, @captured_piece, to)
       end
 
       def unmake!(position, piece, from, to)
@@ -187,7 +188,7 @@ module Chess
         make_clock_adjustment(position)
         position.board[@enp_target] = nil
         position.enemy_pieces.delete(@enp_target)
-        @enemy_material -= Evaluation::adjusted_value(@captured_piece, @enp_target)
+        @enemy_material -= Evaluation::adjusted_value(position, @captured_piece, @enp_target)
       end
 
       def unmake!(position, piece, from, to)
@@ -240,7 +241,8 @@ module Chess
       def make!(position, piece, from, to)
         relocate_piece(position, @queen, from, to) # do not add PST delta for this move, since the moved piece
         make_clock_adjustment(position)            # is replaced by a new queen.
-        @own_material += (Evaluation::adjusted_value(@queen, to) - Evaluation::adjusted_value(piece, from))
+        @own_material += (Evaluation::adjusted_value(position, @queen, to) 
+                          - Evaluation::adjusted_value(position, piece, from))
       end
 
       def unmake!(position, piece, from, to)
@@ -269,8 +271,9 @@ module Chess
         relocate_piece(position, @queen, from, to) # do not add PST delta for this move, since the moved piece
         make_clock_adjustment(position)            # is replaced by a new queen.
         position.enemy_pieces.delete(to)
-        @own_material += (Evaluation::adjusted_value(@queen, to) - Evaluation::adjusted_value(piece, from))
-        @enemy_material -= Evaluation::adjusted_value(@captured_piece, to)
+        @own_material += (Evaluation::adjusted_value(position, @queen, to) 
+                          - Evaluation::adjusted_value(position, piece, from))
+        @enemy_material -= Evaluation::adjusted_value(position, @captured_piece, to)
       end
 
       def unmake!(position, piece, from, to)

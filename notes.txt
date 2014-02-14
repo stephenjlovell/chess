@@ -30,6 +30,13 @@ Current Issues ----
 
   Infinite loop when human player checkmates AI (!)
 
+
+  Positions from which AI makes blunders: 
+    allows queen to die:
+    rnb1kbnr/ppp2ppp/3p4/4p3/7q/2N3P1/PPPPPP1P/R1BQKBNR b KQkq - 0 1
+
+
+
 To Do ----
   
   Add hashing of castling rights
@@ -53,6 +60,7 @@ To Do ----
     -pawn promotions
 
   Add separate PSTs for early- and late-game in Evaluation module.
+
 
 
 

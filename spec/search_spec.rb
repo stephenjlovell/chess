@@ -25,7 +25,7 @@ describe Chess::Search do
 
   before do 
     @s = Chess::Search
-    @depth = 6
+    @depth = 4
   end
   let(:game) { FactoryGirl.build(:test_game) }
   let(:pos) { game.position }
@@ -73,18 +73,18 @@ describe Chess::Search do
   #     @s::select_move(sanity_check,@depth).to_s.should == "a1a2"
   #   end
 
-  #   # it "should avoid search explosion on more challenging problems" do 
-  #   #   game.position = puzzle
-  #   #   @s::select_move(puzzle, @depth)
-  #   # end
+  # #   # it "should avoid search explosion on more challenging problems" do 
+  # #   #   game.position = puzzle
+  # #   #   @s::select_move(puzzle, @depth)
+  # #   # end
 
   # end
 
   describe "playing strength" do
     let(:problems) { load_test_suite('./test_suites/kaufman.epd') }
-
+    
     it "should be able to take standardized tests" do
-      take_test(problems[0..1], @depth)
+      take_test(problems, @depth)
     end
   end
 
