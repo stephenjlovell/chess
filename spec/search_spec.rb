@@ -25,7 +25,7 @@ describe Chess::Search do
 
   before do 
     @s = Chess::Search
-    @depth = 4
+    @depth = 5
   end
   let(:game) { FactoryGirl.build(:test_game) }
   let(:pos) { game.position }
@@ -81,7 +81,7 @@ describe Chess::Search do
   # end
 
   describe "playing strength" do
-    let(:problems) { load_test_suite('./test_suites/kaufman.epd') }
+    let(:problems) { load_test_suite('./test_suites/win_at_chess.epd') }
     
     it "should be able to take standardized tests" do
       take_test(problems, @depth)

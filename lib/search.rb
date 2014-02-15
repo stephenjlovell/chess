@@ -322,24 +322,24 @@ module Chess
       # Don't use Null Move Pruning with MTD-f while near the root.  This prevents occasional blunders where
       # a null move prunes away critical part of the tree. 
 
-      if (!@mtdf || depth < @max_depth-2*PLY_VALUE) && depth > 2*PLY_VALUE &&
-      can_null && @node.value > beta && !@node.endgame?(@node.side_to_move) && !in_check
+      # if (!@mtdf || depth < @max_depth-2*PLY_VALUE) && depth > 2*PLY_VALUE &&
+      # can_null && @node.value > beta && !@node.endgame?(@node.side_to_move) && !in_check
         
-        enp = @node.enp_target
-        MoveGen::flip_null(@node, enp)
-        @node.enp_target = nil
+      #   enp = @node.enp_target
+      #   MoveGen::flip_null(@node, enp)
+      #   @node.enp_target = nil
 
-        # reduction = depth > 5*PLY_VALUE ? 4*PLY_VALUE : 3*PLY_VALUE
-        reduction = depth/2
-        result = -alpha_beta(@node, depth-reduction*PLY_VALUE, -beta, -beta+1, previous_pv, current_pv, false, false)        
+      #   # reduction = depth > 5*PLY_VALUE ? 4*PLY_VALUE : 3*PLY_VALUE
+      #   reduction = depth/2
+      #   result = -alpha_beta(@node, depth-reduction*PLY_VALUE, -beta, -beta+1, previous_pv, current_pv, false, false)        
 
-        MoveGen::flip_null(@node, enp)
-        @node.enp_target = enp
+      #   MoveGen::flip_null(@node, enp)
+      #   @node.enp_target = enp
 
-        if result >= beta
-          return $tt.flag_and_store(@node, depth, result, alpha, beta, best_move)
-        end 
-      end
+      #   if result >= beta
+      #     return $tt.flag_and_store(@node, depth, result, alpha, beta, best_move)
+      #   end 
+      # end
 
       # before looping over moves, get applicable killer moves.
 
