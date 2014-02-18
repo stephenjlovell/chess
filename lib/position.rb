@@ -106,7 +106,11 @@ module Chess
 
       # These methods will be re-written to make use of Move::MoveList class:
 
+
+
       def get_moves(enhanced_sort = false) # returns a sorted array of all possible moves for the current player.
+        all_moves = []
+
         promotion_captures, captures, promotions, moves = [], [], [], []
 
         own_pieces.each do |key, piece| 
@@ -120,9 +124,11 @@ module Chess
 
         # ideally, killer moves should be searched before captures...
         # append move lists together in reasonable order:
-        promotion_captures + captures + promotions + MoveGen::get_castles(self) + moves 
+        moves = promotion_captures + captures + promotions + MoveGen::get_castles(self) + moves 
       end
       alias :edges :get_moves
+
+
 
       def get_captures # returns a sorted array of all possible moves for the current player.
         captures, promotion_captures = [], []

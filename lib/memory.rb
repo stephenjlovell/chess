@@ -22,7 +22,7 @@ module Chess
 
     PSQ = create_key_array { piece_hash }
     ENP = create_key_array { create_key }
-    SIDE = 1  # faster, but does this increase risk of collisions vs. using a complete 64-bit key?
+    SIDE = 1
 
     def self.side_key
       SIDE
@@ -108,8 +108,10 @@ module Chess
     class TranspositionTable # this class generates a hash code for each explored position  
       # using a Zobrist hashing algorithm, and stores the value of each position.
       # A single instance of this class is contained in Chess::Game instances.
+      
       def initialize
-        @table = {}
+        # @table = {}
+        @table = GoogleHashDenseLongToRuby.new
       end
   
       def flag_and_store(node, depth, best_value, alpha, beta, best_move=nil)
@@ -125,17 +127,36 @@ module Chess
 
       def store(node, depth, type, value, best_move=nil)
         h = node.hash
-        if @table[h].nil? || depth >= @table[h].depth   # simple depth-based replacement scheme.
+        if !@table.has_key?(h) || depth >= @table[h].depth   # simple depth-based replacement scheme.
           @table[h] = Entry.new(depth, type, value, best_move)
         end
         return @table[h].value
       end
 
-      def retrieve(node)
-        h = node.hash
-        $memory_calls += 1 if @table[h]
-        @table[h]
+      def probe(node, hash_move, depth, alpha, beta)
+        if contains?(node)
+          entry = retrieve(node)
+          hash_move = entry.best_move
+          if entry.depth >= depth # if entry was searched to greater than current depth, use instead of searching.
+            return entry.value if entry.type == :exact_value
+            return alpha if entry.type == :lower_bound && entry.value <= alpha
+            return beta if entry.type == :upper_bound && entry.value >= beta
+          end
+        end
+        return nil # sentinel indicating probe was unsuccessful in creating an immediate search cutoff.
       end
+
+
+
+      def contains?(node)
+        @table.has_key?(node.hash)
+      end
+
+      def retrieve(node)
+        $memory_calls += 1
+        @table[node.hash]
+      end
+
     end # end TranspostionTable class
 
   end

@@ -361,6 +361,10 @@ module Chess
         @strategy.class
       end
 
+      def eql?(other_move) # only used for comparing two moves from the same position.
+        @from == other_move.from && @to == other_move.to
+      end
+
       def hash # Uses Zobrist hashing to represent the move as a 64-bit unsigned long int.
         @hash ||= @strategy.hash(@piece, @from, @to) ^ Memory::enp_key(@enp_target)
       end

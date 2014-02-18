@@ -38,6 +38,13 @@ Current Issues ----
 
 
 To Do ----
+
+
+  Use a ruby binding to google sparse hash library to replace Hash in TT.
+
+
+  calculate @own_material, @enemy_material when moves are created => use change in adjusted material as a move ordering heuristic for non-captures.
+
   
   Add hashing of castling rights
 

@@ -178,6 +178,9 @@ module Chess
       parent_pv ||= Memory::PVStack.new
       current_pv = Memory::PVStack.new
 
+      pv_move, hash_move, iid_move = nil, nil, nil
+      hash_value = nil
+
       result, best_value, best_move = -$INF, -$INF, nil
 
       pv_move = previous_pv.next_move if previous_pv
@@ -201,18 +204,9 @@ module Chess
           return best_move, result
         end
       end
-
-      entry = $tt.retrieve(@node)
-      if entry && entry.depth >= depth
-        if entry.type == :exact_value
-          return entry.best_move, entry.value  # retrieve PV from entry.pv
-        elsif entry.type == :lower_bound && entry.value > alpha
-          alpha = entry.value 
-        elsif entry.type == :upper_bound && entry.value < beta
-          beta = entry.value
-        end
-        return entry.best_move, entry.value if alpha >= beta # retrieve PV from entry.pv
-      end
+      
+      # allow use of hash move for ordering at root, but not to truncate search.
+      $tt.probe(@node, hash_move, depth, alpha, beta)
 
       @node.edges.each do |move|
         $main_calls += 1
@@ -247,6 +241,9 @@ module Chess
         return $tt.flag_and_store(@node, depth, best_value, alpha, beta)  
       end
 
+      pv_move, hash_move, iid_move = nil, nil, nil
+      hash_value = nil
+
       result, best_value, best_move = -$INF, -$INF, nil
       current_pv = Memory::PVStack.new
 
@@ -276,25 +273,13 @@ module Chess
           end
         end
       end
-      
 
-      entry = $tt.retrieve(@node)  # then probe the transposition table for a hash move
-      if entry && entry.depth >= depth
-        if entry.type == :exact_value
-          return entry.value
-        elsif entry.type == :lower_bound && entry.value > alpha
-          alpha = entry.value 
-        elsif entry.type == :upper_bound && entry.value < beta
-          beta = entry.value
-        end
-        if alpha >= beta
-          return entry.value 
-        end
-      end
+      hash_value = $tt.probe(@node, hash_move, depth, alpha, beta)
+      return hash_value unless hash_value.nil?
 
 
       # if no move available from PV or memory, use IID to get a decent first move.
-      if !on_pv && !entry && depth >= @iid_minimum
+      if !on_pv && !hash_move && depth >= @iid_minimum
         # this is only called at high depths where the cost/benefit is more favorable.
         move, result = internal_iterative_deepening(depth/3)
 
@@ -323,30 +308,30 @@ module Chess
       # a null move prunes away critical part of the tree. 
 
       # if (!@mtdf || depth < @max_depth-2*PLY_VALUE) && depth > 2*PLY_VALUE &&
-      # can_null && @node.value > beta && !@node.endgame?(@node.side_to_move) && !in_check
+      if depth > 2*PLY_VALUE && can_null && @node.value > beta && !@node.endgame?(@node.side_to_move) && !in_check
         
-      #   enp = @node.enp_target
-      #   MoveGen::flip_null(@node, enp)
-      #   @node.enp_target = nil
+        enp = @node.enp_target
+        MoveGen::flip_null(@node, enp)
+        @node.enp_target = nil
 
-      #   # reduction = depth > 5*PLY_VALUE ? 4*PLY_VALUE : 3*PLY_VALUE
-      #   reduction = depth/2
-      #   result = -alpha_beta(@node, depth-reduction*PLY_VALUE, -beta, -beta+1, previous_pv, current_pv, false, false)        
+        # reduction = depth > 5*PLY_VALUE ? 4*PLY_VALUE : 3*PLY_VALUE
+        reduction = depth/2
+        result = -alpha_beta(@node, depth-reduction*PLY_VALUE, -beta, -beta+1, previous_pv, current_pv, false, false)        
 
-      #   MoveGen::flip_null(@node, enp)
-      #   @node.enp_target = enp
+        MoveGen::flip_null(@node, enp)
+        @node.enp_target = enp
 
-      #   if result >= beta
-      #     return $tt.flag_and_store(@node, depth, result, alpha, beta, best_move)
-      #   end 
-      # end
+        if result >= beta
+          return $tt.flag_and_store(@node, depth, result, alpha, beta, best_move)
+        end 
+      end
 
       # before looping over moves, get applicable killer moves.
 
-      # Ideally PV move, IID move, and killers to be generated and appended to move list by MoveGen.
+      # pass pv_move, hash_move, iid_move into MoveGen
 
       legal_moves = false
-      @node.edges(on_pv).each do |move|  # expend additional move ordering effort when at PV nodes.
+      @node.edges(on_pv, pv_move, hash_move, iid_move).each do |move|  # expend additional move ordering effort when at PV nodes.
         $main_calls += 1
 
         MoveGen::make!(@node, move)
@@ -368,7 +353,7 @@ module Chess
 
       unless legal_moves  # if no legal moves available, it's either a draw or checkmate.
         best_value = in_check ? -(Pieces::MATE + @i_depth - depth/PLY_VALUE) : 0 # mate in 1 is more valuable than mate in 2
-        return $tt.store(@node, @max_depth, :exact_value, best_value) 
+        return $tt.store(@node, @max_depth, :exact_value, best_value, nil) 
       end
 
       $tt.flag_and_store(@node, depth, best_value, alpha, beta, best_move)
@@ -376,17 +361,11 @@ module Chess
 
     def self.quiescence(node, depth, alpha, beta)  # quiesence nodes are not part of the principal variation.
 
-      entry = $tt.retrieve(@node)
-      if entry && entry.depth >= depth
-        if entry.type == :exact_value
-          return entry.value 
-        elsif entry.type == :lower_bound && entry.value > alpha
-          alpha = entry.value 
-        elsif entry.type == :upper_bound && entry.value < beta
-          beta = entry.value
-        end
-        return entry.value if alpha >= beta
-      end
+      pv_move, hash_move, iid_move = nil, nil, nil
+      hash_value = nil
+
+      hash_value = $tt.probe(@node, hash_move, depth, alpha, beta)
+      return hash_value unless hash_value.nil?
 
       best_value = @node.value  # assume 'standing pat' lower bound
       return best_value if best_value >= beta  
