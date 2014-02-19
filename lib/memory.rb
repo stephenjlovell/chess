@@ -110,8 +110,8 @@ module Chess
       # A single instance of this class is contained in Chess::Game instances.
       
       def initialize
-        # @table = {}
-        @table = GoogleHashDenseLongToRuby.new
+        @table = {}
+        # @table = GoogleHashDenseLongToRuby.new
       end
   
       def flag_and_store(node, depth, best_value, alpha, beta, best_move=nil)
@@ -133,17 +133,17 @@ module Chess
         return @table[h].value
       end
 
-      def probe(node, hash_move, depth, alpha, beta)
+      def probe(node, depth, alpha, beta, first_moves=nil)
         if contains?(node)
           entry = retrieve(node)
-          hash_move = entry.best_move
           if entry.depth >= depth # if entry was searched to greater than current depth, use instead of searching.
             return entry.value if entry.type == :exact_value
             return alpha if entry.type == :lower_bound && entry.value <= alpha
             return beta if entry.type == :upper_bound && entry.value >= beta
           end
+          first_moves << entry.best_move if first_moves && entry.best_move
         end
-        return nil # sentinel indicating probe was unsuccessful in creating an immediate search cutoff.
+        return nil  # sentinel indicating probe was unsuccessful in creating an immediate search cutoff.
       end
 
 

@@ -27,7 +27,7 @@ module Chess
     
     EXT_CHECK = 1  # extend search when side to move is in check.
 
-    EXT_PV = 1     # extend search when on the principal variation from previous iterative deepening.
+    EXT_PV = 0     # extend search when on the principal variation from previous iterative deepening.
 
     MTD_STEP_SIZE = 5 # 
 
@@ -178,44 +178,23 @@ module Chess
       parent_pv ||= Memory::PVStack.new
       current_pv = Memory::PVStack.new
 
-      pv_move, hash_move, iid_move = nil, nil, nil
-      hash_value = nil
+      first_moves = []
 
       result, best_value, best_move = -$INF, -$INF, nil
 
       pv_move = previous_pv.next_move if previous_pv
-      if pv_move && @node.avoids_check?(pv_move)  # no illegal moves allowed at root.
-        $main_calls += 1
-
-        MoveGen::make!(@node, pv_move)
-        result = -alpha_beta(@node, depth-PLY_VALUE, -beta, -alpha, previous_pv, current_pv, true)
-        MoveGen::unmake!(@node, pv_move)
-
-        if result > best_value
-          best_value = result 
-          best_move = pv_move
-        end
-        if best_value > alpha  # child @node now a PV @node.
-          alpha = best_value
-          append_pv(parent_pv, current_pv, pv_move)
-        end
-        if best_value >= beta
-          result = $tt.flag_and_store(@node, depth, best_value, alpha, beta, best_move)
-          return best_move, result
-        end
-      end
+      first_moves << pv_move if pv_move
       
       # allow use of hash move for ordering at root, but not to truncate search.
-      $tt.probe(@node, hash_move, depth, alpha, beta)
+      $tt.probe(@node, depth, alpha, beta, first_moves)
 
-      @node.edges.each do |move|
+      @node.edges(true, first_moves).each do |move|
         $main_calls += 1
 
         next unless @node.avoids_check?(move)  # no illegal moves allowed at root.
 
         MoveGen::make!(@node, move)
         result = -alpha_beta(@node, depth-PLY_VALUE, -beta, -alpha, previous_pv, current_pv)
-        # puts "#{move.print}: #{result}"
         MoveGen::unmake!(@node, move)
 
         if result > best_value
@@ -241,8 +220,7 @@ module Chess
         return $tt.flag_and_store(@node, depth, best_value, alpha, beta)  
       end
 
-      pv_move, hash_move, iid_move = nil, nil, nil
-      hash_value = nil
+      first_moves = []
 
       result, best_value, best_move = -$INF, -$INF, nil
       current_pv = Memory::PVStack.new
@@ -253,61 +231,20 @@ module Chess
 
       if on_pv  # try the PV move first
         pv_move = previous_pv.next_move
-        if pv_move
-          MoveGen::make!(@node, pv_move)
-          result = -alpha_beta(@node, depth-PLY_VALUE+EXT_PV+ext_check, -beta, -alpha, previous_pv, current_pv, true)
-          MoveGen::unmake!(@node, pv_move)
-
-          legal_moves = true unless result <= Pieces::KING_LOSS
-
-          if result > best_value
-            best_value = result 
-            best_move = pv_move
-          end
-          if best_value > alpha # child node now a PV node.
-            alpha = best_value
-            append_pv(parent_pv, current_pv, pv_move)
-          end
-          if best_value >= beta
-            return $tt.flag_and_store(@node, depth, best_value, alpha, beta, best_move)
-          end
-        end
+        first_moves << pv_move if pv_move
       end
 
-      hash_value = $tt.probe(@node, hash_move, depth, alpha, beta)
+      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)
       return hash_value unless hash_value.nil?
 
-
       # if no move available from PV or memory, use IID to get a decent first move.
-      if !on_pv && !hash_move && depth >= @iid_minimum
-        # this is only called at high depths where the cost/benefit is more favorable.
-        move, result = internal_iterative_deepening(depth/3)
-
-        MoveGen::make!(@node, move)
-        result = -alpha_beta(@node, depth-PLY_VALUE+ext_check, -beta, -alpha, previous_pv, current_pv)
-        MoveGen::unmake!(@node, move)
-
-        legal_moves = true unless result <= Pieces::KING_LOSS
-
-        if result > best_value
-          best_value = result 
-          best_move = move
-        end
-        if best_value > alpha # child @node now a PV @node.
-          alpha = best_value
-          append_pv(parent_pv, current_pv, move)
-        end
-        if best_value >= beta
-          return $tt.flag_and_store(@node, depth, best_value, alpha, beta, best_move)
-        end
+      if first_moves.empty? && depth >= @iid_minimum # only called at high depth where cost/benefit is more favorable.
+        iid_move, result = internal_iterative_deepening(depth/2)
+        first_moves << iid_move if iid_move
       end
 
       # Null Move Pruning
 
-      # Don't use Null Move Pruning with MTD-f while near the root.  This prevents occasional blunders where
-      # a null move prunes away critical part of the tree. 
-
-      # if (!@mtdf || depth < @max_depth-2*PLY_VALUE) && depth > 2*PLY_VALUE &&
       if depth > 2*PLY_VALUE && can_null && @node.value > beta && !@node.endgame?(@node.side_to_move) && !in_check
         
         enp = @node.enp_target
@@ -322,7 +259,7 @@ module Chess
         @node.enp_target = enp
 
         if result >= beta
-          return $tt.flag_and_store(@node, depth, result, alpha, beta, best_move)
+          return beta
         end 
       end
 
@@ -331,7 +268,7 @@ module Chess
       # pass pv_move, hash_move, iid_move into MoveGen
 
       legal_moves = false
-      @node.edges(on_pv, pv_move, hash_move, iid_move).each do |move|  # expend additional move ordering effort when at PV nodes.
+      @node.edges(on_pv, first_moves).each do |move|  # expend additional move ordering effort when at PV nodes.
         $main_calls += 1
 
         MoveGen::make!(@node, move)
@@ -344,7 +281,7 @@ module Chess
           best_value = result 
           best_move = move
         end
-        if best_value > alpha # child @node now a PV @node.
+        if best_value > alpha # child node is part of pv.
           alpha = best_value
           append_pv(parent_pv, current_pv, move)
         end
@@ -361,10 +298,7 @@ module Chess
 
     def self.quiescence(node, depth, alpha, beta)  # quiesence nodes are not part of the principal variation.
 
-      pv_move, hash_move, iid_move = nil, nil, nil
-      hash_value = nil
-
-      hash_value = $tt.probe(@node, hash_move, depth, alpha, beta)
+      hash_value = $tt.probe(@node, depth, alpha, beta)
       return hash_value unless hash_value.nil?
 
       best_value = @node.value  # assume 'standing pat' lower bound
@@ -438,7 +372,7 @@ module Chess
       $main_calls, $quiescence_calls, $evaluation_calls, $memory_calls, $mtdf_ct = 0, 0, 0, 0, 0
     end
 
-    def self.select_move(node, max_depth=5)
+    def self.select_move(node, max_depth=6)
       @node, @max_depth = node, max_depth * PLY_VALUE  # Use class instance variables rather than class variables.
 
       @iid_minimum = @max_depth-PLY_VALUE*2 > PLY_VALUE*4 ? @max_depth-PLY_VALUE*2 : PLY_VALUE*4

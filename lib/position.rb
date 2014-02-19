@@ -108,23 +108,23 @@ module Chess
 
 
 
-      def get_moves(enhanced_sort = false) # returns a sorted array of all possible moves for the current player.
-        all_moves = []
-
+      def get_moves(enhanced_sort=false, first_moves=[]) 
         promotion_captures, captures, promotions, moves = [], [], [], []
 
         own_pieces.each do |key, piece| 
           piece.get_moves(self, key, moves, captures, promotions, promotion_captures)
         end
 
-        # if on the pv, invest some extra time ordering moves.  otherwise, use MVV-LVA
+        # if on the pv, invest some extra time ordering captures.  otherwise, use MVV-LVA
         enhanced_sort ? sort_captures_by_see!(captures) : sort_captures!(captures) 
 
         sort_moves!(moves)  
-
+        
         # ideally, killer moves should be searched before captures...
+
         # append move lists together in reasonable order:
-        moves = promotion_captures + captures + promotions + MoveGen::get_castles(self) + moves 
+        all_moves = first_moves + promotion_captures + captures + promotions + MoveGen::get_castles(self) + moves
+        all_moves.uniq 
       end
       alias :edges :get_moves
 
