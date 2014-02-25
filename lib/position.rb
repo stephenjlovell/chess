@@ -77,6 +77,10 @@ module Chess
         Evaluation::evaluate(self)
       end
 
+      def in_endgame?
+        own_material <= Pieces::ENDGAME_VALUE
+      end
+
       def endgame?(side)
         @material[side] <= Pieces::ENDGAME_VALUE
       end

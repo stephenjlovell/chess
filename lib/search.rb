@@ -31,9 +31,6 @@ module Chess
 
     MTD_STEP_SIZE = 5 # 
 
-    Performance = Struct.new(:depth, :score, :passes, :m_nodes, :q_nodes, :all_nodes, :evals, 
-                             :memory, :eff_branching, :avg_eff_branching)
-
     def self.iterative_deepening_mtdf_step(max_depth=nil)
       @mtdf = true
       depth = max_depth || @max_depth
@@ -54,15 +51,14 @@ module Chess
       @mtdf = false
       depth = max_depth || @max_depth
       iterative_deepening(depth/PLY_VALUE) do |guess, d, previous_pv, current_pv|
-        # alpha_beta_root(d, -$INF, $INF, previous_pv, current_pv)
-        mtdf_step(guess, d, previous_pv, current_pv)
+        alpha_beta_root(d, -$INF, $INF, previous_pv, current_pv)
       end
     end
 
     def self.iterative_deepening(depth)
       guess = @previous_value || @node.value
       best_move, value = nil, -$INF
-      total_calls, performance_data = 0.0, []
+      search_records = [] if @verbose
       previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
       (1..depth).each do |d|
         @i_depth = d
@@ -72,36 +68,39 @@ module Chess
         # puts d
         best_move, value = yield(guess, d*PLY_VALUE, previous_pv, current_pv) # call main search algo.
         
-        total_calls = $main_calls + $quiescence_calls + 0.0
-        eff_branching = previous_total == 0.0 ? total_calls : total_calls/previous_total
-        avg_branching = previous_total == 0.0 ? total_calls : (total_calls**(1r/d))
-        performance_data << Performance.new(d, value, $mtdf_ct, $main_calls, $quiescence_calls, total_calls, 
-                                            $evaluation_calls, $memory_calls, eff_branching, avg_branching)
+        record = Analytics::SearchRecord.new(d, value, $mtdf_ct, $main_calls, $quiescence_calls, 
+                                             $evaluation_calls, $memory_calls, previous_total)
+        search_records << record if @verbose
+        @aggregator.aggregate(record) unless @aggregator.nil?
+
         guess = value
         previous_pv = current_pv
         if Chess::current_game.clock.time_up?
-          puts "evaluation time ran out after depth #{d}"; break
+          puts "evaluation time ran out after depth #{d}" if @verbose
+          break
         end
       end
-      puts "\n"
-      tp performance_data  # print out performance data as a table.
-      current_pv.print
+      if @verbose
+        puts "\n"
+        tp search_records  # print out performance data as a table.
+        current_pv.print
+      end
       return best_move, value
     end
 
-    def self.internal_iterative_deepening(depth)
-      guess = @previous_value || @node.value
-      depth /= PLY_VALUE
-      best_move, value, total_calls = nil, -$INF, 0.0
-      previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
-      (1..depth).each do |d|
-        current_pv = Memory::PVStack.new
-        best_move, value = alpha_beta_root(d*PLY_VALUE, -$INF, $INF, previous_pv, current_pv)
-        # best_move, value = mtdf_step(guess, d*PLY_VALUE, previous_pv, current_pv)
-        previous_pv = current_pv
-      end
-      return best_move, value
-    end
+    # def self.internal_iterative_deepening(depth)
+    #   guess = @previous_value || @node.value
+    #   depth /= PLY_VALUE
+    #   best_move, value, total_calls = nil, -$INF, 0.0
+    #   previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
+    #   (1..depth).each do |d|
+    #     current_pv = Memory::PVStack.new
+    #     best_move, value = alpha_beta_root(d*PLY_VALUE, -$INF, $INF, previous_pv, current_pv)
+    #     # best_move, value = mtdf_step(guess, d*PLY_VALUE, previous_pv, current_pv)
+    #     previous_pv = current_pv
+    #   end
+    #   return best_move, value
+    # end
 
     def self.mtdf(f=nil, depth=nil, previous_pv=nil, parent_pv=nil) 
       f = @previous_value || @node.value
@@ -245,23 +244,23 @@ module Chess
       # end
 
       # Null Move Pruning
-      if depth > 2*PLY_VALUE && can_null && @node.value > beta && !@node.endgame?(@node.side_to_move) && !in_check
-        # puts "null move pruning"
-        enp = @node.enp_target
-        MoveGen::flip_null(@node, enp)
-        @node.enp_target = nil
+      # if depth > 2*PLY_VALUE && can_null && @node.value > beta && !@node.in_endgame? && !in_check
+      #   # puts "null move pruning"
+      #   enp = @node.enp_target
+      #   MoveGen::flip_null(@node, enp)
+      #   @node.enp_target = nil
 
-        # reduction = depth > 5*PLY_VALUE ? 4*PLY_VALUE : 3*PLY_VALUE
-        reduction = depth/2
-        result = -alpha_beta(@node, depth-reduction*PLY_VALUE, -beta, -beta+1, previous_pv, current_pv, false, false)        
+      #   # reduction = depth > 5*PLY_VALUE ? 4*PLY_VALUE : 3*PLY_VALUE
+      #   reduction = depth/2*PLY_VALUE
+      #   result = -alpha_beta(@node, depth-reduction, -beta, -beta+1, previous_pv, current_pv, false, false)        
 
-        MoveGen::flip_null(@node, enp)
-        @node.enp_target = enp
+      #   MoveGen::flip_null(@node, enp)
+      #   @node.enp_target = enp
 
-        if result >= beta
-          return beta
-        end 
-      end
+      #   if result >= beta
+      #     return beta
+      #   end 
+      # end
 
       # before looping over moves, get applicable killer moves.
 
@@ -370,22 +369,22 @@ module Chess
       $main_calls, $quiescence_calls, $evaluation_calls, $memory_calls, $mtdf_ct = 0, 0, 0, 0, 0
     end
 
-    def self.select_move(node, max_depth=6)
-      @node, @max_depth = node, max_depth * PLY_VALUE  # Use class instance variables rather than class variables.
+    def self.select_move(node, max_depth=6, aggregator=nil, verbose=true)
+      # Use class instance variables rather than class variables.
+      @node, @max_depth, @aggregator, @verbose = node, max_depth * PLY_VALUE, aggregator, verbose
       @iid_minimum = @max_depth-PLY_VALUE*3 > PLY_VALUE*3 ? @max_depth-PLY_VALUE*2 : PLY_VALUE*4
       reset_counters
       Chess::current_game.clock.restart
 
       $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to outweigh benefit of 
                  # additional entries.
-      best_move, value = block_given? ? yield : iterative_deepening_mtdf_step # use mtdf by default?
+      move, value = block_given? ? yield : iterative_deepening_alpha_beta # use mtdf by default?
 
-      unless best_move.nil?
+      if @verbose && !move.nil? 
         puts "TT size: #{$tt.size}"
-        puts "Move selected: #{best_move.print}, Eval score: #{value}"
-        # @previous_value = value  # store search outcome in class instance variable for initial guess on next search.
+        puts "Move selected: #{move.print}, Eval score: #{value}"
       end 
-      return best_move
+      return move, value
     end 
 
   end

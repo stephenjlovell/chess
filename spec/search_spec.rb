@@ -34,24 +34,24 @@ describe Chess::Search do
   describe "permits use of" do
     describe "mtdf" do
       # it "as a standalone algorithm" do
-      #   puts "mtdf \n #{@s::select_move(pos, @depth){ @s::mtdf } }"
+      #   puts "mtdf \n #{@s::select_move(pos, @depth){ @s::mtdf }[0] }"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
       # it "from within an iterative deepening framework" do
-      #   puts "iterative_deepening_mtdf \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf } }"
+      #   puts "iterative_deepening_mtdf \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf }[0] }"
       # end
       # it "_step from within an iterative deepening framework" do
-      #   puts "iterative_deepening_mtdf_step \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf_step } }"
+      #   puts "iterative_deepening_mtdf_step \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf_step }[0] }"
       #   pos.board.print
       # end
     end
     describe "alpha beta" do
       # it "as a standalone algorithm" do
-      #   puts "alpha_beta \n #{@s::select_move(pos, @depth) { @s::alpha_beta } }"
+      #   puts "alpha_beta \n #{@s::select_move(pos, @depth) { @s::alpha_beta }[0] }"
       #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
       # end
       # it "from within an iterative deepening framework" do
-      #   puts "iterative_deepening_alpha_beta \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_alpha_beta } }"
+      #   puts "iterative_deepening_alpha_beta \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_alpha_beta }[0] }"
       # end
     end
   end
@@ -72,12 +72,12 @@ describe Chess::Search do
 
   #   it do
   #     game.position = sanity_check
-  #     @s::select_move(sanity_check,@depth).to_s.should == "a1a2"
+  #     @s::select_move(sanity_check,@depth)[0].to_s.should == "a1a2"
   #   end
 
   # #   # it "should avoid search explosion on more challenging problems" do 
   # #   #   game.position = puzzle
-  # #   #   @s::select_move(puzzle, @depth)
+  # #   #   @s::select_move(puzzle, @depth)[0].to_s.should == "e4f6"
   # #   # end
 
   # end

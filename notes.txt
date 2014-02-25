@@ -26,19 +26,27 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
   iterative move gen and king saftey: 7.3749 seconds (26750 NPS)
   2/10/14 pseudolegal with king-loss checking: 3.419017 seconds (57835 NPS)
 
+Search benchmarking:
+
+  2/25/14
+
+A-B without null-move pruning:
+
+
+
+A-B with null-move pruning:
+
+
+
+
+
 Current Issues ----
 
-  when making capture moves probed and retrieved from transposition table, captured piece is sometimes nil.
-
+  Rare bug when making capture moves probed and retrieved from transposition table. 
+  Captured piece is sometimes nil. Issue is intermittent, occurs more often at higher max depths
 
 
 To Do ----
-
-  
-
-
-  rollback?
-    - changes to evaluation
 
   Add hashing of castling rights
 

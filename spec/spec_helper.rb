@@ -29,7 +29,7 @@ end
 
 require 'factories.rb'
 
-def perft(node, depth)  # Performance tester. Counts all leaf nodes to specified depth.
+def perft(node, depth)  # move generation speed test. Counts all leaf nodes to specified depth.
   return 1 if depth == 0
   sum = 0
   moves = node.get_moves
@@ -71,22 +71,29 @@ def avoid_moves_from_epd(epd)
   epd[epd.index('am')+3..epd.index(';')-1].split(' ') # scan string for "am <move>;"
 end
 
-def take_test(problems, depth=nil)
+def take_test(problems, depth, verbose=false)
   correct, total = 0, 0
-  problems.each do |prob|
-    move = Chess::Search::select_move(prob.position, depth)
+  aggregator = Chess::Analytics::Aggregator.new(depth)
+  problems.each_with_index do |prob, i|
+    move = Chess::Search::select_move(prob.position, depth, aggregator, verbose)
     prob.ai_response = move
     prob.score = score_question(prob)
-    puts prob.id
     correct += prob.score
     total += 1
-    puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves} AI Answer: #{prob.ai_response.print}"
-    puts "Running score: #{correct}/#{total} (#{(correct+0.0)/total*100}%)"   
+    if verbose
+      puts prob.id
+      puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves} AI Answer: #{prob.ai_response.print}"
+      puts "Running score: #{correct}/#{total} (#{(correct+0.0)/total*100}%)"
+    else
+      print "#{i}."
+    end
   end
   puts "\n"
   tp problems, :id, :best_moves, :avoid_moves, :ai_response, :score
   total_right, count = score_test(problems), problems.count
-  puts "Total AI score: #{total_right}/#{count} (#{((total_right+0.0)/count)*100}%)"
+  puts "\nTotal AI score: #{total_right}/#{count} (#{((total_right+0.0)/count)*100}%)"
+  puts "\n------ Aggregate Search Performance -------"
+  aggregator.print
 end
 
 def score_test(problems)

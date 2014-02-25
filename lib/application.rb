@@ -52,7 +52,7 @@ module Chess # top-level application namespace.
     end
   end
 
-  History = Struct.new(:index, :position, :move)
+  History = Struct.new(:index, :position, :move, :value)
 
   class MoveHistory
     attr_accessor :history
@@ -62,9 +62,9 @@ module Chess # top-level application namespace.
       @history = []
     end
 
-    def save(position, move)
+    def save(position, move, value=nil)
       @history.slice!(@index+1..-1) if @index < @history.count-1
-      @history << History.new(@history.count, position.to_s, move)
+      @history << History.new(@history.count, position.to_s, move, value)
       @index = @history.count-1
     end
 
@@ -151,8 +151,8 @@ module Chess # top-level application namespace.
       self.print
     end
 
-    def save_move(position, move)
-      @move_history.save(position, move)
+    def save_move(position, move, value=nil)
+      @move_history.save(position, move, value)
     end
 
     def print_history
@@ -170,7 +170,7 @@ module Chess # top-level application namespace.
     end
 
     def ai_move
-      move = Search::select_move(@position)
+      move, value = Search::select_move(@position)
       if move.nil?
         @winner = @opponent
         return nil
