@@ -19,8 +19,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-require 'table_print'
-require 'google_hash'
 
 module Chess # top-level application namespace.
 

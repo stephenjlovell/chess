@@ -32,7 +32,9 @@ module Chess
         @enp_target, @castle = nil, 0b1111
         @hash = @board.hash  # add hash of initial castling rights
         @king_location = set_king_location
-        @material = { w: Evaluation::material(self, :w, false), b: Evaluation::material(self, :b, false) } 
+        w_endgame = Evaluation::base_material(self, :w) <= Pieces::ENDGAME_VALUE # determine initial endgame state
+        b_endgame = Evaluation::base_material(self, :b) <= Pieces::ENDGAME_VALUE
+        @material = { w: Evaluation::material(self, :w, w_endgame), b: Evaluation::material(self, :b, b_endgame) } 
       end
 
       def own_pieces
@@ -100,7 +102,7 @@ module Chess
       end
 
       def inspect
-        "<Chess::Position::ChessPosition <@board:#{@board.inspect}> 
+        "<Chess::Position::ChessPosition <@board:#{@board.inspect}>
          <@pieces:#{@pieces.inspect}>, <@side_to_move:#{@side_to_move}>>"
       end
 
@@ -123,8 +125,8 @@ module Chess
         # ideally, killer moves should be searched before captures...
 
         # append move lists together in reasonable order:
-        all_moves = first_moves + promotion_captures + captures + promotions + MoveGen::get_castles(self) + moves
-        all_moves.uniq 
+        first_moves + promotion_captures + captures + promotions + MoveGen::get_castles(self) + moves
+        # all_moves.uniq 
       end
       alias :edges :get_moves
 

@@ -76,7 +76,7 @@ module Chess
     }
 
     KING_BASE = {
-      false => [ -40, -40, -40, -40, -40, -40, -40, -40,   # false game
+      false => [ -40, -40, -40, -40, -40, -40, -40, -40,   # early game
                  -40, -40, -40, -40, -40, -40, -40, -40,
                  -40, -40, -40, -40, -40, -40, -40, -40,
                  -40, -40, -40, -40, -40, -40, -40, -40,
@@ -85,7 +85,7 @@ module Chess
                  -15, -15, -20, -20, -20, -20, -15, -15,
                    0,  20,  30, -30,   0, -20,  30,  20 ],
 
-      true => [ 0,  10,  20,  30,  30,  20,  10,   0,   # true game 
+      true => [ 0,  10,  20,  30,  30,  20,  10,   0,   # end game
                10,  20,  30,  40,  40,  30,  20,  10,
                20,  30,  40,  50,  50,  40,  30,  20,
                30,  40,  50,  60,  60,  50,  40,  30,
@@ -145,7 +145,7 @@ module Chess
 
     def self.evaluate(position)
       $evaluation_calls += 1 
-      net_material(position) + mobility(position)
+      (net_material(position) + mobility(position)) / EVAL_GRAIN
     end
 
     def self.base_material(position, side)
@@ -155,10 +155,9 @@ module Chess
     private
 
     def self.mobility(position)  
-      side, enemy = Chess::current_game.ai_player, Chess::current_game.opponent
-      if position.board.king_in_check?(position, side)
+      if position.in_check?
         -90
-      elsif position.board.king_in_check?(position, enemy)
+      elsif position.enemy_in_check?
         90
       else
         0
@@ -166,7 +165,7 @@ module Chess
     end
 
     def self.net_material(position) # net material value for side to move.
-      (position.own_material - position.enemy_material) / EVAL_GRAIN
+      (position.own_material - position.enemy_material)
     end
 
     def self.material(position, side, endgame=nil) # =~ 1,040 at start
@@ -184,20 +183,6 @@ module Chess
       type, sq = piece.class.type, SQUARES[loc.to_sym]
       PST[piece.color][endgame][type][sq]
     end
-
-
-    # def self.adjusted_value(piece, location, game_stage=nil)
-
-    #   return piece.class.value + pst_value(piece, location)
-    
-    # end
-
-    # def self.pst_value(piece, location, game_stage = nil)
-    #   pst, sym = PST[piece.class.type], location.to_sym
-
-    #   # piece.color == :w ? pst[SQUARES[sym]] : pst[MIRROR[SQUARES[sym]]]
-    #   piece.color == :w ? pst[MIRROR[SQUARES[sym]]] : pst[SQUARES[sym]]
-    # end
 
   end
 end 

@@ -110,8 +110,24 @@ module Chess
       # A single instance of this class is contained in Chess::Game instances.
       
       def initialize
-        @table = {}
-        # @table = GoogleHashDenseLongToRuby.new
+        # due to potentially large size and high throughput of hash table 
+        # (100k - 1m keys), Ruby core Hash is too inefficient.  Use Google dense_hash_map instead.
+        # http://incise.org/hash-table-benchmarks.html
+        @table = GoogleHashDenseLongToRuby.new
+      end
+
+      def probe(node, depth, alpha, beta, first_moves=nil)
+        if contains?(node)
+          $memory_calls += 1
+          entry = retrieve(node)
+          if entry.depth >= depth # if entry was searched to greater than current depth, use instead of searching.
+            return entry.value if entry.type == :exact_value
+            return alpha if entry.type == :lower_bound && entry.value <= alpha
+            return beta if entry.type == :upper_bound && entry.value >= beta
+          end
+          first_moves << entry.best_move if first_moves && !entry.best_move.nil?
+        end
+        return nil  # sentinel indicating probe was unsuccessful in creating an immediate search cutoff.
       end
   
       def flag_and_store(node, depth, best_value, alpha, beta, best_move=nil)
@@ -133,28 +149,22 @@ module Chess
         return @table[h].value
       end
 
-      def probe(node, depth, alpha, beta, first_moves=nil)
-        if contains?(node)
-          entry = retrieve(node)
-          if entry.depth >= depth # if entry was searched to greater than current depth, use instead of searching.
-            return entry.value if entry.type == :exact_value
-            return alpha if entry.type == :lower_bound && entry.value <= alpha
-            return beta if entry.type == :upper_bound && entry.value >= beta
-          end
-          first_moves << entry.best_move if first_moves && entry.best_move
-        end
-        return nil  # sentinel indicating probe was unsuccessful in creating an immediate search cutoff.
+      def length
+        @table.length
       end
-
-
+      alias :size :length
+      alias :count :length
 
       def contains?(node)
         @table.has_key?(node.hash)
       end
 
       def retrieve(node)
-        $memory_calls += 1
         @table[node.hash]
+      end
+
+      def clear
+        @table = GoogleHashDenseLongToRuby.new
       end
 
     end # end TranspostionTable class

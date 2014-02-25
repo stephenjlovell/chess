@@ -72,14 +72,16 @@ def avoid_moves_from_epd(epd)
 end
 
 def take_test(problems, depth=nil)
-  Chess::Search::reset_counters
+  correct, total = 0, 0
   problems.each do |prob|
     move = Chess::Search::select_move(prob.position, depth)
     prob.ai_response = move
     prob.score = score_question(prob)
-
-    puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves}"
-    puts "AI Answer: #{prob.ai_response.print} Score: #{prob.score}"   
+    puts prob.id
+    correct += prob.score
+    total += 1
+    puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves} AI Answer: #{prob.ai_response.print}"
+    puts "Running score: #{correct}/#{total} (#{(correct+0.0)/total*100}%)"   
   end
   puts "\n"
   tp problems, :id, :best_moves, :avoid_moves, :ai_response, :score

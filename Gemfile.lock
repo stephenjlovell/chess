@@ -54,6 +54,6 @@ PLATFORMS
 DEPENDENCIES
   capybara
   factory_girl
-  google_hash (~> 0.8.0)
+  google_hash (= 0.8.0)
   rspec
   table_print

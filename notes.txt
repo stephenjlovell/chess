@@ -28,27 +28,19 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
 
 Current Issues ----
 
-  Infinite loop when human player checkmates AI (!)
-
-
-  Positions from which AI makes blunders: 
-    allows queen to die:
-    rnb1kbnr/ppp2ppp/3p4/4p3/7q/2N3P1/PPPPPP1P/R1BQKBNR b KQkq - 0 1
+  when making capture moves probed and retrieved from transposition table, captured piece is sometimes nil.
 
 
 
 To Do ----
 
-
-  Use a ruby binding to google sparse hash library to replace Hash in TT.
-
-
-  calculate @own_material, @enemy_material when moves are created => use change in adjusted material as a move ordering heuristic for non-captures.
-
   
-  Add hashing of castling rights
 
-  Internal Iterative Deepening (IID) for non-PV nodes
+
+  rollback?
+    - changes to evaluation
+
+  Add hashing of castling rights
 
   Pruning:
     -Null move pruning (null move heuristic)

@@ -22,12 +22,12 @@
 module Chess
   module Search # this module defines tree traversal algorithms for move selection.
 
-    PLY_VALUE = 2  # multiplier representing the depth value of 1 ply.  
+    PLY_VALUE = 4  # multiplier representing the depth value of 1 ply.  
                    # Used for fractional depth extensions / reductions.
     
     EXT_CHECK = 1  # extend search when side to move is in check.
 
-    EXT_PV = 0     # extend search when on the principal variation from previous iterative deepening.
+    EXT_PV = 1     # extend search when on the principal variation from previous iterative deepening.
 
     MTD_STEP_SIZE = 5 # 
 
@@ -54,7 +54,8 @@ module Chess
       @mtdf = false
       depth = max_depth || @max_depth
       iterative_deepening(depth/PLY_VALUE) do |guess, d, previous_pv, current_pv|
-        alpha_beta_root(d, -$INF, $INF, previous_pv, current_pv)
+        # alpha_beta_root(d, -$INF, $INF, previous_pv, current_pv)
+        mtdf_step(guess, d, previous_pv, current_pv)
       end
     end
 
@@ -91,13 +92,12 @@ module Chess
     def self.internal_iterative_deepening(depth)
       guess = @previous_value || @node.value
       depth /= PLY_VALUE
-      best_move, value = nil, -$INF
-      total_calls, performance_data = 0.0, []
+      best_move, value, total_calls = nil, -$INF, 0.0
       previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
       (1..depth).each do |d|
         current_pv = Memory::PVStack.new
-        # best_move, value = alpha_beta_root(d*PLY_VALUE, -$INF, $INF, previous_pv, current_pv)
-        best_move, value = mtdf_step(guess, d*PLY_VALUE, previous_pv, current_pv)
+        best_move, value = alpha_beta_root(d*PLY_VALUE, -$INF, $INF, previous_pv, current_pv)
+        # best_move, value = mtdf_step(guess, d*PLY_VALUE, previous_pv, current_pv)
         previous_pv = current_pv
       end
       return best_move, value
@@ -137,7 +137,7 @@ module Chess
         # puts "alpha_beta_root(#{depth}, #{r-1}, #{r}, #{previous_pv}, #{current_pv})"
         best_move, f = alpha_beta_root(depth, r-1, r, previous_pv, current_pv)
         
-        return nil, -$INF if best_move == nil  # prevent infinite loop on checkmate
+        return nil, -$INF if best_move.nil?  # prevent infinite loop on checkmate
         return best_move, f if Chess::current_game.clock.time_up?
 
         if f < r 
@@ -177,18 +177,17 @@ module Chess
       depth ||= @max_depth
       parent_pv ||= Memory::PVStack.new
       current_pv = Memory::PVStack.new
+      result, best_value, best_move, first_moves = -$INF, -$INF, nil, []
 
-      first_moves = []
-
-      result, best_value, best_move = -$INF, -$INF, nil
-
+      # if available, use the PV move from previous iterative deepening first.
       pv_move = previous_pv.next_move if previous_pv
-      first_moves << pv_move if pv_move
+      first_moves << pv_move unless pv_move.nil?
       
       # allow use of hash move for ordering at root, but not to truncate search.
       $tt.probe(@node, depth, alpha, beta, first_moves)
 
       @node.edges(true, first_moves).each do |move|
+
         $main_calls += 1
 
         next unless @node.avoids_check?(move)  # no illegal moves allowed at root.
@@ -196,6 +195,8 @@ module Chess
         MoveGen::make!(@node, move)
         result = -alpha_beta(@node, depth-PLY_VALUE, -beta, -alpha, previous_pv, current_pv)
         MoveGen::unmake!(@node, move)
+        
+        # puts "#{move.print}: #{result}"
 
         if result > best_value
           best_value = result 
@@ -220,10 +221,8 @@ module Chess
         return $tt.flag_and_store(@node, depth, best_value, alpha, beta)  
       end
 
-      first_moves = []
-
       result, best_value, best_move = -$INF, -$INF, nil
-      current_pv = Memory::PVStack.new
+      current_pv, first_moves = Memory::PVStack.new, []
 
       in_check = @node.in_check?
       ext_check = in_check ? EXT_CHECK : 0
@@ -234,19 +233,20 @@ module Chess
         first_moves << pv_move if pv_move
       end
 
-      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)
+      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)  # then try probing the hash table for a first move.
       return hash_value unless hash_value.nil?
 
       # if no move available from PV or memory, use IID to get a decent first move.
-      if first_moves.empty? && depth >= @iid_minimum # only called at high depth where cost/benefit is more favorable.
-        iid_move, result = internal_iterative_deepening(depth/2)
-        first_moves << iid_move if iid_move
-      end
+
+      # if first_moves.empty? && depth >= @iid_minimum # only called at high depth where cost/benefit is more favorable.
+      #   # puts "internal iterative deepening"
+      #   iid_move, result = internal_iterative_deepening(depth/2)
+      #   first_moves << iid_move unless iid_move.nil?
+      # end
 
       # Null Move Pruning
-
       if depth > 2*PLY_VALUE && can_null && @node.value > beta && !@node.endgame?(@node.side_to_move) && !in_check
-        
+        # puts "null move pruning"
         enp = @node.enp_target
         MoveGen::flip_null(@node, enp)
         @node.enp_target = nil
@@ -264,8 +264,6 @@ module Chess
       end
 
       # before looping over moves, get applicable killer moves.
-
-      # pass pv_move, hash_move, iid_move into MoveGen
 
       legal_moves = false
       @node.edges(on_pv, first_moves).each do |move|  # expend additional move ordering effort when at PV nodes.
@@ -309,7 +307,7 @@ module Chess
 
       @node.tactical_edges.each do |move|
 
-        break if move.see && move.see < 0  # moves are ordered by SEE
+        next if move.see && move.see < 0  # moves are ordered by SEE
 
         $quiescence_calls += 1
 
@@ -374,13 +372,16 @@ module Chess
 
     def self.select_move(node, max_depth=6)
       @node, @max_depth = node, max_depth * PLY_VALUE  # Use class instance variables rather than class variables.
-
-      @iid_minimum = @max_depth-PLY_VALUE*2 > PLY_VALUE*4 ? @max_depth-PLY_VALUE*2 : PLY_VALUE*4
+      @iid_minimum = @max_depth-PLY_VALUE*3 > PLY_VALUE*3 ? @max_depth-PLY_VALUE*2 : PLY_VALUE*4
       reset_counters
       Chess::current_game.clock.restart
+
+      $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to outweigh benefit of 
+                 # additional entries.
       best_move, value = block_given? ? yield : iterative_deepening_mtdf_step # use mtdf by default?
-      puts "search complete."
+
       unless best_move.nil?
+        puts "TT size: #{$tt.size}"
         puts "Move selected: #{best_move.print}, Eval score: #{value}"
         # @previous_value = value  # store search outcome in class instance variable for initial guess on next search.
       end 

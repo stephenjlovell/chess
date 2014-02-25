@@ -77,14 +77,22 @@ module Chess
         "#{piece} x #{@captured_piece} #{from} to #{to}"
       end
 
+      def inspect
+        "<#{self.class} <@captured_piece:#{@captured_piece}> <@own_material:#{@own_material}>" +
+        "<@enemy_material:#{@enemy_material}>>"
+      end
+
 
       def hash(piece, from, to)
         from_to_key(piece, from, to) ^ Memory::psq_key(@captured_piece, to)
       end
 
+
       def mvv_lva(piece)  # Most valuable victim, least valuable attacker heuristic.
         @mvv_lva ||= @captured_piece.class.value - piece.class.id  # Used for move ordering captures.
       end
+
+
     end
 
     class MoveStrategy  # Generic template and shared behavior for move strategies.
@@ -107,6 +115,10 @@ module Chess
 
       def print(piece, from, to)
         "#{piece} #{from} to #{to}"
+      end
+
+      def inspect
+        "<#{self.class} <@own_material:#{@own_material}> <@enemy_material:#{@enemy_material}>>"
       end
 
       def hash(piece, from, to)
@@ -335,11 +347,17 @@ module Chess
       end
 
       def make!(position)
+        begin
         @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
         position.enp_target = nil
         @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
         position.own_material += @strategy.own_material
         position.enemy_material += @strategy.enemy_material
+        rescue => err
+          puts "TT Size: #{$tt.size}"
+          puts self.inspect
+          raise err
+        end 
       end
 
       def unmake!(position)
@@ -350,7 +368,14 @@ module Chess
       end
 
       def mvv_lva
-        @strategy.mvv_lva(@piece)
+        begin
+          @strategy.mvv_lva(@piece)
+        rescue => err
+          puts "TT Size: #{$tt.size}"
+          puts self.inspect
+          raise err
+        end
+
       end
 
       def see_score(position)
@@ -359,10 +384,6 @@ module Chess
 
       def strategy
         @strategy.class
-      end
-
-      def eql?(other_move) # only used for comparing two moves from the same position.
-        @from == other_move.from && @to == other_move.to
       end
 
       def hash # Uses Zobrist hashing to represent the move as a 64-bit unsigned long int.
@@ -375,6 +396,11 @@ module Chess
 
       def to_s
         @from.to_s + @to.to_s
+      end
+
+      def inspect
+        "<Chess::Move::Move <@piece:#{@piece}> <@from:#{@from}> <@to:#{@to}>" + 
+        "<@enp_target:#{@enp_target}> <@see:#{@see}> <@strategy:#{@strategy.inspect}>>"
       end
 
     end

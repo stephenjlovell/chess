@@ -34,7 +34,7 @@ describe Chess::Move do
   describe "move generation" do
 
     it "should generate the correct number of nodes" do
-      depth = 4
+      depth = 5
       t0 = Time.now
       node_count = perft(@root, depth) # first castling moves would occur at minimum ply 7.
       t1 = Time.now

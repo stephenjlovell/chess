@@ -25,8 +25,9 @@ describe Chess::Search do
 
   before do 
     @s = Chess::Search
-    @depth = 6
+    @depth = 4
   end
+  
   let(:game) { FactoryGirl.build(:test_game) }
   let(:pos) { game.position }
 
@@ -41,6 +42,7 @@ describe Chess::Search do
       # end
       # it "_step from within an iterative deepening framework" do
       #   puts "iterative_deepening_mtdf_step \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf_step } }"
+      #   pos.board.print
       # end
     end
     describe "alpha beta" do
