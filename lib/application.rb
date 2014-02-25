@@ -27,7 +27,7 @@ module Chess # top-level application namespace.
   end
 
   def self.current_game=(game)
-    @current_game = game  # may be needed in a future load_game method.
+    @current_game = game  
   end
 
   def self.new_game(ai_player = :b, time_limit = 30.0)
@@ -86,6 +86,11 @@ module Chess # top-level application namespace.
       else
         puts "no more moves to redo."
       end
+    end
+
+    def previous_value
+      return nil if @history.empty?
+      @history[@index-1].value
     end
 
     def print
@@ -155,6 +160,10 @@ module Chess # top-level application namespace.
       @move_history.save(position, move, value)
     end
 
+    def previous_value
+      @move_history.previous_value
+    end
+
     def print_history
       @move_history.print
     end
@@ -177,8 +186,8 @@ module Chess # top-level application namespace.
       else
         save_move(@position, move)
         MoveGen::make!(@position, move)
-        # if opponent in check, do a 1-play search to determine if checkmate.
-        if @position.in_check? && Search::select_move(@position,1).nil?
+        # if opponent in check after ai move, do a 1-play search to determine if checkmate.
+        if @position.in_check? && Search::select_move(@position,1)[0].nil?
           @winner = @ai_player
           return nil
         else

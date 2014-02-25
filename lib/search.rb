@@ -244,23 +244,23 @@ module Chess
       # end
 
       # Null Move Pruning
-      # if depth > 2*PLY_VALUE && can_null && @node.value > beta && !@node.in_endgame? && !in_check
-      #   # puts "null move pruning"
-      #   enp = @node.enp_target
-      #   MoveGen::flip_null(@node, enp)
-      #   @node.enp_target = nil
+      if depth > 2*PLY_VALUE && can_null && @node.value > beta && !@node.in_endgame? && !in_check
+        # puts "null move pruning"
+        enp = @node.enp_target
+        MoveGen::flip_null(@node, enp)
+        @node.enp_target = nil
 
-      #   # reduction = depth > 5*PLY_VALUE ? 4*PLY_VALUE : 3*PLY_VALUE
-      #   reduction = depth/2*PLY_VALUE
-      #   result = -alpha_beta(@node, depth-reduction, -beta, -beta+1, previous_pv, current_pv, false, false)        
+        # reduction = depth > 5*PLY_VALUE ? 4*PLY_VALUE : 3*PLY_VALUE
+        reduction = depth/2*PLY_VALUE
+        result = -alpha_beta(@node, depth-reduction, -beta, -beta+1, previous_pv, current_pv, false, false)        
 
-      #   MoveGen::flip_null(@node, enp)
-      #   @node.enp_target = enp
+        MoveGen::flip_null(@node, enp)
+        @node.enp_target = enp
 
-      #   if result >= beta
-      #     return beta
-      #   end 
-      # end
+        if result >= beta
+          return beta
+        end 
+      end
 
       # before looping over moves, get applicable killer moves.
 
@@ -375,7 +375,7 @@ module Chess
       @iid_minimum = @max_depth-PLY_VALUE*3 > PLY_VALUE*3 ? @max_depth-PLY_VALUE*2 : PLY_VALUE*4
       reset_counters
       Chess::current_game.clock.restart
-
+      @previous_value = Chess::current_game.previous_value
       $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to outweigh benefit of 
                  # additional entries.
       move, value = block_given? ? yield : iterative_deepening_alpha_beta # use mtdf by default?

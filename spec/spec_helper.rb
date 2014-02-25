@@ -75,7 +75,7 @@ def take_test(problems, depth, verbose=false)
   correct, total = 0, 0
   aggregator = Chess::Analytics::Aggregator.new(depth)
   problems.each_with_index do |prob, i|
-    move = Chess::Search::select_move(prob.position, depth, aggregator, verbose)
+    move, value = Chess::Search::select_move(prob.position, depth, aggregator, verbose)
     prob.ai_response = move
     prob.score = score_question(prob)
     correct += prob.score
@@ -85,7 +85,7 @@ def take_test(problems, depth, verbose=false)
       puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves} AI Answer: #{prob.ai_response.print}"
       puts "Running score: #{correct}/#{total} (#{(correct+0.0)/total*100}%)"
     else
-      print "#{i}."
+      print "#{i+1}."
     end
   end
   puts "\n"
