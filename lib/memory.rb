@@ -96,7 +96,6 @@ module Chess
       end
     end
 
-
     class Entry # this class contains the information to be stored in each bucket.
       attr_reader :depth, :type, :value, :best_move
       # @type may be :upper_bound, :lower_bound, :exact_match

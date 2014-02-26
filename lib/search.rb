@@ -29,7 +29,7 @@ module Chess
 
     EXT_PV = 1     # extend search when on the principal variation from previous iterative deepening.
 
-    MTD_STEP_SIZE = 5 # 
+    MTD_STEP_SIZE = 15 # 
 
     def self.iterative_deepening_mtdf_step(max_depth=nil)
       @mtdf = true
@@ -59,12 +59,13 @@ module Chess
       guess = @previous_value || @node.value
       best_move, value = nil, -$INF
       search_records = [] if @verbose
-      previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
+      # previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
+      previous_pv, current_pv = nil, nil
       (1..depth).each do |d|
         @i_depth = d
         previous_total = $quiescence_calls + $main_calls
         Search::reset_counters
-        current_pv = Memory::PVStack.new
+        # current_pv = Memory::PVStack.new
         # puts d
         best_move, value = yield(guess, d*PLY_VALUE, previous_pv, current_pv) # call main search algo.
         
@@ -109,8 +110,8 @@ module Chess
       while @lower_bound < @upper_bound do
         $mtdf_ct += 1
         r = f == @lower_bound ? f+1 : f
-        current_pv = Memory::PVStack.new
-        previous_pv.reset_counter if previous_pv
+        # current_pv = Memory::PVStack.new
+        # previous_pv.reset_counter if previous_pv
         best_move, f = alpha_beta_root(depth, r-1, r, previous_pv, current_pv)
         
         return nil, -$INF if best_move == nil # prevent infinite loop on checkmate
@@ -129,8 +130,10 @@ module Chess
       while @lower_bound != @upper_bound do
         $mtdf_ct += 1
         r = f == @lower_bound ? f+1 : f
-        current_pv = Memory::PVStack.new
-        previous_pv.reset_counter if previous_pv
+        current_pv = nil
+        # current_pv = Memory::PVStack.new
+        # previous_pv.reset_counter if previous_pv
+
         # puts "step: #{step} lower: #{@lower_bound}, upper: #{@upper_bound}"
         # puts "alpha_beta_root(#{depth}, #{r-1}, #{r}, #{previous_pv}, #{current_pv})"
         best_move, f = alpha_beta_root(depth, r-1, r, previous_pv, current_pv)
@@ -172,8 +175,9 @@ module Chess
 
     def self.alpha_beta_root(depth=nil, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil)
       depth ||= @max_depth
-      parent_pv ||= Memory::PVStack.new
-      current_pv = Memory::PVStack.new
+      # parent_pv ||= Memory::PVStack.new
+      # current_pv = Memory::PVStack.new
+      current_pv = nil
       result, best_value, best_move, first_moves = -$INF, -$INF, nil, []
 
       # if available, use the PV move from previous iterative deepening first.
@@ -197,7 +201,7 @@ module Chess
         end
         if best_value > alpha  # child node now a PV node.
           alpha = best_value
-          append_pv(parent_pv, current_pv, move)
+          # append_pv(parent_pv, current_pv, move)
         end
         break if best_value >= beta
       end
@@ -209,21 +213,21 @@ module Chess
 
     def self.alpha_beta(node, depth, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil, on_pv=false, can_null=true)
 
+      in_check = @node.in_check?
+      ext_check = in_check ? EXT_CHECK : 0
+
       if depth <= 0
         best_value = quiescence(@node, depth, alpha, beta) # not making or unmaking here.
         return $tt.flag_and_store(@node, depth, best_value, alpha, beta)  
       end
 
       result, best_value, best_move = -$INF, -$INF, nil
-      current_pv, first_moves = Memory::PVStack.new, []
-
-      in_check = @node.in_check?
-      ext_check = in_check ? EXT_CHECK : 0
-
+      # current_pv, first_moves = Memory::PVStack.new, []
+      current_pv, first_moves = nil, []
 
       if on_pv  # try the PV move first
-        pv_move = previous_pv.next_move
-        first_moves << pv_move if pv_move
+        # pv_move = previous_pv.next_move
+        # first_moves << pv_move if pv_move
       end
 
       hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)  # then try probing the hash table for a first move.
@@ -274,7 +278,7 @@ module Chess
         end
         if best_value > alpha # child node is part of pv.
           alpha = best_value
-          append_pv(parent_pv, current_pv, move)
+          # append_pv(parent_pv, current_pv, move)
         end
         break if best_value >= beta
       end
@@ -289,7 +293,9 @@ module Chess
 
     def self.quiescence(node, depth, alpha, beta)  # quiesence nodes are not part of the principal variation.
 
-      hash_value = $tt.probe(@node, depth, alpha, beta)
+      first_moves = []
+
+      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)
       return hash_value unless hash_value.nil?
 
       best_value = @node.value  # assume 'standing pat' lower bound
@@ -298,7 +304,7 @@ module Chess
 
       result, best_move = -$INF, nil
 
-      @node.tactical_edges.each do |move|
+      @node.tactical_edges(first_moves).each do |move|
 
         next if move.see && move.see < 0  # moves are ordered by SEE
 
@@ -317,7 +323,12 @@ module Chess
 
       end
 
-      $tt.flag_and_store(@node, depth, best_value, alpha, beta, best_move)
+      # only save higher-depth q_nodes to TT
+      if depth >= -3*PLY_VALUE
+        $tt.flag_and_store(@node, depth, best_value, alpha, beta, best_move)
+      else
+        best_value
+      end
     end
 
     def self.append_pv(parent_pv, current_pv, move)

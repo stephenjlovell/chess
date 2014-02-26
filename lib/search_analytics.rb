@@ -74,7 +74,8 @@ module Chess
       end
 
       def print_summary
-        "nodes: #{all_nodes}, "
+        refresh
+        "nodes: #{all_nodes},  evals: #{all_evals},  avg. branching: #{all_branching}"
       end
 
       def all_nodes

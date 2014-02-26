@@ -136,10 +136,11 @@ module Chess
 
 
 
-      def get_captures # returns a sorted array of all possible moves for the current player.
+      def get_captures(first_moves = []) # returns a sorted array of all possible moves for the current player.
         captures, promotion_captures = [], []
         own_pieces.each { |key, piece| piece.get_captures(self, key, captures, promotion_captures) }
         sort_captures_by_see!(captures)
+        # first_moves + promotion_captures + captures
         promotion_captures + captures
       end
       alias :tactical_edges :get_captures

@@ -25,7 +25,7 @@ describe Chess::Search do
 
   before do 
     @s = Chess::Search
-    @depth = 4
+    @depth = 5
   end
 
   describe "permits use of" do
@@ -86,7 +86,7 @@ describe Chess::Search do
     let(:problems) { load_test_suite('./test_suites/win_at_chess.epd') }
     
     it "should be able to take standardized tests" do
-      take_test(problems, @depth)
+      take_test(problems[0..49], @depth)
     end
   end
 

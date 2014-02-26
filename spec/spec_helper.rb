@@ -98,7 +98,8 @@ def take_test(problems, depth, verbose=false)
   end
   total_right, count = score_test(problems), problems.count
   puts "\nTotal AI score: #{total_right}/#{count} (#{((total_right+0.0)/count)*100}%)"
-  puts ""
+  puts aggregator.print_summary
+  puts "#{time/count} seconds/position at depth #{depth}"
 
   puts "\n------ Aggregate Search Performance -------"
   aggregator.print

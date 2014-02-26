@@ -140,7 +140,13 @@ Current Issues ----
 
 To Do ----
 
-  Add hashing of castling rights
+  Experiment with hashing q-nodes only at the top 3 plies of q-search.
+
+  Set up separate TT for q-nodes.  will allow use of entries for move ordering in q-search.
+
+  move TT's out of Game class and make them single instance.
+
+  implement 2-level "depth + always"  TT replacement scheme?
 
   Pruning:
     -Null move pruning (null move heuristic)
