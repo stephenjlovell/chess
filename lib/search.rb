@@ -213,25 +213,27 @@ module Chess
 
     def self.alpha_beta(node, depth, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil, on_pv=false, can_null=true)
 
-      in_check = @node.in_check?
-      ext_check = in_check ? EXT_CHECK : 0
+      result, best_value, best_move = -$INF, -$INF, nil
+      # current_pv, first_moves = Memory::PVStack.new, []
+      current_pv, first_moves = nil, []
+
+      # if on_pv  # try the PV move first
+      #   # pv_move = previous_pv.next_move
+      #   # first_moves << pv_move if pv_move
+      # end
+
+      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)  # then try probing the hash table for a first move.
+      return hash_value unless hash_value.nil?
+
 
       if depth <= 0
         best_value = quiescence(@node, depth, alpha, beta) # not making or unmaking here.
         return $tt.flag_and_store(@node, depth, best_value, alpha, beta)  
       end
 
-      result, best_value, best_move = -$INF, -$INF, nil
-      # current_pv, first_moves = Memory::PVStack.new, []
-      current_pv, first_moves = nil, []
 
-      if on_pv  # try the PV move first
-        # pv_move = previous_pv.next_move
-        # first_moves << pv_move if pv_move
-      end
-
-      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)  # then try probing the hash table for a first move.
-      return hash_value unless hash_value.nil?
+      in_check = @node.in_check?
+      ext_check = in_check ? EXT_CHECK : 0
 
       # if no move available from PV or memory, use IID to get a decent first move.
 
