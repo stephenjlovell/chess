@@ -26,11 +26,11 @@ module Chess
       attr_accessor :depth, :score, :passes, :m_nodes, :q_nodes,
                     :evals, :memory, :eff_branching, :avg_eff_branching
 
-      def initialize(depth, score, passes, m_nodes, q_nodes, evals, memory, previous_total=0.0)
+      def initialize(depth, score, passes, m_nodes, q_nodes, evals, memory, previous_total=0.0, first_total=0.0)
         @depth, @score, @passes, @m_nodes = depth, score, passes, m_nodes
         @q_nodes, @evals, @memory = evals, memory, q_nodes
-        @eff_branching = previous_total == 0.0 ? all_nodes : all_nodes.to_f/previous_total
-        @avg_eff_branching = previous_total == 0.0 ? all_nodes : (all_nodes**(1r/depth))
+        @eff_branching = previous_total == 0.0 ? 0.0 : all_nodes.to_f/previous_total
+        @avg_eff_branching = depth == 1 ? 0.0 : (all_nodes.to_f/first_total)**(1r/(depth-1)) 
       end
 
       def merge!(other)

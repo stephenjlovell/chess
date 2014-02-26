@@ -96,13 +96,15 @@ module Chess
       end
     end
 
-    class Entry # this class contains the information to be stored in each bucket.
-      attr_reader :depth, :type, :value, :best_move
-      # @type may be :upper_bound, :lower_bound, :exact_match
-      def initialize(depth, type, value, best_move)
-        @depth, @type, @value, @best_move = depth, type, value, best_move
-      end
-    end
+    TTEntry = Struct.new(:depth, :type, :value, :best_move)
+
+    # class Entry # this class contains the information to be stored in each bucket.
+    #   attr_reader :depth, :type, :value, :best_move
+    #   # @type may be :upper_bound, :lower_bound, :exact_match
+    #   def initialize(depth, type, value, best_move)
+    #     @depth, @type, @value, @best_move = depth, type, value, best_move
+    #   end
+    # end
 
     class TranspositionTable # this class generates a hash code for each explored position  
       # using a Zobrist hashing algorithm, and stores the value of each position.
@@ -143,7 +145,7 @@ module Chess
       def store(node, depth, type, value, best_move=nil)
         h = node.hash
         if !@table.has_key?(h) || depth >= @table[h].depth   # simple depth-based replacement scheme.
-          @table[h] = Entry.new(depth, type, value, best_move)
+          @table[h] = TTEntry.new(depth, type, value, best_move)
         end
         return @table[h].value
       end

@@ -29,7 +29,7 @@ module Chess
 
     EXT_PV = 1     # extend search when on the principal variation from previous iterative deepening.
 
-    MTD_STEP_SIZE = 15 # 
+    MTD_STEP_SIZE = 15
 
     def self.iterative_deepening_mtdf_step(max_depth=nil)
       @mtdf = true
@@ -60,17 +60,17 @@ module Chess
       best_move, value = nil, -$INF
       search_records = [] if @verbose
       # previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
+      first_total = 0.0
       previous_pv, current_pv = nil, nil
       (1..depth).each do |d|
         @i_depth = d
         previous_total = $quiescence_calls + $main_calls
         Search::reset_counters
         # current_pv = Memory::PVStack.new
-        # puts d
         best_move, value = yield(guess, d*PLY_VALUE, previous_pv, current_pv) # call main search algo.
-        
+        first_total = $quiescence_calls + $main_calls if d == 1
         record = Analytics::SearchRecord.new(d, value, $mtdf_ct, $main_calls, $quiescence_calls, 
-                                             $evaluation_calls, $memory_calls, previous_total)
+                                             $evaluation_calls, $memory_calls, previous_total, first_total)
         search_records << record if @verbose
         @aggregator.aggregate(record) unless @aggregator.nil?
 
@@ -84,7 +84,7 @@ module Chess
       if @verbose
         puts "\n"
         tp search_records  # print out performance data as a table.
-        current_pv.print
+        current_pv.print unless current_pv.nil?
       end
       return best_move, value
     end
@@ -251,8 +251,12 @@ module Chess
         @node.enp_target = nil
 
         # reduction = depth > 5*PLY_VALUE ? 4*PLY_VALUE : 3*PLY_VALUE
-        reduction = depth/2*PLY_VALUE
-        result = -alpha_beta(@node, depth-reduction, -beta, -beta+1, previous_pv, current_pv, false, false)        
+        reduction = 3*PLY_VALUE
+        result = if (depth - reduction) > 0
+          -alpha_beta(@node, depth-reduction, -beta, -beta+1, previous_pv, current_pv, false, false)        
+        else
+          -quiescence(@node, depth-reduction, -beta, -beta+1)
+        end
 
         MoveGen::flip_null(@node, enp)
         @node.enp_target = enp

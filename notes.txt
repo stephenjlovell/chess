@@ -48,16 +48,18 @@ Search benchmarking:
 Current Issues ----
 
   Rare bug when making capture moves probed and retrieved from transposition table. 
-  Captured piece is sometimes nil. Issue is intermittent, occurs more often at higher max depths
+  Captured piece is sometimes nil. Occurs more often at higher max depths.
+  raise a custom error when this happens that triggers a re-run of the search.
 
 
 To Do ----
 
-  Experiment with hashing q-nodes only at the top 3 plies of q-search.
+  MTD-f will be more efficient if both alpha and beta are stored in TT entries.
+    - refactor TT entries to hold both alpha and beta
+    - refactor search and TT to remove 'flag' approach
 
-  Set up separate TT for q-nodes.  will allow use of entries for move ordering in q-search.
 
-  move TT's out of Game class and make them single instance.
+
 
   implement 2-level "depth + always"  TT replacement scheme?
 
