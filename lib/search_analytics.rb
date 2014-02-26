@@ -50,9 +50,7 @@ module Chess
 
     class Aggregator
       def initialize(max_depth)
-        @data = (1..max_depth).collect do |d| 
-          SearchRecord.new(d, nil, 0, 0, 0, 0, 0, 0.0)
-        end
+        @data = (1..max_depth).collect { |d| SearchRecord.new(d, nil, 0, 0, 0, 0, 0, 0.0) }
       end
 
       def aggregate(record)
@@ -74,6 +72,23 @@ module Chess
         puts "\n"
         tp @data
       end
+
+      def print_summary
+        "nodes: #{all_nodes}, "
+      end
+
+      def all_nodes
+        @data.inject(0){ |total, record| total += record.all_nodes }
+      end
+
+      def all_evals
+        @data.inject(0){ |total, record| total += record.evals }
+      end
+
+      def all_branching
+        @data.last.avg_eff_branching
+      end
+
     end
 
 

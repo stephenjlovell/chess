@@ -114,7 +114,6 @@ module Chess
         best_move, f = alpha_beta_root(depth, r-1, r, previous_pv, current_pv)
         
         return nil, -$INF if best_move == nil # prevent infinite loop on checkmate
-        return best_move, f if Chess::current_game.clock.time_up?
 
         if f < r then @upper_bound = f else @lower_bound = f end
       end
@@ -137,7 +136,6 @@ module Chess
         best_move, f = alpha_beta_root(depth, r-1, r, previous_pv, current_pv)
         
         return nil, -$INF if best_move.nil?  # prevent infinite loop on checkmate
-        return best_move, f if Chess::current_game.clock.time_up?
 
         if f < r 
           @upper_bound = f
@@ -186,17 +184,13 @@ module Chess
       $tt.probe(@node, depth, alpha, beta, first_moves)
 
       @node.edges(true, first_moves).each do |move|
-
         $main_calls += 1
-
         next unless @node.avoids_check?(move)  # no illegal moves allowed at root.
 
         MoveGen::make!(@node, move)
         result = -alpha_beta(@node, depth-PLY_VALUE, -beta, -alpha, previous_pv, current_pv)
         MoveGen::unmake!(@node, move)
-        
         # puts "#{move.print}: #{result}"
-
         if result > best_value
           best_value = result 
           best_move = move
@@ -378,7 +372,7 @@ module Chess
       @previous_value = Chess::current_game.previous_value
       $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to outweigh benefit of 
                  # additional entries.
-      move, value = block_given? ? yield : iterative_deepening_alpha_beta # use mtdf by default?
+      move, value = block_given? ? yield : iterative_deepening_mtdf_step # use mtdf by default?
 
       if @verbose && !move.nil? 
         puts "TT size: #{$tt.size}"

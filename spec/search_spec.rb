@@ -27,11 +27,11 @@ describe Chess::Search do
     @s = Chess::Search
     @depth = 4
   end
-  
-  let(:game) { FactoryGirl.build(:test_game) }
-  let(:pos) { game.position }
 
   describe "permits use of" do
+    let(:game) { FactoryGirl.build(:test_game) }
+    let(:pos) { game.position }
+
     describe "mtdf" do
       # it "as a standalone algorithm" do
       #   puts "mtdf \n #{@s::select_move(pos, @depth){ @s::mtdf }[0] }"
@@ -89,7 +89,6 @@ describe Chess::Search do
       take_test(problems, @depth)
     end
   end
-
 
 end
 
