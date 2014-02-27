@@ -346,7 +346,7 @@ module Chess
       @previous_value = Chess::current_game.previous_value
       $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to outweigh benefit of 
                  # additional entries.
-      move, value = block_given? ? yield : iterative_deepening_mtdf_step # use mtdf by default?
+      move, value = block_given? ? yield : iterative_deepening_alpha_beta # use mtdf by default?
 
       if @verbose && !move.nil? 
         puts "TT size: #{$tt.size}"
