@@ -34,24 +34,24 @@ module Chess
     def self.iterative_deepening_mtdf_step(max_depth=nil)
       @mtdf = true
       depth = max_depth || @max_depth
-      iterative_deepening(@max_depth/PLY_VALUE) do |guess, d, previous_pv, current_pv|
-        mtdf_step(guess, d, previous_pv, current_pv)
+      iterative_deepening(@max_depth/PLY_VALUE) do |guess, d|
+        mtdf_step(guess, d)
       end
     end
 
     def self.iterative_deepening_mtdf(max_depth=nil)
       @mtdf = true
       depth = max_depth || @max_depth
-      iterative_deepening(@max_depth/PLY_VALUE) do |guess, d, previous_pv, current_pv|
-        mtdf(guess, d, previous_pv, current_pv)
+      iterative_deepening(@max_depth/PLY_VALUE) do |guess, d|
+        mtdf(guess, d)
       end
     end
 
     def self.iterative_deepening_alpha_beta(max_depth=nil)
       @mtdf = false
       depth = max_depth || @max_depth
-      iterative_deepening(depth/PLY_VALUE) do |guess, d, previous_pv, current_pv|
-        alpha_beta_root(d, -$INF, $INF, previous_pv, current_pv)
+      iterative_deepening(depth/PLY_VALUE) do |guess, d|
+        alpha_beta_root(d, -$INF, $INF)
       end
     end
 
@@ -59,15 +59,12 @@ module Chess
       guess = @previous_value || @node.value
       best_move, value = nil, -$INF
       search_records = [] if @verbose
-      # previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
       first_total = 0.0
-      previous_pv, current_pv = nil, nil
       (1..depth).each do |d|
         @i_depth = d
         previous_total = $quiescence_calls + $main_calls
         Search::reset_counters
-        # current_pv = Memory::PVStack.new
-        best_move, value = yield(guess, d*PLY_VALUE, previous_pv, current_pv) # call main search algo.
+        best_move, value = yield(guess, d*PLY_VALUE) # call main search algo.
         first_total = $quiescence_calls + $main_calls if d == 1
         record = Analytics::SearchRecord.new(d, value, $mtdf_ct, $main_calls, $quiescence_calls, 
                                              $evaluation_calls, $memory_calls, previous_total, first_total)
@@ -75,7 +72,6 @@ module Chess
         @aggregator.aggregate(record) unless @aggregator.nil?
 
         guess = value
-        previous_pv = current_pv
         if Chess::current_game.clock.time_up?
           puts "evaluation time ran out after depth #{d}" if @verbose
           break
@@ -84,7 +80,6 @@ module Chess
       if @verbose
         puts "\n"
         tp search_records  # print out performance data as a table.
-        current_pv.print unless current_pv.nil?
       end
       return best_move, value
     end
@@ -93,26 +88,22 @@ module Chess
     #   guess = @previous_value || @node.value
     #   depth /= PLY_VALUE
     #   best_move, value, total_calls = nil, -$INF, 0.0
-    #   previous_pv, current_pv  = Memory::PVStack.new, Memory::PVStack.new
     #   (1..depth).each do |d|
-    #     current_pv = Memory::PVStack.new
-    #     best_move, value = alpha_beta_root(d*PLY_VALUE, -$INF, $INF, previous_pv, current_pv)
-    #     # best_move, value = mtdf_step(guess, d*PLY_VALUE, previous_pv, current_pv)
-    #     previous_pv = current_pv
+    #     best_move, value = alpha_beta_root(d*PLY_VALUE, -$INF, $INF)
+    #     # best_move, value = mtdf_step(guess, d*PLY_VALUE)
     #   end
     #   return best_move, value
     # end
 
-    def self.mtdf(f=nil, depth=nil, previous_pv=nil, parent_pv=nil) 
+    def self.mtdf(f=nil, depth=nil) 
       f = @previous_value || @node.value
       depth ||= @max_depth
       @lower_bound, @upper_bound = -$INF, $INF
       while @lower_bound < @upper_bound do
         $mtdf_ct += 1
         r = f == @lower_bound ? f+1 : f
-        # current_pv = Memory::PVStack.new
-        # previous_pv.reset_counter if previous_pv
-        best_move, f = alpha_beta_root(depth, r-1, r, previous_pv, current_pv)
+
+        best_move, f = alpha_beta_root(depth, r-1, r)
         
         return nil, -$INF if best_move == nil # prevent infinite loop on checkmate
 
@@ -121,7 +112,7 @@ module Chess
       return best_move, f
     end
 
-    def self.mtdf_step(f=nil, depth=nil, previous_pv=nil, parent_pv=nil) # MTD-f with "convergence accelerator"
+    def self.mtdf_step(f=nil, depth=nil) # MTD-f with "convergence accelerator"
       f ||= @previous_value || @node.value 
       depth ||= @max_depth
       @lower_bound, @upper_bound, step = -$INF, $INF, MTD_STEP_SIZE
@@ -130,13 +121,9 @@ module Chess
       while @lower_bound != @upper_bound do
         $mtdf_ct += 1
         r = f == @lower_bound ? f+1 : f
-        current_pv = nil
-        # current_pv = Memory::PVStack.new
-        # previous_pv.reset_counter if previous_pv
-
         # puts "step: #{step} lower: #{@lower_bound}, upper: #{@upper_bound}"
-        # puts "alpha_beta_root(#{depth}, #{r-1}, #{r}, #{previous_pv}, #{current_pv})"
-        best_move, f = alpha_beta_root(depth, r-1, r, previous_pv, current_pv)
+        # puts "alpha_beta_root(#{depth}, #{r-1}, #{r})"
+        best_move, f = alpha_beta_root(depth, r-1, r)
         
         return nil, -$INF if best_move.nil?  # prevent infinite loop on checkmate
 
@@ -164,183 +151,146 @@ module Chess
       return best_move, f
     end
 
-
-    def self.max(x,y)
-      x > y ? x : y
-    end
-
-    def self.min(x,y)
-      x < y ? x : y
-    end
-
-    def self.alpha_beta_root(depth=nil, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil)
+    def self.alpha_beta_root(depth=nil, alpha=-$INF, beta=$INF)
       depth ||= @max_depth
-      # parent_pv ||= Memory::PVStack.new
-      # current_pv = Memory::PVStack.new
-      current_pv = nil
-      result, best_value, best_move, first_moves = -$INF, -$INF, nil, []
+      result, best_move, first_moves = -$INF, nil, []
 
-      # if available, use the PV move from previous iterative deepening first.
-      pv_move = previous_pv.next_move if previous_pv
-      first_moves << pv_move unless pv_move.nil?
-      
-      # allow use of hash move for ordering at root, but not to truncate search.
-      $tt.probe(@node, depth, alpha, beta, first_moves)
+      $tt.get_hash_move(@node, first_moves) # At root, use TT for move ordering only.
 
       @node.edges(true, first_moves).each do |move|
         $main_calls += 1
         next unless @node.avoids_check?(move)  # no illegal moves allowed at root.
 
         MoveGen::make!(@node, move)
-        result = -alpha_beta(@node, depth-PLY_VALUE, -beta, -alpha, previous_pv, current_pv)
+        result = -alpha_beta(@node, depth-PLY_VALUE, -beta, -alpha)
         MoveGen::unmake!(@node, move)
-        # puts "#{move.print}: #{result}"
-        if result > best_value
-          best_value = result 
+
+        if result >= beta
+          $tt.store_result(@node, depth, result, alpha, beta, move)
+          return move, beta # fail hard beta cutoff
+        end
+        if result > alpha
+          alpha = result
           best_move = move
         end
-        if best_value > alpha  # child node now a PV node.
-          alpha = best_value
-          # append_pv(parent_pv, current_pv, move)
-        end
-        break if best_value >= beta
       end
 
-
-      result = $tt.flag_and_store(@node, depth, best_value, alpha, beta, best_move)
-      return best_move, result
+      $tt.store_result(@node, depth, result, alpha, beta, best_move)
+      return best_move, alpha
     end
 
-    def self.alpha_beta(node, depth, alpha=-$INF, beta=$INF, previous_pv=nil, parent_pv=nil, on_pv=false, can_null=true)
+    def self.alpha_beta(node, depth, alpha=-$INF, beta=$INF, can_null=true)
+      first_moves, result, best_move = [], -$INF, nil
 
-      result, best_value, best_move = -$INF, -$INF, nil
-      # current_pv, first_moves = Memory::PVStack.new, []
-      current_pv, first_moves = nil, []
-
-      # if on_pv  # try the PV move first
-      #   # pv_move = previous_pv.next_move
-      #   # first_moves << pv_move if pv_move
-      # end
-
-      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)  # then try probing the hash table for a first move.
-      return hash_value unless hash_value.nil?
-
-
-      if depth <= 0
-        best_value = quiescence(@node, depth, alpha, beta) # not making or unmaking here.
-        return $tt.flag_and_store(@node, depth, best_value, alpha, beta)  
+      if $tt.contains?(@node)  # probe the hash table for @node
+        e = $tt.retrieve(@node)
+        return e.alpha if e.alpha >= beta
+        return e.beta if e.beta <= alpha
+        alpha = max(alpha, e.alpha)
+        beta = min(beta, e.beta)
+        first_moves << e.move unless e.move.nil?
       end
 
+      return quiescence(@node, depth, alpha, beta) if depth <= 0 # not making or unmaking here.
+
+      # # Null Move Pruning
+      # if depth > 2*PLY_VALUE && can_null && @node.value > beta && !@node.in_endgame? && !in_check
+      #   enp = @node.enp_target
+      #   MoveGen::flip_null(@node, enp)
+      #   @node.enp_target = nil
+
+      #   reduction = 3*PLY_VALUE
+      #   result = if (depth - reduction) > 0
+      #     -alpha_beta(@node, depth-reduction, -beta, -beta+1, false)        
+      #   else
+      #     -quiescence(@node, depth-reduction, -beta, -beta+1)
+      #   end
+
+      #   MoveGen::flip_null(@node, enp)
+      #   @node.enp_target = enp
+
+      #   if result >= beta
+      #     $tt.store_result(@node, depth, result, alpha, beta, best_move)
+      #     return beta
+      #   end 
+      # end
 
       in_check = @node.in_check?
       ext_check = in_check ? EXT_CHECK : 0
 
-      # if no move available from PV or memory, use IID to get a decent first move.
-
-      # if first_moves.empty? && depth >= @iid_minimum # only called at high depth where cost/benefit is more favorable.
-      #   # puts "internal iterative deepening"
-      #   iid_move, result = internal_iterative_deepening(depth/2)
-      #   first_moves << iid_move unless iid_move.nil?
-      # end
-
-      # Null Move Pruning
-      if depth > 2*PLY_VALUE && can_null && @node.value > beta && !@node.in_endgame? && !in_check
-        # puts "null move pruning"
-        enp = @node.enp_target
-        MoveGen::flip_null(@node, enp)
-        @node.enp_target = nil
-
-        # reduction = depth > 5*PLY_VALUE ? 4*PLY_VALUE : 3*PLY_VALUE
-        reduction = 3*PLY_VALUE
-        result = if (depth - reduction) > 0
-          -alpha_beta(@node, depth-reduction, -beta, -beta+1, previous_pv, current_pv, false, false)        
-        else
-          -quiescence(@node, depth-reduction, -beta, -beta+1)
-        end
-
-        MoveGen::flip_null(@node, enp)
-        @node.enp_target = enp
-
-        if result >= beta
-          return beta
-        end 
-      end
-
-      # before looping over moves, get applicable killer moves.
-
       legal_moves = false
-      @node.edges(on_pv, first_moves).each do |move|  # expend additional move ordering effort when at PV nodes.
+      @node.edges(false, first_moves).each do |move| 
         $main_calls += 1
 
         MoveGen::make!(@node, move)
-        result = -alpha_beta(@node, depth-PLY_VALUE+ext_check, -beta, -alpha, previous_pv, current_pv)
+        result = -alpha_beta(@node, depth-PLY_VALUE+ext_check, -beta, -alpha)
         MoveGen::unmake!(@node, move)
 
         legal_moves = true unless result <= Pieces::KING_LOSS
 
-        if result > best_value
-          best_value = result 
+        if result >= beta
+          $tt.store_result(@node, depth, result, alpha, beta, best_move)
+          return beta # fail hard beta cutoff
+        end
+        if result > alpha
+          alpha = result
           best_move = move
         end
-        if best_value > alpha # child node is part of pv.
-          alpha = best_value
-          # append_pv(parent_pv, current_pv, move)
-        end
-        break if best_value >= beta
       end
 
       unless legal_moves  # if no legal moves available, it's either a draw or checkmate.
-        best_value = in_check ? -(Pieces::MATE + @i_depth - depth/PLY_VALUE) : 0 # mate in 1 is more valuable than mate in 2
-        return $tt.store(@node, @max_depth, :exact_value, best_value, nil) 
+        result = in_check ? -(Pieces::MATE + @i_depth - depth/PLY_VALUE) : 0 # mate in 1 is more valuable than mate in 2
+        alpha = result if result > alpha
       end
 
-      $tt.flag_and_store(@node, depth, best_value, alpha, beta, best_move)
+      $tt.store_result(@node, depth, result, alpha, beta, best_move)
+      return alpha
     end
 
+
     def self.quiescence(node, depth, alpha, beta)  # quiesence nodes are not part of the principal variation.
+      result, best_move, first_moves = -$INF, nil, []
 
-      first_moves = []
+      if $tt.contains?(@node)  # probe the hash table for @node
+        e = $tt.retrieve(@node)
+        return e.alpha if e.alpha >= beta
+        return e.beta if e.beta <= alpha
+        alpha = max(alpha, e.alpha)
+        beta = min(beta, e.beta)
+        first_moves << e.move unless e.move.nil?
+      end
 
-      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)
-      return hash_value unless hash_value.nil?
-
-      best_value = @node.value  # assume 'standing pat' lower bound
-      return best_value if best_value >= beta  
-      alpha = best_value if best_value > alpha
-
-      result, best_move = -$INF, nil
+      result = @node.value  # assume 'standing pat' lower bound
+      if result >= beta  
+        if depth >= -3*PLY_VALUE  # only save higher-depth q-nodes to TT
+          $tt.store_result(@node, depth, result, alpha, beta, best_move)
+        end
+        return beta # fail hard beta cutoff
+      end
+      alpha = result if result > alpha
 
       @node.tactical_edges(first_moves).each do |move|
-
         next if move.see && move.see < 0  # moves are ordered by SEE
-
         $quiescence_calls += 1
 
         MoveGen::make!(@node, move)
         result = -quiescence(@node, depth-PLY_VALUE, -beta, -alpha)
         MoveGen::unmake!(@node, move)
         
-        if result > best_value
-          best_value = result 
+        if result >= beta
+          $tt.store_result(@node, depth, result, alpha, beta, best_move)
+          return beta # fail hard beta cutoff
+        end
+        if result > alpha
+          alpha = result
           best_move = move
         end
-        alpha = best_value if best_value > alpha
-        break if best_value >= beta
-
       end
 
-      # only save higher-depth q_nodes to TT
-      if depth >= -3*PLY_VALUE
-        $tt.flag_and_store(@node, depth, best_value, alpha, beta, best_move)
-      else
-        best_value
+      if depth >= -3*PLY_VALUE  # only save higher-depth q-nodes to TT
+        $tt.store_result(@node, depth, result, alpha, beta, best_move)
       end
-    end
-
-    def self.append_pv(parent_pv, current_pv, move)
-      parent_pv.clear
-      parent_pv[0] = move
-      parent_pv += current_pv  # merge child node PV into parent node PV.
+      return alpha
     end
 
     def self.get_see_score(position, to)
@@ -374,6 +324,14 @@ module Chess
       end
     end
 
+    def self.max(x,y)
+      x > y ? x : y
+    end
+
+    def self.min(x,y)
+      x < y ? x : y
+    end
+
     # Module interface
 
     def self.reset_counters
@@ -381,7 +339,6 @@ module Chess
     end
 
     def self.select_move(node, max_depth=6, aggregator=nil, verbose=true)
-      # Use class instance variables rather than class variables.
       @node, @max_depth, @aggregator, @verbose = node, max_depth * PLY_VALUE, aggregator, verbose
       @iid_minimum = @max_depth-PLY_VALUE*3 > PLY_VALUE*3 ? @max_depth-PLY_VALUE*2 : PLY_VALUE*4
       reset_counters

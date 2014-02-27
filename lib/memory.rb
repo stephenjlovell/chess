@@ -41,70 +41,9 @@ module Chess
       PSQ[r][c][sym]
     end
 
-    class PVStack
-      include Enumerable
-      attr_accessor :moves
+    TTEntry = Struct.new(:depth, :type, :value, :move)
 
-      def initialize(moves=[])
-        @moves = moves
-        @counter = 0
-      end
-
-      def each
-        @moves.each { |m| yield(m) }
-      end
-
-      def +(stack)
-        @moves += stack.moves
-        return self
-      end
-
-      def clear
-        @moves = []
-      end
-
-      def next_move
-        move = @moves[@counter]
-        @counter += 1
-        return move
-      end
-
-      def reset_counter
-        @counter = 0
-      end
-
-      def [](index)
-        @moves[index]
-      end
-
-      def []=(index, move)
-        @moves[index] = move
-      end
-
-      def print
-        puts "\n------Principal Variation (#{self.count} moves)------"
-        each { |m| puts m.print }
-        puts "\n"
-      end
-    
-      def print_details
-        puts "------Principal Variation (#{self.count} moves)------"
-        each do |m|
-          puts m.position.board.print
-          puts m.print
-        end
-      end
-    end
-
-    TTEntry = Struct.new(:depth, :type, :value, :best_move)
-
-    # class Entry # this class contains the information to be stored in each bucket.
-    #   attr_reader :depth, :type, :value, :best_move
-    #   # @type may be :upper_bound, :lower_bound, :exact_match
-    #   def initialize(depth, type, value, best_move)
-    #     @depth, @type, @value, @best_move = depth, type, value, best_move
-    #   end
-    # end
+    TTBoundEntry = Struct.new(:depth, :alpha, :beta, :move)
 
     class TranspositionTable # this class generates a hash code for each explored position  
       # using a Zobrist hashing algorithm, and stores the value of each position.
@@ -117,37 +56,61 @@ module Chess
         @table = GoogleHashDenseLongToRuby.new
       end
 
-      def probe(node, depth, alpha, beta, first_moves=nil)
+      # def probe(node, depth, alpha, beta, first_moves=nil)
+      #   if contains?(node)
+      #     $memory_calls += 1
+      #     entry = retrieve(node)
+      #     if entry.depth >= depth # if entry was searched to greater than current depth, use instead of searching.
+      #       return entry.value if entry.type == :exact_value
+      #       return alpha if entry.type == :lower_bound && entry.value <= alpha
+      #       return beta if entry.type == :upper_bound && entry.value >= beta
+      #     end
+      #     first_moves << entry.move if first_moves && !entry.move.nil?
+      #   end
+      #   return nil  # sentinel indicating probe was unsuccessful in creating an immediate search cutoff.
+      # end
+
+      def get_hash_move(node, first_moves)
         if contains?(node)
           $memory_calls += 1
           entry = retrieve(node)
-          if entry.depth >= depth # if entry was searched to greater than current depth, use instead of searching.
-            return entry.value if entry.type == :exact_value
-            return alpha if entry.type == :lower_bound && entry.value <= alpha
-            return beta if entry.type == :upper_bound && entry.value >= beta
-          end
-          first_moves << entry.best_move if first_moves && !entry.best_move.nil?
+          first_moves << entry.move unless entry.move.nil?
         end
-        return nil  # sentinel indicating probe was unsuccessful in creating an immediate search cutoff.
       end
   
-      def flag_and_store(node, depth, best_value, alpha, beta, best_move=nil)
-        flag = if best_value <= alpha
-          :lower_bound
-        elsif best_value >= beta
-          :upper_bound
-        else
-          :exact_value
-        end
-        store(node, depth, flag, best_value, best_move)
-      end
+      # def flag_and_store(node, depth, best_value, alpha, beta, move=nil)
+      #   flag = if best_value <= alpha
+      #     :lower_bound
+      #   elsif best_value >= beta
+      #     :upper_bound
+      #   else
+      #     :exact_value
+      #   end
+      #   store(node, depth, flag, best_value, move)
+      # end
 
-      def store(node, depth, type, value, best_move=nil)
+      # def store(node, depth, type, value, move=nil)
+      #   h = node.hash
+      #   if !@table.has_key?(h) || depth >= @table[h].depth   # simple depth-based replacement scheme.
+      #     @table[h] = TTEntry.new(depth, type, value, move)
+      #   end
+      #   @table[h].value
+      # end
+
+      def store_result(node, depth, result, alpha, beta, move)
         h = node.hash
-        if !@table.has_key?(h) || depth >= @table[h].depth   # simple depth-based replacement scheme.
-          @table[h] = TTEntry.new(depth, type, value, best_move)
+        if !contains?(node)
+          @table[h] = TTBoundEntry.new(depth, alpha, beta, move)
+        elsif depth >= @table[h].depth
+          e = @table[h]        
+          if result <= alpha
+            e.depth, e.beta = depth, beta
+          elsif result >= beta
+            e.depth, e.alpha = depth, alpha
+          else
+            e.depth, e.alpha, e.beta, e.move = depth, alpha, beta, move
+          end
         end
-        return @table[h].value
       end
 
       def length
