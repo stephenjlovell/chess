@@ -106,8 +106,8 @@ module Chess
       end
 
       def inspect
-        "<Chess::Position::ChessPosition <@board:#{@board.inspect}>
-         <@pieces:#{@pieces.inspect}>, <@side_to_move:#{@side_to_move}>>"
+        "<Chess::Position::ChessPosition <@board:#{@board.inspect}>" +
+        "<@pieces:#{@pieces.inspect}> <@side_to_move:#{@side_to_move}>>"
       end
 
       # These methods will be re-written to make use of Move::MoveList class:

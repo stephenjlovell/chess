@@ -56,81 +56,56 @@ module Chess
         @table = GoogleHashDenseLongToRuby.new
       end
 
-      # def probe(node, depth, alpha, beta, first_moves=nil)
-      #   if contains?(node)
-      #     $memory_calls += 1
-      #     entry = retrieve(node)
-      #     if entry.depth >= depth # if entry was searched to greater than current depth, use instead of searching.
-      #       return entry.value if entry.type == :exact_value
-      #       return alpha if entry.type == :lower_bound && entry.value <= alpha
-      #       return beta if entry.type == :upper_bound && entry.value >= beta
-      #     end
-      #     first_moves << entry.move if first_moves && !entry.move.nil?
-      #   end
-      #   return nil  # sentinel indicating probe was unsuccessful in creating an immediate search cutoff.
-      # end
-
-      def get_hash_move(node, first_moves)
-        if contains?(node)
-          $memory_calls += 1
-          entry = retrieve(node)
-          first_moves << entry.move unless entry.move.nil?
-        end
-      end
-  
-      # def flag_and_store(node, depth, best_value, alpha, beta, move=nil)
-      #   flag = if best_value <= alpha
-      #     :lower_bound
-      #   elsif best_value >= beta
-      #     :upper_bound
-      #   else
-      #     :exact_value
-      #   end
-      #   store(node, depth, flag, best_value, move)
-      # end
-
-      # def store(node, depth, type, value, move=nil)
-      #   h = node.hash
-      #   if !@table.has_key?(h) || depth >= @table[h].depth   # simple depth-based replacement scheme.
-      #     @table[h] = TTEntry.new(depth, type, value, move)
-      #   end
-      #   @table[h].value
-      # end
-
-      def store_result(node, depth, result, alpha, beta, move)
-        h = node.hash
-        if !contains?(node)
-          @table[h] = TTBoundEntry.new(depth, alpha, beta, move)
-        elsif depth >= @table[h].depth
-          e = @table[h]        
-          if result <= alpha
-            e.depth, e.beta = depth, beta
-          elsif result >= beta
-            e.depth, e.alpha = depth, alpha
-          else
-            e.depth, e.alpha, e.beta, e.move = depth, alpha, beta, move
-          end
-        end
-      end
-
       def length
         @table.length
       end
       alias :size :length
       alias :count :length
 
-      def contains?(node)
-        @table.has_key?(node.hash)
-      end
-
-      def retrieve(node)
-        @table[node.hash]
-      end
-
       def clear
         @table = GoogleHashDenseLongToRuby.new
       end
 
+      def contains?(node)
+        @table.has_key?(node.hash)
+      end
+
+      def get(node)
+        @table[node.hash]
+      end
+
+      def get_hash_move(node, first_moves)
+        if contains?(node)
+          # $memory_calls += 1
+          entry = get(node)
+          first_moves << entry.move unless entry.move.nil?
+        end
+      end
+
+      def store_result(node, depth, result, alpha, beta, move)
+        h = node.hash
+        if !contains?(node)
+          alpha, beta = set_bounds(result, alpha, beta)
+          @table[h] = TTBoundEntry.new(depth, alpha, beta, move)
+        elsif depth >= @table[h].depth
+          alpha, beta = set_bounds(result, alpha, beta)
+          e = @table[h]
+          e.depth, e.alpha, e.beta, e.move = depth, alpha, beta, move
+        end
+        result
+      end
+
+      private
+
+      def set_bounds(result, alpha, beta)
+        a, b = alpha, beta
+        b = result if result <= alpha     # fail low
+        a = result if result >= beta      # fail high
+        if result > alpha && result < beta         
+          a, b = result, result           # accurate value found   
+        end
+        return a, b
+      end
     end # end TranspostionTable class
 
   end

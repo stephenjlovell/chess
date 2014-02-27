@@ -83,10 +83,10 @@ describe Chess::Search do
   # end
 
   describe "playing strength" do
-    let(:problems) { load_test_suite('./test_suites/kaufman.epd') }
+    let(:problems) { load_test_suite('./test_suites/win_at_chess.epd') }
     
     it "should be able to take standardized tests" do
-      take_test(problems[0..1], @depth)
+      take_test(problems, @depth, false)
     end
   end
 

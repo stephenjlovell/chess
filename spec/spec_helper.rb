@@ -83,10 +83,10 @@ def take_test(problems, depth, verbose=false)
     total += 1
     if verbose
       puts prob.id
-      puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves} AI Answer: #{prob.ai_response.print}"
+      puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves} AI Answer: #{prob.ai_response}"
       puts "Running score: #{correct}/#{total} (#{(correct+0.0)/total*100}%)"
     else
-      print "#{i+1}."
+      print "#{i+1}.#{prob.score > 1 ? "O" : "X" }."
     end
   end
   t1 = Time.now
@@ -121,6 +121,7 @@ def score_question(problem) # answer is considered correct if it matches any ans
 end
 
 def move_matches_pgn?(move, pgn)
+  return false if move.nil?
   type, to = move.piece.class.type.to_s, move.to.to_s
   if pgn.length == 2
     return pgn == to 

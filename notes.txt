@@ -28,7 +28,9 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
 
 Search benchmarking:
 
-  2/25/14, MTD-f step
+  2/25/14, 
+
+  MTD-f step
   Total AI score: 47/300 (15.666666666666668%)
   nodes: 4115699,  evals: 905779,  avg. branching: 2.4067041134359775
   0.7628975233333334 seconds/position at depth 4
@@ -43,6 +45,10 @@ Search benchmarking:
   4     |       | 2564   | 1410354 | 1162667 | 572604 | 169976 | 2.1879132596835418 | 2.4067041134359775 | 2573021  
 
 
+  2/27/14 - move to double-bound structure for TT
+
+
+
 
 
 Current Issues ----
@@ -50,15 +56,15 @@ Current Issues ----
   Rare bug when making capture moves probed and retrieved from transposition table. 
   Captured piece is sometimes nil. Occurs more often at higher max depths.
   raise a custom error when this happens that triggers a re-run of the search.
+  store a FEN of the position passed to select_move, and reset @node prior to re-searching.
 
 
 To Do ----
 
+
   MTD-f will be more efficient if both alpha and beta are stored in TT entries.
     - refactor TT entries to hold both alpha and beta
     - refactor search and TT to remove 'flag' approach
-
-
 
 
   implement 2-level "depth + always"  TT replacement scheme?

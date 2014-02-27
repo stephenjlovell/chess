@@ -28,7 +28,7 @@ module Chess
 
       def initialize(depth, score, passes, m_nodes, q_nodes, evals, memory, previous_total=0.0, first_total=0.0)
         @depth, @score, @passes, @m_nodes = depth, score, passes, m_nodes
-        @q_nodes, @evals, @memory = evals, memory, q_nodes
+        @q_nodes, @evals, @memory = q_nodes, evals, memory
         @eff_branching = previous_total == 0.0 ? 0.0 : all_nodes.to_f/previous_total
         @avg_eff_branching = depth == 1 ? 0.0 : (all_nodes.to_f/first_total)**(1r/(depth-1)) 
       end
