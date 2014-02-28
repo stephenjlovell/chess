@@ -41,6 +41,19 @@ def perft(node, depth)  # move generation speed test. Counts all leaf nodes to s
   return sum
 end
 
+def perft_legal(node, depth)  # move generation speed test. Counts all leaf nodes to specified depth.
+  return 1 if depth == 0
+  sum = 0
+  moves = node.get_moves
+  moves.each do |move|
+    next unless node.avoids_check?(move)
+    Chess::MoveGen::make!(node, move) 
+    sum += perft(node, depth-1)
+    Chess::MoveGen::unmake!(node, move)
+  end
+  return sum
+end
+
 Problem = Struct.new(:id, :position, :best_moves, :avoid_moves, :ai_response, :score)
 
 def load_test_suite(file)
@@ -86,7 +99,7 @@ def take_test(problems, depth, verbose=false)
       puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves} AI Answer: #{prob.ai_response}"
       puts "Running score: #{correct}/#{total} (#{(correct+0.0)/total*100}%)"
     else
-      print "#{i+1}.#{prob.score > 1 ? "O" : "X" }."
+      print " | #{i+1}.#{prob.score > 0 ? "-" : "X" }"
     end
   end
   t1 = Time.now
@@ -97,12 +110,11 @@ def take_test(problems, depth, verbose=false)
     tp problems, :id, :best_moves, :avoid_moves, :ai_response, :score
   end
   total_right, count = score_test(problems), problems.count
-  puts "\nTotal AI score: #{total_right}/#{count} (#{((total_right+0.0)/count)*100}%)"
-  puts aggregator.print_summary
-  puts "#{time/count} seconds/position at depth #{depth}"
-
-  puts "\n------ Aggregate Search Performance -------"
+  accuracy = ((total_right+0.0)/count)*100
   aggregator.print
+  puts "\nTotal AI score: #{total_right}/#{count} (#{accuracy}%)"
+  puts "#{time/count} seconds/search at depth #{depth}"
+  puts aggregator.print_summary(accuracy)
 end
 
 def score_test(problems)

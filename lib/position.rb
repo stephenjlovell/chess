@@ -110,38 +110,25 @@ module Chess
         "<@pieces:#{@pieces.inspect}> <@side_to_move:#{@side_to_move}>>"
       end
 
-      # These methods will be re-written to make use of Move::MoveList class:
-
-
-
-      def get_moves(enhanced_sort=false, first_moves=[]) 
+      def get_moves(first_moves, enhanced_sort=false) 
         promotion_captures, captures, promotions, moves = [], [], [], []
 
         own_pieces.each do |key, piece| 
           piece.get_moves(self, key, moves, captures, promotions, promotion_captures)
         end
-
-        # if on the pv, invest some extra time ordering captures.  otherwise, use MVV-LVA
+        # if on the pv, invest some extra time ordering captures.  otherwise, use MVV-LVA.
         enhanced_sort ? sort_captures_by_see!(captures) : sort_captures!(captures) 
-
-        sort_moves!(moves)  
-        
-        # ideally, killer moves should be searched before captures...
-
+        sort_moves!(moves)  # ideally, killer moves should be searched before captures.
         # append move lists together in reasonable order:
         first_moves + promotion_captures + captures + promotions + MoveGen::get_castles(self) + moves
-        # all_moves.uniq 
       end
       alias :edges :get_moves
 
-
-
-      def get_captures(first_moves = []) # returns a sorted array of all possible moves for the current player.
+      def get_captures(first_moves) # returns a sorted array of all possible moves for the current player.
         captures, promotion_captures = [], []
         own_pieces.each { |key, piece| piece.get_captures(self, key, captures, promotion_captures) }
         sort_captures_by_see!(captures)
-        # first_moves + promotion_captures + captures
-        promotion_captures + captures
+        first_moves + promotion_captures + captures
       end
       alias :tactical_edges :get_captures
 

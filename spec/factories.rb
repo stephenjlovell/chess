@@ -104,7 +104,7 @@ CHECK = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
 FactoryGirl.define do
 
   factory :clock, class: Chess::Clock do
-    initialize_with { new(120) }
+    initialize_with { new(Chess::TIME_LIMIT) }
   end
 
   factory :transposition_table, class: Chess::Memory::TranspositionTable 
@@ -113,7 +113,7 @@ FactoryGirl.define do
     position { FactoryGirl.build(:position) }
     tt { FactoryGirl.build(:transposition_table) }
     clock { FactoryGirl.build(:clock)}
-    initialize_with { new(:w, 10) }
+    initialize_with { new(:w, Chess::TIME_LIMIT) }
 
     factory :test_game do
       position { FactoryGirl.build(:test_position) }

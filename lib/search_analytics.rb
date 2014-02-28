@@ -69,13 +69,13 @@ module Chess
 
       def print     
         refresh
-        puts "\n"
+        puts "\n\n------ Aggregate Search Performance -------\n\n"
         tp @data
       end
 
-      def print_summary
+      def print_summary(accuracy=nil)
         refresh
-        "nodes: #{all_nodes},  evals: #{all_evals},  avg. branching: #{all_branching}"
+        "N: #{all_nodes}; E: #{all_evals}; B: #{all_branching}; Efficiency: #{accuracy/all_branching}"
       end
 
       def all_nodes

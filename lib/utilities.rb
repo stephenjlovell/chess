@@ -30,6 +30,8 @@ module Chess
   ENEMY_BACK_ROW = { w: 9, b: 2 }
 
   FLIP_COLOR = { w: :b, b: :w }
+
+  TIME_LIMIT = 10  # default search time limit
   
   module Notation # supports translation to and from long algebraic chess notation.
 

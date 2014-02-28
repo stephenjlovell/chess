@@ -31,8 +31,9 @@ module Chess
 
     MTD_STEP_SIZE = 15
 
+    Q_TT_MIN = -3*PLY_VALUE
+
     def self.iterative_deepening_mtdf_step(max_depth=nil)
-      @mtdf = true
       depth = max_depth || @max_depth
       iterative_deepening(@max_depth/PLY_VALUE) do |guess, d|
         mtdf_step(guess, d)
@@ -40,7 +41,6 @@ module Chess
     end
 
     def self.iterative_deepening_mtdf(max_depth=nil)
-      @mtdf = true
       depth = max_depth || @max_depth
       iterative_deepening(@max_depth/PLY_VALUE) do |guess, d|
         mtdf(guess, d)
@@ -48,17 +48,20 @@ module Chess
     end
 
     def self.iterative_deepening_alpha_beta(max_depth=nil)
-      @mtdf = false
       depth = max_depth || @max_depth
       iterative_deepening(depth/PLY_VALUE) do |guess, d|
         alpha_beta_root(d, -$INF, $INF)
       end
     end
 
+    def self.get_initial_estimate
+      # move, result = alpha_beta_root(2*PLY_VALUE, -$INF, $INF)
+      # return result
+      quiescence(Q_TT_MIN, -$INF, $INF)
+    end
 
     def self.iterative_deepening(depth)
-      guess = @previous_value || @node.value
-      best_move, value = nil, -$INF
+      best_move, guess, value = nil, nil, -$INF
       search_records = [] if @verbose
       first_total = 0.0
       (1..depth).each do |d|
@@ -87,7 +90,7 @@ module Chess
 
 
     def self.mtdf(f=nil, depth=nil) 
-      f = @previous_value || @node.value
+      f ||= (@previous_value || get_initial_estimate)
       depth ||= @max_depth
       @lower_bound, @upper_bound = -$INF, $INF
       while @lower_bound < @upper_bound do
@@ -96,7 +99,10 @@ module Chess
 
         best_move, f = alpha_beta_root(depth, r-1, r)
         
-        return nil, f if best_move == nil # prevent infinite loop on checkmate
+        if Chess::current_game.clock.time_up?
+          print "{ timed out: #{best_move}=>#{f}}"
+          return best_move, f 
+        end
 
         if f < r then @upper_bound = f else @lower_bound = f end
       end
@@ -105,7 +111,7 @@ module Chess
 
 
     def self.mtdf_step(f=nil, depth=nil) # MTD-f with "convergence accelerator"
-      f ||= @previous_value || @node.value 
+      f ||= (@previous_value || get_initial_estimate)
       depth ||= @max_depth
       @lower_bound, @upper_bound, step = -$INF, $INF, MTD_STEP_SIZE
       stepped_up, stepped_down = false, false
@@ -117,7 +123,7 @@ module Chess
         # puts "alpha_beta_root(#{depth}, #{r-1}, #{r})"
         best_move, f = alpha_beta_root(depth, r-1, r)
         
-        return nil, f if best_move.nil?  # prevent infinite loop on checkmate
+        return best_move, f if Chess::current_game.clock.time_up?
 
         if f < r 
           @upper_bound = f
@@ -151,13 +157,13 @@ module Chess
       $tt.get_hash_move(@node, first_moves) # At root, use TT for move ordering only.
 
       a, legal_moves = alpha, false
-      @node.edges(false, first_moves).each do |move| 
+      @node.edges(first_moves, true).each do |move| 
         next unless @node.avoids_check?(move)  # no illegal moves allowed at root.
 
         $main_calls += 1
         
         MoveGen::make!(@node, move)
-        result = -alpha_beta(depth-PLY_VALUE, -beta, -a)
+        result = max(-alpha_beta(depth-PLY_VALUE, -beta, -a), result)
         MoveGen::unmake!(@node, move)
 
         legal_moves = true unless result <= Pieces::KING_LOSS
@@ -187,13 +193,15 @@ module Chess
         $memory_calls += 1
         e = $tt.get(@node)
         unless e.nil?
+          first_moves << e.move unless e.move.nil?
           if e.depth >= depth
             return e.alpha if e.alpha >= beta
             return e.beta if e.beta <= alpha
-            alpha = max(alpha, e.alpha)
-            beta = min(beta, e.beta)
+            if e.depth > depth
+              alpha = max(alpha, e.alpha)
+              beta = min(beta, e.beta)
+            end
           end
-          first_moves << e.move unless e.move.nil?
         end
       end
 
@@ -201,7 +209,7 @@ module Chess
       ext_check = in_check ? EXT_CHECK : 0
 
       # # Null Move Pruning
-      # if depth > 2*PLY_VALUE && can_null && @node.value > beta && !@node.in_endgame? && !in_check
+      # if can_null && !in_check && depth > 2*PLY_VALUE && !@node.in_endgame? && @node.value >= beta
       #   enp = @node.enp_target
       #   MoveGen::flip_null(@node, enp)
       #   @node.enp_target = nil
@@ -222,11 +230,11 @@ module Chess
       # end
       
       a, legal_moves = alpha, false
-      @node.edges(false, first_moves).each do |move| 
+      @node.edges(first_moves).each do |move| 
         $main_calls += 1
 
         MoveGen::make!(@node, move)
-        result = -alpha_beta(depth-PLY_VALUE+ext_check, -beta, -a)
+        result = max(-alpha_beta(depth-PLY_VALUE+ext_check, -beta, -a), result)
         MoveGen::unmake!(@node, move)
 
         legal_moves = true unless result <= Pieces::KING_LOSS
@@ -253,13 +261,15 @@ module Chess
         $memory_calls += 1
         e = $tt.get(@node)
         unless e.nil?
+          first_moves << e.move unless e.move.nil?
           if e.depth >= depth
             return e.alpha if e.alpha >= beta
             return e.beta if e.beta <= alpha
-            alpha = max(alpha, e.alpha)
-            beta = min(beta, e.beta)
+            if e.depth > depth
+              alpha = max(alpha, e.alpha)
+              beta = min(beta, e.beta)
+            end
           end
-          first_moves << e.move unless e.move.nil?
         end
       end
 
@@ -276,7 +286,7 @@ module Chess
         $quiescence_calls += 1
 
         MoveGen::make!(@node, move)
-        result = -quiescence(depth-PLY_VALUE, -beta, -a)
+        result = max(-quiescence(depth-PLY_VALUE, -beta, -a), result)
         MoveGen::unmake!(@node, move)
         
         if result > a
@@ -286,7 +296,7 @@ module Chess
         break if result >= beta
       end
 
-      if depth >= -3*PLY_VALUE  # only save higher-depth q-nodes to TT
+      if depth > Q_TT_MIN  # only save higher-depth q-nodes to TT
         $tt.store_result(@node, depth, result, alpha, beta, best_move)
       end
       return result

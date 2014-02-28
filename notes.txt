@@ -73,11 +73,14 @@ To Do ----
     -Null move pruning (null move heuristic)
 
   Move ordering (priority high to low):
-    -PV move
     -Hash Move
     -Killer Moves
     -Captures sorted by MVV-LVA
     -Non-captures sorted by History Heuristic
+
+    move ordering at root by hash value? would imply move ordering by node type (cut nodes last)
+
+
 
   Search extensions:
     -Principal Variation

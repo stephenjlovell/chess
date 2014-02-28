@@ -30,7 +30,7 @@ module Chess # top-level application namespace.
     @current_game = game  
   end
 
-  def self.new_game(ai_player = :b, time_limit = 10.0)
+  def self.new_game(ai_player = :b, time_limit=TIME_LIMIT)
     puts "Starting a new game." 
     puts "AI color: #{ai_player}, Your color: #{FLIP_COLOR[ai_player]}"
     @current_game = Chess::Game.new(ai_player, time_limit)
@@ -110,7 +110,7 @@ module Chess # top-level application namespace.
     attr_accessor :position, :halfmove_clock, :tt, :clock, :move_history, :winner
     attr_reader :ai_player, :opponent
     
-    def initialize(ai_player = :b, time_limit = 10.0)
+    def initialize(ai_player = :b, time_limit=TIME_LIMIT)
       board = Board.new
       @position = Position::ChessPosition.new(board,Pieces::setup(board),:w,0)
       @halfmove_count = 0
