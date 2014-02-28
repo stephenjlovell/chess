@@ -33,10 +33,6 @@ describe Chess::Search do
     let(:pos) { game.position }
 
     describe "mtdf" do
-      # it "as a standalone algorithm" do
-      #   puts "mtdf \n #{@s::select_move(pos, @depth){ @s::mtdf }[0] }"
-      #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
-      # end
       # it "from within an iterative deepening framework" do
       #   puts "iterative_deepening_mtdf \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf }[0] }"
       # end
@@ -46,10 +42,6 @@ describe Chess::Search do
       # end
     end
     describe "alpha beta" do
-      # it "as a standalone algorithm" do
-      #   puts "alpha_beta \n #{@s::select_move(pos, @depth) { @s::alpha_beta }[0] }"
-      #   puts "max |m #{$main_calls} |q #{$quiescence_calls} |t #{$main_calls+$quiescence_calls} |e #{$evaluation_calls} |m #{$memory_calls} |n #{$non_replacements}"
-      # end
       # it "from within an iterative deepening framework" do
       #   puts "iterative_deepening_alpha_beta \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_alpha_beta }[0] }"
       # end

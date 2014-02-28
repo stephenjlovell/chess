@@ -88,8 +88,8 @@ module Chess
           alpha, beta = set_bounds(result, alpha, beta)
           @table[h] = TTBoundEntry.new(depth, alpha, beta, move)
         elsif depth >= @table[h].depth
-          alpha, beta = set_bounds(result, alpha, beta)
           e = @table[h]
+          alpha, beta = set_bounds(result, alpha, beta)
           e.depth, e.alpha, e.beta, e.move = depth, alpha, beta, move
         end
         result
@@ -99,11 +99,11 @@ module Chess
 
       def set_bounds(result, alpha, beta)
         a, b = alpha, beta
-        b = result if result <= alpha     # fail low
-        a = result if result >= beta      # fail high
-        if result > alpha && result < beta         
-          a, b = result, result           # accurate value found   
-        end
+        b = result if result < beta     
+        a = result if result > alpha     
+        # if alpha <= result && result <= beta         
+        #   a, b = result, result           # accurate value found   
+        # end
         return a, b
       end
     end # end TranspostionTable class
