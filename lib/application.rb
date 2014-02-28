@@ -116,8 +116,6 @@ module Chess # top-level application namespace.
       @halfmove_count = 0
       @move_history = MoveHistory.new
       @ai_player, @opponent = ai_player, FLIP_COLOR[ai_player]
-      @tt = Memory::TranspositionTable.new
-      $tt = @tt
       @clock = Clock.new(time_limit)
       Chess::current_game = self
     end

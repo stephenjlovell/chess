@@ -29,7 +29,7 @@ module Chess
 
     EXT_PV = 0     # extend search when on the principal variation from previous iterative deepening.
 
-    MTD_STEP_SIZE = 15
+    MTD_STEP_SIZE = 100
 
     Q_TT_MIN = -3*PLY_VALUE
 
@@ -52,15 +52,6 @@ module Chess
       iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
         alpha_beta_root(d, -$INF, $INF)
       end
-    end
-
-    def self.get_initial_estimate
-      if @node.in_check?
-        move, value = alpha_beta_root(PLY_VALUE)
-      else
-        value = quiescence(Q_TT_MIN)
-      end
-      return value
     end
 
     def self.iterative_deepening(depth)
@@ -92,6 +83,16 @@ module Chess
     end
 
 
+    def self.get_initial_estimate
+      if @node.in_check?
+        move, value = alpha_beta_root(PLY_VALUE)
+      else
+        value = quiescence(0)
+      end
+      return value
+    end
+
+
     def self.mtdf(guess=nil, depth=nil) 
       guess ||= (@previous_value || get_initial_estimate)
       depth ||= @max_depth
@@ -103,10 +104,9 @@ module Chess
 
         move, guess = alpha_beta_root(depth, gamma-1, gamma)
         best_move, best = move, guess unless move.nil?
-
         # return best_move, best if Chess::current_game.clock.time_up?
 
-        if guess < gamma then @upper_bound = guess else @lower_bound = guess end
+        guess < gamma ? @upper_bound = guess : @lower_bound = guess
       end
       return best_move, best
     end
@@ -116,17 +116,17 @@ module Chess
       guess ||= (@previous_value || get_initial_estimate)
       depth ||= @max_depth
       best, @lower_bound, @upper_bound, step = -$INF, -$INF, $INF, MTD_STEP_SIZE
-      stepped_up, stepped_down = false, false
+      # stepped_up, stepped_down = false, false
 
       while @lower_bound < @upper_bound
         $passes += 1
         gamma = guess == @lower_bound ? guess+1 : guess
-        # puts "step: #{step} lower: #{@lower_bound}, upper: #{@upper_bound}"
-        # puts "alpha_beta_root(#{depth}, #{r-1}, #{r})"
+
         move, guess = alpha_beta_root(depth, gamma-1, gamma)
         best_move, best = move, guess unless move.nil?
-        
-        return best_move, guess if Chess::current_game.clock.time_up?
+        # return best_move, guess if Chess::current_game.clock.time_up?
+
+        guess < gamma ? @upper_bound = guess : @lower_bound = guess
 
         if guess < gamma
           @upper_bound = guess
@@ -148,6 +148,7 @@ module Chess
         guess = @upper_bound if @upper_bound < guess
         guess = @lower_bound if @lower_bound > guess
       end
+
       return best_move, best
     end
 
@@ -209,22 +210,22 @@ module Chess
       in_check = @node.in_check?
       ext_check = in_check ? EXT_CHECK : 0
 
-      # # Null Move Pruning
-      # if can_null && !in_check && depth > 2*PLY_VALUE && !@node.in_endgame? && @node.value >= beta
-      #   enp = @node.enp_target
-      #   MoveGen::flip_null(@node, enp)
-      #   @node.enp_target = nil
+      # Null Move Pruning
+      if can_null && !in_check && depth > 2*PLY_VALUE && !@node.in_endgame? && @node.value >= beta
+        enp = @node.enp_target
+        MoveGen::flip_null(@node, enp)
+        @node.enp_target = nil
 
-      #   reduction = 3*PLY_VALUE
-      #   result = -alpha_beta(depth-reduction, -beta, -beta+1, false)        
+        reduction = 3*PLY_VALUE
+        result = -alpha_beta(depth-reduction, -beta, -beta+1, false)        
 
-      #   MoveGen::flip_null(@node, enp)
-      #   @node.enp_target = enp
+        MoveGen::flip_null(@node, enp)
+        @node.enp_target = enp
 
-      #   if result >= beta
-      #     return beta
-      #   end 
-      # end
+        if result >= beta
+          return beta
+        end 
+      end
       
       legal_moves = false
       @node.edges(first_moves).each do |move| 
@@ -291,9 +292,9 @@ module Chess
         break if result >= beta
       end
 
-      if depth > Q_TT_MIN  # only save higher-depth q-nodes to TT
+      # if depth > Q_TT_MIN  # only save higher-depth q-nodes to TT
         $tt.store_result(@node, depth, result, alpha, beta, best_move)
-      end
+      # end
       return result
     end
 

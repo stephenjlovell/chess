@@ -20,12 +20,13 @@
 #-----------------------------------------------------------------------------------
 
 # This file is for Application-level constants and helper methods
+require './lib/memory.rb'
 
 module Chess
 
   # global variables:
   $INF = 1.0/0.0
-  $tt = nil  # global access to transposition table instance.
+  $tt = Memory::TranspositionTable.new  # global access to transposition table instance.
 
   ENEMY_BACK_ROW = { w: 9, b: 2 }
 

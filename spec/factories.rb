@@ -35,7 +35,6 @@ EMPTY = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
     # column  0    1    2    3    4    5    6    7    8    9    10   11
     # letter            A    B    C    D    E    F    G    H
 
-
 # sets up a board with some useful properties for testing.
 SQUARES = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
@@ -67,8 +66,6 @@ INITIAL = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
       # column  0    1    2    3    4    5    6    7    8    9    10   11
       # letter            A    B    C    D    E    F    G    H
-
-
                                                                               # row  board #
 SEE_TEST = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1
@@ -111,7 +108,6 @@ FactoryGirl.define do
 
   factory :game, class: Chess::Game do
     position { FactoryGirl.build(:position) }
-    tt { FactoryGirl.build(:transposition_table) }
     clock { FactoryGirl.build(:clock)}
     initialize_with { new(:w, Chess::TIME_LIMIT) }
 
