@@ -25,7 +25,7 @@ describe Chess::Search do
 
   before do 
     @s = Chess::Search
-    @depth = 4
+    @depth = 6
   end
 
   describe "permits use of" do

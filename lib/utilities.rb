@@ -32,7 +32,7 @@ module Chess
 
   FLIP_COLOR = { w: :b, b: :w }
 
-  TIME_LIMIT = 10  # default search time limit
+  TIME_LIMIT = 12  # default search time limit
   
   module Notation # supports translation to and from long algebraic chess notation.
 

@@ -56,7 +56,9 @@ module Chess
     end
 
     def ray_attack?(location, threat_piece, queen, directions)
-      directions.each { |vector| return true if ray_attack_direction?(location, threat_piece, queen, vector) }
+      directions.each do |vector| 
+        return true if ray_attack_direction?(location, threat_piece, queen, vector)
+      end
       return false
     end
 

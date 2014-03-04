@@ -32,8 +32,7 @@ require 'factories.rb'
 def perft(node, depth)  # move generation speed test. Counts all leaf nodes to specified depth.
   return 1 if depth == 0
   sum = 0
-  moves = node.get_moves
-  moves.each do |move|
+  node.get_moves([]).each do |move|
     Chess::MoveGen::make!(node, move) 
     sum += perft(node, depth-1)
     Chess::MoveGen::unmake!(node, move)
@@ -44,12 +43,13 @@ end
 def perft_legal(node, depth)  # move generation speed test. Counts all leaf nodes to specified depth.
   return 1 if depth == 0
   sum = 0
-  moves = node.get_moves
-  moves.each do |move|
-    next unless node.avoids_check?(move)
-    Chess::MoveGen::make!(node, move) 
-    sum += perft(node, depth-1)
-    Chess::MoveGen::unmake!(node, move)
+  node.get_moves([]).each do |move|
+    # if node.avoids_check?(move)
+    if node.board.avoids_check?(node, move.from, move.to, node.side_to_move)
+      Chess::MoveGen::make!(node, move) 
+      sum += perft(node, depth-1)
+      Chess::MoveGen::unmake!(node, move)
+    end
   end
   return sum
 end

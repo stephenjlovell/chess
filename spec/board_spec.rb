@@ -67,10 +67,11 @@ describe Chess::Board do
     before do
       @position = FactoryGirl.build(:check_position)
       @board = @position.board
-      @from = FactoryGirl.build(:location, r: 3, c: 8)
-      @to = FactoryGirl.build(:location, r: 4, c: 8)
-      @alt_from = FactoryGirl.build(:location, r: 2, c: 3)
-      @alt_to = FactoryGirl.build(:location, r: 2, c: 4)
+      @from = FactoryGirl.build(:location, r: 3, c: 8) # G2
+      @to = FactoryGirl.build(:location, r: 4, c: 8) # G3
+      @alt_from = FactoryGirl.build(:location, r: 3, c: 3) # B2
+      @alt_to = FactoryGirl.build(:location, r: 4, c: 3) # B3
+      puts @from, @to, @alt_from, @alt_to
     end
 
     it 'should know if the specified king is in check' do
@@ -78,7 +79,7 @@ describe Chess::Board do
       @board.king_in_check?(@position, :b).should be_true
     end
 
-    it 'should test if a move would get specified side out of check' do    
+    it 'should test if a move would get specified side out of check' do
       @board.avoids_check?(@position, @from, @to, :w).should be_true
       @board.avoids_check?(@position, @alt_from, @alt_to, :w).should be_false
     end

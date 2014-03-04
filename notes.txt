@@ -61,13 +61,13 @@ Current Issues ----
 
 To Do ----
 
+  MTD-based approaches require fail-soft alpha beta.  Fail soft introduces some search instabilities and -complications that need to be handled properly:
+  -lazy eval
+  -scores returned from null-move
+  -stopping the search in q-search
 
-  MTD-f will be more efficient if both alpha and beta are stored in TT entries.
-    - refactor TT entries to hold both alpha and beta
-    - refactor search and TT to remove 'flag' approach
 
-
-  implement 2-level "depth + always"  TT replacement scheme?
+  Handle king capture in SEE
 
   Pruning:
     -Null move pruning (null move heuristic)

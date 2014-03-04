@@ -180,7 +180,6 @@ module Chess
       puts "#{headings}\n"
     end
 
-
   end
 end
 

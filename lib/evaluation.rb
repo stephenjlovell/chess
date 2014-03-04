@@ -139,11 +139,12 @@ module Chess
 
     PST = create_pst
 
-    EVAL_GRAIN = 2
+    EVAL_GRAIN = 10
 
     def self.evaluate(position)
       $evaluation_calls += 1 
-      (net_material(position) + mobility(position)) / EVAL_GRAIN
+      # (net_material(position) + mobility(position)) / EVAL_GRAIN
+      ((net_material(position) + mobility(position)).to_f/EVAL_GRAIN).round.to_i
     end
 
     def self.base_material(position, side)

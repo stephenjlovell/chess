@@ -63,6 +63,10 @@ module Chess
       else
         pos.side_to_move, pos.enemy = :w, :b
       end
+      update_hash(pos, move)
+    end
+
+    def self.update_hash(pos, move)
       pos.hash ^= move.hash ^ Memory::side_key
     end
 
@@ -81,7 +85,6 @@ module Chess
     BRQ_INIT = Location::get_location(9,2) # a8
     BK_INIT = Location::get_location(9,6)  # e8
     BRK_INIT = Location::get_location(9,9) # h8
-
 
     WATCH = { WRQ_INIT => Proc.new { |pos| pos.castle &= ~C_WQ },
               WK_INIT => Proc.new { |pos| pos.castle &= ~(C_WK|C_WQ) },
