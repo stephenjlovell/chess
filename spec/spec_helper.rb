@@ -44,12 +44,11 @@ def perft_legal(node, depth)  # move generation speed test. Counts all leaf node
   return 1 if depth == 0
   sum = 0
   node.get_moves([]).each do |move|
-    # if node.avoids_check?(move)
-    if node.board.avoids_check?(node, move.from, move.to, node.side_to_move)
+    # if node.board.avoids_check?(node, move.from, move.to, node.side_to_move)
       Chess::MoveGen::make!(node, move) 
       sum += perft(node, depth-1)
       Chess::MoveGen::unmake!(node, move)
-    end
+    # end
   end
   return sum
 end
