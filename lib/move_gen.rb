@@ -71,7 +71,7 @@ module Chess
     BK_INIT = Location::get_location(9,6)  # e8
     BRK_INIT = Location::get_location(9,9) # h8
 
-    WATCH = { WRQ_INIT => Proc.new { |pos| pos.castle &= ~C_WQ },
+    WATCH = { WRQ_INIT => Proc.new { |pos| pos.castle &= ~C_WQ }, 
               WK_INIT => Proc.new { |pos| pos.castle &= ~(C_WK|C_WQ) },
               WRK_INIT => Proc.new { |pos| pos.castle &= ~C_WK },
               BRQ_INIT => Proc.new { |pos| pos.castle &= ~C_BQ },

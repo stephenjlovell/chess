@@ -81,6 +81,22 @@ module Chess
       return best_move, value
     end
 
+    def self.internal_iterative_deepening_alpha_beta(max_depth=nil)
+      max_depth ||= @max_depth
+      internal_iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
+        alpha_beta_root(d, -$INF, $INF)
+      end
+    end
+
+    def self.internal_iterative_deepening(depth)
+      best_move, guess, value = nil, nil, -$INF
+      (1..depth).each do |d|
+        best_move, value = yield(guess, d*PLY_VALUE) # call main search algo.
+        guess = value
+      end
+      return best_move, value
+    end
+
 
     def self.get_initial_estimate
       if @node.in_check?
@@ -178,7 +194,7 @@ module Chess
       end
 
       unless legal_moves  # if no legal moves available, it's either a draw or checkmate.
-        result = in_check ? -(Pieces::MATE + @i_depth - depth/PLY_VALUE) : 0 # mate in 1 is more valuable than mate in 2
+        result = in_check ? (@i_depth*PLY_VALUE - depth) - Pieces::MATE : 0 # mate in 1 is more valuable than mate in 2
         best_move = nil
       end
 
@@ -199,8 +215,8 @@ module Chess
           if e.depth >= depth
             return e.alpha if e.alpha >= beta
             return e.beta if e.beta <= alpha
-            alpha = max(alpha, e.alpha)
-            beta = min(beta, e.beta)
+            # alpha = max(alpha, e.alpha)
+            # beta = min(beta, e.beta)
           end
         end
       end
@@ -230,11 +246,9 @@ module Chess
         is_max_node = @max_side == @node.side_to_move
         moves.each do |move|
           e = nil
-          # MoveGen::update_hash(@node, move) # XOR in hash for move
           MoveGen::make!(@node, move)
           e = $tt.get(@node) if $tt.ok?(@node)  # probe the hash table for node
           MoveGen::unmake!(@node, move)
-          # MoveGen::update_hash(@node, move) # XOR out hash for move
 
           if !e.nil? && e.depth >= depth
             unless is_max_node
@@ -246,20 +260,20 @@ module Chess
         end
       end
 
-      # # Extended futility pruning:
-      # f_margin = depth > PLY_VALUE ? Pieces::PIECE_VALUES[:R] : Pieces::PIECE_VALUES[:N]
-      # f_prune = depth <= 2*PLY_VALUE && !in_check && alpha.abs < Pieces::MATE &&
-      #           @node.value + f_margin <= alpha
+      # Extended futility pruning:
+      f_margin = depth > PLY_VALUE ? Pieces::PIECE_VALUES[:R] : Pieces::PIECE_VALUES[:N]
+      f_prune = depth <= 2*PLY_VALUE && !in_check && alpha.abs < Pieces::MATE &&
+                @node.value + f_margin <= alpha
 
       legal_moves = false
       # @node.edges(first_moves).each do |move| 
       moves.each do |move|
         
         MoveGen::make!(@node, move)
-        # if f_prune && legal_moves && !move.material_swing? && !@node.in_check? # when f_prune flag is set,
-        #   MoveGen::unmake!(@node, move) # prune moves that don't alter material balance or give check.
-        #   next
-        # end
+        if f_prune && legal_moves && !move.material_swing? && !@node.in_check? # when f_prune flag is set,
+          MoveGen::unmake!(@node, move) # prune moves that don't alter material balance or give check.
+          next
+        end
         result = max(-alpha_beta(depth-PLY_VALUE+ext_check, -beta, -alpha), result)
         MoveGen::unmake!(@node, move)
         
@@ -292,8 +306,8 @@ module Chess
           if e.depth >= depth
             return e.alpha if e.alpha >= beta
             return e.beta if e.beta <= alpha
-            alpha = max(alpha, e.alpha)
-            beta = min(beta, e.beta)
+            # alpha = max(alpha, e.alpha)
+            # beta = min(beta, e.beta)
           end
         end
       end

@@ -41,7 +41,7 @@ module Chess
 
       def get_hash_move(node, first_moves)
         if ok?(node)
-          e = get(node)
+          e = get(node)  # if hash move is illegal, don't use it:
           first_moves << e.move unless e.move.nil? || !node.avoids_check?(e.move)
         end
       end

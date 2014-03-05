@@ -139,12 +139,14 @@ module Chess
 
     PST = create_pst
 
-    EVAL_GRAIN = 10
+    # EVAL_GRAIN = 100.0/32 # Use 1/32 pawn eval grain instead of centipawns
+    EVAL_GRAIN = 1
 
     def self.evaluate(position)
       $evaluation_calls += 1 
+      net_material(position) + mobility(position)
       # (net_material(position) + mobility(position)) / EVAL_GRAIN
-      ((net_material(position) + mobility(position)).to_f/EVAL_GRAIN).round.to_i
+      # ((net_material(position) + mobility(position))/EVAL_GRAIN).round.to_i
     end
 
     def self.base_material(position, side)

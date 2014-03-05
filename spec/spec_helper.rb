@@ -100,14 +100,13 @@ def take_test(problems, depth, verbose=false)
       print " | #{i+1}.#{prob.score > 0 ? "-" : "X" }"
     end
   end
-  t1 = Time.now
-  time = t1 - t0
 
   if verbose
     puts "\n"
     tp problems, :id, :best_moves, :avoid_moves, :ai_response, :score
   end
   total_right, count = score_test(problems), problems.count
+  time = Time.now - t0
   accuracy = ((total_right+0.0)/count)*100
   aggregator.print
   puts "\nTotal AI score: #{total_right}/#{count} (#{accuracy}%)"
