@@ -32,11 +32,7 @@ module Chess
 
       def ok?(node)
         h = node.hash # compare the full key to avoid type 2 (index) hash collisions:
-        if @table.has_key?(h) 
-          e = @table[h]
-          return e.key == h && !e.move.nil? && node.avoids_check?(e.move)
-        end
-        false
+        @table.has_key?(h) && @table[h].key == h
       end
 
       def get(node)
@@ -45,8 +41,8 @@ module Chess
 
       def get_hash_move(node, first_moves)
         if ok?(node)
-          entry = get(node)
-          first_moves << entry.move unless entry.move.nil?
+          e = get(node)
+          first_moves << e.move unless e.move.nil? || !node.avoids_check?(e.move)
         end
       end
 
@@ -83,7 +79,7 @@ module Chess
       return arr
     end
     
-    def self.piece_hash # creates a 12 element hash associating each piece to a 
+    def self.piece_hash # creates a   12 element hash associating each piece to a 
       hsh = {}          # random 64 bit unsigned long integer.
       [:wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK].each do |sym| 
         hsh[sym] = create_key

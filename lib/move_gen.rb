@@ -29,21 +29,6 @@ module Chess
     C_BK = 0b0001  # Black castle king side
     C_NONE = 0b0000 # no castle availability
 
-  
-    # class MoveList  # Notional place to store, organize, and sort moves more easily.
-    #   attr_accessor :captures, :regular_moves, :castles, :checks
-
-    #   # Generate moves by category of move, then append categories together.
-    #   # use arr.uniq{ |m| m.hash } to eliminate duplicate moves.
-
-    #   def get_moves(position)
-    #   end
-
-    #   def next_move  # return the next move from the move stack
-    #   end
-    # end
-
-
     # Module interface
 
     def self.make!(position, move) # Mutates position by making the specified move. 
