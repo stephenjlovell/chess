@@ -30,7 +30,7 @@ module Chess
         @board, @pieces, @side_to_move, @halfmove_clock = board, pieces, side_to_move, halfmove_clock
         @enemy = FLIP_COLOR[@side_to_move]
         @enp_target, @castle = nil, 0b1111
-        @hash = @board.hash  # add hash of initial castling rights
+        @hash = @board.hash
         @king_location = set_king_location
         w_endgame = Evaluation::base_material(self, :w) <= Pieces::ENDGAME_VALUE # determine initial endgame state
         b_endgame = Evaluation::base_material(self, :b) <= Pieces::ENDGAME_VALUE
@@ -126,7 +126,9 @@ module Chess
 
       def get_captures(first_moves) # returns a sorted array of all possible moves for the current player.
         captures, promotion_captures = [], []
-        own_pieces.each { |key, piece| piece.get_captures(self, key, captures, promotion_captures) }
+        own_pieces.each do |key, piece| 
+          piece.get_captures(self, key, captures, promotion_captures)
+        end
         sort_captures_by_see!(captures)
         first_moves + promotion_captures + captures
       end

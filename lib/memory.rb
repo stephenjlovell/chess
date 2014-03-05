@@ -2,7 +2,7 @@ module Chess
   module Memory
     require 'SecureRandom'
 
-    TTBoundEntry = Struct.new(:depth, :alpha, :beta, :move)
+    TTBoundEntry = Struct.new(:key, :depth, :alpha, :beta, :move)
 
     class TranspositionTable # This class stores bounds on the heuristic value of the largest subtree
       # explored so far for each position encountered.
@@ -11,6 +11,7 @@ module Chess
         # due to potentially large size and high throughput of hash table 
         # (100k - 1m keys), Ruby core Hash is too inefficient.  Use Google dense_hash_map instead.
         # http://incise.org/hash-table-benchmarks.html
+        # @table = {}
         @table = GoogleHashDenseLongToRuby.new
       end
 
@@ -21,6 +22,7 @@ module Chess
       alias :count :length
 
       def clear
+        # @table = {}
         @table = GoogleHashDenseLongToRuby.new
       end
 
@@ -28,12 +30,21 @@ module Chess
         @table.has_key?(node.hash)
       end
 
+      def ok?(node)
+        h = node.hash # compare the full key to avoid type 2 (index) hash collisions:
+        if @table.has_key?(h) 
+          e = @table[h]
+          return e.key == h && !e.move.nil? && node.avoids_check?(e.move)
+        end
+        false
+      end
+
       def get(node)
         @table[node.hash]
       end
 
       def get_hash_move(node, first_moves)
-        if contains?(node)
+        if ok?(node)
           entry = get(node)
           first_moves << entry.move unless entry.move.nil?
         end
@@ -41,10 +52,10 @@ module Chess
 
       def store_result(node, depth, result, alpha, beta, move)
         h = node.hash
-        if !contains?(node)
+        if !@table.has_key?(h)
           alpha, beta = set_bounds(result, alpha, beta)
-          @table[h] = TTBoundEntry.new(depth, alpha, beta, move)
-        elsif depth >= @table[h].depth
+          @table[h] = TTBoundEntry.new(h, depth, alpha, beta, move)
+        elsif depth >= @table[h].depth   
           e = @table[h]
           alpha, beta = set_bounds(result, alpha, beta)
           e.depth, e.alpha, e.beta, e.move = depth, alpha, beta, move
@@ -56,10 +67,12 @@ module Chess
 
       def set_bounds(result, alpha, beta)
         a, b = alpha, beta
-        b = result if result < beta     
-        a = result if result > alpha 
-        a, b = result, result if alpha <= result && result <= beta  # accurate value found.  Will not occur   
-        return a, b                                                 # in zero-window (i.e. MTD-f) searches.
+        b = result if result <= alpha
+        if alpha < result && result < beta
+          a, b = result, result
+        end 
+        a = result if result >= beta
+        return a, b                       
       end
     end # end TranspostionTable class
 
@@ -79,7 +92,8 @@ module Chess
     end
 
     def self.create_key
-      SecureRandom::random_bytes.unpack('L*').inject(0) { |key, i| key ^= i }
+      # SecureRandom::random_bytes.unpack('L*').inject(0) { |key, i| key ^= i }
+      SecureRandom::random_number(2**61)
     end
 
     PSQ = create_key_array { piece_hash }

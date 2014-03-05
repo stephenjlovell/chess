@@ -53,10 +53,12 @@ Search benchmarking:
 
 Current Issues ----
 
-  Rare bug when making capture moves probed and retrieved from transposition table. 
-  Captured piece is sometimes nil. Occurs more often at higher max depths.
-  raise a custom error when this happens that triggers a re-run of the search.
-  store a FEN of the position passed to select_move, and reset @node prior to re-searching.
+  Hash table collisions are causing bugs: 
+
+  - pieces are ending up saved in pieces hash for the wrong color.
+  - independent of null-move, ETC, futility pruning.
+
+
 
 
 To Do ----

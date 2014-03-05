@@ -193,6 +193,7 @@ module Chess
         halfmove_clock = fields[4] ? fields[4].to_i : 0
         position = Position::ChessPosition.new(board, pieces, side_to_move, halfmove_clock)
         position.castle, position.enp_target = castle, enp_target
+        position.hash ^= Memory::enp_key(enp_target)
         return position
       rescue
         raise NotationFormatError, "could not convert fen to position: #{fen}"

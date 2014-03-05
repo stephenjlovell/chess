@@ -108,11 +108,11 @@ module Chess
     end
 
     def empty?(location)
-      self[location] == nil
+      self[location].nil?
     end
 
     def square_empty?(r,c)
-      @squares[r][c] == nil
+      @squares[r][c].nil?
     end
 
     def on_board?(location)

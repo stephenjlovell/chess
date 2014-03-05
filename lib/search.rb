@@ -59,6 +59,7 @@ module Chess
       (1..depth).each do |d|
         @i_depth = d
         previous_total = $quiescence_calls + $main_calls
+        # puts "----#{d}----"
         Search::reset_counters
         best_move, value = yield(guess, d*PLY_VALUE) # call main search algo.
         first_total = $quiescence_calls + $main_calls if d == 1
@@ -96,14 +97,14 @@ module Chess
       depth ||= @max_depth
       best, @lower_bound, @upper_bound = -$INF, -$INF, $INF
 
-
       while @lower_bound < @upper_bound
         $passes += 1
         gamma = guess == @lower_bound ? guess+1 : guess
 
         move, guess = alpha_beta_root(depth, gamma-1, gamma)
-        best_move, best = move, guess unless move.nil?
- 
+        best_move, best = move, guess unless move.nil?        
+        puts "MT(#{depth}, #{gamma-1}, #{gamma}) => #{move}, #{guess}"
+
         guess < gamma ? @upper_bound = guess : @lower_bound = guess
 
       end
@@ -187,7 +188,7 @@ module Chess
 
       return quiescence(depth, alpha, beta) if depth <= 0 # not making or unmaking here.
 
-      if $tt.contains?(@node)  # probe the hash table for @node
+      if $tt.ok?(@node)  # probe the hash table for @node
         $memory_calls += 1
         e = $tt.get(@node)
         unless e.nil?
@@ -223,17 +224,17 @@ module Chess
 
       # # Enhanced Transposition Cutoffs
       # if depth > 2*PLY_VALUE
-      #   child_is_max_node = @node.enemy == Chess::current_game.ai_player
+      #   is_max_node = @max_side == @node.side_to_move
       #   moves.each do |move|
       #     e = nil
       #     # MoveGen::update_hash(@node, move) # XOR in hash for move
       #     MoveGen::make!(@node, move)
-      #     e = $tt.get(@node) if $tt.contains?(@node)  # probe the hash table for @node
+      #     e = $tt.get(@node) if $tt.ok?(@node)  # probe the hash table for node
       #     MoveGen::unmake!(@node, move)
       #     # MoveGen::update_hash(@node, move) # XOR out hash for move
 
       #     if !e.nil? && e.depth >= depth
-      #       if child_is_max_node
+      #       if is_max_node
       #         return e.alpha if e.alpha >= beta
       #       else
       #         return e.beta if e.beta <= alpha
@@ -280,7 +281,7 @@ module Chess
     def self.quiescence(depth, alpha=-$INF, beta=$INF)  # quiesence nodes are not part of the principal variation.
       result, best_move, first_moves = -$INF, nil, []
 
-      if $tt.contains?(@node)  # probe the hash table for @node
+      if $tt.ok?(@node)  # probe the hash table for @node
         $memory_calls += 1
         e = $tt.get(@node)
         unless e.nil?
@@ -365,6 +366,7 @@ module Chess
     def self.select_move(node, max_depth=4, aggregator=nil, verbose=true)
       Chess::current_game.clock.restart
       @node, @max_depth, @aggregator, @verbose = node, max_depth*PLY_VALUE, aggregator, verbose
+      @max_side = @node.side_to_move
       @previous_value = Chess::current_game.previous_value
       
       reset_counters
