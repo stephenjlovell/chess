@@ -53,26 +53,25 @@ Search benchmarking:
 
 Current Issues ----
 
-  Hash table collisions are causing bugs: 
-
-  - pieces are ending up saved in pieces hash for the wrong color.
-  - independent of null-move, ETC, futility pruning.
-
 
 
 
 To Do ----
 
   MTD-based approaches require fail-soft alpha beta.  Fail soft introduces some search instabilities and -complications that need to be handled properly:
-  -lazy eval
-  -scores returned from null-move
-  -stopping the search in q-search
+    -lazy eval
+    -scores returned from null-move
+    -stopping the search in q-search
+
+
+  add aging scheme for removal of old TT entries?
+
+  Add PV extractor to Search
+
+  Add node-count based TT replacement scheme
 
 
   Handle king capture in SEE
-
-  Pruning:
-    -Null move pruning (null move heuristic)
 
   Move ordering (priority high to low):
     -Hash Move

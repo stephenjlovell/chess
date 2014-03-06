@@ -25,11 +25,10 @@ module Chess
     PLY_VALUE = 4  # multiplier representing the depth value of 1 ply.  
                    # Used for fractional depth extensions / reductions.
 
-    EXT_CHECK = 1  # extend search when side to move is in check.
+    EXT_CHECK = 0  # extend search when side to move is in check.
 
     MTD_STEP_SIZE = 2
 
-    Q_TT_MIN = -3*PLY_VALUE
 
     def self.iterative_deepening_mtdf_step(max_depth=nil)
       max_depth ||= @max_depth
@@ -224,6 +223,8 @@ module Chess
       in_check = @node.in_check?
       ext_check = in_check ? EXT_CHECK : 0
 
+      # ideally null-move pruning should not be performed on PV nodes.
+
       # Null Move Pruning
       if can_null && !in_check && depth > 2*PLY_VALUE && !@node.in_endgame? && @node.value >= beta
         enp = @node.enp_target
@@ -242,20 +243,15 @@ module Chess
       moves = @node.edges(first_moves)
 
       # Enhanced Transposition Cutoffs
-      if depth > 2*PLY_VALUE
-        is_max_node = @max_side == @node.side_to_move
+      if depth >= 2*PLY_VALUE
         moves.each do |move|
           e = nil
           MoveGen::make!(@node, move)
           e = $tt.get(@node) if $tt.ok?(@node)  # probe the hash table for node
           MoveGen::unmake!(@node, move)
-
           if !e.nil? && e.depth >= depth
-            unless is_max_node
-              return e.alpha if e.alpha >= beta
-            else
-              return e.beta if e.beta <= alpha
-            end
+            return e.alpha if e.alpha >= beta
+            return e.beta if e.beta <= alpha
           end
         end
       end
@@ -374,6 +370,14 @@ module Chess
       x < y ? x : y
     end
 
+    def self.get_pv(node)
+      pv, key = [], node.hash
+      until !$tt.key_ok?(key) || $tt[key].move.nil?
+        pv << $tt[key].move
+        key ^= e.move.hash ^ Memory::side_key
+      end
+    end
+
     # Module interface
 
     def self.reset_counters
@@ -383,13 +387,13 @@ module Chess
     def self.select_move(node, max_depth=5, aggregator=nil, verbose=true)
       Chess::current_game.clock.restart
       @node, @max_depth, @aggregator, @verbose = node, max_depth*PLY_VALUE, aggregator, verbose
-      @max_side = @node.side_to_move
-      @previous_value = Chess::current_game.previous_value
+      @previous_value = Chess::current_game.previous_value || nil
       
       reset_counters
-      $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
-                 # outweigh benefit of additional entries.
-      move, value = block_given? ? yield : iterative_deepening_alpha_beta # use mtdf by default?
+      # $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
+      #            # outweigh benefit of additional entries.
+
+      move, value = block_given? ? yield : iterative_deepening_mtdf # use mtdf by default?
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"

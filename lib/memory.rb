@@ -35,8 +35,16 @@ module Chess
         @table.has_key?(h) && @table[h].key == h
       end
 
+      def key_ok?(h)
+        @table.has_key?(h) && @table[h].key == h
+      end
+
       def get(node)
         @table[node.hash]
+      end
+
+      def [](h)
+        @table[h]
       end
 
       def get_hash_move(node, first_moves)
