@@ -101,7 +101,7 @@ module Chess
       if @node.in_check?
         move, value = alpha_beta_root(PLY_VALUE)
       else
-        value = quiescence(0)
+        value, count = quiescence(0)
       end
       return value
     end
@@ -167,7 +167,7 @@ module Chess
 
     def self.alpha_beta_root(depth=nil, alpha=-$INF, beta=$INF)
       depth ||= @max_depth
-      result, best_move, legal_moves, first_moves = -$INF, nil, false, []
+      sum, result, best_move, legal_moves, first_moves = 1, -$INF, nil, false, []
 
       $tt.get_hash_move(@node, first_moves) # At root, use TT for move ordering only.
 
@@ -180,16 +180,20 @@ module Chess
         $main_calls += 1
         
         MoveGen::make!(@node, move)
-        result = max(-alpha_beta(depth-PLY_VALUE+ext_check, -beta, -alpha), result)
+        value, count = alpha_beta(depth-PLY_VALUE+ext_check, -beta, -alpha)
         MoveGen::unmake!(@node, move)
 
         legal_moves = true unless result <= Pieces::KING_LOSS
 
+        value *= -1
+        result = value if value > result
+        
+        sum += count
         if result > alpha
           alpha = result
           best_move = move
           break if result >= beta
-        end
+        end  
       end
 
       unless legal_moves  # if no legal moves available, it's either a draw or checkmate.
@@ -197,7 +201,7 @@ module Chess
         best_move = nil
       end
 
-      $tt.store_result(@node, depth, result, alpha, beta, best_move)
+      $tt.store_result(@node, depth, sum, result, alpha, beta, best_move)
       return best_move, result
     end
 
@@ -212,8 +216,8 @@ module Chess
         unless e.nil?
           first_moves << e.move unless e.move.nil?
           if e.depth >= depth
-            return e.alpha if e.alpha >= beta
-            return e.beta if e.beta <= alpha
+            return e.alpha, e.count if e.alpha >= beta
+            return e.beta, e.count if e.beta <= alpha
             # alpha = max(alpha, e.alpha)
             # beta = min(beta, e.beta)
           end
@@ -232,12 +236,13 @@ module Chess
         @node.enp_target = nil
 
         reduction = 2*PLY_VALUE
-        result = -alpha_beta(depth-PLY_VALUE-reduction, -beta, -beta+1, false)        
+        result, count = alpha_beta(depth-PLY_VALUE-reduction, -beta, -beta+1, false) 
+        result *= -1       
 
         MoveGen::flip_null(@node, enp)
         @node.enp_target = enp
 
-        return result if result >= beta
+        return result, count if result >= beta
       end
 
       moves = @node.edges(first_moves)
@@ -250,8 +255,8 @@ module Chess
           e = $tt.get(@node) if $tt.ok?(@node)  # probe the hash table for node
           MoveGen::unmake!(@node, move)
           if !e.nil? && e.depth >= depth
-            return e.alpha if e.alpha >= beta
-            return e.beta if e.beta <= alpha
+            return e.alpha, e.count if e.alpha >= beta
+            return e.beta, e.count if e.beta <= alpha
           end
         end
       end
@@ -261,8 +266,7 @@ module Chess
       f_prune = depth <= 2*PLY_VALUE && !in_check && alpha.abs < Pieces::MATE &&
                 @node.value + f_margin <= alpha
 
-      legal_moves = false
-      # @node.edges(first_moves).each do |move| 
+      sum, legal_moves = 1, false
       moves.each do |move|
         
         MoveGen::make!(@node, move)
@@ -270,24 +274,27 @@ module Chess
           MoveGen::unmake!(@node, move) # prune moves that don't alter material balance or give check.
           next
         end
-        result = max(-alpha_beta(depth-PLY_VALUE+ext_check, -beta, -alpha), result)
+        value, count = alpha_beta(depth-PLY_VALUE+ext_check, -beta, -alpha)
         MoveGen::unmake!(@node, move)
         
         $main_calls += 1
         legal_moves = true unless result <= Pieces::KING_LOSS
 
+        value *= -1
+        result = value if value > result
+        sum += count
         if result > alpha
           alpha = result
           best_move = move
           break if result >= beta
-        end
+        end  
       end
 
       unless legal_moves  # if no legal moves available, it's either a draw or checkmate.
         result = in_check ? -(Pieces::MATE + @i_depth - depth/PLY_VALUE) : 0 # mate in 1 is more valuable than mate in 2
       end
 
-      $tt.store_result(@node, depth, result, alpha, beta, best_move)
+      $tt.store_result(@node, depth, sum, result, alpha, beta, best_move)
     end
 
 
@@ -300,8 +307,8 @@ module Chess
         unless e.nil?
           first_moves << e.move unless e.move.nil?
           if e.depth >= depth
-            return e.alpha if e.alpha >= beta
-            return e.beta if e.beta <= alpha
+            return e.alpha, e.count if e.alpha >= beta
+            return e.beta, e.count if e.beta <= alpha
             # alpha = max(alpha, e.alpha)
             # beta = min(beta, e.beta)
           end
@@ -309,17 +316,20 @@ module Chess
       end
 
       result = @node.value  # assume 'standing pat' lower bound
-      return beta if result >= beta # fail hard beta cutoff
+      return beta, 1 if result >= beta # fail hard beta cutoff
       alpha = result if result > alpha
 
+      sum = 1
       @node.tactical_edges(first_moves).each do |move|
         next if move.see && move.see < 0  # moves are ordered by SEE
         $quiescence_calls += 1
 
         MoveGen::make!(@node, move)
-        result = max(-quiescence(depth-PLY_VALUE, -beta, -alpha), result)
+        value, count = quiescence(depth-PLY_VALUE, -beta, -alpha)
         MoveGen::unmake!(@node, move)
-        
+        value *= -1
+        result = value if value > result
+        sum += count
         if result > alpha
           alpha = result
           best_move = move
@@ -327,7 +337,7 @@ module Chess
         end        
       end
 
-      $tt.store_result(@node, depth, result, alpha, beta, best_move)
+      $tt.store_result(@node, depth, sum, result, alpha, beta, best_move)
     end
 
 
@@ -393,7 +403,7 @@ module Chess
       # $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
       #            # outweigh benefit of additional entries.
 
-      move, value = block_given? ? yield : iterative_deepening_mtdf # use mtdf by default?
+      move, value = block_given? ? yield : iterative_deepening_alpha_beta # use mtdf by default?
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"

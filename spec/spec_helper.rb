@@ -85,6 +85,7 @@ end
 def take_test(problems, depth, verbose=false)
   correct, total = 0, 0
   aggregator = Chess::Analytics::Aggregator.new(depth)
+  $tt.clear
   t0 = Time.now
   problems.each_with_index do |prob, i|
     move, value = Chess::Search::select_move(prob.position, depth, aggregator, verbose)

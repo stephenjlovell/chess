@@ -2,7 +2,7 @@ module Chess
   module Memory
     require 'SecureRandom'
 
-    TTBoundEntry = Struct.new(:key, :depth, :alpha, :beta, :move)
+    TTBoundEntry = Struct.new(:key, :depth, :count, :alpha, :beta, :move)
 
     class TranspositionTable # This class stores bounds on the heuristic value of the largest subtree
       # explored so far for each position encountered.
@@ -54,17 +54,18 @@ module Chess
         end
       end
 
-      def store_result(node, depth, result, alpha, beta, move)
+      def store_result(node, depth, count, result, alpha, beta, move)
         h = node.hash
         if !@table.has_key?(h)
           alpha, beta = set_bounds(result, alpha, beta)
-          @table[h] = TTBoundEntry.new(h, depth, alpha, beta, move)
-        elsif depth >= @table[h].depth   
+          @table[h] = TTBoundEntry.new(h, depth, count, alpha, beta, move)
+        # elsif count > @table[h].count 
+        elsif depth >= @table[h].depth  
           e = @table[h]
           alpha, beta = set_bounds(result, alpha, beta)
-          e.depth, e.alpha, e.beta, e.move = depth, alpha, beta, move
+          e.depth, e.count, e.alpha, e.beta, e.move = depth, count, alpha, beta, move
         end
-        result
+        return result, count
       end
 
       private
