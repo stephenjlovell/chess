@@ -25,10 +25,11 @@ module Chess
     PLY_VALUE = 4  # multiplier representing the depth value of 1 ply.  
                    # Used for fractional depth extensions / reductions.
 
-    EXT_CHECK = 0  # extend search when side to move is in check.
+    EXT_CHECK = 1  # extend search when side to move is in check.
 
-    MTD_STEP_SIZE = 2
+    MTD_STEP_SIZE = 15
 
+    MTDF_MAX_PASSES = 200  # Prevent infinite feedback loop due to rare TT interactions.
 
     def self.iterative_deepening_mtdf_step(max_depth=nil)
       max_depth ||= @max_depth
@@ -96,10 +97,10 @@ module Chess
       return best_move, value
     end
 
-
     def self.get_initial_estimate
       if @node.in_check?
-        move, value = alpha_beta_root(PLY_VALUE)
+        puts "check"
+        move, value = internal_iterative_deepening_alpha_beta(2*PLY_VALUE)
       else
         value, count = quiescence(0)
       end
@@ -110,18 +111,21 @@ module Chess
     def self.mtdf(guess=nil, depth=nil) 
       guess ||= (@previous_value || get_initial_estimate)
       depth ||= @max_depth
-      best, @lower_bound, @upper_bound = -$INF, -$INF, $INF
+      best, @lower_bound, @upper_bound, mtdf_passes = -$INF, -$INF, $INF, 0
 
-      while @lower_bound < @upper_bound
+      while @lower_bound < @upper_bound && mtdf_passes < MTDF_MAX_PASSES
         $passes += 1
+        mtdf_passes += 1
+
+        # puts "max passes reached" if mtdf_passes >= MTDF_MAX_PASSES
+
         gamma = guess == @lower_bound ? guess+1 : guess
 
         move, guess = alpha_beta_root(depth, gamma-1, gamma)
         best_move, best = move, guess unless move.nil?        
-        # puts "MT(#{depth}, #{gamma-1}, #{gamma}) => #{move}, #{guess}"
+        # puts "#{mtdf_passes} MT(#{depth}, #{gamma-1}, #{gamma}) => #{move}, #{guess}"
 
         guess < gamma ? @upper_bound = guess : @lower_bound = guess
-
       end
       return best_move, best
     end
@@ -130,11 +134,13 @@ module Chess
     def self.mtdf_step(guess=nil, depth=nil) # MTD-f with "convergence accelerator"
       guess ||= (@previous_value || get_initial_estimate)
       depth ||= @max_depth
-      best, @lower_bound, @upper_bound, step = -$INF, -$INF, $INF, MTD_STEP_SIZE
+      mtdf_passes, best, @lower_bound, @upper_bound, step = 0, -$INF, -$INF, $INF, MTD_STEP_SIZE
       stepped_up, stepped_down = false, false
 
-      while @lower_bound < @upper_bound
+      while @lower_bound < @upper_bound && mtdf_passes < MTDF_MAX_PASSES
         $passes += 1
+        mtdf_passes += 1
+
         gamma = guess == @lower_bound ? guess+1 : guess
         move, guess = alpha_beta_root(depth, gamma-1, gamma)
         best_move, best = move, guess unless move.nil?
@@ -182,13 +188,10 @@ module Chess
         MoveGen::make!(@node, move)
         value, count = alpha_beta(depth-PLY_VALUE+ext_check, -beta, -alpha)
         MoveGen::unmake!(@node, move)
-
+        result = max(-value, result)
+        sum += count
         legal_moves = true unless result <= Pieces::KING_LOSS
 
-        value *= -1
-        result = value if value > result
-        
-        sum += count
         if result > alpha
           alpha = result
           best_move = move
@@ -231,18 +234,15 @@ module Chess
 
       # Null Move Pruning
       if can_null && !in_check && depth > 2*PLY_VALUE && !@node.in_endgame? && @node.value >= beta
-        enp = @node.enp_target
+        enp, reduction = @node.enp_target, 2*PLY_VALUE
         MoveGen::flip_null(@node, enp)
         @node.enp_target = nil
-
-        reduction = 2*PLY_VALUE
-        result, count = alpha_beta(depth-PLY_VALUE-reduction, -beta, -beta+1, false) 
-        result *= -1       
-
+        value, count = alpha_beta(depth-PLY_VALUE-reduction, -beta, -beta+1, false) 
+        value *= -1       
         MoveGen::flip_null(@node, enp)
         @node.enp_target = enp
 
-        return result, count if result >= beta
+        return value, count if value >= beta
       end
 
       moves = @node.edges(first_moves)
@@ -276,13 +276,12 @@ module Chess
         end
         value, count = alpha_beta(depth-PLY_VALUE+ext_check, -beta, -alpha)
         MoveGen::unmake!(@node, move)
-        
+
         $main_calls += 1
+        result = max(-value, result)
+        sum += count
         legal_moves = true unless result <= Pieces::KING_LOSS
 
-        value *= -1
-        result = value if value > result
-        sum += count
         if result > alpha
           alpha = result
           best_move = move
@@ -322,14 +321,15 @@ module Chess
       sum = 1
       @node.tactical_edges(first_moves).each do |move|
         next if move.see && move.see < 0  # moves are ordered by SEE
-        $quiescence_calls += 1
 
         MoveGen::make!(@node, move)
         value, count = quiescence(depth-PLY_VALUE, -beta, -alpha)
         MoveGen::unmake!(@node, move)
-        value *= -1
-        result = value if value > result
+
+        $quiescence_calls += 1
+        result = max(-value, result)
         sum += count
+
         if result > alpha
           alpha = result
           best_move = move
@@ -403,7 +403,7 @@ module Chess
       # $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
       #            # outweigh benefit of additional entries.
 
-      move, value = block_given? ? yield : iterative_deepening_alpha_beta # use mtdf by default?
+      move, value = block_given? ? yield : iterative_deepening_mtdf # use mtdf by default?
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"

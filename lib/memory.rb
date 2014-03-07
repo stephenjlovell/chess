@@ -11,7 +11,6 @@ module Chess
         # due to potentially large size and high throughput of hash table 
         # (100k - 1m keys), Ruby core Hash is too inefficient.  Use Google dense_hash_map instead.
         # http://incise.org/hash-table-benchmarks.html
-        # @table = {}
         @table = GoogleHashDenseLongToRuby.new
       end
 
@@ -22,7 +21,6 @@ module Chess
       alias :count :length
 
       def clear
-        # @table = {}
         @table = GoogleHashDenseLongToRuby.new
       end
 
@@ -59,9 +57,9 @@ module Chess
         if !@table.has_key?(h)
           alpha, beta = set_bounds(result, alpha, beta)
           @table[h] = TTBoundEntry.new(h, depth, count, alpha, beta, move)
-        # elsif count > @table[h].count 
-        elsif depth >= @table[h].depth  
-          e = @table[h]
+        # elsif count >= @table[h].count
+        elsif depth >= @table[h].depth
+          e = @table[h] 
           alpha, beta = set_bounds(result, alpha, beta)
           e.depth, e.count, e.alpha, e.beta, e.move = depth, count, alpha, beta, move
         end
@@ -80,7 +78,6 @@ module Chess
         return a, b                       
       end
     end # end TranspostionTable class
-
 
     def self.create_key_array
       arr = Array.new(10) { Array.new(10) }
