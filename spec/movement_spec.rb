@@ -21,25 +21,32 @@
 
 require 'spec_helper'
 
-# number of possible games for each ply (http://oeis.org/A048987/list)
+# number of possible game states for each ply of depth. (http://oeis.org/A048987/list)
 MAX_TREE = [1,20,400,8902,197281,4865609,119060324,3195901860,84998978956,2439530234167,69352859712417]
 
-describe Chess::Move do
+describe Chess::MoveGen do
   
   before do 
     @game = FactoryGirl.build(:game)
     @root = @game.position
+    @depth = 4
   end
 
   describe "move generation" do
 
-    it "should generate the correct number of nodes" do
-      depth = 4
+    it "should generate the correct number of legal positions" do
       t0 = Time.now
-      node_count = perft_legal(@root, depth) # first castling moves would occur at minimum ply 7.
+      node_count = perft_legal(@root, @depth) # first castling moves would occur at minimum ply 7.
       t1 = Time.now
-      print "#{node_count} nodes in #{t1-t0} seconds (#{node_count/(t1-t0)} NPS)"
-      node_count.should == MAX_TREE[depth]
+      puts "Legal MoveGen: #{node_count/(t1-t0)} NPS"
+      node_count.should == MAX_TREE[@depth]
+    end
+
+    it "can generate pseudo-legal positions at lower computational cost" do
+      t0 = Time.now
+      node_count = perft(@root, @depth) # first castling moves would occur at minimum ply 7.
+      t1 = Time.now
+      puts "Pseudo-legal MoveGen: #{node_count/(t1-t0)} NPS"
     end
 
   end

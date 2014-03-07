@@ -33,7 +33,6 @@ describe Chess do
     subject { @game }
     it { should respond_to :position }    
     it { should respond_to :halfmove_clock }
-    it { should respond_to :tt }
     it { should respond_to :clock }
     it { should respond_to :ai_player }
     it { should respond_to :opponent }
@@ -44,20 +43,19 @@ describe Chess do
     end
 
     describe "should contain objects of the right class" do
-      its("clock.class") { should == Chess::Clock }
-      its("tt.class") { should == Chess::Memory::TranspositionTable }
       its("position.class") { should == Chess::Position::ChessPosition }
+      its("move_history.class") { should == Chess::MoveHistory }
+      its("clock.class") { should == Chess::Clock }
+      its("clock") { should respond_to :time_up? }
+      its("clock") { should respond_to :restart }
     end
   end
 
-  describe Chess::Clock do
-    before { @clock = Chess::Clock.new }
-    subject { @clock }
-    it { should respond_to :game_start }
-    it { should respond_to :time_up? }
-    it { should respond_to :restart }
-    it { should respond_to :end_turn }
-  end
   
 end
+
+
+
+
+
 

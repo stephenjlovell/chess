@@ -26,14 +26,9 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
   iterative move gen and king saftey: 7.3749 seconds (26750 NPS)
   2/10/14 pseudolegal with king-loss checking: 3.419017 seconds (57835 NPS)
 
-Search benchmarking:
+Search benchmarking (Win at Chess test suite):
 
-  2/25/14, 
-
-  MTD-f step
-  Total AI score: 47/300 (15.666666666666668%)
-  nodes: 4115699,  evals: 905779,  avg. branching: 2.4067041134359775
-  0.7628975233333334 seconds/position at depth 4
+  2/25/14, MTD-f step
 
   ------ Aggregate Search Performance -------
 
@@ -44,10 +39,25 @@ Search benchmarking:
   3     |       | 802    | 589349  | 586667  | 144154 | 166016 | 6.4585745197324345 | 2.524172321467073  | 1176016  
   4     |       | 2564   | 1410354 | 1162667 | 572604 | 169976 | 2.1879132596835418 | 2.4067041134359775 | 2573021  
 
+  Total AI score: 47/300 (15.666666666666668%)
+  0.7628975233333334 seconds/position at depth 4
+  nodes: 4115699,  evals: 905779,  avg. branching: 2.4067041134359775
 
-  2/27/14 - move to double-bound structure for TT
 
+  3/7/14, MTD-f
+  
+  ------ Aggregate Search Performance -------
 
+  DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS   | MEMORY | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+  ------|-------|--------|---------|---------|---------|--------|--------------------|--------------------|----------
+  1     |       | 3142   | 23231   | 18380   | 38784   | 11439  | 0.0                | 0.0                | 41611    
+  2     |       | 2286   | 70762   | 62142   | 127383  | 21486  | 3.1939631347480235 | 3.1939631347480235 | 132904   
+  3     |       | 674    | 363624  | 163890  | 503847  | 58831  | 3.969135616685728  | 3.5605158104563412 | 527514   
+  4     |       | 684    | 904204  | 353180  | 1208359 | 130591 | 2.383603089207111  | 3.1147265555903036 | 1257384  
+
+  Total AI score: 67/300 (22.333333333333332%)
+  1.1498487733333334 seconds/search at depth 4
+  N: 1959413; E: 1878373; B: 3.1147265555903036; Efficiency: 7.170238842716231
 
 
 
@@ -55,41 +65,36 @@ Current Issues ----
 
 
 
-
 To Do ----
 
-  MTD-based approaches require fail-soft alpha beta.  Fail soft introduces some search instabilities and -complications that need to be handled properly:
-    -lazy eval
-    -scores returned from null-move
-    -stopping the search in q-search
+  Update all specs
+
+  Prevent king capture in SEE
+  
+  Refactor for readability where required, comment ambiguous code.
+  
+  Red-Team code review
+
+  create readme
 
 
-  add aging scheme for removal of old TT entries?
 
-  Add PV extractor to Search
+Possible Enhancements to Add ----
+
+  Add aging scheme for removal of old TT entries
+
+  Integrate PV extractor into Search for analytics.
 
   Add node-count based TT replacement scheme
 
-
-  Handle king capture in SEE
-
-  Move ordering (priority high to low):
-    -Hash Move
+  Move ordering enhancements:
     -Killer Moves
-    -Captures sorted by MVV-LVA
     -Non-captures sorted by History Heuristic
+    -At root, use TT entry result if available, otherwise use q-search.
 
-    move ordering at root by hash value? would imply move ordering by node type (cut nodes last)
-
-
-
-  Search extensions:
+  Additional search extensions:
     -Principal Variation
-    -checks
-    -captures with MVV-LVA ratio greater than 1.5
     -pawn promotions
-
-  Add separate PSTs for early- and late-game in Evaluation module.
 
 
 

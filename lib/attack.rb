@@ -65,9 +65,7 @@ module Chess
     def ray_attack_direction?(location, threat_piece, queen, vector)
       square = location + vector
       while self.on_board?(square)
-        unless self.empty?(square)
-          return self[square] == threat_piece || self[square] == queen
-        end
+        return self[square] == threat_piece || self[square] == queen unless self.empty?(square)
         square += vector
       end
       return false
@@ -77,7 +75,6 @@ module Chess
       directions.each { |vector| return true if self[location + vector] == threat_piece }
       return false
     end
-
 
     def get_square_attackers(location)
       { w: get_square_attackers_by_color(location, :w),

@@ -29,7 +29,7 @@ module Chess
 
     MTD_STEP_SIZE = 15
 
-    MTDF_MAX_PASSES = 200  # Prevent infinite feedback loop due to rare TT interactions.
+    MTDF_MAX_PASSES = 200  # Prevent feedback loop due to rare TT interactions.
 
     def self.iterative_deepening_mtdf_step(max_depth=nil)
       max_depth ||= @max_depth
@@ -99,8 +99,8 @@ module Chess
 
     def self.get_initial_estimate
       if @node.in_check?
-        puts "check"
-        move, value = internal_iterative_deepening_alpha_beta(2*PLY_VALUE)
+        # move, value = internal_iterative_deepening_alpha_beta(2*PLY_VALUE)
+        move, value = alpha_beta_root(PLY_VALUE)
       else
         value, count = quiescence(0)
       end
@@ -208,6 +208,12 @@ module Chess
       return best_move, result
     end
 
+  # MTD-based approaches require fail-soft alpha beta.  Fail soft introduces some search instabilities 
+  # and complications that need to be handled properly:
+  #   -lazy evaluation bounds (if any)
+  #   -scores returned from null-move must be fail-soft
+  #   -terminating the search properly in q-search
+
     def self.alpha_beta(depth, alpha=-$INF, beta=$INF, can_null=true)
       first_moves, result, best_move = [], -$INF, nil
 
@@ -221,8 +227,8 @@ module Chess
           if e.depth >= depth
             return e.alpha, e.count if e.alpha >= beta
             return e.beta, e.count if e.beta <= alpha
-            # alpha = max(alpha, e.alpha)
-            # beta = min(beta, e.beta)
+            # alpha = max(alpha, e.alpha)   # Using TT to adjust local bounds reduces branching factor, but also
+            # beta = min(beta, e.beta)      # creates search instability that can decrease playing strength.
           end
         end
       end
@@ -230,7 +236,7 @@ module Chess
       in_check = @node.in_check?
       ext_check = in_check ? EXT_CHECK : 0
 
-      # ideally null-move pruning should not be performed on PV nodes.
+      # Ideally null-move pruning should not be performed on PV nodes.
 
       # Null Move Pruning
       if can_null && !in_check && depth > 2*PLY_VALUE && !@node.in_endgame? && @node.value >= beta
@@ -403,7 +409,7 @@ module Chess
       # $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
       #            # outweigh benefit of additional entries.
 
-      move, value = block_given? ? yield : iterative_deepening_mtdf # use mtdf by default?
+      move, value = block_given? ? yield : iterative_deepening_mtdf
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"

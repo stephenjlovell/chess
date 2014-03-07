@@ -20,16 +20,12 @@
 #-----------------------------------------------------------------------------------
 
 require './initialize.rb'
-
 require 'factory_girl'
-
-RSpec.configure do |config|
-  config.include FactoryGirl::Syntax::Methods
-end
-
+RSpec.configure { |config| config.include FactoryGirl::Syntax::Methods }
 require 'factories.rb'
 
-def perft(node, depth)  # move generation speed test. Counts all leaf nodes to specified depth.
+
+def perft(node, depth)  # Legal MoveGen speed/accuracy test. Counts all leaf nodes at depth.
   return 1 if depth == 0
   sum = 0
   node.get_moves([]).each do |move|
@@ -40,7 +36,7 @@ def perft(node, depth)  # move generation speed test. Counts all leaf nodes to s
   return sum
 end
 
-def perft_legal(node, depth)  # move generation speed test. Counts all leaf nodes to specified depth.
+def perft_legal(node, depth)  # Pseudolegal MoveGen speed test. Counts all leaf nodes at depth.
   return 1 if depth == 0
   sum = 0
   node.get_moves([]).each do |move|
@@ -52,7 +48,7 @@ def perft_legal(node, depth)  # move generation speed test. Counts all leaf node
   return sum
 end
 
-Problem = Struct.new(:id, :position, :best_moves, :avoid_moves, :ai_response, :score)
+ChessProblem = Struct.new(:id, :position, :best_moves, :avoid_moves, :ai_response, :score)
 
 def load_test_suite(file)
   raise "test suite #{file} not found" unless File.exists?(file)
@@ -63,7 +59,7 @@ def load_test_suite(file)
     best_moves = best_moves_from_epd(line)
     avoid_moves = avoid_moves_from_epd(line)
     id = id_from_epd(line)
-    problems << Problem.new(id, pos, best_moves, avoid_moves)
+    problems << ChessProblem.new(id, pos, best_moves, avoid_moves)
   end
   return problems
 end
@@ -83,10 +79,28 @@ def avoid_moves_from_epd(epd)
 end
 
 def take_test(problems, depth, verbose=false)
-  correct, total = 0, 0
   aggregator = Chess::Analytics::Aggregator.new(depth)
-  $tt.clear
+  $tt.clear  # make sure no entries are stored in TT that could bias test results.
+  
   t0 = Time.now
+  answer_questions(problems, depth, aggregator, verbose)
+  time = Time.now - t0
+
+  if verbose
+    puts "\n"
+    tp problems, :id, :best_moves, :avoid_moves, :ai_response, :score
+  end
+  total_right = problems.inject(0) { |memo, prob| memo += score_question(prob) }
+  count =  problems.count
+  accuracy = ((total_right+0.0)/count)*100
+  aggregator.print
+  puts "\nTotal AI score: #{total_right}/#{count} (#{accuracy}%)"
+  puts "#{time/count} seconds/search at depth #{depth}"
+  puts aggregator.print_summary(accuracy)
+end
+
+def answer_questions(problems, depth, aggregator, verbose=false)
+  correct, total = 0, 0
   problems.each_with_index do |prob, i|
     move, value = Chess::Search::select_move(prob.position, depth, aggregator, verbose)
     prob.ai_response = move
@@ -101,32 +115,12 @@ def take_test(problems, depth, verbose=false)
       print " | #{i+1}.#{prob.score > 0 ? "-" : "X" }"
     end
   end
+end 
 
-  if verbose
-    puts "\n"
-    tp problems, :id, :best_moves, :avoid_moves, :ai_response, :score
-  end
-  total_right, count = score_test(problems), problems.count
-  time = Time.now - t0
-  accuracy = ((total_right+0.0)/count)*100
-  aggregator.print
-  puts "\nTotal AI score: #{total_right}/#{count} (#{accuracy}%)"
-  puts "#{time/count} seconds/search at depth #{depth}"
-  puts aggregator.print_summary(accuracy)
-end
-
-def score_test(problems)
-  problems.inject(0) { |memo, prob| memo += score_question(prob) }
-end
-
-def score_question(problem) # answer is considered correct if it matches any answer 
-  # in the best_moves field, and does not match any answer in the avoid_moves field.
-  problem.best_moves.each do |pgn| 
-    return 1 if move_matches_pgn?(problem.ai_response, pgn)
-  end
-  problem.avoid_moves.each do |pgn|
-    return 0 if move_matches_pgn?(problem.ai_response, pgn)
-  end
+def score_question(problem) # answer is considered correct if it matches any answer in
+                            # best_moves, and does not match any answer in avoid_moves.
+  problem.best_moves.each { |pgn| return 1 if move_matches_pgn?(problem.ai_response, pgn) }
+  problem.avoid_moves.each { |pgn| return 0 if move_matches_pgn?(problem.ai_response, pgn) }
   return problem.best_moves.empty? ? 1 : 0
 end
 

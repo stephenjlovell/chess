@@ -57,8 +57,8 @@ module Chess
         if !@table.has_key?(h)
           alpha, beta = set_bounds(result, alpha, beta)
           @table[h] = TTBoundEntry.new(h, depth, count, alpha, beta, move)
-        # elsif count >= @table[h].count
-        elsif depth >= @table[h].depth
+        elsif count >= @table[h].count
+        # elsif depth >= @table[h].depth
           e = @table[h] 
           alpha, beta = set_bounds(result, alpha, beta)
           e.depth, e.count, e.alpha, e.beta, e.move = depth, count, alpha, beta, move

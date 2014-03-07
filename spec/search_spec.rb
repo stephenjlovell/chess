@@ -25,60 +25,41 @@ describe Chess::Search do
 
   before do 
     @s = Chess::Search
-    @depth = 5
+    @depth = 4
   end
 
-  describe "permits use of" do
-    let(:game) { FactoryGirl.build(:test_game) }
-    let(:pos) { game.position }
+  # describe "permits use of Iterative Deepening" do
+  #   let(:game) { FactoryGirl.build(:test_game) }
+  #   let(:pos) { game.position }
 
-    describe "mtdf" do
-      # it "from within an iterative deepening framework" do
-      #   puts "iterative_deepening_mtdf \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf }[0] }"
-      # end
-      # it "_step from within an iterative deepening framework" do
-      #   puts "iterative_deepening_mtdf_step \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_mtdf_step }[0] }"
-      #   pos.board.print
-      # end
-    end
-    describe "alpha beta" do
-      # it "from within an iterative deepening framework" do
-      #   puts "iterative_deepening_alpha_beta \n #{@s::select_move(pos, @depth) { @s::iterative_deepening_alpha_beta }[0] }"
-      # end
-    end
-  end
+  #   it "MTD(f)" do
+  #     puts "\niterative_deepening_mtdf" 
+  #     @s::select_move(pos, @depth) { @s::iterative_deepening_mtdf }[0].to_s.should == "f2f3"
+  #   end
+  #   it "MTD(f)-Step" do
+  #     puts "\niterative_deepening_mtdf_step" 
+  #     @s::select_move(pos, @depth) { @s::iterative_deepening_mtdf_step }[0].to_s.should == "f2f3"
+  #   end
+  #   it "Alpha Beta" do
+  #     puts "\niterative_deepening_alpha_beta" 
+  #     @s::select_move(pos, @depth) { @s::iterative_deepening_alpha_beta }[0].to_s.should == "f2f3"
+  #   end
+  # end
 
   # describe "static exchange evaluation" do
   #   let(:loc) { Chess::Location::get_location(5,6) }
   #   let(:see_pos) { FactoryGirl.build(:see_position) }
   #   it "should correctly value an exchange over a single square" do
-  #     see_pos.board.print
+  #     # see_pos.board.print
   #     @s.get_see_score(see_pos, loc).should == 100
   #   end
-  # end
-
-  # describe "should make tactically sound moves" do
-  #   let(:game) { FactoryGirl.build(:game) }
-  #   let(:sanity_check) { Chess::Notation::fen_to_position("1nbqkbnr/1ppppppp/8/8/1p1P2P1/8/r1P1PP1P/RNBQKBNR w KQk - 0 1") }
-  #   let(:puzzle) { Chess::Notation::epd_to_position('1rbq1rk1/p1b1nppp/1p2p3/8/1B1pN3/P2B4/1P3PPP/2RQ1R1K w - - bm Nf6+; id "position 01";') }
-
-  #   it do
-  #     game.position = sanity_check
-  #     @s::select_move(sanity_check,@depth)[0].to_s.should == "a1a2"
-  #   end
-
-  # #   # it "should avoid search explosion on more challenging problems" do 
-  # #   #   game.position = puzzle
-  # #   #   @s::select_move(puzzle, @depth)[0].to_s.should == "e4f6"
-  # #   # end
-
   # end
 
   describe "playing strength" do
     let(:problems) { load_test_suite('./test_suites/win_at_chess.epd') }
     
     it "should be able to take standardized tests" do
-      take_test(problems[0..9], @depth, false)
+      take_test(problems[0..4], @depth, false)
     end
   end
 

@@ -21,8 +21,7 @@
 
 require 'spec_helper'
 
-describe Chess::Pieces do
-  describe "chess pieces" do
+  describe "Chess pieces" do
     before do
       @game = Chess::Game.new
       @position = @game.position
@@ -51,34 +50,12 @@ describe Chess::Pieces do
         return moves
       end
 
-      # it "should generate a list of valid moves" do  # position, square, target, capture_value, options
-      #   targets = moves.collect { |m| m.to.to_a }
-      #   targets.should == [[7, 4], [7, 6], [6, 7], [4, 7], [3, 6], [3, 4], [4, 3], [6, 3]]
-      # end
-
-    end
-
-    describe "pawns" do
-      before do
-        @from = FactoryGirl.build(:location, r: 7, c: 5) 
-        @pawn = Chess::Pieces::Pawn.new(:w) # D5
-      end
-      
-      subject { @pawn }
-      let(:moves) do 
-        moves = []
-        @pawn.get_moves(@position, @from, moves, [], [], [])
-        return moves
+      it "should generate a list of valid moves" do  # position, square, target, capture_value, options
+        targets = moves.collect { |m| m.to.to_a }
+        targets.should == [[7, 4], [7, 6], [6, 7], [4, 7], [4, 3], [6, 3]]
       end
 
-      # it "should attack diagnally" do
-      #   moves.collect { |m| m.to.to_a }.should == [[8,6],[8,4]]
-      # end
-
     end
-  end
-
-  # describe Chess::Pieces helper methods
 
 end
 

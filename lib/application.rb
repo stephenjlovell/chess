@@ -37,8 +37,6 @@ module Chess # top-level application namespace.
   end
 
   class Clock
-    attr_reader :game_start
-
     def initialize(time_limit) 
       @game_start, @turn_start, @time_limit = Time.now, Time.now, time_limit
     end

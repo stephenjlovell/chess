@@ -71,7 +71,6 @@ describe Chess::Board do
       @to = FactoryGirl.build(:location, r: 4, c: 8) # G3
       @alt_from = FactoryGirl.build(:location, r: 3, c: 3) # B2
       @alt_to = FactoryGirl.build(:location, r: 4, c: 3) # B3
-      puts @from, @to, @alt_from, @alt_to
     end
 
     it 'should know if the specified king is in check' do
@@ -86,18 +85,19 @@ describe Chess::Board do
 
   end
 
-  # describe 'when finding pieces that attack a given square' do
-  #   before do
-  #     @board = FactoryGirl.build(:test_board)
-  #     @location = Chess::Location::get_location(5,8)
-  #   end
+  describe 'when finding pieces that attack a given square' do
+    before do
+      @board = FactoryGirl.build(:test_board)
+      @location = Chess::Location::get_location(5,8)
+      @attackers = @board.get_square_attackers(@location)
+    end
 
-  #   it 'should generate a list of squares holding pieces that attack the given square' do
-  #     @board.get_square_attackers(@location, :w).should == [Chess::Location::get_location(2,5)]
-  #     @board.attackers(@location, :b).should == [Chess::Location::get_location(7,7)]
-  #   end
+    it 'should generate a list of squares holding pieces that attack the given square' do
+      @attackers[:w].should == [Chess::Location::get_location(2,5)]
+      @attackers[:b].should == [Chess::Location::get_location(7,7)]
+    end
 
-  # end
+  end
 
 
 
