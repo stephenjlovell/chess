@@ -129,8 +129,7 @@ module Chess
         own_pieces.each do |key, piece| 
           piece.get_captures(self, key, captures, promotion_captures)
         end
-        # sort_captures_by_see!(captures)
-        sort_captures!(captures)
+        sort_captures_by_see!(captures)
         first_moves + promotion_captures + captures
       end
       alias :tactical_edges :get_captures

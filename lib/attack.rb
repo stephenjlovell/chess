@@ -30,7 +30,6 @@ module Chess
       ray_attack?(location, rook, queen, Pieces::DIRECTIONS[:straight]) || # queens and rooks
       ray_attack?(location, bishop, queen, Pieces::DIRECTIONS[:diagonal]) || # queens and bishops
       single_attack?(location, knight, Pieces::DIRECTIONS[:N]) # knights
-      # king cannot be attacked by another king.
     end
 
     def attacked?(location, attacker_color)
@@ -46,20 +45,18 @@ module Chess
 
     def attacked_by_pawn?(location, attacker_color)
       if attacker_color == :w   
-        return true if self[location + Pieces::SE] == :wP
-        return true if self[location + Pieces::SW] == :wP
+        return true if self[location + Pieces::SE] == :wP || self[location + Pieces::SW] == :wP
       else
-        return true if self[location + Pieces::NE] == :bP
-        return true if self[location + Pieces::NW] == :bP
+        return true if self[location + Pieces::NE] == :bP || self[location + Pieces::NW] == :bP
       end
-      return false
+      false
     end
 
     def ray_attack?(location, threat_piece, queen, directions)
       directions.each do |vector| 
         return true if ray_attack_direction?(location, threat_piece, queen, vector)
       end
-      return false
+      false
     end
 
     def ray_attack_direction?(location, threat_piece, queen, vector)
@@ -68,7 +65,7 @@ module Chess
         return self[square] == threat_piece || self[square] == queen unless self.empty?(square)
         square += vector
       end
-      return false
+      false
     end
 
     def single_attack?(location, threat_piece, directions)
@@ -77,15 +74,13 @@ module Chess
     end
 
     def get_square_attackers(location)
-      { w: get_square_attackers_by_color(location, :w),
-        b: get_square_attackers_by_color(location, :b) }
+      { w: get_square_attackers_by_color(location, :w), b: get_square_attackers_by_color(location, :b) }
     end
 
     def get_square_attackers_by_color(location, color)
-      pieces = Pieces::PIECES_BY_COLOR[color]
+      pieces, attackers = Pieces::PIECES_BY_COLOR[color], []
       knight, bishop, rook, queen, king = pieces[:N], pieces[:B], pieces[:R], pieces[:Q], pieces[:K]
 
-      attackers = []
       get_pawn_attackers(attackers, location, color) # pawns
       get_ray_attackers(attackers, location, rook, queen, Pieces::DIRECTIONS[:straight]) # queens and rooks
       get_ray_attackers(attackers, location, bishop, queen, Pieces::DIRECTIONS[:diagonal]) # queens and bishops
@@ -99,23 +94,23 @@ module Chess
         square = location + Pieces::SE
         if self[square] == :wP
           insert_attacker(attackers, square)
-          get_ray_attackers_by_direction(attackers, square, :wB, :wQ, Pieces::SE ) # check for hidden attackers 
+          get_ray_attackers_by_direction(attackers, square, :wB, :wQ, Pieces::SE ) # check for 'hidden' attackers 
         end
         square = location + Pieces::SW
         if self[square] == :wP
           insert_attacker(attackers, square)
-          get_ray_attackers_by_direction(attackers, square, :wB, :wQ, Pieces::SW )
+          get_ray_attackers_by_direction(attackers, square, :wB, :wQ, Pieces::SW ) # check for 'hidden' attackers 
         end
       else
         square = location + Pieces::NE
         if self[square] == :bP
           insert_attacker(attackers, square)
-          get_ray_attackers_by_direction(attackers, square, :bB, :bQ, Pieces::NE )
+          get_ray_attackers_by_direction(attackers, square, :bB, :bQ, Pieces::NE ) # check for 'hidden' attackers 
         end
         square = location + Pieces::NW
         if self[square] == :bP
           insert_attacker(attackers, square)
-          get_ray_attackers_by_direction(attackers, square, :bB, :bQ, Pieces::NW )
+          get_ray_attackers_by_direction(attackers, square, :bB, :bQ, Pieces::NW ) # check for 'hidden' attackers 
         end
       end
     end
@@ -128,9 +123,9 @@ module Chess
       square = location + vector
       while self.on_board?(square)
         unless self.empty?(square) # if square is occupied, it's either a threat piece, 
-          # a non-attacker of same color, or a piece of opposite color.
+                                   # a non-attacker of same color, or a piece of opposite color.
           if self[square] == threat_piece || self[square] == queen
-            if blocking_square   # insert the threat piece by the appropriate method
+            if blocking_square     
               insert_hidden_attacker(attackers, square, blocking_square)
             else
               insert_attacker(attackers, square)
@@ -163,15 +158,13 @@ module Chess
           break if Pieces::PIECE_SYM_ID[self[attackers[i]]] >= square_value
           insert_index += 1
         end
-        attackers.insert(insert_index, square) # [ 1, 3, 5 ].insert(2,4)  => [1,3,4,5]
+        attackers.insert(insert_index, square)
       end
     end
 
     def insert_hidden_attacker(attackers, square, blocking_square) # hidden attackers must come after 
       # the piece by which they were blocked, but are otherwise sorted normally.
-      insert_index = 0
-      max = attackers.count - 1
-
+      insert_index, max = 0, attackers.count - 1
       (0..max).each do |i|
         break if attackers[i] == blocking_square
         insert_index += 1

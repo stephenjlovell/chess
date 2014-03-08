@@ -94,7 +94,6 @@ module Chess
     end
 
     def self.create_key
-      # SecureRandom::random_bytes.unpack('L*').inject(0) { |key, i| key ^= i }
       SecureRandom::random_number(2**61)
     end
 

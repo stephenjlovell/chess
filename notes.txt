@@ -67,19 +67,25 @@ Current Issues ----
 
 To Do ----
 
-  Update all specs
+  Refactor utilities.rb
 
   Prevent king capture in SEE
   
   Refactor for readability where required, comment ambiguous code.
   
-  Red-Team code review
+  Complete review of all files in ./lib/
 
   create readme
 
 
 
 Possible Enhancements to Add ----
+
+  Add very basic 'King Tropism' to evaluation:
+    - create a pre-filled 64x64 table holding the chebyshev distance for each to/from square combination.
+    - assign a multiplier value for each piece type.
+    - keep a total king_tropism value incrementally updated (for both sides) on make/unmake.
+    - add 'net king tropism' to evaluation total.
 
   Add aging scheme for removal of old TT entries
 

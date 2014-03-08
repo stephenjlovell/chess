@@ -31,8 +31,7 @@ module Chess # top-level application namespace.
   end
 
   def self.new_game(ai_player = :b, time_limit=TIME_LIMIT)
-    puts "Starting a new game." 
-    puts "AI color: #{ai_player}, Your color: #{FLIP_COLOR[ai_player]}"
+    puts "Starting a new game. AI color: #{ai_player}, Your color: #{FLIP_COLOR[ai_player]}"
     @current_game = Chess::Game.new(ai_player, time_limit)
   end
 
@@ -109,12 +108,9 @@ module Chess # top-level application namespace.
     attr_reader :ai_player, :opponent
     
     def initialize(ai_player = :b, time_limit=TIME_LIMIT)
-      board = Board.new
+      board, @move_history, @clock = Board.new, MoveHistory.new, Clock.new(time_limit)
       @position = Position::ChessPosition.new(board,Pieces::setup(board),:w,0)
-      @halfmove_count = 0
-      @move_history = MoveHistory.new
-      @ai_player, @opponent = ai_player, FLIP_COLOR[ai_player]
-      @clock = Clock.new(time_limit)
+      @ai_player, @opponent, @halfmove_count = ai_player, FLIP_COLOR[ai_player], 0
       Chess::current_game = self
     end
 
@@ -124,18 +120,14 @@ module Chess # top-level application namespace.
 
     def print # print game state info along with board representation
       puts @position.to_s
-      puts "\n"
       opp_score, ai_score = score(@ai_player), score(@opponent)
-      scoreboard = "| Move: #{move_clock} | Ply: #{@halfmove_count} " +
+      scoreboard = "\n| Move: #{move_clock} | Ply: #{@halfmove_count} " +
                    "| Turn: #{@position.side_to_move.to_s} " +
                    "| Castling: #{Notation::castling_availability(@position.castle)} " +
                    "| AI Score: #{ai_score} | Your Score: #{opp_score} |"
       separator = "-" * scoreboard.length
       puts separator, scoreboard, separator, "\n"
       @position.board.print
-      if @position.in_check?
-
-      end
     end
 
     def score(enemy_color)
@@ -181,8 +173,7 @@ module Chess # top-level application namespace.
         return nil
       else
         save_move(@position, move)
-        MoveGen::make!(@position, move)
-        # if opponent in check after ai move, do a 1-play search to determine if checkmate.
+        MoveGen::make!(@position, move) # if opponent in check, do a 1-play search to determine if ai wins.
         if @position.in_check? && Search::select_move(@position,1)[0].nil?
           @winner = @ai_player
           return nil

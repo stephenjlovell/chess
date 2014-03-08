@@ -19,7 +19,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-# This file is for Application-level constants and helper methods
 require './lib/memory.rb'
 
 module Chess
@@ -28,13 +27,20 @@ module Chess
   $INF = 1.0/0.0
   $tt = Memory::TranspositionTable.new  # global access to transposition table instance.
 
+  # application-level constants:
   ENEMY_BACK_ROW = { w: 9, b: 2 }
-
   FLIP_COLOR = { w: :b, b: :w }
-
   TIME_LIMIT = 12  # default search time limit
+
+  def self.max(x,y)
+    x > y ? x : y
+  end
+
+  def self.min(x,y)
+    x < y ? x : y
+  end
   
-  module Notation # supports translation to and from long algebraic chess notation.
+  module Notation # supports translation to and from algebraic notation, EPD, and FEN.
 
     class InvalidMoveError < StandardError
     end
@@ -47,7 +53,7 @@ module Chess
     end
 
     def self.str_to_move(pos, str) # create a move object from long algebraic chess notation (used by UCI).
-      # Valid examples:  e2e4, e7e5, e1g1 (white short castling), e7e8q (for promotion)
+                                   # Examples:  e2e4, e7e5, e1g1 (white short castling), e7e8q (promotion)
       begin
         from = Location::string_to_location(str[0..1])
         to = Location::string_to_location(str[2..3])

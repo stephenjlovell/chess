@@ -122,7 +122,9 @@ module Chess
         gamma = guess == @lower_bound ? guess+1 : guess
 
         move, guess = alpha_beta_root(depth, gamma-1, gamma)
-        best_move, best = move, guess unless move.nil?        
+        best_move, best = move, guess unless move.nil?
+        # only update when score increases?
+
         # puts "#{mtdf_passes} MT(#{depth}, #{gamma-1}, #{gamma}) => #{move}, #{guess}"
 
         guess < gamma ? @upper_bound = guess : @lower_bound = guess
@@ -148,11 +150,11 @@ module Chess
 
         if guess < gamma
           @upper_bound = guess
-          guess = max(guess-step, @lower_bound+1)
+          guess = Chess::max(guess-step, @lower_bound+1)
           stepped_down = true
         else
           @lower_bound = guess
-          guess = min(guess+step, @upper_bound-1)
+          guess = Chess::min(guess+step, @upper_bound-1)
           stepped_up = true
         end
 
@@ -188,7 +190,7 @@ module Chess
         MoveGen::make!(@node, move)
         value, count = alpha_beta(depth-PLY_VALUE+ext_check, -beta, -alpha)
         MoveGen::unmake!(@node, move)
-        result = max(-value, result)
+        result = Chess::max(-value, result)
         sum += count
         legal_moves = true unless result <= Pieces::KING_LOSS
 
@@ -227,8 +229,8 @@ module Chess
           if e.depth >= depth
             return e.alpha, e.count if e.alpha >= beta
             return e.beta, e.count if e.beta <= alpha
-            # alpha = max(alpha, e.alpha)   # Using TT to adjust local bounds reduces branching factor, but also
-            # beta = min(beta, e.beta)      # creates search instability that can decrease playing strength.
+            # alpha = Chess::max(alpha, e.alpha)   # Using TT to adjust local bounds reduces branching factor, but also
+            # beta = Chess::min(beta, e.beta)      # creates search instability that can decrease playing strength.
           end
         end
       end
@@ -254,7 +256,7 @@ module Chess
       moves = @node.edges(first_moves)
 
       # Enhanced Transposition Cutoffs
-      if depth >= 2*PLY_VALUE
+      if depth > 2*PLY_VALUE
         moves.each do |move|
           e = nil
           MoveGen::make!(@node, move)
@@ -284,7 +286,7 @@ module Chess
         MoveGen::unmake!(@node, move)
 
         $main_calls += 1
-        result = max(-value, result)
+        result = Chess::max(-value, result)
         sum += count
         legal_moves = true unless result <= Pieces::KING_LOSS
 
@@ -314,8 +316,8 @@ module Chess
           if e.depth >= depth
             return e.alpha, e.count if e.alpha >= beta
             return e.beta, e.count if e.beta <= alpha
-            # alpha = max(alpha, e.alpha)
-            # beta = min(beta, e.beta)
+            # alpha = Chess::max(alpha, e.alpha)
+            # beta = Chess::min(beta, e.beta)
           end
         end
       end
@@ -333,7 +335,7 @@ module Chess
         MoveGen::unmake!(@node, move)
 
         $quiescence_calls += 1
-        result = max(-value, result)
+        result = Chess::max(-value, result)
         sum += count
 
         if result > alpha
@@ -376,14 +378,6 @@ module Chess
         counters[other_side] += 1
         alpha = score if score > alpha  # alpha update
       end
-    end
-
-    def self.max(x,y)
-      x > y ? x : y
-    end
-
-    def self.min(x,y)
-      x < y ? x : y
     end
 
     def self.get_pv(node)
