@@ -24,8 +24,8 @@ require './lib/memory.rb'
 module Chess
 
   # global variables:
-  $INF = 1.0/0.0
-  $tt = Memory::TranspositionTable.new  # global access to transposition table instance.
+  $INF = 1.0/0.0  # infinity
+  $tt = Memory::TranspositionTable.new  # single global transposition table instance.
 
   # application-level constants:
   ENEMY_BACK_ROW = { w: 9, b: 2 }
@@ -51,6 +51,8 @@ module Chess
     def self.move_to_str(move)
       move.to_s
     end
+
+    # refactor and break up this method into more manageable pieces:
 
     def self.str_to_move(pos, str) # create a move object from long algebraic chess notation (used by UCI).
                                    # Examples:  e2e4, e7e5, e1g1 (white short castling), e7e8q (promotion)
@@ -98,9 +100,7 @@ module Chess
           end
         when :K
           if from + [0,2] == to || from + [0,-2] == to
-
             # add checks for castling rights here.
-
             if from + [0,-2] == to # castle queen-side
               if from == MoveGen::WK_INIT
                 rook_from, rook_to = MoveGen::WRQ_INIT, Location::get_location(2,5)

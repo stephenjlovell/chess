@@ -20,29 +20,32 @@
 #-----------------------------------------------------------------------------------
  
 module Chess
-  module Attack  # Mixin module for use with Board object.
+  module Attack  # Mixin module for use with Board object.  Provides methods for determining if a given square is attacked,
+  # and for listing attackers available to each side in a battle over control of a given square.  Lists of attacking pieces
+  # are used to perform Static Exchange Evaluation (SEE) during search.
 
-    def king_attacked?(location, attacker_color)
-      pieces = Pieces::PIECES_BY_COLOR[attacker_color]
-      knight, bishop, rook, queen, king = pieces[:N], pieces[:B], pieces[:R], pieces[:Q], pieces[:K]
-
-      attacked_by_pawn?(location, attacker_color) || # pawns
-      ray_attack?(location, rook, queen, Pieces::DIRECTIONS[:straight]) || # queens and rooks
-      ray_attack?(location, bishop, queen, Pieces::DIRECTIONS[:diagonal]) || # queens and bishops
-      single_attack?(location, knight, Pieces::DIRECTIONS[:N]) # knights
+    def king_attacked?(location, attacker_color)        
+      attacked_by_regular_piece?(location, attacker_color)  # kings cannot be attacked by other kings.
     end
 
-    def attacked?(location, attacker_color)
-      pieces = Pieces::PIECES_BY_COLOR[attacker_color]
-      knight, bishop, rook, queen, king = pieces[:N], pieces[:B], pieces[:R], pieces[:Q], pieces[:K]
-
-      attacked_by_pawn?(location, attacker_color) || # pawns
-      ray_attack?(location, rook, queen, Pieces::DIRECTIONS[:straight]) || # queens and rooks
-      ray_attack?(location, bishop, queen, Pieces::DIRECTIONS[:diagonal]) || # queens and bishops
-      single_attack?(location, knight, Pieces::DIRECTIONS[:N]) || # knights
-      single_attack?(location, king, Pieces::DIRECTIONS[:ray])  # Kings
+    # Determine if given square is attacked by any piece of the specified color, including the enemy king.
+    def attacked?(location, attacker_color) 
+      attacked_by_regular_piece?(location, attacker_color) ||
+      single_attack?(location, Pieces::PIECES_BY_COLOR[attacker_color][:K], Pieces::DIRECTIONS[:ray]) # king attacks
     end
 
+    # Determine if given square is attacked by any non-king piece of the specified color.
+    def attacked_by_regular_piece?(location, attacker_color) 
+      pieces = Pieces::PIECES_BY_COLOR[attacker_color]
+      knight, bishop, rook, queen = pieces[:N], pieces[:B], pieces[:R], pieces[:Q]
+
+      attacked_by_pawn?(location, attacker_color) || # pawn attacks
+      ray_attack?(location, rook, queen, Pieces::DIRECTIONS[:straight]) || # queen and rook attacks
+      ray_attack?(location, bishop, queen, Pieces::DIRECTIONS[:diagonal]) || # queen and bishop attacks
+      single_attack?(location, knight, Pieces::DIRECTIONS[:N]) # knight attacks
+    end
+
+    # Check for attacks by enemy pawns.
     def attacked_by_pawn?(location, attacker_color)
       if attacker_color == :w   
         return true if self[location + Pieces::SE] == :wP || self[location + Pieces::SW] == :wP
@@ -52,15 +55,16 @@ module Chess
       false
     end
 
+    # Check for attacks by sliding pieces (bishops, rooks, queens).  
     def ray_attack?(location, threat_piece, queen, directions)
-      directions.each do |vector| 
-        return true if ray_attack_direction?(location, threat_piece, queen, vector)
-      end
+      directions.each { |vector| return true if ray_attack_direction?(location, threat_piece, queen, vector) }
       false
     end
 
-    def ray_attack_direction?(location, threat_piece, queen, vector)
-      square = location + vector
+    # Repeatedly add an increment vector to location, scanning along a direction 
+    # until either a threat piece is detected or movement is blocked.
+    def ray_attack_direction?(location, threat_piece, queen, vector) 
+      square = location + vector 
       while self.on_board?(square)
         return self[square] == threat_piece || self[square] == queen unless self.empty?(square)
         square += vector
@@ -68,11 +72,14 @@ module Chess
       false
     end
 
-    def single_attack?(location, threat_piece, directions)
+    # Check for attacks by pieces that move in a single jump (knights and kings).
+    def single_attack?(location, threat_piece, directions)  
       directions.each { |vector| return true if self[location + vector] == threat_piece }
       return false
     end
 
+    # Create lists of all pieces that can attack the given square during an exchange.  This includes 'hidden'
+    # attackers that must wait until another piece of their color has been exchanged before attacking.
     def get_square_attackers(location)
       { w: get_square_attackers_by_color(location, :w), b: get_square_attackers_by_color(location, :b) }
     end
@@ -89,6 +96,8 @@ module Chess
       return attackers
     end
 
+    # Add any available pawns (bishops, rooks, queens) to attackers array.  If an attacking pawn is found,
+    # this method continues scanning along the direction of attack to find any hidden sliding piece attackers.
     def get_pawn_attackers(attackers, location, color)
       if color == :w
         square = location + Pieces::SE
@@ -115,16 +124,18 @@ module Chess
       end
     end
 
+    # Add any available sliding pieces (bishops, rooks, queens) to attackers array. 
     def get_ray_attackers(attackers, location, threat_piece, queen, directions)
       directions.each { |vector| get_ray_attackers_by_direction(attackers, location, threat_piece, queen, vector) }
     end
 
+    # Repeatedly add an increment vector to location, scanning along a direction and inserting any available 
+    # sliding attack pieces into the attackers array.
     def get_ray_attackers_by_direction(attackers, location, threat_piece, queen, vector, blocking_square=nil)
       square = location + vector
       while self.on_board?(square)
-        unless self.empty?(square) # if square is occupied, it's either a threat piece, 
-                                   # a non-attacker of same color, or a piece of opposite color.
-          if self[square] == threat_piece || self[square] == queen
+        unless self.empty?(square)                                 # If square is occupied, it's either a threat piece, 
+          if self[square] == threat_piece || self[square] == queen # a non-attacker of same color, or a piece of opposite color.
             if blocking_square     
               insert_hidden_attacker(attackers, square, blocking_square)
             else
@@ -132,12 +143,11 @@ module Chess
             end
             blocking_square = square
           else
-            return  # if occupied by non-threat piece, stop searching this direction
+            break  # if occupied by non-threat piece, stop searching this direction
           end
         end
         square += vector
       end
-
     end
 
     def get_single_attackers(attackers, location, threat_piece, directions)
@@ -146,13 +156,12 @@ module Chess
       end  # knights and kings cannot block other attackers.
     end
 
-    def insert_attacker(attackers, square, insert_index=0) # when applied to each attack square, 
-      # attackers should be in order of ID. Existing attackers have already been sorted.
+    # Insertion sort.  Keeps attackers sorted in order of value at risk (less expensive pieces first).
+    def insert_attacker(attackers, square, insert_index=0)
       if attackers.empty?
         attackers << square
       else
         square_value = Pieces::PIECE_SYM_ID[self[square]]
-
         max = attackers.count - 1
         (insert_index..max).each do |i|
           break if Pieces::PIECE_SYM_ID[self[attackers[i]]] >= square_value
@@ -162,8 +171,8 @@ module Chess
       end
     end
 
-    def insert_hidden_attacker(attackers, square, blocking_square) # hidden attackers must come after 
-      # the piece by which they were blocked, but are otherwise sorted normally.
+    # Hidden attackers must come after the piece by which they are blocked, but are otherwise sorted normally.
+    def insert_hidden_attacker(attackers, square, blocking_square) 
       insert_index, max = 0, attackers.count - 1
       (0..max).each do |i|
         break if attackers[i] == blocking_square

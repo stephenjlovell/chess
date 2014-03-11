@@ -354,7 +354,7 @@ module Chess
       static_exchange_evaluation(position.board, to, position.side_to_move, attackers)
     end
 
-    def self.static_exchange_evaluation(board, to, side, attackers) # Iterative SEE algo based on alpha beta pruning.
+    def self.static_exchange_evaluation(board, to, side, attackers) # Iterative SEE implementation based on alpha beta pruning.
       score = 0
       alpha, beta = -$INF, $INF
       other_side = FLIP_COLOR[side]
@@ -388,11 +388,11 @@ module Chess
       end
     end
 
-    # Module interface
-
     def self.reset_counters
       $main_calls, $quiescence_calls, $evaluation_calls, $memory_calls, $passes = 0, 0, 0, 0, 0
     end
+
+    # Module interface
 
     def self.select_move(node, max_depth=5, aggregator=nil, verbose=true)
       Chess::current_game.clock.restart
@@ -400,8 +400,8 @@ module Chess
       @previous_value = Chess::current_game.previous_value || nil
       
       reset_counters
-      # $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
-      #            # outweigh benefit of additional entries.
+      $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
+                 # outweigh benefit of additional entries.
 
       move, value = block_given? ? yield : iterative_deepening_mtdf
 

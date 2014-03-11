@@ -20,9 +20,23 @@
 #-----------------------------------------------------------------------------------
 
 module Chess
-  module Evaluation # this module provides a heuristic value for a given chess position.
+  module Evaluation
 
-    BASE_PST = {  # Piece Square Tables for black.           
+    # This module contains all methods used to assess the heuristic value of a chess position.
+    # RubyChess uses a very simplistic, low-cost evaluation function.  The evaluation score is based on 
+    # three factors:
+    #
+    #   1. Material balance - Sums the value of all pieces in play for each side.  A small bonus/penalty is applied
+    #      based on the location of the piece.
+    #   2. Mobility - If a side is in check, that side has lost the initiative and most respond to the threat.
+    #      A bonus/penalty of 9/10 pawn is applied depending on which side is in check.  The bonus is less than one pawn 
+    #      in order to prevent the AI from sacrificing pawns on useless checks.
+    #   3. King safety - The AI attempts to maximize the danger to the enemy king, and minimize the danger to its own king.
+    #      This is approximated by awarding a bonus for each piece in play based on the value of the piece and its distance 
+    #      to the opposing king.
+
+    BASE_PST = {  # Piece Square Tables are used to provide a small positional bonus/penalty for controlling valuable       
+                  # real estate on the board, relative to black side to move. Base PSTs are taken from the ChessProgramming wiki:
 
       P: [ 0,   0,   0,   0,   0,   0,   0,   0,
           -6,  -4,   1,   1,   1,   1,  -4,  -6,
@@ -42,7 +56,6 @@ module Chess
            -8,   0,   1,   2,   2,   1,   0,  -8,
            -8,  -12, -8,  -8,  -8,  -8, -12,  -8 ],
 
-
       B: [ -4,  -4,  -4,  -4,  -4,  -4,  -4,  -4,
            -4,   0,   0,   0,   0,   0,   0,  -4,
            -4,   0,   2,   4,   4,   2,   0,  -4,
@@ -61,7 +74,6 @@ module Chess
            -5,   0,   0,   0,   0,   0,   0,  -5,
             0,   0,   0,   2,   2,   0,   0,   0 ],
 
-
       Q: [  0,   0,   0,   0,   0,   0,   0,   0,
             0,   0,   1,   1,   1,   1,   0,   0,
             0,   0,   1,   2,   2,   1,   0,   0,
@@ -69,13 +81,11 @@ module Chess
             0,   0,   2,   3,   3,   2,   0,   0,
             0,   0,   1,   2,   2,   1,   0,   0,
             0,   0,   1,   1,   1,   1,   0,   0,
-           -5,  -5,  -5,  -5,  -5,  -5,  -5,  -5 ]
-
-    }
+           -5,  -5,  -5,  -5,  -5,  -5,  -5,  -5 ] }
 
     KING_BASE = {
-      false => [ -40, -40, -40, -40, -40, -40, -40, -40,   # early game
-                 -40, -40, -40, -40, -40, -40, -40, -40,
+      false => [ -40, -40, -40, -40, -40, -40, -40, -40,   # In early game, encourage the king to stay on back 
+                 -40, -40, -40, -40, -40, -40, -40, -40,   # row defended by friendly pieces.
                  -40, -40, -40, -40, -40, -40, -40, -40,
                  -40, -40, -40, -40, -40, -40, -40, -40,
                  -40, -40, -40, -40, -40, -40, -40, -40,
@@ -83,17 +93,16 @@ module Chess
                  -15, -15, -20, -20, -20, -20, -15, -15,
                    0,  20,  30, -30,   0, -20,  30,  20 ],
 
-      true => [ 0,  10,  20,  30,  30,  20,  10,   0,   # end game
-               10,  20,  30,  40,  40,  30,  20,  10,
-               20,  30,  40,  50,  50,  40,  30,  20,
+      true => [ 0,  10,  20,  30,  30,  20,  10,   0,   # In end game (when few friendly pieces are available
+               10,  20,  30,  40,  40,  30,  20,  10,   # to protect king), the king should move toward the center
+               20,  30,  40,  50,  50,  40,  30,  20,   # and avoid getting trapped in corners.
                30,  40,  50,  60,  60,  50,  40,  30,
                30,  40,  50,  60,  60,  50,  40,  30,
                20,  30,  40,  50,  50,  40,  30,  20,
                10,  20,  30,  40,  40,  30,  20,  10,
                 0,  10,  20,  30,  30,  20,  10,   0 ] }
 
-
-    MIRROR = [ 56, 57, 58, 59, 60, 61, 62, 63,
+    MIRROR = [ 56, 57, 58, 59, 60, 61, 62, 63,  # Used to create a mirror image of the base PST.
                48, 49, 50, 51, 52, 53, 54, 55,
                40, 41, 42, 43, 44, 45, 46, 47,
                32, 33, 34, 35, 36, 37, 38, 39,
@@ -111,7 +120,7 @@ module Chess
                 a7: 48, b7: 49, c7: 50, d7: 51, e7: 52, f7: 53, g7: 54, h7: 55,
                 a8: 56, b8: 57, c8: 58, d8: 59, e8: 60, f8: 61, g8: 62, h8: 63 }
 
-
+    # Initialize Piece Square Tables for each color, endgame status, and piece type.
     def self.create_pst
       pst = { w: { false => {}, true => {} }, b: { false => {}, true => {} } }
       BASE_PST.each do |type, arr|
@@ -131,6 +140,7 @@ module Chess
       return pst
     end
 
+    # reverse the rows in the base PST 
     def self.mirror_table(arr)
       new_arr = Array.new(64, nil)
       (0..63).each { |i| new_arr[i] = arr[MIRROR[i]] }
@@ -139,22 +149,37 @@ module Chess
 
     PST = create_pst
 
-    # EVAL_GRAIN = 100.0/32 # Use 1/32 pawn eval grain instead of centipawns
     EVAL_GRAIN = 1
 
+    # The main evaluation method.  Calls methods for calculation of each evaluation component,
+    # then divides the total eval score by EVAL_GRAIN to achieve the desired 'coarseness' of evaluation.
     def self.evaluate(position)
       $evaluation_calls += 1 
-      net_material(position) + mobility(position)
-      # (net_material(position) + mobility(position)) / EVAL_GRAIN
-      # ((net_material(position) + mobility(position))/EVAL_GRAIN).round.to_i
+      ((net_material(position) + mobility(position) + net_king_safety(position))/EVAL_GRAIN).round.to_i
     end
 
+    # Sums up the value of all pieces in play for the given side (without any positional bonuses/penalties).
     def self.base_material(position, side)
       position.pieces[side].inject(0) { |total, (key, piece)| total += piece.class.value }
     end
 
     private
 
+    def self.net_king_safety(pos)
+      king_safety(pos, pos.side_to_move) - king_safety(pos, pos.enemy)
+    end
+
+    # Award a bonus/penalty for each piece in play based on the value of the piece and its distance 
+    # to the opposing king.
+    def self.king_safety(pos, side)
+      sum, enemy_king_location = 0, pos.enemy_king_location
+      pos.pieces[side].each do |loc, piece|
+        sum += Tropism::get_bonus(piece, loc, enemy_king_location)
+      end
+      return sum
+    end
+
+    # Award a bonus/penalty depending on which side (if any) is in check.
     def self.mobility(position)  
       if position.in_check?
         -90

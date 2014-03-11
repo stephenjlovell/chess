@@ -22,6 +22,9 @@
 module Chess
   module Move
 
+    # Move instances function as a Memento containing all the information needed to make and unmake a given move.
+    
+
     class Move
       attr_reader :piece, :from, :to, :enp_target, :see
 

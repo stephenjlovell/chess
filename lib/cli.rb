@@ -23,18 +23,8 @@ require './lib/utilities.rb'
 
 module Chess
   module CLI  # this module provides a basic command-line interface for playing human vs AI games.  
-    # extend Chess::Notation
 
-    HELP = [ { command: 'help', description: "displays a help screen with a list of valid commands... including this one." },
-             { command: 'quit', description: 'ends the game and exits the program.  you may also enter "q" or "exit" to quit.' },
-             { command: 'undo', description: 'undoes the most recent full move (undoing the most recent action for each side).' },
-             { command: 'redo', description: 'replays the next full move.  Only available if move(s) have been undone.' },
-             { command: 'print history', description: 'prints a list of the moves made by each player.' }, 
-             { command: 'print history details', description: 'prints the move list, along with the position in FEN format.' },
-             { command: 'load <FEN>', description: 'loads the chess position specified by <FEN> in FEN format.' },
-               command: 'fen', description: 'prints out the current position in FEN notation' ]
-
-    def self.play # main CLI method.  Gets and responds to user input.
+    def self.play  # Main CLI method.  Gets and responds to user input.
       return if setup.nil?
       input = ""
       until quit?(input) do
@@ -46,14 +36,14 @@ module Chess
       end
     end
 
-    def self.setup
+    def self.setup  # Prompts the user to choose their color, and starts up a new game.
       puts "Welcome to RubyChess!"
       input, valid_color = "", false
       until valid_color
         print  "Choose your color (w/b):  "
         $stdout.flush
         input = gets.chomp
-        return nil if quit?(input) # sentinel indicating user wants to quit the game.
+        return nil if quit?(input) # sentinel indicating user wants to exit the game.
         valid_color = input == "w" || input == "b" || input == "white" || input == "black"
         if valid_color
           time_limit = 12.0
@@ -61,7 +51,7 @@ module Chess
           game = Chess::new_game(ai_color, time_limit)
           
           if game.ai_player == :w
-            puts "white always moves first..."
+            puts "White always moves first..."
             game.ai_move 
           else
             game.print
@@ -73,7 +63,7 @@ module Chess
       return Chess::current_game
     end
 
-    def self.parse_input(game, input) # Allows player undo/redo their previous move, or make a new move.
+    def self.parse_input(game, input) # Parses user input, and executes the specified command if command is valid.
       return nil if help?(input)
       if input == "undo"
         game.undo_move
@@ -91,11 +81,11 @@ module Chess
         move = parse_move(input)
         return nil unless move
         game.human_move(move) 
-        game.ai_move          # if ai_move returns nil, AI is in checkmate. game.winner flag will be set.
+        game.ai_move  # If AI is in checkmate, game.winner flag will be set.
       end
     end
 
-    def self.quit?(input)
+    def self.quit?(input)  # Check if the user is trying to exit the game.
       if input == "quit" || input == "q" || input == "-q" || input == "exit"
         puts "Thanks for playing!  See you soon."
         return true
@@ -103,7 +93,16 @@ module Chess
       false
     end
 
-    def self.help?(input)
+    HELP = [ { command: 'help', description: "displays a help screen with a list of valid commands... including this one." },
+             { command: 'quit', description: 'ends the game and exits the program.  you may also enter "q" or "exit" to quit.' },
+             { command: 'undo', description: 'undoes the most recent full move (undoing the most recent action for each side).' },
+             { command: 'redo', description: 'replays the next full move.  Only available if move(s) have been undone.' },
+             { command: 'print history', description: 'prints a list of the moves made by each player.' }, 
+             { command: 'print history details', description: 'prints the move list, along with the position in FEN format.' },
+             { command: 'load <FEN>', description: 'loads the chess position specified by <FEN> in FEN format.' },
+             { command: 'fen', description: 'prints out the current position in FEN notation' } ]
+
+    def self.help?(input)  # prints out a help menu and a table listing valid commands. 
       if input == "help" || input == "h" || input == "-h"
         separator = "-"*44
         puts "\n#{separator} RubyChess Help #{separator}"
@@ -118,7 +117,7 @@ module Chess
       false
     end
 
-    def self.parse_move(input) # translate the string into a move object.
+    def self.parse_move(input) # translates an input string into a valid move object.
       begin
         move = Notation::str_to_move(Chess::current_game.position, input)
         if Chess::current_game.position.avoids_check?(move)
@@ -132,6 +131,9 @@ module Chess
       end
     end
 
+    # Accepts a string representing a valid chess position in Forsyth-Edwards Notation (FEN), and updates the
+    # current game state to match the specified position.  This can be used to load and play chess puzzles, or 
+    # to resume a previous game.
     def self.load(input)
       begin
         pos = Notation::fen_to_position(input)
@@ -150,7 +152,7 @@ module Chess
       if Chess::current_game.winner == Chess::current_game.opponent
         puts "\nCheckmate! You win!! \n\n"
       else
-        puts "\nCheckmate.  You've been defeated. \n\n"
+        puts "\nYour forces are defeated! I for one welcome our new robot overlords... \n\n"
       end
       Chess::current_game.print_history_details
       true

@@ -22,8 +22,8 @@
 
 module Chess # top-level application namespace.
 
-  def self.current_game
-    @current_game ||= Chess::Game.new
+  def self.current_game  # Application-level helper method.  Ensures that there is always an
+    @current_game ||= Chess::Game.new  # instance of the Game class available when needed.
   end
 
   def self.current_game=(game)
@@ -35,7 +35,7 @@ module Chess # top-level application namespace.
     @current_game = Chess::Game.new(ai_player, time_limit)
   end
 
-  class Clock
+  class Clock  # Used during Search to determine when AI must stop searching and make a move.
     def initialize(time_limit) 
       @game_start, @turn_start, @time_limit = Time.now, Time.now, time_limit
     end
@@ -49,10 +49,10 @@ module Chess # top-level application namespace.
     end
   end
 
-  History = Struct.new(:index, :position, :move, :value)
+  HistoryItem = Struct.new(:index, :position, :move, :value)
 
-  class MoveHistory
-    attr_accessor :history
+  class MoveHistory  # This class saves a record of each move made during the course of the game, and allows
+    attr_accessor :history # the human player to undo or redo any number of his/her moves.
 
     def initialize
       @index = 0
@@ -61,11 +61,11 @@ module Chess # top-level application namespace.
 
     def save(position, move, value=nil)
       @history.slice!(@index+1..-1) if @index < @history.count-1
-      @history << History.new(@history.count, position.to_s, move, value)
+      @history << HistoryItem.new(@history.count, position.to_s, move, value)
       @index = @history.count-1
     end
 
-    def undo(position)    
+    def undo(position) # undoes the player's previous move and the AI's response to that move.   
       if @index >= 1
         MoveGen::unmake!(position, @history[@index].move)
         MoveGen::unmake!(position, @history[@index-1].move)
@@ -98,7 +98,7 @@ module Chess # top-level application namespace.
 
     def print_details
       puts "------Move History Details (#{@history.count} total)------"
-      tp @history, :index, :move, position: {width: 200}
+      tp @history, :index, :move, position: { width: 200 }
       puts "\n"
     end
   end
@@ -134,17 +134,17 @@ module Chess # top-level application namespace.
       [(1040 - (Evaluation::base_material(@position, enemy_color)/100)),0].max
     end
 
-    def undo_move
+    def undo_move  # delegate to the MoveHistory class.
       @move_history.undo(@position)
       self.print
     end
 
-    def redo_move
+    def redo_move  # delegate to the MoveHistory class.
       @move_history.redo(@position)
       self.print
     end
 
-    def save_move(position, move, value=nil)
+    def save_move(position, move, value=nil)  # delegate to the MoveHistory class.
       @move_history.save(position, move, value)
     end
 
@@ -160,22 +160,22 @@ module Chess # top-level application namespace.
       @move_history.print_details
     end
 
-    def human_move(move)  
+    def human_move(move)  # Makes the move specified by the CLI or GUI
       save_move(@position, move)
       MoveGen::make!(@position, move)
       end_turn
     end
 
     def ai_move
-      move, value = Search::select_move(@position)
+      move, value = Search::select_move(@position) 
       if move.nil?
         @winner = @opponent
         return nil
       else
         save_move(@position, move)
-        MoveGen::make!(@position, move) # if opponent in check, do a 1-play search to determine if ai wins.
+        MoveGen::make!(@position, move) 
         if @position.in_check? && Search::select_move(@position,1)[0].nil?
-          @winner = @ai_player
+          @winner = @ai_player  # if opponent is in check after AI move, do a 1-play search to determine if AI has won.
           return nil
         else
           end_turn

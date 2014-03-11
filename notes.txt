@@ -28,7 +28,7 @@ Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
 
 Search benchmarking (Win at Chess test suite):
 
-  2/25/14, MTD-f step
+2/25/14, MTD-f step
 
   ------ Aggregate Search Performance -------
 
@@ -44,7 +44,7 @@ Search benchmarking (Win at Chess test suite):
   nodes: 4115699,  evals: 905779,  avg. branching: 2.4067041134359775
 
 
-  3/7/14, MTD-f
+3/7/14, MTD-f
   
   ------ Aggregate Search Performance -------
 
@@ -58,6 +58,51 @@ Search benchmarking (Win at Chess test suite):
   Total AI score: 67/300 (22.333333333333332%)
   1.1498487733333334 seconds/search at depth 4
   N: 1959413; E: 1878373; B: 3.1147265555903036; Efficiency: 7.170238842716231
+
+3/9/14, MTD-f after adding King Tropism heuristic to evaluation.
+
+      ------ Aggregate Search Performance -------
+
+    DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS   | MEMORY | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+    ------|-------|--------|---------|---------|---------|--------|--------------------|--------------------|----------
+    1     |       | 2614   | 31974   | 29292   | 49862   | 16762  | 0.0                | 0.0                | 61266    
+    2     |       | 2223   | 61542   | 70111   | 127052  | 28179  | 2.148875395814971  | 2.148875395814971  | 131653   
+    3     |       | 710    | 365055  | 255935  | 595139  | 68184  | 4.71686934593211   | 3.1837029513991038 | 620990   
+    4     |       | 647    | 889970  | 514969  | 1350768 | 148819 | 2.2624180743651268 | 2.8410528582793413 | 1404939  
+
+    Total AI score: 69/300 (23.0%)
+    1.4116527433333332 seconds/search at depth 4
+    N: 2218848; E: 2122821; B: 2.8410528582793413; Efficiency: 8.095590313631035
+
+    ------ Aggregate Search Performance -------
+
+    DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+    ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
+    1     |       | 2614   | 31974    | 29292   | 49862    | 16762   | 0.0                | 0.0                | 61266    
+    2     |       | 2223   | 61542    | 70111   | 127052   | 28179   | 2.148875395814971  | 2.148875395814971  | 131653   
+    3     |       | 710    | 365055   | 255935  | 595139   | 68184   | 4.71686934593211   | 3.1837029513991038 | 620990   
+    4     |       | 647    | 889970   | 514969  | 1350768  | 148819  | 2.2624180743651268 | 2.8410528582793413 | 1404939  
+    5     |       | 748    | 10268469 | 4130184 | 13461295 | 1022796 | 10.248596558284737 | 3.9153950257610033 | 14398653 
+
+    Total AI score: 71/300 (23.666666666666668%)
+    8.932542573333334 seconds/search at depth 5
+    N: 16617501; E: 15584116; B: 3.9153950257610033; Efficiency: 6.044515690231479
+
+    ------ Aggregate Search Performance -------
+
+  DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+  ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
+  1     |       | 2614   | 31974    | 29292   | 49862    | 16762   | 0.0                | 0.0                | 61266    
+  2     |       | 2223   | 61542    | 70111   | 127052   | 28179   | 2.148875395814971  | 2.148875395814971  | 131653   
+  3     |       | 710    | 365055   | 255935  | 595139   | 68184   | 4.71686934593211   | 3.1837029513991038 | 620990   
+  4     |       | 647    | 889970   | 514969  | 1350768  | 148819  | 2.2624180743651268 | 2.8410528582793413 | 1404939  
+  5     |       | 748    | 10268469 | 4130184 | 13461295 | 1022796 | 10.248596558284737 | 3.9153950257610033 | 14398653 
+  6     |       | 515    | 13269450 | 3535557 | 15535641 | 1916286 | 1.1671235496820431 | 3.0735751357459287 | 16805007 
+
+  Total AI score: 75/300 (25.0%)
+  17.46751890666667 seconds/search at depth 6
+  N: 33422508; E: 31119757; B: 3.0735751357459287; Efficiency: 8.133850286998996
+
 
 
 
@@ -81,11 +126,7 @@ To Do ----
 
 Possible Enhancements to Add ----
 
-  Add very basic 'King Tropism' to evaluation:
-    - create a pre-filled 64x64 table holding the chebyshev distance for each to/from square combination.
-    - assign a multiplier value for each piece type.
-    - keep a total king_tropism value incrementally updated (for both sides) on make/unmake.
-    - add 'net king tropism' to evaluation total.
+  Switch to incremental update of king tropism evaluation on make/unmake.
 
   Add aging scheme for removal of old TT entries
 

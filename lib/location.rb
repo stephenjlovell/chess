@@ -69,9 +69,9 @@ module Chess
     end
 
     LOCATIONS = create_locations
-    Location.include(:+) do |arr|  # Append + method to Location class.
-      LOCATIONS[@r+arr[0]][@c+arr[1]]  # Hack to avoid a circular definition when LOCATIONS
-    end                                # constant is created at startup.
+    Location.include(:+) do |arr|      # Append + method to Location class
+      LOCATIONS[@r+arr[0]][@c+arr[1]]  # (hack to avoid a circular definition when 
+    end                                # LOCATIONS constant is created at startup).
 
     def self.get_location(r, c)
       return nil unless LOCATIONS[r]  # add warning?

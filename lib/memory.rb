@@ -11,7 +11,8 @@ module Chess
         # due to potentially large size and high throughput of hash table 
         # (100k - 1m keys), Ruby core Hash is too inefficient.  Use Google dense_hash_map instead.
         # http://incise.org/hash-table-benchmarks.html
-        @table = GoogleHashDenseLongToRuby.new
+        # @table = GoogleHashDenseLongToRuby.new
+        @table = {}
       end
 
       def length
@@ -21,7 +22,8 @@ module Chess
       alias :count :length
 
       def clear
-        @table = GoogleHashDenseLongToRuby.new
+        # @table = GoogleHashDenseLongToRuby.new
+        @table = {}
       end
 
       def contains?(node)
@@ -43,6 +45,22 @@ module Chess
 
       def [](h)
         @table[h]
+      end
+
+      def probe(node, alpha, beta)
+        if $tt.ok?(@node)  # probe the hash table for @node
+          $memory_calls += 1
+          e = $tt.get(@node)
+          unless e.nil?
+            first_moves << e.move unless e.move.nil?
+            if e.depth >= depth
+              return e.alpha, e.count if e.alpha >= beta
+              return e.beta, e.count if e.beta <= alpha
+              # alpha = Chess::max(alpha, e.alpha)   # Using TT to adjust local bounds reduces branching factor, but also
+              # beta = Chess::min(beta, e.beta)      # creates search instability that can decrease playing strength.
+            end
+          end
+        end
       end
 
       def get_hash_move(node, first_moves)
@@ -94,7 +112,7 @@ module Chess
     end
 
     def self.create_key
-      SecureRandom::random_number(2**61)
+      SecureRandom::random_number(2**64)
     end
 
     PSQ = create_key_array { piece_hash }

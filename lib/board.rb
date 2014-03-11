@@ -21,12 +21,21 @@
  
 module Chess
 
+  # This class stores a 'square-centric' 12 x 12 board representation containing a symbol for each chess piece
+  # currently in play, along with 'out-of-bounds' markers (:XX) and empty squares (nil).
+
+  # The board is used to test legality of possible moves, determine what pieces can attack and defend a given square, 
+  # and check for king safety. To prevent repeatedly scanning the board for available pieces during move generation,
+  # separate piece-lists by color are stored in the Position object and indexed by piece location.
+
+  # Both the piece-lists and board object are incrementally updated as moves are made and unmade during Search.
+  
   class Board
     include Enumerable
     include Attack
     attr_accessor :squares
 
-    def initialize(squares=nil)  # sets initial configuration of board at start of game.         # row  board #
+    def initialize(squares=nil)  # sets initial configuration of board at start of game.      # row  board #
       @squares = squares || [[ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
                              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
                              [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, :wB, :wN, :wR, :XX, :XX ],  # 2    1
@@ -44,7 +53,7 @@ module Chess
       return self
     end
 
-    def clear
+    def clear  # Clears all pieces from the board, leaving only out-of-bounds symbols.
       @squares = [[ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
                   [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
                   [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 2    1
@@ -95,7 +104,7 @@ module Chess
       end
     end
 
-    def square(r, c)
+    def square(r, c)  # get the contents of a square by its coordinates.
       @squares[r][c]
     end
 
@@ -123,15 +132,17 @@ module Chess
       @squares[r][c] != :XX
     end
 
-    def occupied?(location)
+    def occupied?(location) # Return true if the given square is occupied by any piece of either color.
       sym = self[location]
       sym != nil && sym != :XX
     end
 
-    def enemy?(location, color)      
+    def enemy?(location, color) # Return true if a piece of the opposite color is found at the given square.
       occupied?(location) && Pieces::PIECE_COLOR[self[location]] != color
     end
 
+    # Determine if making a move from/to the given squares would leave the king in check for the specified color, 
+    # without having to do a full make/unmake of the move in question.
     def avoids_check?(position, from, to, color, king_location=nil)
       piece_sym = self[from]
       target_sym = self[to]
@@ -145,22 +156,24 @@ module Chess
       return avoids_check
     end
 
+    # Uses methods provided by the Attack module to determine if the king for the specified color is in check.
     def king_in_check?(position, color, king_location=nil)
       king_location ||= position.king_location[color] # get location of king for color.
       king_attacked?(king_location, FLIP_COLOR[color])
     end
 
-
-    def hash # used when providing an initial hash value for position object.
-      key = 0
-      each_square_with_location { |r,c,s| key ^= Memory::psq_key_by_square(r,c,s) unless s.nil? }
+    # Provide an initial hash for position object by merging (via XOR) the hash keys for each # piece/square.
+    def hash   
+      key = 0  
+      each_square_with_location { |r,c,sym| key ^= Memory::psq_key_by_square(r,c,sym) unless sym.nil? }
       return key
     end
 
     # Unicode symbols for chess pieces:
     GRAPHICS = { wP: "\u2659", wN: "\u2658", wB: "\u2657", wR: "\u2656", wQ: "\u2655", wK: "\u2654" , 
                  bP: "\u265F", bN: "\u265E", bB: "\u265D", bR: "\u265C", bQ: "\u265B", bK: "\u265A" }
-    def print
+
+    def print  # prints out a visual representation of the chessboard to the console.
       i = 8
       puts (headings = "    A   B   C   D   E   F   G   H")
       puts (divider =  "  " + ("-" * 33))

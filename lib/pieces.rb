@@ -135,7 +135,7 @@ module Chess
         while board.on_board?(to)
 
           if board.occupied?(to) 
-            if board.enemy?(to, @color) # && board.avoids_check?(position, from, to, @color)
+            if board.enemy?(to, @color)
               
               captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
 
