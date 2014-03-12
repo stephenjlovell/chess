@@ -22,22 +22,25 @@
 module Chess
   module Evaluation
 
-    # This module contains all methods used to assess the heuristic value of a chess position.
+    # This module contains methods used to assess the heuristic value of a chess position.
     # RubyChess uses a very simplistic, low-cost evaluation function.  The evaluation score is based on 
     # three factors:
-    #
+    
     #   1. Material balance - Sums the value of all pieces in play for each side.  A small bonus/penalty is applied
-    #      based on the location of the piece.
-    #   2. Mobility - If a side is in check, that side has lost the initiative and most respond to the threat.
-    #      A bonus/penalty of 9/10 pawn is applied depending on which side is in check.  The bonus is less than one pawn 
-    #      in order to prevent the AI from sacrificing pawns on useless checks.
+    #      based on the location of the piece.  Material balance is by far the largest component of the overall evaluation
+    #      score.
+    #   2. Mobility - If a side is in check, that side is in serious danger and must respond to the threat.
+    #      A bonus/penalty equivalent to 3 pawns is applied depending on which side is in check.  The bonus is less than 
+    #      one knight in order to prevent the AI from occasionally sacrificing major pieces merely to earn a temporary 
+    #      evaulation bonus.
     #   3. King safety - The AI attempts to maximize the danger to the enemy king, and minimize the danger to its own king.
     #      This is approximated by awarding a bonus for each piece in play based on the value of the piece and its distance 
     #      to the opposing king.
 
-    BASE_PST = {  # Piece Square Tables are used to provide a small positional bonus/penalty for controlling valuable       
-                  # real estate on the board, relative to black side to move. Base PSTs are taken from the ChessProgramming wiki:
-
+    BASE_PST = {  # Piece Square Tables (PSTs) are used to provide a small positional bonus/penalty for controlling valuable       
+                  # real estate on the board. Base PSTs are implemented relative to black side to move. 
+                  # Base PSTs are taken from the ChessProgramming wiki: http://chessprogramming.wikispaces.com/CPW-Engine_eval_init
+      # Pawn          
       P: [ 0,   0,   0,   0,   0,   0,   0,   0,
           -6,  -4,   1,   1,   1,   1,  -4,  -6,
           -6,  -4,   1,   2,   2,   1,  -4,  -6,
@@ -46,7 +49,7 @@ module Chess
           -4,  -4,   1,   5,   5,   1,  -4,  -4,
           -6,  -4,   1, -24, -24,   1,  -4,  -6,
            0,   0,   0,   0,   0,   0,   0,   0 ],
-
+      # Knight
       N: [ -8,  -8,  -8,  -8,  -8,  -8,  -8,  -8,
            -8,   0,   0,   0,   0,   0,   0,  -8,
            -8,   0,   4,   4,   4,   4,   0,  -8,
@@ -55,7 +58,7 @@ module Chess
            -8,   0,   4,   4,   4,   4,   0,  -8,
            -8,   0,   1,   2,   2,   1,   0,  -8,
            -8,  -12, -8,  -8,  -8,  -8, -12,  -8 ],
-
+      # Bishop
       B: [ -4,  -4,  -4,  -4,  -4,  -4,  -4,  -4,
            -4,   0,   0,   0,   0,   0,   0,  -4,
            -4,   0,   2,   4,   4,   2,   0,  -4,
@@ -64,7 +67,7 @@ module Chess
            -4,   1,   2,   4,   4,   2,   1,  -4,
            -4,   2,   1,   1,   1,   1,   2,  -4,
            -4,  -4, -12,  -4,  -4, -12,  -4,  -4 ],
-
+      # Rook
       R: [  5,   5,   5,   5,   5,   5,   5,   5,
            20,  20,  20,  20,  20,  20,  20,  20,
            -5,   0,   0,   0,   0,   0,   0,  -5,
@@ -73,7 +76,7 @@ module Chess
            -5,   0,   0,   0,   0,   0,   0,  -5,
            -5,   0,   0,   0,   0,   0,   0,  -5,
             0,   0,   0,   2,   2,   0,   0,   0 ],
-
+      # Queen
       Q: [  0,   0,   0,   0,   0,   0,   0,   0,
             0,   0,   1,   1,   1,   1,   0,   0,
             0,   0,   1,   2,   2,   1,   0,   0,
@@ -84,6 +87,7 @@ module Chess
            -5,  -5,  -5,  -5,  -5,  -5,  -5,  -5 ] }
 
     KING_BASE = {
+      # Used when side being evaluated is not in 'endgame'.
       false => [ -40, -40, -40, -40, -40, -40, -40, -40,   # In early game, encourage the king to stay on back 
                  -40, -40, -40, -40, -40, -40, -40, -40,   # row defended by friendly pieces.
                  -40, -40, -40, -40, -40, -40, -40, -40,
@@ -92,7 +96,7 @@ module Chess
                  -40, -40, -40, -40, -40, -40, -40, -40,
                  -15, -15, -20, -20, -20, -20, -15, -15,
                    0,  20,  30, -30,   0, -20,  30,  20 ],
-
+      # Used when side being evaluated is in 'endgame'.
       true => [ 0,  10,  20,  30,  30,  20,  10,   0,   # In end game (when few friendly pieces are available
                10,  20,  30,  40,  40,  30,  20,  10,   # to protect king), the king should move toward the center
                20,  30,  40,  50,  50,  40,  30,  20,   # and avoid getting trapped in corners.
@@ -101,8 +105,8 @@ module Chess
                20,  30,  40,  50,  50,  40,  30,  20,
                10,  20,  30,  40,  40,  30,  20,  10,
                 0,  10,  20,  30,  30,  20,  10,   0 ] }
-
-    MIRROR = [ 56, 57, 58, 59, 60, 61, 62, 63,  # Used to create a mirror image of the base PST.
+    # Used to create a mirror image of the base PST.
+    MIRROR = [ 56, 57, 58, 59, 60, 61, 62, 63,  
                48, 49, 50, 51, 52, 53, 54, 55,
                40, 41, 42, 43, 44, 45, 46, 47,
                32, 33, 34, 35, 36, 37, 38, 39,
@@ -111,6 +115,7 @@ module Chess
                 8,  9, 10, 11, 12, 13, 14, 15,
                 0,  1,  2,  3,  4,  5,  6,  7 ]
 
+    # Used to move from location object to 1-dimensional PST coordinate.
     SQUARES = { a1: 0,  b1: 1,  c1: 2,  d1: 3,  e1: 4,  f1: 5,  g1: 6,  h1: 7,
                 a2: 8,  b2: 9,  c2: 10, d2: 11, e2: 12, f2: 13, g2: 14, h2: 15,
                 a3: 16, b3: 17, c3: 18, d3: 19, e3: 20, f3: 21, g3: 22, h3: 23,
@@ -182,9 +187,9 @@ module Chess
     # Award a bonus/penalty depending on which side (if any) is in check.
     def self.mobility(position)  
       if position.in_check?
-        -90
+        -300
       elsif position.enemy_in_check?
-        90
+        300
       else
         0
       end

@@ -134,6 +134,8 @@ Possible Enhancements to Add ----
 
   Add node-count based TT replacement scheme
 
+  Experiment with node count-based TT replacement at depths > 0, and use depth-based replacement for quiesence nodes.
+
   Move ordering enhancements:
     -Killer Moves
     -Non-captures sorted by History Heuristic

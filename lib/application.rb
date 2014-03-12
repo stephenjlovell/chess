@@ -51,9 +51,9 @@ module Chess # top-level application namespace.
 
   HistoryItem = Struct.new(:index, :position, :move, :value)
 
-  class MoveHistory  # This class saves a record of each move made during the course of the game, and allows
-    attr_accessor :history # the human player to undo or redo any number of his/her moves.
-
+  class MoveHistory         # MoveHistory instances save a record of each move made during 
+    attr_accessor :history  # the course of the game, and allows the human player to undo or 
+                            # redo any number of his/her moves.
     def initialize
       @index = 0
       @history = []
@@ -134,29 +134,29 @@ module Chess # top-level application namespace.
       [(1040 - (Evaluation::base_material(@position, enemy_color)/100)),0].max
     end
 
-    def undo_move  # delegate to the MoveHistory class.
+    def undo_move  # Delegate to the MoveHistory class.
       @move_history.undo(@position)
       self.print
     end
 
-    def redo_move  # delegate to the MoveHistory class.
+    def redo_move  # Delegate to the MoveHistory class.
       @move_history.redo(@position)
       self.print
     end
 
-    def save_move(position, move, value=nil)  # delegate to the MoveHistory class.
+    def save_move(position, move, value=nil)  # Delegate to the MoveHistory class.
       @move_history.save(position, move, value)
     end
 
-    def previous_value
+    def previous_value  # Delegate to the MoveHistory class.
       @move_history.previous_value
     end
 
-    def print_history
+    def print_history  # Delegate to the MoveHistory class.
       @move_history.print
     end
 
-    def print_history_details
+    def print_history_details  # Delegate to the MoveHistory class.
       @move_history.print_details
     end
 

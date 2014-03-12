@@ -20,8 +20,9 @@
 #-----------------------------------------------------------------------------------
  
 module Chess
-  module Attack  # Mixin module for use with Board object.  Provides methods for determining if a given square is attacked,
-  # and for listing attackers available to each side in a battle over control of a given square.  Lists of attacking pieces
+  module Attack  
+  # Mixin module for use with Board object.  Provides methods for determining if a given square is attacked, and
+  # for listing attackers available to each side in a battle over control of a given square.  Lists of attacking pieces
   # are used to perform Static Exchange Evaluation (SEE) during search.
 
     def king_attacked?(location, attacker_color)        

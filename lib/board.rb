@@ -149,7 +149,7 @@ module Chess
       self[from] = nil  # simulate making the specified regular move
       self[to] = piece_sym
 
-      avoids_check = !king_in_check?(position, color, king_location)  # No moves are legal if king has been killed.
+      avoids_check = !king_in_check?(position, color, king_location)
 
       self[from] = piece_sym  # undo changes to board
       self[to] = target_sym

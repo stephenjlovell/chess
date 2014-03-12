@@ -52,7 +52,7 @@ module Chess
     end
 
     def self.update_hash(pos, move)
-      pos.hash ^= move.hash ^ Memory::side_key
+      pos.hash ^= move.hash ^ Memory::SIDE
     end
 
     def self.flip_null(pos, enp_target)
@@ -61,7 +61,7 @@ module Chess
       else
         pos.side_to_move, pos.enemy = :w, :b
       end
-      pos.hash ^= Memory::side_key ^ Memory::enp_key(enp_target)
+      pos.hash ^= Memory::SIDE ^ Memory::enp_key(enp_target)
     end
 
     WRQ_INIT = Location::get_location(2,2) # a1

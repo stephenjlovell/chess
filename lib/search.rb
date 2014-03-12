@@ -99,7 +99,6 @@ module Chess
 
     def self.get_initial_estimate
       if @node.in_check?
-        # move, value = internal_iterative_deepening_alpha_beta(2*PLY_VALUE)
         move, value = alpha_beta_root(PLY_VALUE)
       else
         value, count = quiescence(0)
@@ -209,36 +208,20 @@ module Chess
       $tt.store_result(@node, depth, sum, result, alpha, beta, best_move)
       return best_move, result
     end
-
-  # MTD-based approaches require fail-soft alpha beta.  Fail soft introduces some search instabilities 
-  # and complications that need to be handled properly:
-  #   -lazy evaluation bounds (if any)
-  #   -scores returned from null-move must be fail-soft
-  #   -terminating the search properly in q-search
+    
 
     def self.alpha_beta(depth, alpha=-$INF, beta=$INF, can_null=true)
       first_moves, result, best_move = [], -$INF, nil
 
-      return quiescence(depth, alpha, beta) if depth <= 0 # not making or unmaking here.
+      return quiescence(0, alpha, beta) if depth <= 0 # search extensions are not used in q-search, so initial depth
+                                                      # can be set to 0.
 
-      if $tt.ok?(@node)  # probe the hash table for @node
-        $memory_calls += 1
-        e = $tt.get(@node)
-        unless e.nil?
-          first_moves << e.move unless e.move.nil?
-          if e.depth >= depth
-            return e.alpha, e.count if e.alpha >= beta
-            return e.beta, e.count if e.beta <= alpha
-            # alpha = Chess::max(alpha, e.alpha)   # Using TT to adjust local bounds reduces branching factor, but also
-            # beta = Chess::min(beta, e.beta)      # creates search instability that can decrease playing strength.
-          end
-        end
-      end
+      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)
+      return hash_value unless hash_value.nil?
 
       in_check = @node.in_check?
       ext_check = in_check ? EXT_CHECK : 0
 
-      # Ideally null-move pruning should not be performed on PV nodes.
 
       # Null Move Pruning
       if can_null && !in_check && depth > 2*PLY_VALUE && !@node.in_endgame? && @node.value >= beta
@@ -308,19 +291,8 @@ module Chess
     def self.quiescence(depth, alpha=-$INF, beta=$INF)  # quiesence nodes are not part of the principal variation.
       result, best_move, first_moves = -$INF, nil, []
 
-      if $tt.ok?(@node)  # probe the hash table for @node
-        $memory_calls += 1
-        e = $tt.get(@node)
-        unless e.nil?
-          first_moves << e.move unless e.move.nil?
-          if e.depth >= depth
-            return e.alpha, e.count if e.alpha >= beta
-            return e.beta, e.count if e.beta <= alpha
-            # alpha = Chess::max(alpha, e.alpha)
-            # beta = Chess::min(beta, e.beta)
-          end
-        end
-      end
+      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)
+      return hash_value unless hash_value.nil?
 
       result = @node.value  # assume 'standing pat' lower bound
       return beta, 1 if result >= beta # fail hard beta cutoff
@@ -384,7 +356,7 @@ module Chess
       pv, key = [], node.hash
       until !$tt.key_ok?(key) || $tt[key].move.nil?
         pv << $tt[key].move
-        key ^= e.move.hash ^ Memory::side_key
+        key ^= e.move.hash ^ Memory::SIDE
       end
     end
 
