@@ -26,10 +26,11 @@ module Chess
       attr_accessor :board, :pieces, :side_to_move, :enemy, :halfmove_clock, :castle, :enp_target, 
                     :hash, :king_location, :material
 
-      def initialize(board, pieces, side_to_move, halfmove_clock)
-        @board, @pieces, @side_to_move, @halfmove_clock = board, pieces, side_to_move, halfmove_clock
-        @enemy = FLIP_COLOR[@side_to_move]
-        @enp_target, @castle = nil, 0b1111
+      def initialize(board=nil, side_to_move=:w, halfmove_clock=0)
+        @side_to_move, @halfmove_clock = side_to_move, halfmove_clock
+        @board = board || Board.new
+        @pieces = create_pieces(@board)
+        @enp_target, @castle, @enemy  = nil, 0b1111, FLIP_COLOR[@side_to_move]
         @hash = @board.hash
         @king_location = set_king_location
         w_endgame = Evaluation::base_material(self, :w) <= Pieces::ENDGAME_VALUE # determine initial endgame state
@@ -156,6 +157,30 @@ module Chess
       end
 
       private 
+
+      # Create a hash of chess pieces corresponding to the specified board representation. Used during initialization of
+      def create_pieces(board)        
+        pieces = { w: {}, b: {} }
+        board.each_square_with_location do |r,c,sym|
+          unless sym.nil?
+            piece = create_piece_by_sym(sym)
+            pieces[piece.color][Location::get_location(r,c)] = piece
+          end
+        end
+        return pieces
+      end
+
+      def create_piece_by_sym(sym)
+        color, type = sym[0].to_sym, sym[1]
+        case type
+        when "P" then Pieces::Pawn.new(color)
+        when "R" then Pieces::Rook.new(color)
+        when "N" then Pieces::Knight.new(color)
+        when "B" then Pieces::Bishop.new(color)
+        when "Q" then Pieces::Queen.new(color)
+        when "K" then Pieces::King.new(color)
+        end
+      end
 
       def set_king_location
         kings = {}

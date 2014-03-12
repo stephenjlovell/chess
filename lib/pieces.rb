@@ -49,9 +49,10 @@ module Chess
                         b: { P: :bP, N: :bN, B: :bB, R: :bR, Q: :bQ, K: :bK } }
 
     PIECE_ID = { P: 1, N: 2, B: 3, R: 4, Q: 5, K: 6 } # Used for move ordering by MVV-LVA heuristic.
-
-    PIECE_SYM_ID = { wP: 1, wN: 2, wB: 3, wR: 4, wQ: 5, wK: 6,
-                     bP: 1, bN: 2, bB: 3, bR: 4, bQ: 5, bK: 6 }
+    
+    # This hash associates each piece symbol with the ID of the underlying piece type.
+    PIECE_SYM_ID = { wP: PIECE_ID[:P], wN: PIECE_ID[:N], wB: PIECE_ID[:B], wR: PIECE_ID[:R], wQ: PIECE_ID[:Q], wK: PIECE_ID[:K],
+                     bP: PIECE_ID[:P], bN: PIECE_ID[:N], bB: PIECE_ID[:B], bR: PIECE_ID[:R], bQ: PIECE_ID[:Q], bK: PIECE_ID[:K] }
 
 
     # Increment vectors used for move generation:
@@ -72,23 +73,25 @@ module Chess
     WEST_SW = [-1,-2]
     WEST_NW = [1,-2]
 
-    DIRECTIONS = { straight: [NORTH, SOUTH, EAST, WEST], 
-                   diagonal: [NE, NW, SE, SW],
-                   ray: [NORTH, NE, EAST, SE, SOUTH, SW, WEST, NW], 
-                   N: [NORTH_NW, NORTH_NE, EAST_NE, EAST_SE, SOUTH_SE, SOUTH_SW, WEST_SW, WEST_NW], 
-                   P: { w: { attack: [NE, NW],
+    DIRECTIONS = { straight: [ NORTH, SOUTH, EAST, WEST ], 
+                   diagonal: [ NE, NW, SE, SW ],
+                   ray: [ NORTH, NE, EAST, SE, SOUTH, SW, WEST, NW ], 
+                   N: [ NORTH_NW, NORTH_NE, EAST_NE, EAST_SE, SOUTH_SE, SOUTH_SW, WEST_SW, WEST_NW ], 
+                   P: { w: { attack: [ NE, NW ],
                              advance: NORTH,
                              initial: [2,0],
                              enp_offset: NORTH, 
                              start_row: 3 },
-                        b: { attack: [SE, SW],
+                        b: { attack: [ SE, SW ],
                              advance: SOUTH,                               
                              initial: [-2,0],
                              enp_offset: SOUTH,  
                              start_row: 8 }, 
-                        en_passant: [EAST, WEST]} }
+                        en_passant: [ EAST, WEST ] } }
 
-    class Piece  # Provides a common template used by each concrete chess piece class.
+
+    # The Piece class provides an abstract template and shared behavior for concrete piece classes.
+    class Piece  
       attr_reader :color, :symbol
 
       def initialize(color)
@@ -100,11 +103,13 @@ module Chess
         @symbol.to_s
       end
 
-      def get_moves(position, from, moves, captures, promotions, promotion_captures) # returns a collection of all pseudo-legal moves for the current piece.
+      # Collects all pseudo-legal moves available to the current piece.
+      def get_moves(position, from, moves, captures, promotions, promotion_captures) 
         self.class.directions.each { |vector| get_moves_for_direction(position, position.board, from, vector, moves, captures) }
       end
 
-      def get_captures(position, from, captures, promotion_captures) # returns a collection of all pseudo-legal moves for the current piece.
+      # Collects all pseudo-legal capture moves available to the current piece.
+      def get_captures(position, from, captures, promotion_captures)
         self.class.directions.each { |vector| get_captures_for_direction(position, position.board, from, vector, captures) }
       end
 
@@ -117,18 +122,10 @@ module Chess
             moves << Move::Factory.build(self, from, to, :regular_move)
           else
             if board.enemy?(to, @color)
-
+              raise Memory::HashCollisionError if position.enemy_pieces[to].nil?   
               captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
-
-              if position.enemy_pieces[to].nil?
-                board.print
-                print position.pieces
-                puts position.inspect
-                puts captures.last.inspect
-                raise "enemy piece missing"
-              end
             end
-            break  # if path blocked by any piece, stop evaluating this direction.
+            break  # if path blocked by any piece, stop evaluating in this direction.
           end
           to += vector
         end
@@ -137,21 +134,12 @@ module Chess
       def get_captures_for_direction(position, board, from, vector, captures)
         to = from + vector
         while board.on_board?(to)
-
           if board.occupied?(to) 
             if board.enemy?(to, @color)
-              
+              raise Memory::HashCollisionError if position.enemy_pieces[to].nil?              
               captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
-
-              if position.enemy_pieces[to].nil?
-                board.print
-                print position.pieces
-                puts position.inspect
-                puts captures.last.inspect
-                raise "enemy piece missing"
-              end
             end
-            break # if path blocked by any piece, stop evaluating this direction.
+            break # if path blocked by any piece, stop evaluating in this direction.
           end
           to += vector
         end
@@ -274,7 +262,6 @@ module Chess
         board = position.board
         self.class.directions.each do |vector|
           to = from + vector
-
           if board.empty?(to)
             moves << Move::Factory.build(self, from, to, :regular_move)
           else
@@ -282,7 +269,6 @@ module Chess
               captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
             end
           end
-
         end
       end
 
@@ -439,28 +425,9 @@ module Chess
       PIECE_SYM_VALUES[sym]
     end
 
-    def self.setup(board)        # returns a collection of chess pieces 
-      pieces = { w: {}, b: {} }  # corresponding to the specified board representation.
-      board.each_square_with_location do |r,c,sym|
-        unless sym.nil?
-          piece = self.create_piece_by_sym(sym)
-          pieces[piece.color][Location::get_location(r,c)] = piece
-        end
-      end
-      return pieces
-    end
 
-    def self.create_piece_by_sym(sym)
-      color, type = sym[0].to_sym, sym[1]
-      case type
-      when "P" then Pawn.new(color)
-      when "R" then Rook.new(color)
-      when "N" then Knight.new(color)
-      when "B" then Bishop.new(color)
-      when "Q" then Queen.new(color)
-      when "K" then King.new(color)
-      end
-    end
+
+
 
   end
 end

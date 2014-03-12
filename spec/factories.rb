@@ -119,13 +119,11 @@ FactoryGirl.define do
 
   factory :position, class: Chess::Position::ChessPosition do
     board  { FactoryGirl.build(:board) }
-    pieces { Chess::Pieces::setup(board) }
     side_to_move :w
     halfmove_clock 0
-    hash { board.hash }
     king_location { { w: FactoryGirl.build(:location, r: 2, c: 6),
                       b: FactoryGirl.build(:location, r: 9, c: 6) } }
-    initialize_with { new(board, pieces, side_to_move, halfmove_clock) }
+    initialize_with { new(board, side_to_move, halfmove_clock) }
 
     factory :test_position do
       board { FactoryGirl.build(:test_board) }

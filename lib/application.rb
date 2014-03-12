@@ -104,24 +104,27 @@ module Chess # top-level application namespace.
   end
 
   class Game
-    attr_accessor :position, :halfmove_clock, :tt, :clock, :move_history, :winner
-    attr_reader :ai_player, :opponent
+    attr_accessor :position, :clock, :move_history
+    attr_reader :ai_player, :opponent, :winner
     
     def initialize(ai_player = :b, time_limit=TIME_LIMIT)
-      board, @move_history, @clock = Board.new, MoveHistory.new, Clock.new(time_limit)
-      @position = Position::ChessPosition.new(board,Pieces::setup(board),:w,0)
-      @ai_player, @opponent, @halfmove_count = ai_player, FLIP_COLOR[ai_player], 0
+      @move_history, @clock, @position = MoveHistory.new, Clock.new(time_limit), Position::ChessPosition.new
+      @ai_player, @opponent = ai_player, FLIP_COLOR[ai_player]
       Chess::current_game = self
     end
 
+    def halfmove_clock
+      @position.halfmove_clock
+    end
+
     def move_clock
-      @halfmove_count / 2
+      halfmove_clock / 2
     end
 
     def print # print game state info along with board representation
       puts @position.to_s
       opp_score, ai_score = score(@ai_player), score(@opponent)
-      scoreboard = "\n| Move: #{move_clock} | Ply: #{@halfmove_count} " +
+      scoreboard = "\n| Move: #{move_clock} | Ply: #{halfmove_clock} " +
                    "| Turn: #{@position.side_to_move.to_s} " +
                    "| Castling: #{Notation::castling_availability(@position.castle)} " +
                    "| AI Score: #{ai_score} | Your Score: #{opp_score} |"
@@ -131,7 +134,7 @@ module Chess # top-level application namespace.
     end
 
     def score(enemy_color)
-      [(1040 - (Evaluation::base_material(@position, enemy_color)/100)),0].max
+      (1040 - (Evaluation::base_material(@position, enemy_color)/100)).abs
     end
 
     def undo_move  # Delegate to the MoveHistory class.
@@ -186,11 +189,9 @@ module Chess # top-level application namespace.
     private
 
     def end_turn
-      @halfmove_count += 1
       self.print
       @clock.restart
     end
-
   end
 
 end

@@ -192,12 +192,11 @@ module Chess
       begin
         fields = fen.split(' ') # break the FEN string into its constituent fields
         board = fen_to_board(fields[0])
-        pieces = Pieces::setup(board)
         side_to_move = fields[1].to_sym
         castle = fen_to_castle(fields[2])
         enp_target = fen_to_enp(fields[3])
         halfmove_clock = fields[4] ? fields[4].to_i : 0
-        position = Position::ChessPosition.new(board, pieces, side_to_move, halfmove_clock)
+        position = Position::ChessPosition.new(board, side_to_move, halfmove_clock)
         position.castle, position.enp_target = castle, enp_target
         position.hash ^= Memory::enp_key(enp_target)
         return position
@@ -209,7 +208,6 @@ module Chess
     IS_NUMERIC = /\d/
     
     def self.fen_to_board(fen)
-
       board = Chess::Board.new.clear
       squares = board.squares
       fen_rows = fen.split('/').reverse
