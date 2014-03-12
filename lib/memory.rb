@@ -2,9 +2,6 @@ module Chess
   module Memory
     require 'SecureRandom'
 
-
-    TTBoundEntry = Struct.new(:key, :depth, :count, :alpha, :beta, :move)
-
     #  The TranspositionTable (TT) class handles storage and retrieval of results for previous subtree searches.
     #  This allows the re-use of information gained in previous searches, and avoids wasteful re-expansion of the same
     #  subtree. Design considerations:
@@ -18,8 +15,10 @@ module Chess
     #       flag indicating node type, each entry saves both lower and upper bounds on the search.  These bounds
     #       can be used to adjust local bounds, and are required for some MTD(f) based search algorithms to perform well.
     #
-    #    3. Hashing - 64-bit Hash keys for nodes are computed via Zobrist hashing.  Hash keys are incrementally
+    #    3. Hashing - 64-bit hash keys for nodes are computed via Zobrist hashing.  Hash keys are incrementally
     #       updated during move generation.
+
+    TTBoundEntry = Struct.new(:key, :depth, :count, :alpha, :beta, :move)
 
     class TranspositionTable
       def initialize
@@ -41,7 +40,7 @@ module Chess
         key_ok?(node.hash) 
       end
 
-      # Compares the full key to avoid possible type 2 (indexing) hash collisions
+      # Compare the full key to avoid possible type 2 (indexing) hash collisions
       def key_ok?(h)
         @table.has_key?(h) && @table[h].key == h
       end
@@ -54,21 +53,22 @@ module Chess
         @table[h]
       end
 
-      # Probe the TT for 
+      # Probe the TT for saved search results.  If a valid entry is found, push the stored best move into
+      # first_moves array. If stored result would cause cutoff of local search, return the stored result.
       def probe(node, depth, alpha, beta, first_moves)
         if ok?(node)
           $memory_calls += 1
           e = get(node)
           first_moves << e.move unless e.move.nil?
           if e.depth >= depth
-            return e.alpha, e.count if e.alpha >= beta
+            return e.alpha, e.count if e.alpha >= beta  
             return e.beta, e.count if e.beta <= alpha
           end
         end
-        nil
+        nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
       end
 
-      # If an entry is available for node, append the stored best move ("hash move") into first_moves array.
+      # If an entry is available for node, push the stored best move ("hash move") into first_moves array.
       def get_hash_move(node, first_moves)
         if ok?(node)
           e = get(node)  # if hash move is illegal, don't use it:
@@ -76,6 +76,8 @@ module Chess
         end
       end
 
+      # Store search results for node. Only overwrite existing entry if new information is based on search
+      # of a larger subtree than the existing entry.
       def store_result(node, depth, count, result, alpha, beta, move)
         h = node.hash
         if !@table.has_key?(h)
@@ -101,6 +103,15 @@ module Chess
         return a, b                       
       end
     end # end TranspostionTable class
+
+    # When using 64-bit hash keys, Type I (hash collision) errors are extremely rare (once in 10,000+ searches 
+    # at depth 6), but could theoretically still happen. These are particularly difficult to detect and can corrupt the
+    # position / board representation when moves are made that are invalid for the current position.  If an error occurs
+    # resulting from corruption of the internal board state, a HashCollisionError is raised.
+
+    class HashCollisionError < StandardError 
+    end
+
 
     # Zobrist Hashing
     #

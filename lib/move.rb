@@ -22,9 +22,17 @@
 module Chess
   module Move
 
-    # Move instances function as a Memento containing all the information needed to make and unmake a given move.
+    #  Move object instances encapsulate all information and logic required to transform a chess position by making
+    #  or unmaking a specific move.  Each Move instance contains a strategy object that abstracts out any make/unmake
+    #  logic unique to the type of move being made. 
+    #  
+    #  1. Useage of Move objects follows the Memento pattern.  The position object acts as the 'originator', generating Move
+    #     instances for available legal moves.  The MoveGen module acts as 'caretaker', making and rolling back changes
+    #     to the originator supplied by the 'memento' (the Move instance).
+    #  2. The move object caches incremental changes to the position's material balance, king safety, and hash key, reducing
+    #     overhead when the move is unmade during Search.
+    #  3. Sequences of Move objects are stored by the MoveHistory class, allowing the human player to undo/redo moves at will.
     
-
     class Move
       attr_reader :piece, :from, :to, :enp_target, :see
 
@@ -34,15 +42,13 @@ module Chess
 
       def make!(position)
         begin
-        @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
-        position.enp_target = nil
-        @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
-        position.own_material += @strategy.own_material
-        position.enemy_material += @strategy.enemy_material
+          @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
+          position.enp_target = nil
+          @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
+          position.own_material += @strategy.own_material
+          position.enemy_material += @strategy.enemy_material
         rescue => err
-          puts "TT Size: #{$tt.size}"
-          puts self.inspect
-          raise err
+          raise Memory::HashCollisionError
         end 
       end
 
@@ -54,13 +60,7 @@ module Chess
       end
 
       def mvv_lva
-        begin
-          @strategy.mvv_lva(@piece)
-        rescue => err
-          puts "TT Size: #{$tt.size}"
-          puts self.inspect
-          raise err
-        end
+        @strategy.mvv_lva(@piece)
       end
 
       def see_score(position)
@@ -71,7 +71,7 @@ module Chess
         @strategy.class
       end
 
-      def hash # Uses Zobrist hashing to represent the move as a 64-bit unsigned long int.
+      def hash 
         @hash ||= @strategy.hash(@piece, @from, @to) ^ Memory::enp_key(@enp_target)
       end
 
@@ -93,9 +93,11 @@ module Chess
       end
     end
 
+    # The MoveStrategy class provides a generic template and shared behavior for each move strategy. Concrete strategy 
+    # classes include either the Reversible or Irreversible module.  If the concrete strategy class captures an enemy piece, 
+    # the strategy class will include the MakesCapture module.
 
-    class MoveStrategy  # Generic template and shared behavior for move strategies.
-      # Concrete strategy classes must include either Reversible or Irreversible module.
+    class MoveStrategy  
       attr_reader :own_material, :enemy_material
 
       def initialize
@@ -146,8 +148,8 @@ module Chess
       end
     end
 
-
-    module Reversible # moves other than pawn moves and captures
+    # The Halmove Rule requires that all moves other than pawn moves and captures increment the halfmove clock.
+    module Reversible 
       def make_clock_adjustment(position)
         position.halfmove_clock += 1
       end
@@ -161,7 +163,8 @@ module Chess
       end
     end
 
-    module Irreversible # pawn moves and captures
+    # The Halfmove Rule requires that pawn moves and captures reset the halfmove clock to zero.
+    module Irreversible 
       def make_clock_adjustment(position) # reset halfmove clock to zero. 
         @halfmove_clock = position.halfmove_clock # store halfmove clock for unmake.
         position.halfmove_clock = 0
@@ -176,9 +179,10 @@ module Chess
       end
     end
 
-    module MakesCapture # mixes in methods shared among capture strategies 
+    # All concrete strategy classes involving capture of an enemy piece will include MakesCapture.
+    module MakesCapture 
       include Irreversible
-      attr_accessor :captured_piece
+      attr_reader :captured_piece
       
       def initialize(captured_piece)
         @captured_piece, @own_material, @enemy_material = captured_piece, 0, 0
@@ -211,8 +215,12 @@ module Chess
         from_to_key(piece, from, to) ^ Memory::psq_key(@captured_piece, to)
       end
 
-      def mvv_lva(piece)  # Most valuable victim, least valuable attacker heuristic.
-        @mvv_lva ||= @captured_piece.class.value - piece.class.id  # Used for move ordering captures.
+      def mvv_lva(piece)  # Most valuable victim, least valuable attacker heuristic. Used for move ordering of captures.
+        begin
+          @mvv_lva ||= @captured_piece.class.value - piece.class.id
+        rescue => err
+          raise Memory::HashCollisionError
+        end
       end
 
       def material_swing?
@@ -228,15 +236,13 @@ module Chess
       include Reversible
 
       def make!(position, piece, from, to)
-        make_relocate_piece(position, piece, from, to)
+        super # call make! method inherited from MoveStrategy
         position.own_king_location = to  # update king location
-        make_clock_adjustment(position)
       end
 
       def unmake!(position, piece, from, to)
-        relocate_piece(position, piece, to, from)
+        super # call unmake! method inherited from MoveStrategy
         position.own_king_location = from  # update king location
-        unmake_clock_adjustment(position)
       end
     end
 
@@ -248,19 +254,13 @@ module Chess
       include MakesCapture
 
       def make!(position, piece, from, to)
-        make_relocate_piece(position, piece, from, to)
+        super # call make! method mixed-in by MakesCapture
         position.own_king_location = to  # update king location
-        make_clock_adjustment(position)
-        position.enemy_pieces.delete(to)
-        @enemy_material -= Evaluation::adjusted_value(position, @captured_piece, to)
       end
 
       def unmake!(position, piece, from, to)
-        relocate_piece(position, piece, to, from)
+        super # call unmake! method mixed-in by MakesCapture
         position.own_king_location = from  # update king location
-        unmake_clock_adjustment(position)
-        position.board[to] = @captured_piece.symbol
-        position.enemy_pieces[to] = @captured_piece
       end
     end
 
@@ -297,22 +297,18 @@ module Chess
 
     end
 
-    class PawnMove < MoveStrategy
-      include Irreversible
+    class PawnMove < MoveStrategy 
+      include Irreversible  # regular pawn moves reset the halfmove clock
     end
 
+    # Strategy used when a pawn makes a double move from its initial position at start of game.  This reders the 
+    # moved pawn capturable via En Passant attack by another pawn for one turn.
     class EnPassantAdvance < MoveStrategy # Sets or removes the enp_target from position object.
       include Irreversible
-      def make!(position, piece, from, to)
-        make_relocate_piece(position, piece, from, to)
-        make_clock_adjustment(position)
-        position.enp_target = to # Set enp_target to new target square
-      end
 
-      def unmake!(position, piece, from, to)
-        relocate_piece(position, piece, to, from)
-        unmake_clock_adjustment(position)
-        position.enp_target = nil
+      def make!(position, piece, from, to)
+        super # call make! method inherited from MoveStrategy
+        position.enp_target = to # Set enp_target to new target square. 
       end
 
       def hash(piece, from, to)
@@ -320,6 +316,7 @@ module Chess
       end
     end
 
+    # Strategy used when a pawn moves onto the enemy back row, promoting it to a Queen.
     class PawnPromotion < MoveStrategy # Stores the existing pawn in move object and places a new Queen.
       include Irreversible
       def initialize(side_to_move)
@@ -332,11 +329,6 @@ module Chess
         make_clock_adjustment(position)            # is replaced by a new queen.
         @own_material += (Evaluation::adjusted_value(position, @queen, to) 
                           - Evaluation::adjusted_value(position, piece, from))
-      end
-
-      def unmake!(position, piece, from, to)
-        relocate_piece(position, piece, to, from)
-        unmake_clock_adjustment(position)
       end
 
       def print(piece, from, to)
@@ -352,6 +344,7 @@ module Chess
       end
     end
 
+    # Strategy used when a pawn moves onto the enemy back row by capturing another piece.
     class PawnPromotionCapture < MoveStrategy
       include MakesCapture
 
@@ -369,13 +362,6 @@ module Chess
         @enemy_material -= Evaluation::adjusted_value(position, @captured_piece, to)
       end
 
-      def unmake!(position, piece, from, to)
-        relocate_piece(position, piece, to, from)
-        unmake_clock_adjustment(position)
-        position.board[to] = @captured_piece.symbol
-        position.enemy_pieces[to] = @captured_piece
-      end
-
       def print(piece, from, to)
         "#{piece} x #{@captured_piece} promotion #{from} to #{to}"
       end
@@ -389,8 +375,7 @@ module Chess
       end
     end
 
-    class Castle < MoveStrategy  # Stores Move info for the rook to be moved.
-      # King Move information will be stored in the Move class properties.
+    class Castle < MoveStrategy # Caches info on movement of the rook. King information is stored in the Move instance.
       include Reversible
 
       attr_accessor :rook, :rook_from, :rook_to
@@ -400,16 +385,14 @@ module Chess
       end
 
       def make!(position, piece, from, to)
-        make_relocate_piece(position, piece, from, to)
+        super # call make! method inherited from MoveStrategy
         make_relocate_piece(position, @rook, @rook_from, @rook_to)
-        make_clock_adjustment(position)
         position.own_king_location = to
       end
 
       def unmake!(position, piece, from, to)
-        relocate_piece(position, piece, to, from)
+        super # call unmake! method inherited from MoveStrategy
         relocate_piece(position, @rook, @rook_to, @rook_from)
-        unmake_clock_adjustment(position)
         position.own_king_location = from
       end
 
@@ -422,8 +405,9 @@ module Chess
       end
     end
 
-
-    class Factory  # A simplified interface for instantiating Move objects.
+    # The Factory class provides a simplified interface for instantiating Move objects, 
+    # hiding creation of strategy object instances from the client.
+    class Factory  
       PROCS = { regular_move:           Proc.new { |*args| RegularMove.new },
                 king_move:              Proc.new { |*args| KingMove.new },
                 regular_capture:        Proc.new { |*args| RegularCapture.new(*args) },

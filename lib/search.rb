@@ -216,8 +216,8 @@ module Chess
       return quiescence(0, alpha, beta) if depth <= 0 # search extensions are not used in q-search, so initial depth
                                                       # can be set to 0.
 
-      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)
-      return hash_value unless hash_value.nil?
+      hash_value, hash_count = $tt.probe(@node, depth, alpha, beta, first_moves)
+      return hash_value, hash_count unless hash_value.nil?
 
       in_check = @node.in_check?
       ext_check = in_check ? EXT_CHECK : 0
@@ -291,8 +291,8 @@ module Chess
     def self.quiescence(depth, alpha=-$INF, beta=$INF)  # quiesence nodes are not part of the principal variation.
       result, best_move, first_moves = -$INF, nil, []
 
-      hash_value = $tt.probe(@node, depth, alpha, beta, first_moves)
-      return hash_value unless hash_value.nil?
+      hash_value, hash_count = $tt.probe(@node, depth, alpha, beta, first_moves)
+      return hash_value, hash_count unless hash_value.nil?
 
       result = @node.value  # assume 'standing pat' lower bound
       return beta, 1 if result >= beta # fail hard beta cutoff
