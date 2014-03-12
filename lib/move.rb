@@ -71,8 +71,8 @@ module Chess
         @strategy.class
       end
 
-      def hash 
-        @hash ||= @strategy.hash(@piece, @from, @to) ^ Memory::enp_key(@enp_target)
+      def hash # XOR out the old en-passant key, if any.
+        @hash ||= @strategy.hash(@piece, @from, @to) ^ Memory::enp_key(@enp_target) ^ Memory::SIDE
       end
 
       def print
@@ -139,6 +139,7 @@ module Chess
         position.board[to] = piece.symbol
       end
 
+      # XOR out the key for piece at from, and XOR in the key for piece at to.
       def from_to_key(piece, from, to)
         Memory::psq_key(piece, from) ^ Memory::psq_key(piece, to)
       end
@@ -211,6 +212,7 @@ module Chess
         "<@enemy_material:#{@enemy_material}>>"
       end
 
+      # XOR out key for piece at from. XOR in the key for piece at to. XOR out key for @captured_piece at to.
       def hash(piece, from, to)
         from_to_key(piece, from, to) ^ Memory::psq_key(@captured_piece, to)
       end

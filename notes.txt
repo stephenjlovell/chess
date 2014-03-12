@@ -116,9 +116,7 @@ To Do ----
 
   Prevent king capture in SEE
   
-  Refactor for readability where required, comment ambiguous code.
-  
-  Complete review of all files in ./lib/
+  Switch to incremental update of king safety bonuses.
 
   create readme
 
@@ -126,7 +124,7 @@ To Do ----
 
 Possible Enhancements to Add ----
 
-  
+
 
   Switch to incremental update of king tropism evaluation on make/unmake.
 

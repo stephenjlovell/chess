@@ -22,23 +22,29 @@
 module Chess
   module Pieces
 
+    # Assign each piece a base material value approximating its relative importance.      
     PIECE_VALUES = { P: 100, N: 320, B: 333, R: 510, Q: 880, K: 100000 }
+
 
     NON_KING_VALUE = PIECE_VALUES[:P]*8 + PIECE_VALUES[:N]*2 + PIECE_VALUES[:B]*2 + 
                      PIECE_VALUES[:R]*2 + PIECE_VALUES[:Q]
 
+    # When a player has lost 2/3 of their pieces by value, they are considered to be in the 'endgame'.  
+    # Endgame state is used during Evaluation.
     ENDGAME_VALUE = PIECE_VALUES[:K] + NON_KING_VALUE/3
 
+    # During search, an evaluation score less than KING_LOSS indicates that the king will be captured in the next ply.  This
+    # is used to avoid illegal moves without the overhead cost of checking each possible move for full legality.
     KING_LOSS = NON_KING_VALUE - PIECE_VALUES[:K] 
 
-    MATE = NON_KING_VALUE + PIECE_VALUES[:K] + 1
+    # This constant provides a finite evaluation score indicating checkmate.   
+    MATE = NON_KING_VALUE + PIECE_VALUES[:K]
 
-    PIECE_SYM_VALUES = { wP: 100, wN: 320, wB: 333, wR: 510, wQ: 880, wK: 100000,
-                         bP: 100, bN: 320, bB: 333, bR: 510, bQ: 880, bK: 100000, }
-
+    # This hash associates piece symbols with their underlying color.
     PIECE_COLOR = { wP: :w, wN: :w, wB: :w, wR: :w, wQ: :w, wK: :w,
                     bP: :b, bN: :b, bB: :b, bR: :b, bQ: :b, bK: :b }
 
+    # This hash associates each color with its corresponding set of piece symbols.
     PIECES_BY_COLOR = { w: { P: :wP, N: :wN, B: :wB, R: :wR, Q: :wQ, K: :wK }, 
                         b: { P: :bP, N: :bN, B: :bB, R: :bR, Q: :bQ, K: :bK } }
 
@@ -49,7 +55,6 @@ module Chess
 
 
     # Increment vectors used for move generation:
-
     NORTH = [1,0]
     NE = [1,1]
     EAST = [0,1]
@@ -58,7 +63,6 @@ module Chess
     SW = [-1,-1]
     WEST = [0,-1]
     NW = [1,-1]
-
     NORTH_NW = [2,-1]
     NORTH_NE = [2,1]
     EAST_NE = [1,2]
@@ -423,6 +427,12 @@ module Chess
         end
       end
     end
+
+    # This hash associates piece symbols with the value of their piece type.
+    PIECE_SYM_VALUES = { wP: PIECE_VALUES[:P], wN: PIECE_VALUES[:N], wB: PIECE_VALUES[:B], 
+                         wR: PIECE_VALUES[:R], wQ: PIECE_VALUES[:Q], wK: PIECE_VALUES[:K],
+                         bP: PIECE_VALUES[:P], bN: PIECE_VALUES[:N], bB: PIECE_VALUES[:B], 
+                         bR: PIECE_VALUES[:R], bQ: PIECE_VALUES[:Q], bK: PIECE_VALUES[:K] }
 
     def self.get_value_by_sym(sym)
       return 0 if sym == nil || sym == :XX
