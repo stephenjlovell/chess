@@ -254,9 +254,7 @@ module Chess
 
       # if depth > 3*PLY_VALUE
       #   moves.each do |move|
-      #     @node.hash ^= move.hash
-      #     hash_value, hash_count = $tt.etc_probe(@node.hash, depth, alpha, beta)
-      #     @node.hash ^= move.hash
+      #     hash_value, hash_count = $tt.etc_probe(@node.hash^move.hash, depth, alpha, beta)
       #     return hash_value, hash_count unless hash_value.nil?
       #   end
       # end
@@ -329,44 +327,29 @@ module Chess
     end
 
 
-    def self.get_see_score(position, to)
-      attackers = position.board.get_square_attackers(to)
-      static_exchange_evaluation(position.board, to, position.side_to_move, attackers)
-    end
-
-    def self.static_exchange_evaluation(board, to, side, attackers) # Iterative SEE implementation based on alpha beta pruning.
-      score = 0
-      alpha, beta = -$INF, $INF
-      other_side = FLIP_COLOR[side]
-
-      counters = { w: 0, b: 0 }
-      attacker_count = { w: attackers[:w].count, b: attackers[:b].count }
+    def self.see(position, to) # Iterative SEE implementation based on alpha beta pruning.
+      board = position.board
+      attackers = board.get_square_attackers(to)
+      alpha, beta, score, own_counter, enemy_counter = -$INF, $INF, 0, 0, 0
+      own, enemy = position.side_to_move, position.enemy
+      own_attackers, enemy_attackers = attackers[own].count, attackers[enemy].count
 
       victim = board[to]
       while true
         score += Pieces::get_value_by_sym(victim)
-        return alpha if score <= alpha || counters[side] >= attacker_count[side]  # stand pat 
-        
-        victim = board[attackers[side][counters[side]]]
-        counters[side] += 1
+        return alpha if score <= alpha || own_counter >= own_attackers || victim.nil?  # stand pat 
+        victim = board[attackers[own][own_counter]] 
+        own_counter += 1
         beta = score if score < beta # beta update
-        score -= Pieces::get_value_by_sym(victim)
 
-        return beta if score >= beta || counters[other_side] >= attacker_count[other_side]  # stand pat
-        
-        victim = board[attackers[other_side][counters[other_side]]]  
-        counters[other_side] += 1
+        score -= Pieces::get_value_by_sym(victim)
+        return beta if score >= beta || enemy_counter >= enemy_attackers || victim.nil?  # stand pat
+        victim = board[attackers[enemy][enemy_counter]]  
+        enemy_counter += 1
         alpha = score if score > alpha  # alpha update
       end
     end
 
-    def self.get_pv(node)
-      pv, key = [], node.hash
-      until !$tt.key_ok?(key) || $tt[key].move.nil?
-        pv << $tt[key].move
-        key ^= e.move.hash ^ Memory::SIDE
-      end
-    end
 
     def self.reset_counters
       $main_calls, $quiescence_calls, $evaluation_calls, $memory_calls, $passes = 0, 0, 0, 0, 0

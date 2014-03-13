@@ -72,7 +72,7 @@ module Chess
       end
 
       def see_score(position)
-        @see ||= Search::get_see_score(position, @to)
+        @see ||= Search::see(position, @to)
       end
 
       def strategy
@@ -391,7 +391,7 @@ module Chess
                        - Tropism::get_bonus(piece, from, pos.enemy_king_location)
       end
 
-      def hash(piece, from, to)
+      def hash(piece, from, to) # XOR out piece at from.  XOR in @queen at to.
         Memory::psq_key(piece, from) ^ Memory::psq_key(@queen, to)
       end
 
@@ -428,7 +428,7 @@ module Chess
         "#{piece} x #{@captured_piece} promotion #{from} to #{to}"
       end
 
-      def hash(piece, from, to)
+      def hash(piece, from, to) # XOR out piece at from. XOR out @captured_piece at to.  XOR in @queen at to.
         Memory::psq_key(piece, from) ^ Memory::psq_key(@captured_piece, to) ^ Memory::psq_key(@queen, to)
       end
 

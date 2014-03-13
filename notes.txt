@@ -76,7 +76,9 @@ Search benchmarking (Win at Chess test suite):
   17.46751890666667 seconds/search at depth 6
   N: 33422508; E: 31119757; B: 3.0735751357459287; Efficiency: 8.133850286998996
 
-3/13/14 MTD-f after separating extensions from search depth
+3/13/14 MTD-f 
+
+after separating extensions from search depth:
 
   ------ Aggregate Search Performance -------
 
@@ -93,26 +95,56 @@ Search benchmarking (Win at Chess test suite):
   14.399493723333332 seconds/search at depth 6
   N: 24107130; E: 22228973; B: 2.7898043965493544; Efficiency: 10.753442082572642
 
+after fixing bug in incremental update of material:
+
+  ------ Aggregate Search Performance -------
+
+  DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+  ------|-------|--------|---------|---------|----------|---------|--------------------|--------------------|----------
+  1     |       | 1482   | 31887   | 27781   | 47281    | 13885   | 0.0                | 0.0                | 59668    
+  2     |       | 612    | 43050   | 60262   | 98609    | 23552   | 1.731447341958839  | 1.731447341958839  | 103312   
+  3     |       | 943    | 434952  | 541358  | 944002   | 78324   | 9.45011228124516   | 4.045042866345734  | 976310   
+  4     |       | 629    | 651716  | 682360  | 1276374  | 139010  | 1.3664471325705974 | 2.81716983866229   | 1334076  
+  5     |       | 899    | 9409613 | 5071527 | 13762309 | 956614  | 10.854808871458598 | 3.9469835628592596 | 14481140 
+  6     |       | 453    | 8955343 | 5652669 | 13252202 | 1905071 | 1.0087611886909456 | 3.0044842186355063 | 14608012 
+
+  Total AI score: 102/300 (34.0%)
+  18.44492197 seconds/search at depth 6
+  N: 31562518; E: 29380777; B: 3.0044842186355063; Efficiency: 11.316418235487081
+
+after adding incremental update of king safety:
+
+  ------ Aggregate Search Performance -------
+
+  DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+  ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
+  1     |       | 1025   | 26521    | 7255    | 31048    | 3872    | 0.0                | 0.0                | 33776    
+  2     |       | 649    | 48956    | 48846   | 91598    | 10775   | 2.8956063477025107 | 2.8956063477025107 | 97802    
+  3     |       | 779    | 409418   | 157983  | 552297   | 52943   | 5.8015275761231875 | 4.098651006830597  | 567401   
+  4     |       | 675    | 571403   | 417198  | 959021   | 79108   | 1.7423321425235416 | 3.0817987628640218 | 988601   
+  5     |       | 853    | 7765005  | 2904206 | 10170567 | 689925  | 10.792231648561957 | 4.215809925774577  | 10669211 
+  6     |       | 652    | 12462808 | 5861110 | 16808649 | 2215879 | 1.7174576451810728 | 3.5227516316816816 | 18323918 
+
+  Total AI score: 106/300 (35.333333333333336%)
+  15.703747 seconds/search at depth 6
+  N: 30680709; E: 28613180; B: 3.5227516316816816; Efficiency: 10.030038171174164
+
+
+
 
 Current Issues ----
     
-  ETC appears to work best without any search extensions.
+  ETC works differently with a complete make/unmake than with hash update only.  Both versions should be identical in node count
+  and strength.
 
 
 To Do ----
-
-  Refactor utilities.rb
-
-  Prevent king capture in SEE
   
-  Switch to incremental update of king safety bonuses.
-    - When king moves, recalculate enemy tropism.  
-      This needs to be independent of make/unmake timing in case of King Capture strategy.
-    - When non-king moves, add tropism delta for to - from square to own tropism
+  Comment position, search, search_analytics, tropism, utilities
 
+  Refactor utilities
 
-
-  create readme
+  Create readme
 
 
 

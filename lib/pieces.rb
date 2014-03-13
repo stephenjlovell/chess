@@ -44,6 +44,10 @@ module Chess
     PIECE_COLOR = { wP: :w, wN: :w, wB: :w, wR: :w, wQ: :w, wK: :w,
                     bP: :b, bN: :b, bB: :b, bR: :b, bQ: :b, bK: :b }
 
+    # This hash associates piece symbols with their underlying type.
+    PIECE_TYPE = { wP: :P, wN: :N, wB: :B, wR: :R, wQ: :Q, wK: :K,
+                   bP: :P, bN: :N, bB: :B, bR: :R, bQ: :Q, bK: :K }
+
     # This hash associates each color with its corresponding set of piece symbols.
     PIECES_BY_COLOR = { w: { P: :wP, N: :wN, B: :wB, R: :wR, Q: :wQ, K: :wK }, 
                         b: { P: :bP, N: :bN, B: :bB, R: :bR, Q: :bQ, K: :bK } }

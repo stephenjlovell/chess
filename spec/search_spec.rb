@@ -51,7 +51,7 @@ describe Chess::Search do
   #   let(:see_pos) { FactoryGirl.build(:see_position) }
   #   it "should correctly value an exchange over a single square" do
   #     # see_pos.board.print
-  #     @s.get_see_score(see_pos, loc).should == 100
+  #     @s.see(see_pos, loc).should == 100
   #   end
   # end
 
