@@ -45,16 +45,16 @@ module Chess
           @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
           position.enp_target = nil
           @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
-          position.own_material += @strategy.own_material
-          position.enemy_material += @strategy.enemy_material
+          position.own_material += @strategy.own_material(position, @piece, @from, @to)
+          position.enemy_material += @strategy.enemy_material(position, @piece, @from, @to)
         rescue => err
           raise Memory::HashCollisionError
         end 
       end
 
       def unmake!(position)
-        position.own_material -= @strategy.own_material
-        position.enemy_material -= @strategy.enemy_material
+        position.own_material -= @strategy.own_material(position, @piece, @from, @to)
+        position.enemy_material -= @strategy.enemy_material(position, @piece, @from, @to)
         @strategy.unmake!(position, @piece, @from, @to)  # delegate to the strategy class.
         position.enp_target, position.castle = @enp_target, @castle_rights
       end
@@ -98,14 +98,11 @@ module Chess
     # the strategy class will include the MakesCapture module.
 
     class MoveStrategy  
-      attr_reader :own_material, :enemy_material
-
       def initialize
-        @own_material, @enemy_material = 0, 0
       end
 
       def make!(position, piece, from, to)
-        make_relocate_piece(position, piece, from, to)
+        relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
       end
 
@@ -126,10 +123,12 @@ module Chess
         from_to_key(piece, from, to)
       end
 
-      def make_relocate_piece(position, piece, from, to)
-        relocate_piece(position, piece, from, to)
-        @own_material += (Evaluation::pst_value(position, piece, to) 
-                          - Evaluation::pst_value(position, piece, from))
+      def own_material(position, piece, from, to)
+        @own_material ||= Evaluation::pst_value(position, piece, to)-Evaluation::pst_value(position, piece, from)
+      end
+
+      def enemy_material(position, piece, from, to)
+        @enemy_material ||= 0
       end
 
       def relocate_piece(position, piece, from, to)
@@ -186,14 +185,14 @@ module Chess
       attr_reader :captured_piece
       
       def initialize(captured_piece)
-        @captured_piece, @own_material, @enemy_material = captured_piece, 0, 0
+        @captured_piece = captured_piece
       end
 
       def make!(position, piece, from, to)
-        make_relocate_piece(position, piece, from, to)
+        relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
         position.enemy_pieces.delete(to)
-        @enemy_material -= Evaluation::adjusted_value(position, @captured_piece, to)
+        # @enemy_material -= Evaluation::adjusted_value(position, @captured_piece, to)
       end
 
       def unmake!(position, piece, from, to)
@@ -201,6 +200,14 @@ module Chess
         unmake_clock_adjustment(position)
         position.board[to] = @captured_piece.symbol
         position.enemy_pieces[to] = @captured_piece
+      end
+
+      def own_material(position, piece, from, to)
+        @own_material ||= Evaluation::pst_value(position, piece, to)-Evaluation::pst_value(position, piece, from)
+      end
+
+      def enemy_material(position, piece, from, to)
+        @enemy_material ||= -Evaluation::adjusted_value(position, @captured_piece, to)
       end
 
       def print(piece, from, to)
@@ -246,6 +253,10 @@ module Chess
         super # call unmake! method inherited from MoveStrategy
         position.own_king_location = from  # update king location
       end
+
+      def enemy_tropism(pos, from, to)  # ideally, this should be independent of make/unmake timing.
+        @enemy_tropism ||= Evaluation::king_safety(pos, pos.enemy, to) - pos.enemy_tropism
+      end
     end
 
     class RegularCapture < MoveStrategy #  Stores captured piece for unmake purposes.
@@ -264,6 +275,10 @@ module Chess
         super # call unmake! method mixed-in by MakesCapture
         position.own_king_location = from  # update king location
       end
+
+      def enemy_tropism(pos, from, to)
+        @enemy_tropism ||= Evaluation::king_safety(pos, pos.enemy, to) - pos.enemy_tropism
+      end
     end
 
     class EnPassantCapture < MoveStrategy
@@ -271,15 +286,13 @@ module Chess
 
       def initialize(captured_piece, enp_target)
         @captured_piece, @enp_target = captured_piece, enp_target
-        @own_material, @enemy_material = 0, 0
       end
 
       def make!(position, piece, from, to)
-        make_relocate_piece(position, piece, from, to)
+        relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
         position.board[@enp_target] = nil
         position.enemy_pieces.delete(@enp_target)
-        @enemy_material -= Evaluation::adjusted_value(position, @captured_piece, @enp_target)
       end
 
       def unmake!(position, piece, from, to)
@@ -287,6 +300,14 @@ module Chess
         unmake_clock_adjustment(position)
         position.board[@enp_target] = @captured_piece.symbol
         position.enemy_pieces[@enp_target] = @captured_piece
+      end
+
+      def own_material(position, piece, from, to)
+        @own_material ||= Evaluation::pst_value(position, piece, to)-Evaluation::pst_value(position, piece, from)
+      end
+
+      def enemy_material(position, piece, from, to)
+        @enemy_material ||= -Evaluation::adjusted_value(position, @captured_piece, @enp_target)
       end
 
       def hash(piece, from, to)
@@ -323,18 +344,20 @@ module Chess
       include Irreversible
       def initialize(side_to_move)
         @queen = Pieces::Queen.new(side_to_move)
-        @own_material, @enemy_material = 0, 0
       end
 
       def make!(position, piece, from, to)
         relocate_piece(position, @queen, from, to) # do not add PST delta for this move, since the moved piece
         make_clock_adjustment(position)            # is replaced by a new queen.
-        @own_material += (Evaluation::adjusted_value(position, @queen, to) 
-                          - Evaluation::adjusted_value(position, piece, from))
       end
 
       def print(piece, from, to)
         "#{piece} promotion #{from} to #{to}"
+      end
+
+      def own_material(position, piece, from, to)
+        @own_material ||= Evaluation::adjusted_value(position, @queen, to)
+                        - Evaluation::adjusted_value(position, piece, from)
       end
 
       def hash(piece, from, to)
@@ -352,16 +375,17 @@ module Chess
 
       def initialize(captured_piece)  
         @queen, @captured_piece = Pieces::Queen.new(FLIP_COLOR[captured_piece.color]), captured_piece
-        @own_material, @enemy_material = 0, 0
       end
 
       def make!(position, piece, from, to)
         relocate_piece(position, @queen, from, to) # do not add PST delta for this move, since the moved piece
         make_clock_adjustment(position)            # is replaced by a new queen.
         position.enemy_pieces.delete(to)
-        @own_material += (Evaluation::adjusted_value(position, @queen, to) 
-                          - Evaluation::adjusted_value(position, piece, from))
-        @enemy_material -= Evaluation::adjusted_value(position, @captured_piece, to)
+      end
+
+      def own_material(position, piece, from, to)
+        @own_material ||= Evaluation::adjusted_value(position, @queen, to)
+                        - Evaluation::adjusted_value(position, piece, from)
       end
 
       def print(piece, from, to)
@@ -383,12 +407,11 @@ module Chess
       attr_accessor :rook, :rook_from, :rook_to
       def initialize(rook, rook_from, rook_to)
         @rook, @rook_from, @rook_to = rook, rook_from, rook_to
-        @own_material, @enemy_material = 0, 0
       end
 
       def make!(position, piece, from, to)
         super # call make! method inherited from MoveStrategy
-        make_relocate_piece(position, @rook, @rook_from, @rook_to)
+        relocate_piece(position, @rook, @rook_from, @rook_to)
         position.own_king_location = to
       end
 
@@ -396,6 +419,13 @@ module Chess
         super # call unmake! method inherited from MoveStrategy
         relocate_piece(position, @rook, @rook_to, @rook_from)
         position.own_king_location = from
+      end
+
+      def own_material(position, piece, from, to)
+        @own_material ||= Evaluation::pst_value(position, piece, to)
+                        - Evaluation::pst_value(position, piece, from)
+                        + Evaluation::pst_value(position, @rook, @rook_to)
+                        - Evaluation::pst_value(position, @rook, @rook_from)
       end
 
       def print(piece, from, to)

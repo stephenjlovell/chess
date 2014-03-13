@@ -61,33 +61,6 @@ Search benchmarking (Win at Chess test suite):
 
 3/9/14, MTD-f after adding King Tropism heuristic to evaluation.
 
-      ------ Aggregate Search Performance -------
-
-    DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS   | MEMORY | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
-    ------|-------|--------|---------|---------|---------|--------|--------------------|--------------------|----------
-    1     |       | 2614   | 31974   | 29292   | 49862   | 16762  | 0.0                | 0.0                | 61266    
-    2     |       | 2223   | 61542   | 70111   | 127052  | 28179  | 2.148875395814971  | 2.148875395814971  | 131653   
-    3     |       | 710    | 365055  | 255935  | 595139  | 68184  | 4.71686934593211   | 3.1837029513991038 | 620990   
-    4     |       | 647    | 889970  | 514969  | 1350768 | 148819 | 2.2624180743651268 | 2.8410528582793413 | 1404939  
-
-    Total AI score: 69/300 (23.0%)
-    1.4116527433333332 seconds/search at depth 4
-    N: 2218848; E: 2122821; B: 2.8410528582793413; Efficiency: 8.095590313631035
-
-    ------ Aggregate Search Performance -------
-
-    DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
-    ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
-    1     |       | 2614   | 31974    | 29292   | 49862    | 16762   | 0.0                | 0.0                | 61266    
-    2     |       | 2223   | 61542    | 70111   | 127052   | 28179   | 2.148875395814971  | 2.148875395814971  | 131653   
-    3     |       | 710    | 365055   | 255935  | 595139   | 68184   | 4.71686934593211   | 3.1837029513991038 | 620990   
-    4     |       | 647    | 889970   | 514969  | 1350768  | 148819  | 2.2624180743651268 | 2.8410528582793413 | 1404939  
-    5     |       | 748    | 10268469 | 4130184 | 13461295 | 1022796 | 10.248596558284737 | 3.9153950257610033 | 14398653 
-
-    Total AI score: 71/300 (23.666666666666668%)
-    8.932542573333334 seconds/search at depth 5
-    N: 16617501; E: 15584116; B: 3.9153950257610033; Efficiency: 6.044515690231479
-
     ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
@@ -103,11 +76,27 @@ Search benchmarking (Win at Chess test suite):
   17.46751890666667 seconds/search at depth 6
   N: 33422508; E: 31119757; B: 3.0735751357459287; Efficiency: 8.133850286998996
 
+3/13/14 MTD-f after separating extensions from search depth
 
+  ------ Aggregate Search Performance -------
+
+  DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+  ------|-------|--------|---------|---------|----------|---------|--------------------|--------------------|----------
+  1     |       | 3166   | 38113   | 33109   | 59090    | 19407   | 0.0                | 0.0                | 71222    
+  2     |       | 2206   | 51835   | 61891   | 109003   | 28133   | 1.5967818932352362 | 1.5967818932352362 | 113726   
+  3     |       | 808    | 349234  | 329466  | 658019   | 63781   | 5.967852557902327  | 3.086965970974741  | 678700   
+  4     |       | 624    | 486473  | 493148  | 942736   | 97069   | 1.4433785177545306 | 2.395969620474154  | 979621   
+  5     |       | 735    | 7467208 | 2760632 | 9681531  | 680467  | 10.440609174364372 | 3.4617240086651226 | 10227840 
+  6     |       | 524    | 8028542 | 4007479 | 10778594 | 1941941 | 1.1767901140416746 | 2.7898043965493544 | 12036021 
+
+  Total AI score: 90/300 (30.0%)
+  14.399493723333332 seconds/search at depth 6
+  N: 24107130; E: 22228973; B: 2.7898043965493544; Efficiency: 10.753442082572642
 
 
 Current Issues ----
 
+  ETC appears to work best without any search extensions.
 
 
 To Do ----
@@ -125,16 +114,9 @@ To Do ----
 Possible Enhancements to Add ----
 
 
-
-  Switch to incremental update of king tropism evaluation on make/unmake.
-
   Add aging scheme for removal of old TT entries
 
   Integrate PV extractor into Search for analytics.
-
-  Add node-count based TT replacement scheme
-
-  Experiment with node count-based TT replacement at depths > 0, and use depth-based replacement for quiesence nodes.
 
   Move ordering enhancements:
     -Killer Moves

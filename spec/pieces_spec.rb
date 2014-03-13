@@ -35,7 +35,6 @@ require 'spec_helper'
       its(:class) { should respond_to :value }
       its(:class) { should respond_to :type }
       its(:class) { should respond_to :id }
-      its(:class) { should respond_to :move_until_blocked? }
       it { should respond_to :symbol }
       it { should respond_to :color }
       it { should respond_to :get_moves }

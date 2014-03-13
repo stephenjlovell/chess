@@ -24,7 +24,7 @@ module Chess
 
     class ChessPosition # Mutable description of the game state as of a specific turn.
       attr_accessor :board, :pieces, :side_to_move, :enemy, :halfmove_clock, :castle, :enp_target, 
-                    :hash, :king_location, :material
+                    :hash, :king_location, :material, :tropism
 
       def initialize(board=nil, side_to_move=:w, halfmove_clock=0)
         @side_to_move, @halfmove_clock = side_to_move, halfmove_clock
@@ -35,7 +35,8 @@ module Chess
         @king_location = set_king_location
         w_endgame = Evaluation::base_material(self, :w) <= Pieces::ENDGAME_VALUE # determine initial endgame state
         b_endgame = Evaluation::base_material(self, :b) <= Pieces::ENDGAME_VALUE
-        @material = { w: Evaluation::material(self, :w, w_endgame), b: Evaluation::material(self, :b, b_endgame) } 
+        @material = { w: Evaluation::material(self, :w, w_endgame), b: Evaluation::material(self, :b, b_endgame) }
+        @tropism = { w: Evaluation::king_safety(self, :w), b: Evaluation::king_safety(self, :w) } 
       end
 
       def own_pieces
@@ -60,6 +61,22 @@ module Chess
 
       def enemy_material=(value)
         @material[@enemy] = value
+      end
+
+      def own_tropism
+        @tropism[@side_to_move]
+      end
+
+      def enemy_tropism
+        @tropism[@enemy]
+      end
+
+      def own_tropism=(value)
+        @tropism[@side_to_move] = value
+      end
+
+      def enemy_tropism=(value)
+        @tropism[@enemy] = value
       end
 
       def own_king_location

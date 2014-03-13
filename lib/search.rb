@@ -22,14 +22,25 @@
 module Chess
   module Search # this module defines tree traversal algorithms for move selection.
 
-    PLY_VALUE = 4  # multiplier representing the depth value of 1 ply.  
+    PLY_VALUE = 2  # Multiplier representing the depth value of 1 ply.  
                    # Used for fractional depth extensions / reductions.
 
-    EXT_CHECK = 1  # extend search when side to move is in check.
+    EXT_CHECK = 1  # Used to extend search by a fraction of a ply when side to move is in check.
+
+    EXT_MAX = 2*PLY_VALUE # maximum number of check extensions permitted.
 
     MTD_STEP_SIZE = 15
 
-    MTDF_MAX_PASSES = 200  # Prevent feedback loop due to rare TT interactions.
+    MTDF_MAX_PASSES = 200  # Used to prevent feedback loop due to rare TT interactions.
+
+
+    MATE = Pieces::MATE/Evaluation::EVAL_GRAIN
+
+    KING_LOSS = Pieces::KING_LOSS/Evaluation::EVAL_GRAIN
+    
+    F_MARGIN_HIGH = Pieces::PIECE_VALUES[:R]/Evaluation::EVAL_GRAIN    
+    F_MARGIN_LOW  = Pieces::PIECE_VALUES[:N]/Evaluation::EVAL_GRAIN
+
 
     def self.iterative_deepening_mtdf_step(max_depth=nil)
       max_depth ||= @max_depth
@@ -59,9 +70,10 @@ module Chess
       (1..depth).each do |d|
         @i_depth = d
         previous_total = $quiescence_calls + $main_calls
-        # puts "----#{d}----"
         Search::reset_counters
+
         best_move, value = yield(guess, d*PLY_VALUE) # call main search algo.
+        
         first_total = $quiescence_calls + $main_calls if d == 1
         record = Analytics::SearchRecord.new(d, value, $passes, $main_calls, $quiescence_calls, 
                                              $evaluation_calls, $memory_calls, previous_total, first_total)
@@ -116,15 +128,10 @@ module Chess
         $passes += 1
         mtdf_passes += 1
 
-        # puts "max passes reached" if mtdf_passes >= MTDF_MAX_PASSES
-
         gamma = guess == @lower_bound ? guess+1 : guess
 
         move, guess = alpha_beta_root(depth, gamma-1, gamma)
         best_move, best = move, guess unless move.nil?
-        # only update when score increases?
-
-        # puts "#{mtdf_passes} MT(#{depth}, #{gamma-1}, #{gamma}) => #{move}, #{guess}"
 
         guess < gamma ? @upper_bound = guess : @lower_bound = guess
       end
@@ -179,7 +186,7 @@ module Chess
       $tt.get_hash_move(@node, first_moves) # At root, use TT for move ordering only.
 
       in_check = @node.in_check?
-      ext_check = in_check ? EXT_CHECK : 0
+      extension = in_check ? EXT_CHECK : 0
 
       @node.edges(first_moves, true).each do |move| 
         next unless @node.avoids_check?(move)  # no illegal moves allowed at root.
@@ -187,11 +194,11 @@ module Chess
         $main_calls += 1
         
         MoveGen::make!(@node, move)
-        value, count = alpha_beta(depth-PLY_VALUE+ext_check, -beta, -alpha)
+        value, count = alpha_beta(depth-PLY_VALUE, -beta, -alpha, extension)
         MoveGen::unmake!(@node, move)
         result = Chess::max(-value, result)
         sum += count
-        legal_moves = true unless result <= Pieces::KING_LOSS
+        legal_moves = true unless result <= KING_LOSS
 
         if result > alpha
           alpha = result
@@ -201,34 +208,31 @@ module Chess
       end
 
       unless legal_moves  # if no legal moves available, it's either a draw or checkmate.
-        result = in_check ? (@i_depth*PLY_VALUE - depth) - Pieces::MATE : 0 # mate in 1 is more valuable than mate in 2
+        result = in_check ? (@i_depth*PLY_VALUE - depth) - MATE : 0 # mate in 1 is more valuable than mate in 2
         best_move = nil
       end
 
       $tt.store_result(@node, depth, sum, result, alpha, beta, best_move)
       return best_move, result
     end
-    
 
-    def self.alpha_beta(depth, alpha=-$INF, beta=$INF, can_null=true)
+    def self.alpha_beta(depth, alpha=-$INF, beta=$INF, extension=0, can_null=true)
       first_moves, result, best_move = [], -$INF, nil
 
-      return quiescence(0, alpha, beta) if depth <= 0 # search extensions are not used in q-search, so initial depth
-                                                      # can be set to 0.
+      return quiescence(depth, alpha, beta) if depth+extension < PLY_VALUE
+
+      in_check = @node.in_check?
+      extension += EXT_CHECK if in_check && extension < EXT_MAX
 
       hash_value, hash_count = $tt.probe(@node, depth, alpha, beta, first_moves)
       return hash_value, hash_count unless hash_value.nil?
-
-      in_check = @node.in_check?
-      ext_check = in_check ? EXT_CHECK : 0
-
 
       # Null Move Pruning
       if can_null && !in_check && depth > 2*PLY_VALUE && !@node.in_endgame? && @node.value >= beta
         enp, reduction = @node.enp_target, 2*PLY_VALUE
         MoveGen::flip_null(@node, enp)
         @node.enp_target = nil
-        value, count = alpha_beta(depth-PLY_VALUE-reduction, -beta, -beta+1, false) 
+        value, count = alpha_beta(depth-PLY_VALUE-reduction, -beta, -beta+1, extension, false) 
         value *= -1       
         MoveGen::flip_null(@node, enp)
         @node.enp_target = enp
@@ -239,39 +243,34 @@ module Chess
       moves = @node.edges(first_moves)
 
       # Enhanced Transposition Cutoffs
-      if depth > 2*PLY_VALUE
+      if depth > 3*PLY_VALUE
         moves.each do |move|
-          e = nil
           MoveGen::make!(@node, move)
-          e = $tt.get(@node) if $tt.ok?(@node)  # probe the hash table for node
+          hash_value, hash_count = $tt.probe(@node, depth, alpha, beta)
           MoveGen::unmake!(@node, move)
-          if !e.nil? && e.depth >= depth
-            return e.alpha, e.count if e.alpha >= beta
-            return e.beta, e.count if e.beta <= alpha
-          end
+          return hash_value, hash_count unless hash_value.nil?
         end
       end
 
       # Extended futility pruning:
-      f_margin = depth > PLY_VALUE ? Pieces::PIECE_VALUES[:R] : Pieces::PIECE_VALUES[:N]
-      f_prune = depth <= 2*PLY_VALUE && !in_check && alpha.abs < Pieces::MATE &&
-                @node.value + f_margin <= alpha
+      f_margin = depth > PLY_VALUE ? F_MARGIN_HIGH : F_MARGIN_LOW
+      f_prune = (depth <= 2*PLY_VALUE) && !in_check && (alpha.abs < MATE) && (@node.value + f_margin <= alpha)
 
       sum, legal_moves = 1, false
       moves.each do |move|
         
         MoveGen::make!(@node, move)
-        if f_prune && legal_moves && !move.material_swing? && !@node.in_check? # when f_prune flag is set,
-          MoveGen::unmake!(@node, move) # prune moves that don't alter material balance or give check.
+        if f_prune && legal_moves && !move.material_swing? && !@node.in_check? # When f_prune flag is set,
+          MoveGen::unmake!(@node, move)     # prune moves that don't alter material balance or give check.
           next
         end
-        value, count = alpha_beta(depth-PLY_VALUE+ext_check, -beta, -alpha)
+        value, count = alpha_beta(depth-PLY_VALUE, -beta, -alpha, extension)
         MoveGen::unmake!(@node, move)
 
         $main_calls += 1
         result = Chess::max(-value, result)
         sum += count
-        legal_moves = true unless result <= Pieces::KING_LOSS
+        legal_moves = true unless result <= KING_LOSS
 
         if result > alpha
           alpha = result
@@ -281,7 +280,7 @@ module Chess
       end
 
       unless legal_moves  # if no legal moves available, it's either a draw or checkmate.
-        result = in_check ? -(Pieces::MATE + @i_depth - depth/PLY_VALUE) : 0 # mate in 1 is more valuable than mate in 2
+        result = in_check ? -(MATE + @i_depth - depth/PLY_VALUE) : 0 # mate in 1 is more valuable than mate in 2
       end
 
       $tt.store_result(@node, depth, sum, result, alpha, beta, best_move)

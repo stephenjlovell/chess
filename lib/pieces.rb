@@ -25,7 +25,7 @@ module Chess
     # Assign each piece a base material value approximating its relative importance.      
     PIECE_VALUES = { P: 100, N: 320, B: 333, R: 510, Q: 880, K: 100000 }
 
-
+    # This constant represents the maximum value of all non-king pieces for each side.
     NON_KING_VALUE = PIECE_VALUES[:P]*8 + PIECE_VALUES[:N]*2 + PIECE_VALUES[:B]*2 + 
                      PIECE_VALUES[:R]*2 + PIECE_VALUES[:Q]
 
@@ -103,18 +103,22 @@ module Chess
         @symbol.to_s
       end
 
-      # Collects all pseudo-legal moves available to the current piece.
+      # Generate all pseudo-legal moves available to the current piece.
+      # Moves are pushed into separate arrays for captures, promotions, promotion captures, and other moves.
       def get_moves(position, from, moves, captures, promotions, promotion_captures) 
         self.class.directions.each { |vector| get_moves_for_direction(position, position.board, from, vector, moves, captures) }
       end
 
-      # Collects all pseudo-legal capture moves available to the current piece.
+      # Generate all pseudo-legal capture moves available to the current piece.
+      # Moves are pushed into separate arrays for captures and promotion captures.
       def get_captures(position, from, captures, promotion_captures)
         self.class.directions.each { |vector| get_captures_for_direction(position, position.board, from, vector, captures) }
       end
 
       private 
 
+      # Scan along a direction by repeatedly adding a given increment vector to the current square.
+      # Add a move object of the appropriate type to the move array if the square is a valid destination.
       def get_moves_for_direction(position, board, from, vector, moves, captures)
         to = from + vector
         while board.on_board?(to)
@@ -131,6 +135,8 @@ module Chess
         end
       end
 
+      # Scan along a direction by repeatedly adding a given increment vector to the current square.
+      # Add a move object of the appropriate type to the move array if the square is a valid capture target.
       def get_captures_for_direction(position, board, from, vector, captures)
         to = from + vector
         while board.on_board?(to)
@@ -163,10 +169,6 @@ module Chess
           :P
         end
 
-        def move_until_blocked?
-          false
-        end
-
         PAWN_DIRECTIONS = DIRECTIONS[:P]
         def directions
           PAWN_DIRECTIONS
@@ -186,6 +188,7 @@ module Chess
 
       private
 
+      # Add any valid regular pawn attacks to move array. Pawns may only attack toward the enemy side.
       def get_attacks(position, board, from, captures, promotion_captures)
         self.class.directions[@color][:attack].each do |vector|  # normal attacks
           to = from + vector
@@ -200,6 +203,8 @@ module Chess
         end
       end
 
+      # Add any valid En-Passant captures to move array. Any pawn that made a double move from
+      # its starting row on the previous turn is vulnerable to an En-Passant attack by the opposing side.
       def get_en_passant(position, board, from, captures)
         self.class.directions[:en_passant].each do |vector|
           target = from + vector
@@ -212,6 +217,7 @@ module Chess
         end
       end
 
+      # Add any valid non-capture moves to move array, including promotions and double moves (En-Passant advances).
       def get_advances(position, board, from, moves, promotions)
         dir = self.class.directions[@color]
         to = from + dir[:advance]
@@ -248,16 +254,14 @@ module Chess
           :N
         end
 
-        def move_until_blocked?
-          false
-        end
-
         KNIGHT_DIRECTIONS = DIRECTIONS[:N]
         def directions
           KNIGHT_DIRECTIONS
         end
       end
 
+      # Generate all pseudo-legal moves available to the current knight.
+      # Moves are pushed into separate arrays for captures, promotions, promotion captures, and other moves.
       def get_moves(position, from, moves, captures, promotions, promotion_captures)              
         board = position.board
         self.class.directions.each do |vector|
@@ -272,7 +276,9 @@ module Chess
         end
       end
 
-      def get_captures(position, from, captures, promotion_captures) # returns a collection of all pseudo-legal moves for the current piece.
+      # Generate all pseudo-legal capture moves available to the current knight.
+      # Moves are pushed into separate arrays for captures and promotion captures.
+      def get_captures(position, from, captures, promotion_captures)
         board = position.board
         self.class.directions.each do |vector|
           to = from + vector
@@ -281,7 +287,6 @@ module Chess
           end
         end
       end
-
     end
 
     class Bishop < Piece
@@ -298,10 +303,6 @@ module Chess
 
         def type
           :B
-        end
-
-        def move_until_blocked?
-          true
         end
 
         BISHOP_DIRECTIONS = DIRECTIONS[:diagonal]
@@ -327,10 +328,6 @@ module Chess
           :R
         end
 
-        def move_until_blocked?
-          true
-        end
-
         ROOK_DIRECTIONS = DIRECTIONS[:straight]
         def directions
           ROOK_DIRECTIONS
@@ -352,10 +349,6 @@ module Chess
 
         def type
           :Q
-        end
-
-        def move_until_blocked?
-          true
         end
 
         QUEEN_DIRECTIONS = DIRECTIONS[:diagonal] + DIRECTIONS[:straight]
@@ -381,16 +374,14 @@ module Chess
           :K
         end
 
-        def move_until_blocked?
-          false
-        end
-
         KING_DIRECTIONS = DIRECTIONS[:diagonal] + DIRECTIONS[:straight]
         def directions
           KING_DIRECTIONS
         end
       end
 
+      # Generate all pseudo-legal moves available to the current king.
+      # Moves are pushed into separate arrays for captures, promotions, promotion captures, and other moves.
       def get_moves(position, from, moves, captures, promotions, promotion_captures)   
         board = position.board
         self.class.directions.each do |vector|
@@ -403,6 +394,8 @@ module Chess
         end
       end
 
+      # Generate all pseudo-legal capture moves available to the current king.
+      # Moves are pushed into separate arrays for captures and promotion captures.
       def get_captures(position, from, captures, promotion_captures) 
         board = position.board
         self.class.directions.each do |vector|
@@ -424,10 +417,6 @@ module Chess
       return 0 if sym == nil || sym == :XX
       PIECE_SYM_VALUES[sym]
     end
-
-
-
-
 
   end
 end

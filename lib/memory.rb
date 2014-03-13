@@ -55,17 +55,17 @@ module Chess
 
       # Probe the TT for saved search results.  If a valid entry is found, push the stored best move into
       # first_moves array. If stored result would cause cutoff of local search, return the stored result.
-      def probe(node, depth, alpha, beta, first_moves)
+      def probe(node, depth, alpha, beta, first_moves=nil)
         if ok?(node)
           $memory_calls += 1
           e = get(node)
-          first_moves << e.move unless e.move.nil?
+          first_moves << e.move unless e.move.nil? || first_moves.nil?
           if e.depth >= depth
             return e.alpha, e.count if e.alpha >= beta  
             return e.beta, e.count if e.beta <= alpha
           end
         end
-        nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
+        return nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
       end
 
       # If an entry is available for node, push the stored best move ("hash move") into first_moves array.

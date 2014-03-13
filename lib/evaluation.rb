@@ -176,8 +176,9 @@ module Chess
 
     # Award a bonus/penalty for each piece in play based on the value of the piece and its distance 
     # to the opposing king.
-    def self.king_safety(pos, side)
-      sum, enemy_king_location = 0, pos.enemy_king_location
+    def self.king_safety(pos, side, enemy_king_location=nil)
+      sum = 0 
+      enemy_king_location ||= pos.enemy_king_location
       pos.pieces[side].each do |loc, piece|
         sum += Tropism::get_bonus(piece, loc, enemy_king_location)
       end
