@@ -53,6 +53,18 @@ module Chess
         @table[h]
       end
 
+      def etc_probe(key, depth, alpha, beta)
+        if key_ok?(key)
+          $memory_calls += 1
+          e = @table[key]
+          if e.depth >= depth
+            return e.alpha, e.count if e.alpha >= beta  
+            return e.beta, e.count if e.beta <= alpha
+          end
+        end
+        return nil, nil
+      end
+
       # Probe the TT for saved search results.  If a valid entry is found, push the stored best move into
       # first_moves array. If stored result would cause cutoff of local search, return the stored result.
       def probe(node, depth, alpha, beta, first_moves=nil)

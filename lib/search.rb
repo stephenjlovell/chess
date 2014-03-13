@@ -252,6 +252,15 @@ module Chess
         end
       end
 
+      # if depth > 3*PLY_VALUE
+      #   moves.each do |move|
+      #     @node.hash ^= move.hash
+      #     hash_value, hash_count = $tt.etc_probe(@node.hash, depth, alpha, beta)
+      #     @node.hash ^= move.hash
+      #     return hash_value, hash_count unless hash_value.nil?
+      #   end
+      # end
+
       # Extended futility pruning:
       f_margin = depth > PLY_VALUE ? F_MARGIN_HIGH : F_MARGIN_LOW
       f_prune = (depth <= 2*PLY_VALUE) && !in_check && (alpha.abs < MATE) && (@node.value + f_margin <= alpha)

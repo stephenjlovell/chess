@@ -171,7 +171,8 @@ module Chess
     private
 
     def self.net_king_safety(pos)
-      king_safety(pos, pos.side_to_move) - king_safety(pos, pos.enemy)
+      # king_safety(pos, pos.side_to_move) - king_safety(pos, pos.enemy)
+      pos.own_tropism - pos.enemy_tropism
     end
 
     # Award a bonus/penalty for each piece in play based on the value of the piece and its distance 

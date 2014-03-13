@@ -41,21 +41,29 @@ module Chess
       end
 
       def make!(position)
-        begin
+        # begin
           @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
           position.enp_target = nil
+          position.own_tropism += @strategy.own_tropism(position, @piece, @from, @to)
+          position.enemy_tropism += @strategy.enemy_tropism(position, @piece, @from, @to)
+
           @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
+
           position.own_material += @strategy.own_material(position, @piece, @from, @to)
           position.enemy_material += @strategy.enemy_material(position, @piece, @from, @to)
-        rescue => err
-          raise Memory::HashCollisionError
-        end 
+        # rescue => err
+        #   raise Memory::HashCollisionError
+        # end 
       end
 
       def unmake!(position)
         position.own_material -= @strategy.own_material(position, @piece, @from, @to)
         position.enemy_material -= @strategy.enemy_material(position, @piece, @from, @to)
+
         @strategy.unmake!(position, @piece, @from, @to)  # delegate to the strategy class.
+
+        position.own_tropism -= @strategy.own_tropism(position, @piece, @from, @to)
+        position.enemy_tropism -= @strategy.enemy_tropism(position, @piece, @from, @to)
         position.enp_target, position.castle = @enp_target, @castle_rights
       end
 
@@ -131,6 +139,15 @@ module Chess
         @enemy_material ||= 0
       end
 
+      def own_tropism(pos, piece, from, to) 
+        @own_tropism ||= Tropism::get_bonus(piece, to, pos.enemy_king_location) 
+                       - Tropism::get_bonus(piece, from, pos.enemy_king_location) 
+      end
+
+      def enemy_tropism(pos, piece, from, to) 
+        @enemy_tropism ||= 0
+      end
+
       def relocate_piece(position, piece, from, to)
         position.own_pieces.delete(from) # relocate piece within piece list
         position.own_pieces[to] = piece
@@ -202,12 +219,12 @@ module Chess
         position.enemy_pieces[to] = @captured_piece
       end
 
-      def own_material(position, piece, from, to)
-        @own_material ||= Evaluation::pst_value(position, piece, to)-Evaluation::pst_value(position, piece, from)
-      end
-
       def enemy_material(position, piece, from, to)
         @enemy_material ||= -Evaluation::adjusted_value(position, @captured_piece, to)
+      end
+
+      def enemy_tropism(pos, piece, from, to)
+        @enemy_tropism ||= -Tropism::get_bonus(@captured_piece, to, pos.own_king_location) 
       end
 
       def print(piece, from, to)
@@ -254,7 +271,11 @@ module Chess
         position.own_king_location = from  # update king location
       end
 
-      def enemy_tropism(pos, from, to)  # ideally, this should be independent of make/unmake timing.
+      def own_tropism(pos, piece, from, to)
+        @own_tropism ||= 0
+      end
+
+      def enemy_tropism(pos, piece, from, to)  # ideally, this should be independent of make/unmake timing.
         @enemy_tropism ||= Evaluation::king_safety(pos, pos.enemy, to) - pos.enemy_tropism
       end
     end
@@ -276,8 +297,13 @@ module Chess
         position.own_king_location = from  # update king location
       end
 
-      def enemy_tropism(pos, from, to)
+      def own_tropism(pos, piece, from, to)
+        @own_tropism ||= 0
+      end
+
+      def enemy_tropism(pos, piece, from, to) # Must be called before strategy.make!
         @enemy_tropism ||= Evaluation::king_safety(pos, pos.enemy, to) - pos.enemy_tropism
+                         - Tropism::get_bonus(@captured_piece, to, to) 
       end
     end
 
@@ -302,12 +328,12 @@ module Chess
         position.enemy_pieces[@enp_target] = @captured_piece
       end
 
-      def own_material(position, piece, from, to)
-        @own_material ||= Evaluation::pst_value(position, piece, to)-Evaluation::pst_value(position, piece, from)
-      end
-
       def enemy_material(position, piece, from, to)
         @enemy_material ||= -Evaluation::adjusted_value(position, @captured_piece, @enp_target)
+      end
+
+      def enemy_tropism(pos, piece, from, to)
+        @enemy_tropism ||= -Tropism::get_bonus(@captured_piece, @enp_target, pos.own_king_location) 
       end
 
       def hash(piece, from, to)
@@ -335,7 +361,7 @@ module Chess
       end
 
       def hash(piece, from, to)
-        from_to_key(piece, from, to) ^ Memory::enp_key(to)
+        from_to_key(piece, from, to) ^ Memory::enp_key(to) # XOR in the hash key for the new en-passant target.
       end
     end
 
@@ -358,6 +384,11 @@ module Chess
       def own_material(position, piece, from, to)
         @own_material ||= Evaluation::adjusted_value(position, @queen, to)
                         - Evaluation::adjusted_value(position, piece, from)
+      end
+
+      def own_tropism(pos, piece, from, to)
+        @own_tropism ||= Tropism::get_bonus(@queen, to, pos.enemy_king_location) 
+                       - Tropism::get_bonus(piece, from, pos.enemy_king_location)
       end
 
       def hash(piece, from, to)
@@ -386,6 +417,11 @@ module Chess
       def own_material(position, piece, from, to)
         @own_material ||= Evaluation::adjusted_value(position, @queen, to)
                         - Evaluation::adjusted_value(position, piece, from)
+      end
+
+      def own_tropism(pos, piece, from, to)
+        @own_tropism ||= Tropism::get_bonus(@queen, to, pos.enemy_king_location) 
+                       - Tropism::get_bonus(piece, from, pos.enemy_king_location)
       end
 
       def print(piece, from, to)
@@ -426,6 +462,15 @@ module Chess
                         - Evaluation::pst_value(position, piece, from)
                         + Evaluation::pst_value(position, @rook, @rook_to)
                         - Evaluation::pst_value(position, @rook, @rook_from)
+      end
+
+      def own_tropism(pos, piece, from, to)
+        @own_tropism ||= Tropism::get_bonus(@rook, @rook_to, pos.enemy_king_location) 
+                       - Tropism::get_bonus(@rook, @rook_from, pos.enemy_king_location)
+      end
+
+      def enemy_tropism(pos, piece, from, to)  # recalculation of enemy tropism is caused by king movement.
+        @enemy_tropism ||= Evaluation::king_safety(pos, pos.enemy, to) - pos.enemy_tropism
       end
 
       def print(piece, from, to)

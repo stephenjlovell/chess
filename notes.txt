@@ -95,7 +95,7 @@ Search benchmarking (Win at Chess test suite):
 
 
 Current Issues ----
-
+    
   ETC appears to work best without any search extensions.
 
 
@@ -106,13 +106,17 @@ To Do ----
   Prevent king capture in SEE
   
   Switch to incremental update of king safety bonuses.
+    - When king moves, recalculate enemy tropism.  
+      This needs to be independent of make/unmake timing in case of King Capture strategy.
+    - When non-king moves, add tropism delta for to - from square to own tropism
+
+
 
   create readme
 
 
 
 Possible Enhancements to Add ----
-
 
   Add aging scheme for removal of old TT entries
 
@@ -122,6 +126,7 @@ Possible Enhancements to Add ----
     -Killer Moves
     -Non-captures sorted by History Heuristic
     -At root, use TT entry result if available, otherwise use q-search.
+
 
   Additional search extensions:
     -Principal Variation
