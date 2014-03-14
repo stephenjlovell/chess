@@ -31,7 +31,7 @@ module Chess
 
     MTD_STEP_SIZE = 5
 
-    MTDF_MAX_PASSES = 200  # Used to prevent feedback loop due to rare TT interactions.
+    MTDF_MAX_PASSES = 100  # Used to prevent feedback loop due to rare TT interactions.
 
     MATE = Pieces::MATE/Evaluation::EVAL_GRAIN
 
@@ -147,8 +147,8 @@ module Chess
         $passes += 1
         mtdf_passes += 1
 
-        gamma = guess == @lower_bound ? guess+1 : guess
-        move, guess = alpha_beta_root(depth, gamma-1, gamma)
+        gamma = guess == @lower_bound ? guess+step : guess
+        move, guess = alpha_beta_root(depth, gamma-step, gamma)
         best_move, best = move, guess unless move.nil?
 
         if guess < gamma

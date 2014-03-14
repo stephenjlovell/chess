@@ -152,6 +152,9 @@ Possible Enhancements to Add ----
 
   Add aging scheme for removal of old TT entries
 
+  Add separate depth entries for upper and lower bounds in TT entries:
+    
+
   Integrate PV extractor into Search for analytics.
 
   Move ordering enhancements:
