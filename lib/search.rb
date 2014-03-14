@@ -29,10 +29,9 @@ module Chess
 
     EXT_MAX = 2*PLY_VALUE # maximum number of check extensions permitted.
 
-    MTD_STEP_SIZE = 15
+    MTD_STEP_SIZE = 5
 
     MTDF_MAX_PASSES = 200  # Used to prevent feedback loop due to rare TT interactions.
-
 
     MATE = Pieces::MATE/Evaluation::EVAL_GRAIN
 
@@ -129,7 +128,6 @@ module Chess
         mtdf_passes += 1
 
         gamma = guess == @lower_bound ? guess+1 : guess
-
         move, guess = alpha_beta_root(depth, gamma-1, gamma)
         best_move, best = move, guess unless move.nil?
 
@@ -152,7 +150,6 @@ module Chess
         gamma = guess == @lower_bound ? guess+1 : guess
         move, guess = alpha_beta_root(depth, gamma-1, gamma)
         best_move, best = move, guess unless move.nil?
-        # return best_move, guess if Chess::current_game.clock.time_up?
 
         if guess < gamma
           @upper_bound = guess
@@ -163,18 +160,13 @@ module Chess
           guess = Chess::min(guess+step, @upper_bound-1)
           stepped_up = true
         end
-
         if stepped_up && stepped_down
           step /= 2
         elsif step < (@upper_bound - @lower_bound)/2
           step *= 2 
         end
-
-        guess += @upper_bound == guess ? -step : step
-        guess = @upper_bound if @upper_bound < guess
-        guess = @lower_bound if @lower_bound > guess
+      
       end
-
       return best_move, best
     end
 
@@ -366,7 +358,7 @@ module Chess
       $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
                  # outweigh benefit of additional entries.
 
-      move, value = block_given? ? yield : iterative_deepening_mtdf
+      move, value = block_given? ? yield : iterative_deepening_mtdf_step
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"
