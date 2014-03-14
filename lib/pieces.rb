@@ -94,13 +94,18 @@ module Chess
                         en_passant: [ EAST, WEST ] } }
 
 
-    # The Piece class provides an abstract template and shared behavior for concrete piece classes.
+    #  The abstract Piece class provides a shared interface and defualt behavior for its subclasses. Each concrete 
+    #  piece instance can:
+    #
+    #  1. generate all pseudo-legal moves (moves that may or may not leave the king in check, but which are
+    #     otherwise legal) available to it, including captures, for the current position. 
+    #  2. generate captures only. This is used during Quiesence Search.
+
     class Piece  
       attr_reader :color, :symbol
 
       def initialize(color)
-        @color = color
-        @symbol = (@color.to_s + self.class.type.to_s).to_sym
+        @color, @symbol = color, (color.to_s + self.class.type.to_s).to_sym
       end
 
       def to_s
@@ -109,13 +114,13 @@ module Chess
 
       # Generate all pseudo-legal moves available to the current piece.
       # Moves are pushed into separate arrays for captures, promotions, promotion captures, and other moves.
-      def get_moves(position, from, moves, captures, promotions, promotion_captures) 
+      def get_moves(position, from, moves, captures, promotions) 
         self.class.directions.each { |vector| get_moves_for_direction(position, position.board, from, vector, moves, captures) }
       end
 
       # Generate all pseudo-legal capture moves available to the current piece.
       # Moves are pushed into separate arrays for captures and promotion captures.
-      def get_captures(position, from, captures, promotion_captures)
+      def get_captures(position, from, captures, promotions)
         self.class.directions.each { |vector| get_captures_for_direction(position, position.board, from, vector, captures) }
       end
 
@@ -179,27 +184,39 @@ module Chess
         end
       end
 
-      def get_moves(position, from, moves, captures, promotions, promotion_captures) 
-        get_attacks(position, position.board, from, captures, promotion_captures)
+      #  Pawns behave differently than other pieces. They: 
+      #  1. can move only in one direction;
+      #  2. can attack diagonally but can only advance on file (forward);
+      #  3. can move an extra space from the starting square;
+      #  4. can capture other pawns via the En-Passant Rule;
+      #  5. are promoted to another piece type if they reach the enemy's back rank.
+
+      def get_moves(position, from, moves, captures, promotions) 
+        get_attacks(position, position.board, from, captures, promotions)
+        # get non-capture promotions only after capture promotions have been found. 
+        # This ensures capture promotions are ordered first.
         get_en_passant(position, position.board, from, captures) if position.enp_target
         get_advances(position, position.board, from, moves, promotions)
       end
 
-      def get_captures(position, from, captures, promotion_captures)         
-        get_attacks(position, position.board, from, captures, promotion_captures)
+      def get_captures(position, from, captures, promotions)         
+        get_attacks(position, position.board, from, captures, promotions)
+        # get non-capture promotions only after capture promotions have been found. 
+        # This ensures capture promotions are ordered first.
+        get_promotion(position, position.board, from, promotions)
         get_en_passant(position, position.board, from, captures) if position.enp_target
       end
 
       private
 
       # Add any valid regular pawn attacks to move array. Pawns may only attack toward the enemy side.
-      def get_attacks(position, board, from, captures, promotion_captures)
+      def get_attacks(position, board, from, captures, promotions)
         self.class.directions[@color][:attack].each do |vector|  # normal attacks
           to = from + vector
           if board.enemy?(to, @color)
             enemy = position.enemy_pieces[to]
             if to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
-              promotion_captures << Move::Factory.build(self, from, to, :pawn_promotion_capture, enemy)
+              promotions << Move::Factory.build(self, from, to, :pawn_promotion_capture, enemy)
             else
               captures << Move::Factory.build(self, from, to, :regular_capture, enemy)
             end
@@ -207,8 +224,8 @@ module Chess
         end
       end
 
-      # Add any valid En-Passant captures to move array. Any pawn that made a double move from
-      # its starting row on the previous turn is vulnerable to an En-Passant attack by the opposing side.
+      # Add any valid En-Passant captures to move array. Any pawn that made a double move on the previous turn 
+      # is vulnerable to an En-Passant attack by enemy pawns for one turn.
       def get_en_passant(position, board, from, captures)
         self.class.directions[:en_passant].each do |vector|
           target = from + vector
@@ -240,6 +257,14 @@ module Chess
         end
       end
 
+      # Get only advances resulting in pawn promotion.
+      def get_promotion(position, board, from, promotions)
+        to = from + self.class.directions[@color][:advance]
+        if board.empty?(to) && to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
+          promotions << Move::Factory.build(self, from, to, :pawn_promotion, @color)
+        end
+      end
+
     end
 
     class Knight < Piece
@@ -266,7 +291,7 @@ module Chess
 
       # Generate all pseudo-legal moves available to the current knight.
       # Moves are pushed into separate arrays for captures, promotions, promotion captures, and other moves.
-      def get_moves(position, from, moves, captures, promotions, promotion_captures)              
+      def get_moves(position, from, moves, captures, promotions)              
         board = position.board
         self.class.directions.each do |vector|
           to = from + vector
@@ -282,7 +307,7 @@ module Chess
 
       # Generate all pseudo-legal capture moves available to the current knight.
       # Moves are pushed into separate arrays for captures and promotion captures.
-      def get_captures(position, from, captures, promotion_captures)
+      def get_captures(position, from, captures, promotions)
         board = position.board
         self.class.directions.each do |vector|
           to = from + vector
@@ -386,7 +411,7 @@ module Chess
 
       # Generate all pseudo-legal moves available to the current king.
       # Moves are pushed into separate arrays for captures, promotions, promotion captures, and other moves.
-      def get_moves(position, from, moves, captures, promotions, promotion_captures)   
+      def get_moves(position, from, moves, captures, promotions)   
         board = position.board
         self.class.directions.each do |vector|
           to = from + vector
@@ -400,7 +425,7 @@ module Chess
 
       # Generate all pseudo-legal capture moves available to the current king.
       # Moves are pushed into separate arrays for captures and promotion captures.
-      def get_captures(position, from, captures, promotion_captures) 
+      def get_captures(position, from, captures, promotions) 
         board = position.board
         self.class.directions.each do |vector|
           to = from + vector

@@ -20,23 +20,42 @@
 #-----------------------------------------------------------------------------------
 
 module Chess
-  module Position
 
-    class ChessPosition # Mutable description of the game state as of a specific turn.
+    #  The Position object contains all information needed to fully describe any possible state of play in a game 
+    #  of chess.  This includes piece placement, side to move (the side that moves next from the current position),
+    #  castling rights for both sides,the location of the en-passant target square (if any), and the current 
+    #  halfmove count (for tracking draws by the Fifty Move Rule).  
+    #
+    #  1. A single position instance is stored for the current game, and is updated by making
+    #     and unmaking moves. A single instance is also maintained and updated throughout the search.
+    #     In early testing, make/unmake (or 'incremental update') reduced overhead cost of move generation by a 
+    #     factor of 3-4 compared to the 'copy/make' approach. 
+    #  2. Some heuristics needed during Evaluation can be stored in the position object and incrementally
+    #     updated during make/unmake, eliminating the need to loop over the piece lists to recalculate these
+    #     heuristics for each evaluation call. Material balance and king tropism bonus are updated in this way.
+
+    class Position
       attr_accessor :board, :pieces, :side_to_move, :enemy, :halfmove_clock, :castle, :enp_target, 
                     :hash, :king_location, :material, :tropism
 
-      def initialize(board=nil, side_to_move=:w, halfmove_clock=0)
-        @side_to_move, @halfmove_clock = side_to_move, halfmove_clock
+      def initialize(board=nil, side_to_move=:w, castle=0b1111, enp_target=nil, halfmove_clock=0)
+        @side_to_move, @castle, @enp_target, @halfmove_clock = side_to_move, castle, enp_target, halfmove_clock
+        @enemy = FLIP_COLOR[@side_to_move]
         @board = board || Board.new
-        @pieces = create_pieces(@board)
-        @enp_target, @castle, @enemy  = nil, 0b1111, FLIP_COLOR[@side_to_move]
-        @hash = @board.hash
+        # Create lists of pieces in play for each side.  This allows for move generation without having to scan 
+        # the board.
+        @pieces = create_pieces(@board) 
+        # Calculate an initial Zobrist hash key for the position.
+        @hash = @board.hash ^ Memory::enp_key(enp_target) ^ (@side_to_move==:w ? 1 : 0)
+        # Find and store the initial location of each king. Locations are updated on make/unmake of king moves.
         @king_location = set_king_location
-        w_endgame = Evaluation::base_material(self, :w) <= Pieces::ENDGAME_VALUE # determine initial endgame state
-        b_endgame = Evaluation::base_material(self, :b) <= Pieces::ENDGAME_VALUE
-        @material = { w: Evaluation::material(self, :w, w_endgame), b: Evaluation::material(self, :b, b_endgame) }
-        @tropism = { w: Evaluation::king_safety(self, :w), b: Evaluation::king_safety(self, :w) } 
+        # Set initial value of material (sum of each piece value adjusted for it's location on board) for each side.
+        # material values are incrementally updated during move generation.
+        @material = { w: Evaluation::material(self, :w, Evaluation::base_material(self, :w) <= Pieces::ENDGAME_VALUE), 
+                      b: Evaluation::material(self, :b, Evaluation::base_material(self, :b) <= Pieces::ENDGAME_VALUE) }
+        # Set initial king tropism bonuses (closeness of a side's non-king pieces to the enemy king) for each side.
+        # King tropism bonuses are incrementally updated during move generation.
+        @tropism = { w: Evaluation::king_tropism(self, :w), b: Evaluation::king_tropism(self, :w) } 
       end
 
       def own_pieces
@@ -51,12 +70,12 @@ module Chess
         @material[@side_to_move]
       end
 
-      def enemy_material
-        @material[@enemy]
-      end
-
       def own_material=(value)
         @material[@side_to_move] = value
+      end
+
+      def enemy_material
+        @material[@enemy]
       end
 
       def enemy_material=(value)
@@ -67,12 +86,12 @@ module Chess
         @tropism[@side_to_move]
       end
 
-      def enemy_tropism
-        @tropism[@enemy]
-      end
-
       def own_tropism=(value)
         @tropism[@side_to_move] = value
+      end
+
+      def enemy_tropism
+        @tropism[@enemy]
       end
 
       def enemy_tropism=(value)
@@ -91,6 +110,9 @@ module Chess
         @king_location[@enemy]
       end
 
+      # Perform a static evaluation of the current position to asses its heuristic value to the current side.
+      # This method should only be called from positions that are relatively 'quiescent', i.e. where big swings in
+      # material balance are not likely.
       def value
         Evaluation::evaluate(self)
       end
@@ -111,6 +133,7 @@ module Chess
         @board.king_in_check?(self, @enemy)
       end
 
+      # Verify that the given move would not leave the current side's king in check.
       def avoids_check?(move)
         if move.from == own_king_location 
           @board.avoids_check?(self, move.from, move.to, @side_to_move, move.to)
@@ -119,36 +142,51 @@ module Chess
         end
       end
 
-      def to_s  # return a string decribing the position in Forsyth-Edwards Notation.
+      # Return a string decribing the position in Forsyth-Edwards Notation.
+      def to_s  
         Notation::position_to_fen(self)
       end
 
       def inspect
-        "<Chess::Position::ChessPosition <@board:#{@board.inspect}>" +
-        "<@pieces:#{@pieces.inspect}> <@side_to_move:#{@side_to_move}>>"
+        "<Chess::Position <@board:#{@board.inspect}> <@pieces:#{@pieces.inspect}> <@side_to_move:#{@side_to_move}>>"
       end
 
-      def get_moves(first_moves, enhanced_sort=false) 
-        promotion_captures, captures, promotions, moves = [], [], [], []
+      # Moves should be ordered in descending order of expected subtree value. Better move ordering produces a greater
+      # number of alpha/beta cutoffs during search, reducing the size of the actual search tree toward the minimal tree.
 
-        own_pieces.each do |key, piece| 
-          piece.get_moves(self, key, moves, captures, promotions, promotion_captures)
-        end
-        # if on the pv, invest some extra time ordering captures.  otherwise, use MVV-LVA.
+      def get_moves(first_moves, enhanced_sort=false) 
+        captures, promotions, moves = [], [], []
+
+        # Loop over piece list for the current side, collecting moves available to each piece.
+        own_pieces.each { |key, piece| piece.get_moves(self, key, moves, captures, promotions) }
+        
+        # Sorting captures by Static Exchange Evaluation (SEE) is more accurate than sorting by Most-Valuable Victim,
+        # Least Valuable Attacker (MVV-LVA). However, it's also prohibitively expensive. Only use SEE in critical parts
+        # of the tree.
         enhanced_sort ? sort_captures_by_see!(captures) : sort_captures!(captures) 
-        sort_moves!(moves)  # ideally, killer moves should be searched before captures.
+        
+        # sort remaining moves by History Heuristic:
+        sort_moves!(moves)
+        
         # append move lists together in reasonable order:
-        first_moves + promotion_captures + captures + promotions + MoveGen::get_castles(self) + moves
+        first_moves + promotions + captures + MoveGen::get_castles(self) + moves
       end
       alias :edges :get_moves
 
+      # Generate only moves that create big swings in material balance, i.e. captures and promotions. 
+      # Used during Quiescence search to seek out positions from which a stable static evaluation can 
+      # be performed.
       def get_captures(first_moves) # returns a sorted array of all possible moves for the current player.
-        captures, promotion_captures = [], []
-        own_pieces.each do |key, piece| 
-          piece.get_captures(self, key, captures, promotion_captures)
-        end
+        captures, promotions = [], []
+        # Loop over piece list for the current side, collecting capture moves and promotions available to each piece.
+        own_pieces.each { |key, piece| piece.get_captures(self, key, captures, promotions) }
+        
+        # During quiesence search, sorting captures by SEE has the added benefit of enabling the pruning of bad
+        # captures (those with SEE < 0). In practice, this reduced the average number of q-nodes by around half. 
         sort_captures_by_see!(captures)
-        first_moves + promotion_captures + captures
+
+        # append move lists together in reasonable order:
+        first_moves + promotions + captures
       end
       alias :tactical_edges :get_captures
 
@@ -169,13 +207,13 @@ module Chess
         captures.sort! { |x,y| y.mvv_lva <=> x.mvv_lva } # Z-A
       end
 
-      def sort_moves!(moves) # sort remaining (non-capture) moves
-        # sort regular moves by History or Killer heuristic
+      def sort_moves!(moves)
+        # sort non-capture, non-promotion moves by History heuristic
       end
 
       private 
 
-      # Create a hash of chess pieces corresponding to the specified board representation. Used during initialization of
+      # Create piece lists indexed by board location, based on the given board.
       def create_pieces(board)        
         pieces = { w: {}, b: {} }
         board.each_square_with_location do |r,c,sym|
@@ -213,7 +251,6 @@ module Chess
 
     end
 
-  end
 end
 
 

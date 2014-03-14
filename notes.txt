@@ -1,21 +1,4 @@
 
-BOARD STATE
-  Hybrid approach: Piece list for move generation with separate board square representation for lookups.  
-GAME TREE
-  Position object used as node in search tree
-  Evaluation score stored in node
-  edges to other nodes generated based on move list.
-SEARCHING / TRAVERSAL ----
-  Iterative Deepening
-    =>  MTD(f) for scope narrowing
-        =>  Alpha-Beta Pruning with memoization
-            =>  Transposition hash table for memoization
-EVALUATION ----
-  Material balance
-  Mobility balance
-  Piece Square Tables
-
-
 Move Generation benchmarking (4-ply maximal tree, 197742 nodes)
   baseline: 46.596299 seconds
   12/30/13: 35.324076 seconds
@@ -131,6 +114,10 @@ after adding incremental update of king safety:
 
 
 
+Performance notes - 
+
+  5% improvement in node count after adding Internal Iterative Deepening (IID)
+
 
 Current Issues ----
     
@@ -140,28 +127,32 @@ Current Issues ----
 
 To Do ----
   
-  Comment position, search, search_analytics, tropism, utilities
+  Comment search, search_analytics, tropism, utilities
 
   Refactor utilities
 
   Create readme
 
 
-
 Possible Enhancements to Add ----
 
-  Add aging scheme for removal of old TT entries
 
-  Add separate depth entries for upper and lower bounds in TT entries:
-    
+  Create a threat square list, indexed by piece type, showing where enemy king can be attacked from.
+  Use to create a 'gives check' move generator. Could also be used for move ordering purposes.
+
+  Use to efficiently generate moves that give check while in q-search.
+
+
+  Use separate depth entries for upper and lower bounds in TT entries. This may improve performance of MTD-f step as well.
+
+  Add aging scheme for removal of old TT entries
 
   Integrate PV extractor into Search for analytics.
 
   Move ordering enhancements:
-    -Killer Moves
+    -Killer Moves(searched before captures)
     -Non-captures sorted by History Heuristic
     -At root, use TT entry result if available, otherwise use q-search.
-
 
   Additional search extensions:
     -Principal Variation

@@ -23,6 +23,9 @@ require './lib/location.rb'
 module Chess
   module Tropism
 
+    # The Tropism module
+
+
     def self.create_distance_table
       locations = Chess::Location::LOCATIONS[2..9].collect { |r| r[2..9] }.flatten
       hsh = create_location_hash(locations)
@@ -75,7 +78,8 @@ module Chess
       return hsh 
     end
 
-    DIST = create_distance_table  # a 64 x 64 x 6 table 
+    # Create a 64 x 64 x 6 table containing bonuses for each piece type and from/to square combination.
+    DIST = create_distance_table  
 
     def self.get_bonus(piece, piece_loc, king_loc)
       DIST[piece_loc][king_loc][piece.class.type]

@@ -41,7 +41,7 @@ module Chess
       end
 
       def make!(position)
-        # begin
+        begin
           @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
           position.enp_target = nil
           position.own_tropism += @strategy.own_tropism(position, @piece, @from, @to)
@@ -51,9 +51,9 @@ module Chess
 
           position.own_material += @strategy.own_material(position, @piece, @from, @to)
           position.enemy_material += @strategy.enemy_material(position, @piece, @from, @to)
-        # rescue => err
-        #   raise Memory::HashCollisionError
-        # end 
+        rescue => err
+          raise Memory::HashCollisionError
+        end 
       end
 
       def unmake!(position)
@@ -68,7 +68,7 @@ module Chess
       end
 
       def mvv_lva
-        @strategy.mvv_lva(@piece)
+        @mvv_lva ||= @strategy.mvv_lva(@piece)
       end
 
       def see_score(position)
@@ -243,7 +243,7 @@ module Chess
 
       def mvv_lva(piece)  # Most valuable victim, least valuable attacker heuristic. Used for move ordering of captures.
         begin
-          @mvv_lva ||= @captured_piece.class.value - piece.class.id
+          return @captured_piece.class.value - piece.class.id
         rescue => err
           raise Memory::HashCollisionError
         end
@@ -276,7 +276,7 @@ module Chess
       end
 
       def enemy_tropism(pos, piece, from, to)  # ideally, this should be independent of make/unmake timing.
-        @enemy_tropism ||= Evaluation::king_safety(pos, pos.enemy, to) - pos.enemy_tropism
+        @enemy_tropism ||= Evaluation::king_tropism(pos, pos.enemy, to) - pos.enemy_tropism
       end
     end
 
@@ -302,7 +302,7 @@ module Chess
       end
 
       def enemy_tropism(pos, piece, from, to) # Must be called before strategy.make!
-        @enemy_tropism ||= Evaluation::king_safety(pos, pos.enemy, to) - pos.enemy_tropism
+        @enemy_tropism ||= Evaluation::king_tropism(pos, pos.enemy, to) - pos.enemy_tropism
                          - Tropism::get_bonus(@captured_piece, to, to) 
       end
     end
@@ -470,7 +470,7 @@ module Chess
       end
 
       def enemy_tropism(pos, piece, from, to)  # recalculation of enemy tropism is caused by king movement.
-        @enemy_tropism ||= Evaluation::king_safety(pos, pos.enemy, to) - pos.enemy_tropism
+        @enemy_tropism ||= Evaluation::king_tropism(pos, pos.enemy, to) - pos.enemy_tropism
       end
 
       def print(piece, from, to)

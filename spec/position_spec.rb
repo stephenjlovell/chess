@@ -21,7 +21,7 @@
 
 require 'spec_helper'
 
-describe Chess::Position::ChessPosition do
+describe Chess::Position do
 
   before { @position = FactoryGirl.build(:test_position) }
   subject { @position }

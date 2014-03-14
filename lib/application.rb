@@ -108,7 +108,9 @@ module Chess # top-level application namespace.
     attr_reader :ai_player, :opponent, :winner
     
     def initialize(ai_player = :b, time_limit=TIME_LIMIT)
-      @move_history, @clock, @position = MoveHistory.new, Clock.new(time_limit), Position::ChessPosition.new
+      # Side to move for @position is always white initially. If human player chooses black, AI will get
+      # to move first.
+      @move_history, @clock, @position = MoveHistory.new, Clock.new(time_limit), Position.new
       @ai_player, @opponent = ai_player, FLIP_COLOR[ai_player]
       Chess::current_game = self
     end

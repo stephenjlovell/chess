@@ -70,14 +70,14 @@ INITIAL = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
 # used for testing Static Exchange Evaluation                                 # row  board #
 SEE_TEST = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1
-             [ :XX, :XX, nil, nil, nil, nil, :wR, nil, nil, :wB, :XX, :XX ],  # 2 1
+             [ :XX, :XX, :wK, nil, nil, nil, :wR, nil, nil, :wB, :XX, :XX ],  # 2 1
              [ :XX, :XX, nil, nil, nil, :wN, nil, nil, nil, nil, :XX, :XX ],  # 3 2
              [ :XX, :XX, nil, nil, nil, nil, nil, :wP, nil, nil, :XX, :XX ],  # 4 3
              [ :XX, :XX, nil, nil, nil, nil, :bP, nil, nil, nil, :XX, :XX ],  # 5 4
              [ :XX, :XX, nil, nil, :bN, nil, nil, :bP, nil, nil, :XX, :XX ],  # 6 5
              [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7 6
              [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 8 7
-             [ :XX, :XX, nil, nil, nil, nil, :bR, nil, nil, nil, :XX, :XX ],  # 9 8
+             [ :XX, :XX, :bK, nil, nil, nil, :bR, nil, nil, nil, :XX, :XX ],  # 9 8
              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10
              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11
       # column  0    1    2    3    4    5    6    7    8    9    10   11
@@ -117,13 +117,10 @@ FactoryGirl.define do
     end
   end
 
-  factory :position, class: Chess::Position::ChessPosition do
+  factory :position, class: Chess::Position do
     board  { FactoryGirl.build(:board) }
-    side_to_move :w
-    halfmove_clock 0
-    king_location { { w: FactoryGirl.build(:location, r: 2, c: 6),
-                      b: FactoryGirl.build(:location, r: 9, c: 6) } }
-    initialize_with { new(board, side_to_move, halfmove_clock) }
+
+    initialize_with { new(board, :w, 0b1111, nil, 0) }
 
     factory :test_position do
       board { FactoryGirl.build(:test_board) }

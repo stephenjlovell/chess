@@ -15,7 +15,7 @@ module Chess
     #       flag indicating node type, each entry saves both lower and upper bounds on the search.  These bounds
     #       can be used to adjust local bounds, and are required for some MTD(f) based search algorithms to perform well.
     #
-    #    3. Hashing - 64-bit hash keys for nodes are computed via Zobrist hashing.  Hash keys are incrementally
+    #    3. Hashing - 64-bit hash keys for nodes are computed via Zobrist hashing (see below).  Hash keys are incrementally
     #       updated during move generation.
 
     TTBoundEntry = Struct.new(:key, :depth, :count, :alpha, :beta, :move)
@@ -40,7 +40,7 @@ module Chess
         key_ok?(node.hash) 
       end
 
-      # Compare the full key to avoid possible type 2 (indexing) hash collisions
+      # Compare the full key to the key saved in the TT entry to avoid possible type 2 (indexing) hash collisions.
       def key_ok?(h)
         @table.has_key?(h) && @table[h].key == h
       end
@@ -51,18 +51,6 @@ module Chess
 
       def [](h)
         @table[h]
-      end
-
-      def etc_probe(key, depth, alpha, beta)
-        if key_ok?(key)
-          $memory_calls += 1
-          e = @table[key]
-          if e.depth >= depth
-            return e.alpha, e.count if e.alpha >= beta  
-            return e.beta, e.count if e.beta <= alpha
-          end
-        end
-        return nil, nil
       end
 
       # Probe the TT for saved search results.  If a valid entry is found, push the stored best move into
@@ -80,6 +68,20 @@ module Chess
         return nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
       end
 
+      # Special probing method for use with Enhanced Transposition Cutoffs (ETC).  Used to probe for child positions
+      # without doing a full make/unmake cycle.
+      def etc_probe(key, depth, alpha, beta)
+        if key_ok?(key)
+          $memory_calls += 1
+          e = @table[key]
+          if e.depth >= depth
+            return e.alpha, e.count if e.alpha >= beta  
+            return e.beta, e.count if e.beta <= alpha
+          end
+        end
+        return nil, nil
+      end
+
       # If an entry is available for node, push the stored best move ("hash move") into first_moves array.
       def get_hash_move(node, first_moves)
         if ok?(node)
@@ -90,7 +92,7 @@ module Chess
 
       # Store search results for node. Only overwrite existing entry if new information is based on search
       # of a larger subtree than the existing entry.
-      def store_result(node, depth, count, result, alpha, beta, move)
+      def store(node, depth, count, result, alpha, beta, move)
         h = node.hash
         if !@table.has_key?(h)
           alpha, beta = set_bounds(result, alpha, beta)

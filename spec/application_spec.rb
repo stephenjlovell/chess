@@ -43,7 +43,7 @@ describe Chess do
     end
 
     describe "should contain objects of the right class" do
-      its("position.class") { should == Chess::Position::ChessPosition }
+      its("position.class") { should == Chess::Position }
       its("move_history.class") { should == Chess::MoveHistory }
       its("clock.class") { should == Chess::Clock }
       its("clock") { should respond_to :time_up? }

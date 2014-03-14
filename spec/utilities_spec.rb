@@ -39,7 +39,7 @@ describe Chess::Notation do
 
   it 'can also convert from EPD notation' do  # does not consider halfmove clock.
     pos = Chess::Notation::epd_to_position(EPD) # EPD to position
-    pos.class.should == Chess::Position::ChessPosition
+    pos.class.should == Chess::Position
   end
 
   describe 'when translating long algebraic chess notation' do

@@ -160,7 +160,7 @@ module Chess
     # then divides the total eval score by EVAL_GRAIN to achieve the desired 'coarseness' of evaluation.
     def self.evaluate(position)
       $evaluation_calls += 1 
-      ((net_material(position) + mobility(position) + net_king_safety(position))/EVAL_GRAIN).round.to_i
+      ((net_material(position) + mobility(position) + net_king_tropism(position))/EVAL_GRAIN).round.to_i
     end
 
     # Sums up the value of all pieces in play for the given side (without any positional bonuses/penalties).
@@ -170,14 +170,14 @@ module Chess
 
     private
 
-    def self.net_king_safety(pos)
-      # king_safety(pos, pos.side_to_move) - king_safety(pos, pos.enemy)
+    def self.net_king_tropism(pos)
+      # king_tropism(pos, pos.side_to_move) - king_tropism(pos, pos.enemy)
       pos.own_tropism - pos.enemy_tropism
     end
 
     # Award a bonus/penalty for each piece in play based on the value of the piece and its distance 
     # to the opposing king.
-    def self.king_safety(pos, side, enemy_king_location=nil)
+    def self.king_tropism(pos, side, enemy_king_location=nil)
       sum = 0 
       enemy_king_location ||= pos.enemy_king_location
       pos.pieces[side].each do |loc, piece|

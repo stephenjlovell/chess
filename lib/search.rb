@@ -40,7 +40,7 @@ module Chess
     F_MARGIN_HIGH = Pieces::PIECE_VALUES[:R]/Evaluation::EVAL_GRAIN    
     F_MARGIN_LOW  = Pieces::PIECE_VALUES[:N]/Evaluation::EVAL_GRAIN
 
-
+    # Calls the mtdf_step algorithm from within 
     def self.iterative_deepening_mtdf_step(max_depth=nil)
       max_depth ||= @max_depth
       iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
@@ -92,10 +92,10 @@ module Chess
       return best_move, value
     end
 
-    def self.internal_iterative_deepening_alpha_beta(max_depth=nil)
+    def self.internal_iterative_deepening_alpha_beta(max_depth=nil, alpha=-$INF, beta=$INF, extension=0)
       max_depth ||= @max_depth
       internal_iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
-        alpha_beta_root(d, -$INF, $INF)
+        alpha_beta_root(d, alpha, beta, extension)
       end
     end
 
@@ -171,14 +171,21 @@ module Chess
     end
 
 
-    def self.alpha_beta_root(depth=nil, alpha=-$INF, beta=$INF)
+    def self.alpha_beta_root(depth=nil, alpha=-$INF, beta=$INF, extension=0)
       depth ||= @max_depth
       sum, result, best_move, legal_moves, first_moves = 1, -$INF, nil, false, []
 
       $tt.get_hash_move(@node, first_moves) # At root, use TT for move ordering only.
 
       in_check = @node.in_check?
-      extension = in_check ? EXT_CHECK : 0
+      extension += EXT_CHECK if in_check && extension < EXT_MAX
+
+      # # Internal Iterative deepening
+      # if first_moves.empty? && depth > @iid_minimum
+      #   reduction = 3*PLY_VALUE
+      #   best_move, value = internal_iterative_deepening_alpha_beta(depth-reduction, @lower_bound, @upper_bound, extension)
+      #   first_moves << best_move unless best_move.nil? || !@node.avoids_check?(best_move)
+      # end
 
       @node.edges(first_moves, true).each do |move| 
         next unless @node.avoids_check?(move)  # no illegal moves allowed at root.
@@ -204,7 +211,7 @@ module Chess
         best_move = nil
       end
 
-      $tt.store_result(@node, depth, sum, result, alpha, beta, best_move)
+      $tt.store(@node, depth, sum, result, alpha, beta, best_move)
       return best_move, result
     end
 
@@ -229,7 +236,7 @@ module Chess
         MoveGen::flip_null(@node, enp)
         @node.enp_target = enp
 
-        return value, count if value >= beta
+        return beta, count if value >= beta
       end
 
       moves = @node.edges(first_moves)
@@ -244,6 +251,7 @@ module Chess
         end
       end
 
+      # # Alternative ETC implementation - hash key update only.
       # if depth > 3*PLY_VALUE
       #   moves.each do |move|
       #     hash_value, hash_count = $tt.etc_probe(@node.hash^move.hash, depth, alpha, beta)
@@ -251,13 +259,20 @@ module Chess
       #   end
       # end
 
+      # # Internal Iterative deepening
+      # if first_moves.empty? && depth > @iid_minimum
+      #   reduction = 3*PLY_VALUE
+      #   best_move, value = internal_iterative_deepening_alpha_beta(depth-reduction, @lower_bound, @upper_bound, extension)
+      #   moves.insert(0, best_move) unless best_move.nil? || !@node.avoids_check?(best_move)
+      # end
+
+
       # Extended futility pruning:
       f_margin = depth > PLY_VALUE ? F_MARGIN_HIGH : F_MARGIN_LOW
       f_prune = (depth <= 2*PLY_VALUE) && !in_check && (alpha.abs < MATE) && (@node.value + f_margin <= alpha)
 
       sum, legal_moves = 1, false
       moves.each do |move|
-        
         MoveGen::make!(@node, move)
         if f_prune && legal_moves && !move.material_swing? && !@node.in_check? # When f_prune flag is set,
           MoveGen::unmake!(@node, move)     # prune moves that don't alter material balance or give check.
@@ -282,7 +297,7 @@ module Chess
         result = in_check ? -(MATE + @i_depth - depth/PLY_VALUE) : 0 # mate in 1 is more valuable than mate in 2
       end
 
-      $tt.store_result(@node, depth, sum, result, alpha, beta, best_move)
+      $tt.store(@node, depth, sum, result, alpha, beta, best_move)
     end
 
 
@@ -315,7 +330,7 @@ module Chess
         end        
       end
 
-      $tt.store_result(@node, depth, sum, result, alpha, beta, best_move)
+      $tt.store(@node, depth, sum, result, alpha, beta, best_move)
     end
 
 
@@ -349,16 +364,17 @@ module Chess
 
     # Module interface
 
-    def self.select_move(node, max_depth=5, aggregator=nil, verbose=true)
+    def self.select_move(node, max_ply=5, aggregator=nil, verbose=true)
       Chess::current_game.clock.restart
-      @node, @max_depth, @aggregator, @verbose = node, max_depth*PLY_VALUE, aggregator, verbose
+      @node, @max_depth, @aggregator, @verbose = node, max_ply*PLY_VALUE, aggregator, verbose
+      @iid_minimum = Chess::max(@max_depth-2*PLY_VALUE, 4*PLY_VALUE)
       @previous_value = Chess::current_game.previous_value || nil
       
       reset_counters
       $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
                  # outweigh benefit of additional entries.
 
-      move, value = block_given? ? yield : iterative_deepening_mtdf_step
+      move, value = block_given? ? yield : iterative_deepening_mtdf
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"

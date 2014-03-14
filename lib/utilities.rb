@@ -30,7 +30,7 @@ module Chess
   # application-level constants:
   ENEMY_BACK_ROW = { w: 9, b: 2 }
   FLIP_COLOR = { w: :b, b: :w }
-  TIME_LIMIT = 12  # default search time limit
+  TIME_LIMIT = 30  # default search time limit
 
   def self.max(x,y)
     x > y ? x : y
@@ -196,9 +196,7 @@ module Chess
         castle = fen_to_castle(fields[2])
         enp_target = fen_to_enp(fields[3])
         halfmove_clock = fields[4] ? fields[4].to_i : 0
-        position = Position::ChessPosition.new(board, side_to_move, halfmove_clock)
-        position.castle, position.enp_target = castle, enp_target
-        position.hash ^= Memory::enp_key(enp_target)
+        position = Position.new(board, side_to_move, castle, enp_target, halfmove_clock)
         return position
       rescue
         raise NotationFormatError, "could not convert fen to position: #{fen}"

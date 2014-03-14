@@ -21,7 +21,7 @@
  
 module Chess
 
-  # This class stores a 'square-centric' 12 x 12 board representation containing a symbol for each chess piece
+  # The Board class stores a 'square-centric' 12 x 12 board representation containing a symbol for each chess piece
   # currently in play, along with 'out-of-bounds' markers (:XX) and empty squares (nil).
 
   # The board is used to test legality of possible moves, determine what pieces can attack and defend a given square, 
