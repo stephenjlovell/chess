@@ -83,6 +83,7 @@ def take_test(problems, depth, verbose=false)
   $tt.clear  # make sure no entries are stored in TT that could bias test results.
   
   t0 = Time.now
+  puts t0
   answer_questions(problems, depth, aggregator, verbose)
   time = Time.now - t0
 

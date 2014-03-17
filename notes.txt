@@ -112,7 +112,35 @@ after adding incremental update of king safety:
   15.703747 seconds/search at depth 6
   N: 30680709; E: 28613180; B: 3.5227516316816816; Efficiency: 10.030038171174164
 
+3/14/14 after adding generation of non-capture promotions in q-search:
 
+  ------ Aggregate Search Performance -------
+
+  DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+  ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
+  1     |       | 924    | 24521    | 7307    | 29109    | 3869    | 0.0                | 0.0                | 31828    
+  2     |       | 649    | 49054    | 49321   | 92154    | 10794   | 3.0908319718486865 | 3.0908319718486865 | 98375    
+  3     |       | 791    | 415836   | 166374  | 566740   | 53471   | 5.918271918678526  | 4.276959675323799  | 582210   
+  4     |       | 681    | 574995   | 423709  | 968864   | 79695   | 1.7153673073289706 | 3.1541025774332807 | 998704   
+  5     |       | 864    | 7840507  | 3024612 | 10358357 | 700126  | 10.879218467133406 | 4.298394624838531  | 10865119 
+  6     |       | 740    | 16072101 | 7448192 | 21508359 | 2782340 | 2.1647524523201263 | 3.747370862572797  | 23520293 
+
+  Total AI score: 107/300 (35.66666666666667%)
+  18.160272170000002 seconds/search at depth 6
+  N: 36096529; E: 33523583; B: 3.747370862572797; Efficiency: 9.517784061057503
+
+  ------ Aggregate Search Performance -------
+
+  DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS  | MEMORY | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+  ------|-------|--------|---------|---------|--------|--------|--------------------|--------------------|----------
+  1     |       | 874    | 23571   | 7307    | 28159  | 3869   | 0.0                | 0.0                | 30878    
+  2     |       | 649    | 49054   | 49321   | 92154  | 10794  | 3.18592525422631   | 3.18592525422631   | 98375    
+  3     |       | 791    | 415836  | 166374  | 566740 | 53471  | 5.918271918678526  | 4.342254249476453  | 582210   
+  4     |       | 681    | 574995  | 423709  | 968864 | 79695  | 1.7153673073289706 | 3.1861230327014276 | 998704   
+
+  Total AI score: 86/300 (28.666666666666668%)
+  0.9265735100000001 seconds/search at depth 4
+  N: 1710167; E: 1655917; B: 3.1861230327014276; Efficiency: 8.997350815533629
 
 Performance notes - 
 
@@ -129,6 +157,13 @@ To Do ----
   
   Comment search, search_analytics, tropism, utilities
 
+  Under current structure, if the move in first_moves does not cause a alpha-beta cutoff, it WILL be re-expanded 
+  if it is encountered again in the main move list. Need to prevent this by removing duplicates.
+
+
+
+  add draw by fifty-move rule
+
   Refactor utilities
 
   Create readme
@@ -139,8 +174,7 @@ Possible Enhancements to Add ----
 
   Create a threat square list, indexed by piece type, showing where enemy king can be attacked from.
   Use to create a 'gives check' move generator. Could also be used for move ordering purposes.
-
-  Use to efficiently generate moves that give check while in q-search.
+    -Use to efficiently generate moves that give check while in q-search. Could do this always or only when in endgame.
 
 
   Use separate depth entries for upper and lower bounds in TT entries. This may improve performance of MTD-f step as well.
@@ -151,7 +185,9 @@ Possible Enhancements to Add ----
 
   Move ordering enhancements:
     -Killer Moves(searched before captures)
-    -Non-captures sorted by History Heuristic
+    -Non-captures sorted by History Heuristic.  Structure for History table access:
+      HIST[piece.color][piece.class.type][to]
+
     -At root, use TT entry result if available, otherwise use q-search.
 
   Additional search extensions:

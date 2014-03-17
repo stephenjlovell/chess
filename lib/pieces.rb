@@ -58,6 +58,9 @@ module Chess
     PIECE_SYM_ID = { wP: PIECE_ID[:P], wN: PIECE_ID[:N], wB: PIECE_ID[:B], wR: PIECE_ID[:R], wQ: PIECE_ID[:Q], wK: PIECE_ID[:K],
                      bP: PIECE_ID[:P], bN: PIECE_ID[:N], bB: PIECE_ID[:B], bR: PIECE_ID[:R], bQ: PIECE_ID[:Q], bK: PIECE_ID[:K] }
 
+    ENEMY_BACK_ROW = { w: 9, b: 2 }
+
+    CAN_PROMOTE = { w: 8, b: 3 }
 
     # Increment vectors used for move generation:
     NORTH = [1,0]
@@ -163,6 +166,15 @@ module Chess
     end
 
     class Pawn < Piece
+      def initialize(color)
+        super
+        directions = self.class.directions[@color]
+        @attacks, @advance, @double_advance = directions[:attack], directions[:advance], directions[:initial]
+        @enp_offset = directions[:enp_offset]
+        @start_row = directions[:start_row]
+        @enemy_back_row, @can_promote_row = ENEMY_BACK_ROW[@color], CAN_PROMOTE[@color]
+      end
+
       class << self
         VALUE = PIECE_VALUES[:P]
         def value
@@ -176,6 +188,11 @@ module Chess
 
         def type
           :P
+        end
+
+        CHECK_EN_PASSANT = DIRECTIONS[:P][:en_passant]
+        def check_en_passant
+          CHECK_EN_PASSANT
         end
 
         PAWN_DIRECTIONS = DIRECTIONS[:P]
@@ -195,7 +212,7 @@ module Chess
         get_attacks(position, position.board, from, captures, promotions)
         # get non-capture promotions only after capture promotions have been found. 
         # This ensures capture promotions are ordered first.
-        get_en_passant(position, position.board, from, captures) if position.enp_target
+        get_en_passant(position, position.board, from, captures) unless position.enp_target.nil?
         get_advances(position, position.board, from, moves, promotions)
       end
 
@@ -203,19 +220,19 @@ module Chess
         get_attacks(position, position.board, from, captures, promotions)
         # get non-capture promotions only after capture promotions have been found. 
         # This ensures capture promotions are ordered first.
-        get_promotion(position, position.board, from, promotions)
-        get_en_passant(position, position.board, from, captures) if position.enp_target
+        get_promotion(position, position.board, from, promotions) if from.r == @can_promote_row
+        get_en_passant(position, position.board, from, captures) unless position.enp_target.nil?
       end
 
       private
 
       # Add any valid regular pawn attacks to move array. Pawns may only attack toward the enemy side.
       def get_attacks(position, board, from, captures, promotions)
-        self.class.directions[@color][:attack].each do |vector|  # normal attacks
+        @attacks.each do |vector|  # normal attacks
           to = from + vector
           if board.enemy?(to, @color)
             enemy = position.enemy_pieces[to]
-            if to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
+            if to.r == @enemy_back_row # determine if pawn promotion
               promotions << Move::Factory.build(self, from, to, :pawn_promotion_capture, enemy)
             else
               captures << Move::Factory.build(self, from, to, :regular_capture, enemy)
@@ -227,11 +244,10 @@ module Chess
       # Add any valid En-Passant captures to move array. Any pawn that made a double move on the previous turn 
       # is vulnerable to an En-Passant attack by enemy pawns for one turn.
       def get_en_passant(position, board, from, captures)
-        self.class.directions[:en_passant].each do |vector|
+        self.class.check_en_passant.each do |vector|
           target = from + vector
           if position.enp_target == target
-            offset = self.class.directions[@color][:enp_offset]
-            to = target + offset
+            to = target + @enp_offset
             enemy = position.enemy_pieces[target]
             captures << Move::Factory.build(self, from, to, :enp_capture, enemy, target)
           end
@@ -240,16 +256,15 @@ module Chess
 
       # Add any valid non-capture moves to move array, including promotions and double moves (En-Passant advances).
       def get_advances(position, board, from, moves, promotions)
-        dir = self.class.directions[@color]
-        to = from + dir[:advance]
+        to = from + @advance
         if board.empty?(to)
-          if to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
+          if to.r == @enemy_back_row # determine if pawn promotion
             promotions << Move::Factory.build(self, from, to, :pawn_promotion, @color)
           else
             moves << Move::Factory.build(self, from, to, :regular_move)
           end
-          if from.r == dir[:start_row]
-            to = from + dir[:initial]
+          if from.r == @start_row
+            to = from + @double_advance
             if board.empty?(to)
               moves << Move::Factory.build(self, from, to, :enp_advance)
             end
@@ -259,8 +274,8 @@ module Chess
 
       # Get only advances resulting in pawn promotion.
       def get_promotion(position, board, from, promotions)
-        to = from + self.class.directions[@color][:advance]
-        if board.empty?(to) && to.r == ENEMY_BACK_ROW[@color] # determine if pawn promotion
+        to = from + @advance
+        if board.empty?(to)
           promotions << Move::Factory.build(self, from, to, :pawn_promotion, @color)
         end
       end

@@ -27,11 +27,11 @@ module Chess
 
     EXT_CHECK = 1  # Used to extend search by a fraction of a ply when side to move is in check.
 
-    EXT_MAX = 2*PLY_VALUE # maximum number of check extensions permitted.
+    EXT_MAX = 2*PLY_VALUE # Maximum number of check extensions permitted.
 
-    MTD_STEP_SIZE = 5
+    MTD_STEP_SIZE = 1 # Initial value used by MTD(f)-Step to adjust bounds and window size.
 
-    MTDF_MAX_PASSES = 100  # Used to prevent feedback loop due to rare TT interactions.
+    MTDF_MAX_PASSES = 50 # Used to prevent feedback loop due to rare TT interactions.
 
     MATE = Pieces::MATE/Evaluation::EVAL_GRAIN
 
@@ -40,27 +40,39 @@ module Chess
     F_MARGIN_HIGH = Pieces::PIECE_VALUES[:R]/Evaluation::EVAL_GRAIN    
     F_MARGIN_LOW  = Pieces::PIECE_VALUES[:N]/Evaluation::EVAL_GRAIN
 
-    # Calls the mtdf_step algorithm from within 
+    # Calls the MTD(f)-Step algorithm from within an iterative deepening framework.
     def self.iterative_deepening_mtdf_step(max_depth=nil)
       max_depth ||= @max_depth
       iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
         mtdf_step(guess, d)
       end
     end
-
+    # Calls the MTD(f) algorithm from within an iterative deepening framework.
     def self.iterative_deepening_mtdf(max_depth=nil)
       max_depth ||= @max_depth
       iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
         mtdf(guess, d)
       end
     end
-
+    # Calls the Alpha Beta With Memory algorithm from within an iterative deepening framework.
     def self.iterative_deepening_alpha_beta(max_depth=nil)
       max_depth ||= @max_depth
       iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
         alpha_beta_root(d, -$INF, $INF)
       end
     end
+
+    #  Iterative Deepening (ID) repeatedly calls the main search algorithm at increasing maximum depth.
+    #     
+    #  1. Provides a way to inexpensively gain information early in the search that can be re-used to make 
+    #     deeper searching more efficient. Best move information is saved in the Transposition Table (TT). This 
+    #     allows the previous best move to be tried first in later search iterations, improving the move ordering
+    #     and causing more alpha/beta cutoffs. 
+    #  2. The search result from the previous ID iteration can be used to approximate the final result. MTD(f) uses
+    #     this info to provide bounds close to the true value, reducing the total number of passes before converging
+    #     on the 'exact' minimax value.
+    #  3. The result from the previous ID iteration can be returned when a time limit is reached, allowing the search
+    #     to be cut off cleanly without risk of serious tactical blunders.
 
     def self.iterative_deepening(depth)
       best_move, guess, value = nil, nil, -$INF
@@ -73,6 +85,7 @@ module Chess
 
         best_move, value = yield(guess, d*PLY_VALUE) # call main search algo.
         
+        # Save some performance data about the search.
         first_total = $quiescence_calls + $main_calls if d == 1
         record = Analytics::SearchRecord.new(d, value, $passes, $main_calls, $quiescence_calls, 
                                              $evaluation_calls, $memory_calls, previous_total, first_total)
@@ -85,13 +98,14 @@ module Chess
           break
         end
       end
-      if @verbose
+      if @verbose 
         puts "\n"
-        tp search_records  # print out performance data as a table.
+        tp search_records  # Print out performance data as a table when in verbose mode.
       end
       return best_move, value
     end
 
+    # Calls the Alpha Beta With Memory algorithm from within an ID framework, with the specified bounds.
     def self.internal_iterative_deepening_alpha_beta(max_depth=nil, alpha=-$INF, beta=$INF, extension=0)
       max_depth ||= @max_depth
       internal_iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
@@ -99,6 +113,8 @@ module Chess
       end
     end
 
+    # At interior nodes, when a best move is not available from the TT, Internal Iterative Deepening (IID) can
+    # be called at reduced search depth to get a reasonable guess at the best move to try first.
     def self.internal_iterative_deepening(depth)
       best_move, guess, value = nil, nil, -$INF
       (1..depth).each do |d|
@@ -108,6 +124,8 @@ module Chess
       return best_move, value
     end
 
+    # Make an initial guess at the heuristic value of the root node. Used in MTD(f) when no estimate from a previous
+    # search or from the previous ID iteration is available.
     def self.get_initial_estimate
       if @node.in_check?
         move, value = alpha_beta_root(PLY_VALUE)
@@ -231,7 +249,8 @@ module Chess
         enp, reduction = @node.enp_target, 2*PLY_VALUE
         MoveGen::flip_null(@node, enp)
         @node.enp_target = nil
-        value, count = alpha_beta(depth-PLY_VALUE-reduction, -beta, -beta+1, extension, false) 
+        value, count = alpha_beta(depth-PLY_VALUE-reduction, -beta, -beta+1, extension, false)
+
         value *= -1       
         MoveGen::flip_null(@node, enp)
         @node.enp_target = enp
@@ -274,7 +293,7 @@ module Chess
       sum, legal_moves = 1, false
       moves.each do |move|
         MoveGen::make!(@node, move)
-        if f_prune && legal_moves && !move.material_swing? && !@node.in_check? # When f_prune flag is set,
+        if f_prune && legal_moves && move.quiet? && !@node.in_check? # When f_prune flag is set,
           MoveGen::unmake!(@node, move)     # prune moves that don't alter material balance or give check.
           next
         end
@@ -289,7 +308,12 @@ module Chess
         if result > alpha
           alpha = result
           best_move = move
-          break if result >= beta
+          if result >= beta
+            # If the move that caused the cutoff is a 'quiet' move (i.e. not a capture or promotion), then
+            # store the move in the Killer Moves table.
+
+            break
+          end
         end  
       end
 
@@ -300,6 +324,9 @@ module Chess
       $tt.store(@node, depth, sum, result, alpha, beta, best_move)
     end
 
+    # Depth minimax  
+    # Quiescence Search (q-search) is called at leaf nodes when depth is less than one full ply.
+    #
 
     def self.quiescence(depth, alpha=-$INF, beta=$INF)  # quiesence nodes are not part of the principal variation.
       result, best_move, first_moves = -$INF, nil, []
@@ -333,8 +360,18 @@ module Chess
       $tt.store(@node, depth, sum, result, alpha, beta, best_move)
     end
 
+    #  The Static Exchange Evaluation (SEE) heuristic provides a way to determine if a capture 
+    #  is a 'winning' or 'losing' capture.
+    #
+    #  1. When a capture results in an exchange of pieces by both sides, SEE is used to determine the 
+    #     net gain/loss in material for the side initiating the exchange.
+    #  2. SEE scoring of moves is used for move ordering of captures at critical nodes.
+    #  3. During quiescence search, SEE is used to prune losing captures. This provides a very low-risk
+    #     way of reducing the size of the q-search without impacting playing strength.
 
-    def self.see(position, to) # Iterative SEE implementation based on alpha beta pruning.
+    # This iterative SEE implementation uses alpha beta pruning as proposed by H.G. Muller here:
+    # http://www.talkchess.com/forum/viewtopic.php?topic_view=threads&p=310782&t=30905
+    def self.see(position, to) 
       board = position.board
       attackers = board.get_square_attackers(to)
       alpha, beta, score, own_counter, enemy_counter = -$INF, $INF, 0, 0, 0
@@ -364,7 +401,7 @@ module Chess
 
     # Module interface
 
-    def self.select_move(node, max_ply=5, aggregator=nil, verbose=true)
+    def self.select_move(node, max_ply=6, aggregator=nil, verbose=true)
       Chess::current_game.clock.restart
       @node, @max_depth, @aggregator, @verbose = node, max_ply*PLY_VALUE, aggregator, verbose
       @iid_minimum = Chess::max(@max_depth-2*PLY_VALUE, 4*PLY_VALUE)
@@ -374,7 +411,7 @@ module Chess
       $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
                  # outweigh benefit of additional entries.
 
-      move, value = block_given? ? yield : iterative_deepening_mtdf
+      move, value = block_given? ? yield : iterative_deepening_alpha_beta
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"

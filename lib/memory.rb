@@ -63,6 +63,9 @@ module Chess
           if e.depth >= depth
             return e.alpha, e.count if e.alpha >= beta  
             return e.beta, e.count if e.beta <= alpha
+            # Return scores for exact entries. Exact entries will not occur during zero-width 
+            # ('minimal window') searches.
+            return e.beta, e.count if alpha < e.alpha && e.beta < beta 
           end
         end
         return nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.

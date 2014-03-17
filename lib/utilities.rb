@@ -28,9 +28,8 @@ module Chess
   $tt = Memory::TranspositionTable.new  # single global transposition table instance.
 
   # application-level constants:
-  ENEMY_BACK_ROW = { w: 9, b: 2 }
   FLIP_COLOR = { w: :b, b: :w }
-  TIME_LIMIT = 30  # default search time limit
+  TIME_LIMIT = 4  # default search time limit
 
   def self.max(x,y)
     x > y ? x : y
@@ -52,10 +51,10 @@ module Chess
       move.to_s
     end
 
-    # refactor and break up this method into more manageable pieces:
 
-    def self.str_to_move(pos, str) # create a move object from long algebraic chess notation (used by UCI).
-                                   # Examples:  e2e4, e7e5, e1g1 (white short castling), e7e8q (promotion)
+    # Create a move object from long algebraic chess notation (used by UCI). Examples:  e2e4, e7e5, e1g1 
+    # (white short castling), e7e8q (for promotion).
+    def self.str_to_move(pos, str)   
       begin
         from = Location::string_to_location(str[0..1])
         to = Location::string_to_location(str[2..3])
@@ -63,12 +62,13 @@ module Chess
       rescue
         raise InvalidMoveError, 'invalid square coordinates given' 
       end
-
       raise InvalidMoveError, 'This square is already occupied by one of your pieces.' if pos.own_pieces[to]
-
       piece, enemy = pos.own_pieces[from], pos.enemy_pieces[to]
       raise InvalidMoveError, "no piece available at square #{from}" if piece.nil?
+      create_move(pos, piece, enemy, from, to)
+    end
 
+    def self.create_move(pos, from, to)
       own_type = piece.class.type
       if enemy # move is a capture, but not an en-passant capture.
         if own_type == :K
