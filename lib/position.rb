@@ -154,41 +154,55 @@ module Chess
       # Moves should be ordered in descending order of expected subtree value. Better move ordering produces a greater
       # number of alpha/beta cutoffs during search, reducing the size of the actual search tree toward the minimal tree.
 
-      def get_moves(first_moves, enhanced_sort=false) 
+      def get_moves(depth, enhanced_sort) 
         captures, promotions, moves = [], [], []
-
         # Loop over piece list for the current side, collecting moves available to each piece.
         own_pieces.each { |key, piece| piece.get_moves(self, key, moves, captures, promotions) }
-        
-        # Sorting captures by Static Exchange Evaluation (SEE) is more accurate than sorting by Most-Valuable Victim,
-        # Least Valuable Attacker (MVV-LVA). However, it's also prohibitively expensive. Only use SEE in critical parts
-        # of the tree.
-        enhanced_sort ? sort_captures_by_see!(captures) : sort_captures!(captures) 
-        
-        # sort remaining moves by History Heuristic:
-        sort_moves!(moves)
-        
-        # append move lists together in reasonable order:
-        first_moves + promotions + captures + MoveGen::get_castles(self) + moves
+        # At higher depths, expend additional effort on move ordering.
+        return promotions + if enhanced_sort
+          enhanced_sort(captures, moves, depth)
+        else
+          basic_sort(captures, moves, depth)
+        end
       end
       alias :edges :get_moves
+
+      def enhanced_sort(captures, moves, depth)
+        winning_captures, losing_captures = split_captures_by_see!(captures)
+        killers, non_killers = split_killers(moves, depth)
+        castles = MoveGen::get_castles(self)
+        winning_captures + killers + losing_captures + castles + non_killers
+      end
+
+      def basic_sort(captures, moves, depth)
+        sort_captures!(captures) + MoveGen::get_castles(self) + history_sort!(moves)
+      end
 
       # Generate only moves that create big swings in material balance, i.e. captures and promotions. 
       # Used during Quiescence search to seek out positions from which a stable static evaluation can 
       # be performed.
-      def get_captures(first_moves) # returns a sorted array of all possible moves for the current player.
+      def get_captures # returns a sorted array of all possible moves for the current player.
         captures, promotions = [], []
         # Loop over piece list for the current side, collecting capture moves and promotions available to each piece.
         own_pieces.each { |key, piece| piece.get_captures(self, key, captures, promotions) }
         
         # During quiesence search, sorting captures by SEE has the added benefit of enabling the pruning of bad
         # captures (those with SEE < 0). In practice, this reduced the average number of q-nodes by around half. 
-        sort_captures_by_see!(captures)
-
-        # append move lists together in reasonable order:
-        first_moves + promotions + captures
+        promotions + sort_captures_by_see!(captures)
       end
       alias :tactical_edges :get_captures
+
+      def split_captures_by_see!(captures)
+        winning, losing = [], []
+        sort_captures_by_see!(captures).each do |m|
+          if m.see >= 0
+            winning << m
+          else
+            losing << m
+          end
+        end
+        return winning, losing
+      end
 
       def sort_captures_by_see!(captures)
         captures.each { |m| m.see_score(self) }
@@ -198,7 +212,7 @@ module Chess
           elsif y.see < x.see
             -1
           else
-            y.mvv_lva <=> x.mvv_lva  # rely on MVV-LVA in event of tie.
+            y.mvv_lva <=> x.mvv_lva  # Rely on MVV-LVA in event of tie.
           end
         end
       end
@@ -207,8 +221,21 @@ module Chess
         captures.sort! { |x,y| y.mvv_lva <=> x.mvv_lva } # Z-A
       end
 
-      def sort_moves!(moves)
-        # sort non-capture, non-promotion moves by History heuristic
+      def split_killers(moves, depth)
+        k = $killer[depth]
+        killers, non_killers = [], []
+        moves.each do |m| 
+          if m == k.first || m == k.second || m == k.third
+            killers << m
+          else
+            non_killers << m 
+          end
+        end
+        return killers, history_sort!(non_killers)
+      end
+
+      def history_sort!(moves)
+        moves.sort! { |x,y| $history[y.piece.symbol][y.to] <=> $history[x.piece.symbol][x.to] }
       end
 
       private 

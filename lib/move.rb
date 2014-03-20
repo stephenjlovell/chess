@@ -91,8 +91,13 @@ module Chess
         @from.to_s + @to.to_s
       end
 
-      def is_quiet
-        @strategy.is_quiet
+      def ==(other)
+        return false if other.nil?
+        @from == other.from && @to == other.to
+      end
+
+      def quiet?
+        @strategy.quiet?
       end
 
       def inspect
@@ -160,7 +165,7 @@ module Chess
         Memory::psq_key(piece, from) ^ Memory::psq_key(piece, to)
       end
 
-      def is_quiet
+      def quiet?
         true
       end
     end
@@ -249,7 +254,7 @@ module Chess
         end
       end
 
-      def is_quiet
+      def quiet?
         false
       end
     end
@@ -395,7 +400,7 @@ module Chess
         Memory::psq_key(piece, from) ^ Memory::psq_key(@queen, to)
       end
 
-      def is_quiet
+      def quiet?
         false
       end
     end

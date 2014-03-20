@@ -170,20 +170,17 @@ module Chess
 
     private
 
-    def self.net_king_tropism(pos)
-      # king_tropism(pos, pos.side_to_move) - king_tropism(pos, pos.enemy)
-      pos.own_tropism - pos.enemy_tropism
+    # Returns the net value of all pieces in play (adjusted by their location on board)
+    # relative to the current side to move. Material subtotals for each side are incrementally updated 
+    # during make/unmake.
+    def self.net_material(position)
+      (position.own_material - position.enemy_material)
     end
 
-    # Award a bonus/penalty for each piece in play based on the value of the piece and its distance 
-    # to the opposing king.
-    def self.king_tropism(pos, side, enemy_king_location=nil)
-      sum = 0 
-      enemy_king_location ||= pos.enemy_king_location
-      pos.pieces[side].each do |loc, piece|
-        sum += Tropism::get_bonus(piece, loc, enemy_king_location)
-      end
-      return sum
+    # Return the net king tropism bonus.  Each side is awarded a bonus based on the proximity of its pieces
+    # to the enemy king.  King tropism bonuses for each side are incrementally updated during make and unmake.
+    def self.net_king_tropism(pos)
+      pos.own_tropism - pos.enemy_tropism
     end
 
     # Award a bonus/penalty depending on which side (if any) is in check.
@@ -197,8 +194,15 @@ module Chess
       end
     end
 
-    def self.net_material(position) # net material value for side to move.
-      (position.own_material - position.enemy_material)
+    # Award a bonus/penalty for each piece in play based on the value of the piece and its distance 
+    # to the opposing king.
+    def self.king_tropism(pos, side, enemy_king_location=nil)
+      sum = 0 
+      enemy_king_location ||= pos.enemy_king_location
+      pos.pieces[side].each do |loc, piece|
+        sum += Tropism::get_bonus(piece, loc, enemy_king_location)
+      end
+      return sum
     end
 
     def self.material(position, side, endgame=nil) # =~ 1,040 at start

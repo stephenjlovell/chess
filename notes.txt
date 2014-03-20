@@ -116,6 +116,19 @@ after adding incremental update of king safety:
 
   ------ Aggregate Search Performance -------
 
+  DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS  | MEMORY | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+  ------|-------|--------|---------|---------|--------|--------|--------------------|--------------------|----------
+  1     |       | 874    | 23571   | 7307    | 28159  | 3869   | 0.0                | 0.0                | 30878    
+  2     |       | 649    | 49054   | 49321   | 92154  | 10794  | 3.18592525422631   | 3.18592525422631   | 98375    
+  3     |       | 791    | 415836  | 166374  | 566740 | 53471  | 5.918271918678526  | 4.342254249476453  | 582210   
+  4     |       | 681    | 574995  | 423709  | 968864 | 79695  | 1.7153673073289706 | 3.1861230327014276 | 998704   
+
+  Total AI score: 86/300 (28.666666666666668%)
+  0.9265735100000001 seconds/search at depth 4
+  N: 1710167; E: 1655917; B: 3.1861230327014276; Efficiency: 8.997350815533629
+
+  ------ Aggregate Search Performance -------
+
   DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
   1     |       | 924    | 24521    | 7307    | 29109    | 3869    | 0.0                | 0.0                | 31828    
@@ -129,28 +142,64 @@ after adding incremental update of king safety:
   18.160272170000002 seconds/search at depth 6
   N: 36096529; E: 33523583; B: 3.747370862572797; Efficiency: 9.517784061057503
 
+
+3/20/14 after switching to new move ordering scheme:
+
   ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS  | MEMORY | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|---------|---------|--------|--------|--------------------|--------------------|----------
-  1     |       | 874    | 23571   | 7307    | 28159  | 3869   | 0.0                | 0.0                | 30878    
-  2     |       | 649    | 49054   | 49321   | 92154  | 10794  | 3.18592525422631   | 3.18592525422631   | 98375    
-  3     |       | 791    | 415836  | 166374  | 566740 | 53471  | 5.918271918678526  | 4.342254249476453  | 582210   
-  4     |       | 681    | 574995  | 423709  | 968864 | 79695  | 1.7153673073289706 | 3.1861230327014276 | 998704   
+  1     |       | 875    | 23649   | 7306    | 28180  | 3922   | 0.0                | 0.0                | 30955    
+  2     |       | 650    | 45530   | 46364   | 86120  | 9282   | 2.9686318849943465 | 2.9686318849943465 | 91894    
+  3     |       | 793    | 312401  | 129357  | 415340 | 49844  | 4.807256186475722  | 3.77769426959199   | 441758   
+  4     |       | 681    | 488501  | 343146  | 793729 | 72626  | 1.8825850352455418 | 2.9950407724802943 | 831647   
 
-  Total AI score: 86/300 (28.666666666666668%)
-  0.9265735100000001 seconds/search at depth 4
-  N: 1710167; E: 1655917; B: 3.1861230327014276; Efficiency: 8.997350815533629
+  Total AI score: 88/300 (29.333333333333332%)
+  0.7875455533333333 seconds/search at depth 4
+  N: 1396254; E: 1323369; B: 2.9950407724802943; Efficiency: 9.793967949571988
+
 
 Performance notes - 
 
-  5% improvement in node count after adding Internal Iterative Deepening (IID)
+  5% reduction in node count after adding Internal Iterative Deepening (IID) at depth 4. No improvement at depth 6?
+  16.5% reduction in node count after adding Killer Heuristic / History Heuristic
+  4% reduction in node count after adding History Heuristic, but execution time increases 4%.
 
+  Move ordering results:
+
+  Basic sort always:
+  Total AI score: 15/25 (60.0%)
+  9.37741276 seconds/search at depth 6
+  N: 1391449; E: 1259676; B: 3.2578893007087; Efficiency: 18.41683202279095
+
+  Regular sort always: => -1.03% node count, +3.35% execution time
+  Total AI score: 15/25 (60.0%)
+  9.7027556 seconds/search at depth 6
+  N: 1377028; E: 1247652; B: 3.253575657705981; Efficiency: 18.44124935527228
+
+  Enhanced sort always: => -12.97 node count, +7.85% execution time
+  Total AI score: 16/25 (64.0%)
+  10.1759876 seconds/search at depth 6
+  N: 1231736; E: 1135602; B: 3.175782343699573; Efficiency: 20.152514584939816
+
+  Enhanced sort at depth >= 3 ply & at root
+  Total AI score: 16/25 (64.0%)
+  9.412217759999999 seconds/search at depth 6
+  N: 1378125; E: 1249235; B: 3.251301453750776; Efficiency: 19.684425117261316
+
+  regular sort at depth >= 3 ply, enhanced sort at root
+  Total AI score: 15/25 (60.0%)
+  9.476681079999999 seconds/search at depth 6
+  N: 1382765; E: 1252010; B: 3.252623175912695; Efficiency: 18.446649597878437
+
+  Enhanced sort at depth >= 4 ply & at root =>  -1.965% node count, -1.21% execution time
+  Total AI score: 16/25 (64.0%)
+  9.26446324 seconds/search at depth 6
+  N: 1364109; E: 1231185; B: 3.238358312483991; Efficiency: 19.76310025770701
 
 Current Issues ----
     
-  ETC works differently with a complete make/unmake than with hash update only.  Both versions should be identical in node count
-  and strength.
+  ETC works differently with a complete make/unmake than with hash update only.  Both versions should be identical in node count and strength.
 
 
 To Do ----

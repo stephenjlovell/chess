@@ -25,9 +25,8 @@ module Chess
         @table = {}
       end
 
-      def clear  # Discards all entries stored in TT instance and runs garbage collection.
+      def clear
         @table = {}
-        GC.start
       end
 
       def length
@@ -55,20 +54,21 @@ module Chess
 
       # Probe the TT for saved search results.  If a valid entry is found, push the stored best move into
       # first_moves array. If stored result would cause cutoff of local search, return the stored result.
-      def probe(node, depth, alpha, beta, first_moves=nil)
+      def probe(node, depth, alpha, beta)
+        move = nil
         if ok?(node)
           $memory_calls += 1
           e = get(node)
-          first_moves << e.move unless e.move.nil? || first_moves.nil?
+          move = e.move unless e.move.nil? || !node.avoids_check?(e.move)
           if e.depth >= depth
-            return e.alpha, e.count if e.alpha >= beta  
-            return e.beta, e.count if e.beta <= alpha
+            return move, e.alpha, e.count if e.alpha >= beta  
+            return move, e.beta, e.count if e.beta <= alpha
             # Return scores for exact entries. Exact entries will not occur during zero-width 
             # ('minimal window') searches.
-            return e.beta, e.count if alpha < e.alpha && e.beta < beta 
+            return move, e.beta, e.count if alpha < e.alpha && e.beta < beta 
           end
         end
-        return nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
+        return move, nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
       end
 
       # Special probing method for use with Enhanced Transposition Cutoffs (ETC).  Used to probe for child positions
@@ -86,11 +86,12 @@ module Chess
       end
 
       # If an entry is available for node, push the stored best move ("hash move") into first_moves array.
-      def get_hash_move(node, first_moves)
+      def get_hash_move(node)
         if ok?(node)
           e = get(node)  # if hash move is illegal, don't use it:
-          first_moves << e.move unless e.move.nil? || !node.avoids_check?(e.move)
+          return e.move unless e.move.nil? || !node.avoids_check?(e.move)
         end
+        nil
       end
 
       # Store search results for node. Only overwrite existing entry if new information is based on search

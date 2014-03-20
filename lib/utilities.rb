@@ -20,16 +20,20 @@
 #-----------------------------------------------------------------------------------
 
 require './lib/memory.rb'
+require './lib/killer.rb'
+require './lib/history.rb'
 
 module Chess
 
   # global variables:
   $INF = 1.0/0.0  # infinity
   $tt = Memory::TranspositionTable.new  # single global transposition table instance.
+  $killer = Killer::KillerTable.new     # single global killer table instance.
+  $history = History::HistoryTable.new  # single global history table instance.
 
   # application-level constants:
   FLIP_COLOR = { w: :b, b: :w }
-  TIME_LIMIT = 4  # default search time limit
+  TIME_LIMIT = 30  # default search time limit
 
   def self.max(x,y)
     x > y ? x : y
