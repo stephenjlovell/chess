@@ -71,15 +71,33 @@ module Chess
         return move, nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
       end
 
+      def side_probe(node, depth, alpha, beta, is_max)
+        if ok?(node)
+          $memory_calls += 1
+          e = get(node)
+          if e.depth >= depth
+            if is_max
+              return e.alpha, e.count if e.alpha >= beta  
+            else
+              return e.beta, e.count if e.beta <= alpha
+            end
+          end
+        end
+        return nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
+      end
+
       # Special probing method for use with Enhanced Transposition Cutoffs (ETC).  Used to probe for child positions
       # without doing a full make/unmake cycle.
-      def etc_probe(key, depth, alpha, beta)
+      def etc_probe(key, depth, alpha, beta, is_max)
         if key_ok?(key)
           $memory_calls += 1
           e = @table[key]
           if e.depth >= depth
-            return e.alpha, e.count if e.alpha >= beta  
-            return e.beta, e.count if e.beta <= alpha
+            if max
+              return e.alpha, e.count if e.alpha >= beta  
+            else
+              return e.beta, e.count if e.beta <= alpha
+            end
           end
         end
         return nil, nil

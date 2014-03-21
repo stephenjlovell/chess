@@ -30,9 +30,7 @@ module Chess
     #      based on the location of the piece.  Material balance is by far the largest component of the overall evaluation
     #      score.
     #   2. Mobility - If a side is in check, that side is in serious danger and must respond to the threat.
-    #      A bonus/penalty equivalent to 3 pawns is applied depending on which side is in check.  The bonus is less than 
-    #      one knight in order to prevent the AI from occasionally sacrificing major pieces merely to earn a temporary 
-    #      evaulation bonus.
+    #      A bonus/penalty equivalent to 3.5 pawns is applied depending on which side is in check.
     #   3. King safety - The AI attempts to maximize the danger to the enemy king, and minimize the danger to its own king.
     #      This is approximated by awarding a bonus for each piece in play based on the value of the piece and its distance 
     #      to the opposing king.
@@ -186,9 +184,9 @@ module Chess
     # Award a bonus/penalty depending on which side (if any) is in check.
     def self.mobility(position)  
       if position.in_check?
-        -300
+        -350
       elsif position.enemy_in_check?
-        300
+        350
       else
         0
       end
