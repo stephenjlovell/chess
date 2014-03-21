@@ -13,7 +13,6 @@ Search benchmarking (Win at Chess test suite):
 
 2/25/14, MTD-f step
 
-  ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS  | MEMORY | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|---------|---------|--------|--------|--------------------|--------------------|----------
@@ -29,7 +28,6 @@ Search benchmarking (Win at Chess test suite):
 
 3/7/14, MTD-f
   
-  ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS   | MEMORY | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|---------|---------|---------|--------|--------------------|--------------------|----------
@@ -44,7 +42,6 @@ Search benchmarking (Win at Chess test suite):
 
 3/9/14, MTD-f after adding King Tropism heuristic to evaluation.
 
-    ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
@@ -63,7 +60,6 @@ Search benchmarking (Win at Chess test suite):
 
 after separating extensions from search depth:
 
-  ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|---------|---------|----------|---------|--------------------|--------------------|----------
@@ -80,7 +76,6 @@ after separating extensions from search depth:
 
 after fixing bug in incremental update of material:
 
-  ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|---------|---------|----------|---------|--------------------|--------------------|----------
@@ -97,7 +92,6 @@ after fixing bug in incremental update of material:
 
 after adding incremental update of king safety:
 
-  ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
@@ -114,7 +108,6 @@ after adding incremental update of king safety:
 
 3/14/14 after adding generation of non-capture promotions in q-search:
 
-  ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS  | MEMORY | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|---------|---------|--------|--------|--------------------|--------------------|----------
@@ -127,7 +120,6 @@ after adding incremental update of king safety:
   0.9265735100000001 seconds/search at depth 4
   N: 1710167; E: 1655917; B: 3.1861230327014276; Efficiency: 8.997350815533629
 
-  ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
@@ -145,7 +137,6 @@ after adding incremental update of king safety:
 
 3/20/14 after switching to new move ordering scheme:
 
-  ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS  | MEMORY | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|---------|---------|--------|--------|--------------------|--------------------|----------
@@ -158,7 +149,6 @@ after adding incremental update of king safety:
   0.76810844 seconds/search at depth 4
   N: 1396254; E: 1323369; B: 2.9950407724802943; Efficiency: 9.793967949571988
 
-  ------ Aggregate Search Performance -------
 
   DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
   ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
@@ -173,49 +163,45 @@ after adding incremental update of king safety:
   15.215443256666667 seconds/search at depth 6
   N: 27655659; E: 24905056; B: 3.619308242656125; Efficiency: 9.394060334316316
 
+3/21/14 after fixing bug in ETC:
+
+
+  DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS  | MEMORY | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+  ------|-------|--------|---------|---------|--------|--------|--------------------|--------------------|----------
+  1     |       | 875    | 23661   | 7316    | 28200  | 3938   | 0.0                | 0.0                | 30977    
+  2     |       | 654    | 45650   | 47237   | 86952  | 9455   | 2.9985795913096815 | 2.9985795913096815 | 92887    
+  3     |       | 801    | 310156  | 133284  | 416742 | 50393  | 4.773972676477871  | 3.7835349921940193 | 443440   
+  4     |       | 681    | 468127  | 330450  | 764693 | 109223 | 1.8008682121594803 | 2.954104226693423  | 798577   
+
+  Total AI score: 91/300 (30.333333333333336%)
+  0.7714771333333333 seconds/search at depth 4
+  N: 1365881; E: 1296587; B: 2.954104226693423; Efficiency: 10.268200105886558
+
 
 Performance notes - 
 
   5% reduction in node count after adding Internal Iterative Deepening (IID) at depth 4. No improvement at depth 6?
   16.5% reduction in node count after adding Killer Heuristic / History Heuristic
-  4% reduction in node count after adding History Heuristic, but execution time increases 4%.
 
-  Move ordering results:
-
-  Basic sort always:
-  Total AI score: 15/25 (60.0%)
-  9.37741276 seconds/search at depth 6
-  N: 1391449; E: 1259676; B: 3.2578893007087; Efficiency: 18.41683202279095
-
-  Regular sort always: => -1.03% node count, +3.35% execution time
-  Total AI score: 15/25 (60.0%)
-  9.7027556 seconds/search at depth 6
-  N: 1377028; E: 1247652; B: 3.253575657705981; Efficiency: 18.44124935527228
-
-  Enhanced sort always: => -12.97 node count, +7.85% execution time
-  Total AI score: 16/25 (64.0%)
-  10.1759876 seconds/search at depth 6
-  N: 1231736; E: 1135602; B: 3.175782343699573; Efficiency: 20.152514584939816
-
-  Enhanced sort at depth >= 3 ply & at root
-  Total AI score: 16/25 (64.0%)
-  9.412217759999999 seconds/search at depth 6
-  N: 1378125; E: 1249235; B: 3.251301453750776; Efficiency: 19.684425117261316
-
-  regular sort at depth >= 3 ply, enhanced sort at root
-  Total AI score: 15/25 (60.0%)
-  9.476681079999999 seconds/search at depth 6
-  N: 1382765; E: 1252010; B: 3.252623175912695; Efficiency: 18.446649597878437
-
-  Enhanced sort at depth >= 4 ply & at root =>  -1.965% node count, -1.21% execution time
-  Total AI score: 16/25 (64.0%)
-  9.26446324 seconds/search at depth 6
-  N: 1364109; E: 1231185; B: 3.238358312483991; Efficiency: 19.76310025770701
 
 Current Issues ----
     
-  ETC works differently with a complete make/unmake than with hash update only.  Both versions should be identical in node count and strength.
+  ETC works differently with a complete make/unmake than with hash update only.  Both versions should be identical in node count and playing strength. Instead:
 
+  No ETC:
+    Total AI score: 90/300 (30.0%)
+    0.7669726566666667 seconds/search at depth 4
+    N: 1401155; E: 1326932; B: 2.9969743964274986; Efficiency: 10.010095526929119
+
+  ETC with Hash update only: 
+    Total AI score: 91/300 (30.333333333333336%)
+    0.7714771333333333 seconds/search at depth 4
+    N: 1365881; E: 1296587; B: 2.954104226693423; Efficiency: 10.268200105886558
+
+  ETC with full make/unmake:
+    Total AI score: 92/300 (30.666666666666664%)
+    0.7952847399999999 seconds/search at depth 4
+    N: 1384037; E: 1311331; B: 2.9763315824017686; Efficiency: 10.303511493138144
 
 To Do ----
   

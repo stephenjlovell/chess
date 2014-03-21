@@ -142,12 +142,17 @@ module Chess
       return value
     end
 
+    # MTD(f) starts with an initial guess on the 'true' heuristic value of the minimax tree.  It makes a series 
+    # of 'zero-window' calls to alpha-beta that establish upper and lower bounds on the 'true' value.
+    # Each subsequent pass causes the bounds to 'converge' on the true minimax value. When the window between 
+    # the bounds reaches size zero, the search is complete and the 'true' value is returned.
+
     def self.mtdf(guess=nil, depth=nil) 
       guess ||= (@previous_value || get_initial_estimate)
       depth ||= @max_depth
       best, @lower_bound, @upper_bound, mtdf_passes = -$INF, -$INF, $INF, 0
 
-      while @lower_bound < @upper_bound && mtdf_passes < MTDF_MAX_PASSES
+      while @lower_bound != @upper_bound && mtdf_passes < MTDF_MAX_PASSES
         $passes += 1
         mtdf_passes += 1
 
@@ -160,8 +165,9 @@ module Chess
       return best_move, best
     end
 
+    # MTD(f)-Step modifies the MTD(f) algorithm to dynamically increase/decrease the 
 
-    def self.mtdf_step(guess=nil, depth=nil) # MTD-f with "convergence accelerator"
+    def self.mtdf_step(guess=nil, depth=nil) # MTD(f) with 'convergence accelerator'.
       guess ||= (@previous_value || get_initial_estimate)
       depth ||= @max_depth
       mtdf_passes, best, @lower_bound, @upper_bound, step = 0, -$INF, -$INF, $INF, MTD_STEP_SIZE
@@ -271,6 +277,31 @@ module Chess
       first_move, hash_value, hash_count = $tt.probe(@node, adjusted_depth, alpha, beta)
       return hash_value, hash_count unless hash_value.nil?
 
+
+      # # Enhanced Transposition Cutoffs
+      # if adjusted_depth > TWO_PLY
+      #   moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
+      #   etc_depth = adjusted_depth-PLY_VALUE
+      #   child_is_max = @node.side_to_move != @max_side
+      #   moves.each do |move|
+      #     MoveGen::make!(@node, move)
+      #     value, count = $tt.etc_probe(@node, etc_depth, -beta, -alpha, child_is_max)
+      #     MoveGen::unmake!(@node, move)
+      #     return -value, count unless value.nil? 
+      #   end
+      # end
+
+      # # Alternative ETC implementation - hash key update only.
+      # if adjusted_depth > TWO_PLY
+      #   moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
+      #   etc_depth = adjusted_depth-PLY_VALUE
+      #   child_is_max = @node.side_to_move != @max_side
+      #   moves.each do |move|
+      #     value, count = $tt.etc_key_probe(@node.hash^move.hash, etc_depth, alpha, beta, child_is_max)
+      #     return -value, count unless value.nil?
+      #   end
+      # end
+
       # Null Move Pruning
       if can_null && !in_check && adjusted_depth > TWO_PLY && !@node.in_endgame? && @node.value >= beta
         enp, reduction = @node.enp_target, TWO_PLY
@@ -317,37 +348,10 @@ module Chess
         end  
       end
 
-      moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
-
-      # # Enhanced Transposition Cutoffs
-      # if adjusted_depth >= THREE_PLY
-      #   etc_depth = adjusted_depth-PLY_VALUE
-
-      #   is_max = @node.side_to_move == @max_side
-      #   moves.each do |move|
-      #     MoveGen::make!(@node, move)
-      #     value, count = $tt.side_probe(@node, etc_depth, alpha, beta, is_max)
-      #     MoveGen::unmake!(@node, move)
-      #     return value, count unless value.nil? 
-      #   end
-      # end
-
-      # # Alternative ETC implementation - hash key update only.
-      # if adjusted_depth >= THREE_PLY
-      #   moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
-      #   is_max = @node.side_to_move == @max_side
-      #   etc_depth = adjusted_depth-PLY_VALUE
-      #   moves.each do |move|
-      #     hash_value, hash_count = $tt.etc_probe(@node.hash^move.hash, etc_depth, alpha, beta, is_max)
-      #     return hash_value, hash_count unless hash_value.nil?
-      #   end
-      # end
-
-
       # Extended futility pruning:
       f_margin = adjusted_depth > PLY_VALUE ? F_MARGIN_HIGH : F_MARGIN_LOW
       f_prune = (adjusted_depth <= TWO_PLY) && !in_check && (alpha.abs < MATE) && (@node.value + f_margin <= alpha)
-      # moves ||= @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
+      moves ||= @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
 
       moves.each do |move|
         MoveGen::make!(@node, move)
