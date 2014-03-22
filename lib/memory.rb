@@ -18,7 +18,9 @@ module Chess
     #    3. Hashing - 64-bit hash keys for nodes are computed via Zobrist hashing (see below).  Hash keys are incrementally
     #       updated during move generation.
 
-    TTBoundEntry = Struct.new(:key, :depth, :count, :alpha, :beta, :move)
+    TTBoundEntry = Struct.new(:key, :lower, :upper, :move)
+
+    TTBoundSlot = Struct.new(:depth, :count, :bound)
 
     class TranspositionTable
       def initialize
@@ -55,20 +57,24 @@ module Chess
       # Probe the TT for saved search results.  If a valid entry is found, push the stored best move into
       # first_moves array. If stored result would cause cutoff of local search, return the stored result.
       def probe(node, depth, alpha, beta)
-        move = nil
         if ok?(node)
           $memory_calls += 1
           e = get(node)
-          move = e.move unless e.move.nil? || !node.avoids_check?(e.move)
-          if e.depth >= depth
-            return move, e.alpha, e.count if e.alpha >= beta  
-            return move, e.beta, e.count if e.beta <= alpha
+          lower, upper = e.lower, e.upper
+          if !lower.nil? && lower.depth >= depth && lower.bound >= beta
+            return e.move, lower.bound, lower.count
+          elsif !upper.nil? && upper.depth >= depth && upper.bound <= alpha
+            return e.move, upper.bound, upper.count
+          elsif !lower.nil? && !upper.nil?
             # Return scores for exact entries. Exact entries will not occur during zero-width 
             # ('minimal window') searches.
-            return move, e.beta, e.count if alpha < e.alpha && e.beta < beta 
+            if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
+              return e.move, upper.bound, upper.count  # return an 'exact' score
+            end
           end
+          return e.move, nil, nil
         end
-        return move, nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
+        return nil, nil, nil  # sentinel indicating stored bounds were not sufficient to cause immediate cutoff.
       end
 
       # Special probing method for use with Enhanced Transposition Cutoffs (ETC).  Used to probe for child positions
@@ -77,13 +83,22 @@ module Chess
         if ok?(node)
           $memory_calls += 1
           e = get(node)
-          if e.depth >= depth
-            if is_max
-              return e.alpha, e.count if e.alpha >= beta  
-            else
-              return e.beta, e.count if e.beta <= alpha
+          lower, upper = e.lower, e.upper
+          if is_max
+            if !lower.nil? && lower.depth >= depth && lower.bound >= beta
+              return lower.bound, lower.count
             end
-            # return move, e.beta, e.count if alpha < e.alpha && e.beta < beta 
+          else
+            if !upper.nil? && upper.depth >= depth && upper.bound <= alpha
+              return upper.bound, upper.count
+            end
+          end
+          unless lower.nil? || upper.nil?
+            # Return scores for exact entries. Exact entries will not occur during zero-width 
+            # ('minimal window') searches.
+            if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
+              return upper.bound, upper.count  # return an 'exact' score
+            end
           end
         end
         return nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
@@ -95,11 +110,21 @@ module Chess
         if key_ok?(key)
           $memory_calls += 1
           e = @table[key]
-          if e.depth >= depth
-            if is_max
-              return e.alpha, e.count if e.alpha >= beta  
-            else
-              return e.beta, e.count if e.beta <= alpha
+          lower, upper = e.lower, e.upper
+          if is_max
+            if !lower.nil? && lower.depth >= depth && lower.bound >= beta
+              return lower.bound, lower.count
+            end
+          else
+            if !upper.nil? && upper.depth >= depth && upper.bound <= alpha
+              return upper.bound, upper.count
+            end
+          end
+          unless lower.nil? || upper.nil?
+            # Return scores for exact entries. Exact entries will not occur during zero-width 
+            # ('minimal window') searches.
+            if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
+              return upper.bound, upper.count  # return an 'exact' score
             end
           end
         end
@@ -119,28 +144,44 @@ module Chess
       # of a larger subtree than the existing entry.
       def store(node, depth, count, result, alpha, beta, move)
         h = node.hash
-        if !@table.has_key?(h)
-          alpha, beta = set_bounds(result, alpha, beta)
-          @table[h] = TTBoundEntry.new(h, depth, count, alpha, beta, move)
-        elsif count >= @table[h].count         
-          e = @table[h] 
-          alpha, beta = set_bounds(result, alpha, beta)
-          e.depth, e.count, e.alpha, e.beta, e.move = depth, count, alpha, beta, move
+        if @table.has_key?(h)
+          e = @table[h]
+          lower, upper = e.lower, e.upper
+          if result <= alpha
+            set_bound(upper, depth, count, result, e, move)
+          elsif result >= beta
+            set_bound(lower, depth, count, result, e, move)
+          elsif alpha < result && result < beta
+            set_bound(upper, depth, count, result, e, move)
+            set_bound(lower, depth, count, result, e, move)
+          end
+        else
+          lower, upper = nil, nil
+          if result <= alpha
+            upper = TTBoundSlot.new(depth, count, result)
+          elsif result >= beta
+            lower = TTBoundSlot.new(depth, count, result)
+          elsif alpha < result && result < beta
+            upper = TTBoundSlot.new(depth, count, result)
+            lower = TTBoundSlot.new(depth, count, result)    
+          end
+          @table[h] = TTBoundEntry.new(h, lower, upper, move)
         end
         return result, count
       end
 
       private
 
-      def set_bounds(result, alpha, beta)
-        a, b = alpha, beta
-        b = result if result <= alpha
-        if alpha < result && result < beta
-          a, b = result, result
-        end 
-        a = result if result >= beta
-        return a, b                       
+      def set_bound(slot, depth, count, result, entry, move)
+        if slot.nil?
+          slot = TTBoundSlot.new(depth, count, result)
+          entry.move = move
+        elsif count >= slot.count
+          slot.depth, slot.count, slot.bound = depth, count, result
+          entry.move = move
+        end
       end
+
     end # end TranspostionTable class
 
     # When using 64-bit hash keys, Type I (hash collision) errors are extremely rare (once in 10,000+ searches 
@@ -150,7 +191,6 @@ module Chess
 
     class HashCollisionError < StandardError 
     end
-
 
     # Zobrist Hashing
     #
