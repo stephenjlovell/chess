@@ -94,8 +94,6 @@ module Chess
             end
           end
           unless lower.nil? || upper.nil?
-            # Return scores for exact entries. Exact entries will not occur during zero-width 
-            # ('minimal window') searches.
             if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
               return upper.bound, upper.count  # return an 'exact' score
             end
@@ -121,8 +119,6 @@ module Chess
             end
           end
           unless lower.nil? || upper.nil?
-            # Return scores for exact entries. Exact entries will not occur during zero-width 
-            # ('minimal window') searches.
             if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
               return upper.bound, upper.count  # return an 'exact' score
             end
@@ -191,6 +187,7 @@ module Chess
 
     class HashCollisionError < StandardError 
     end
+
 
     # Zobrist Hashing
     #

@@ -173,7 +173,7 @@ module Chess
       mtdf_passes, best, @lower_bound, @upper_bound, step = 0, -$INF, -$INF, $INF, MTD_STEP_SIZE
       stepped_up, stepped_down = false, false
 
-      while @lower_bound < @upper_bound && mtdf_passes < MTDF_MAX_PASSES
+      while @lower_bound != @upper_bound && mtdf_passes < MTDF_MAX_PASSES
         $passes += 1
         mtdf_passes += 1
 

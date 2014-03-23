@@ -203,6 +203,23 @@ Current Issues ----
     0.7952847399999999 seconds/search at depth 4
     N: 1384037; E: 1311331; B: 2.9763315824017686; Efficiency: 10.303511493138144
 
+  After switching to separate depth and count for upper and lower TT bounds:
+
+  No ETC:
+    Total AI score: 95/300 (31.666666666666664%)
+    0.7692356633333334 seconds/search at depth 4
+    N: 1418235; E: 1329646; B: 2.885021654842312; Efficiency: 10.976231881489113
+
+  ETC with Hash update only: 
+    Total AI score: 95/300 (31.666666666666664%)
+    0.7756738033333334 seconds/search at depth 4
+    N: 1412006; E: 1324704; B: 2.877883325216093; Efficiency: 11.003457433177523
+  
+  ETC with full make/unmake:
+    Total AI score: 95/300 (31.666666666666664%)
+    0.7988399199999999 seconds/search at depth 4
+    N: 1415970; E: 1327469; B: 2.8824300925924105; Efficiency: 10.986100494873124
+
 To Do ----
   
   Comment search, search_analytics, tropism, utilities
