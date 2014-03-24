@@ -291,16 +291,16 @@ module Chess
       #   end
       # end
 
-      # # Alternative ETC implementation - hash key update only.
-      # if adjusted_depth > TWO_PLY
-      #   moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
-      #   etc_depth = adjusted_depth-PLY_VALUE
-      #   child_is_max = @node.side_to_move != @max_side
-      #   moves.each do |move|
-      #     value, count = $tt.etc_key_probe(@node.hash^move.hash, etc_depth, alpha, beta, child_is_max)
-      #     return -value, count unless value.nil?
-      #   end
-      # end
+      # Alternative ETC implementation - hash key update only.
+      if adjusted_depth > TWO_PLY
+        moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
+        etc_depth = adjusted_depth-PLY_VALUE
+        child_is_max = @node.side_to_move != @max_side
+        moves.each do |move|
+          value, count = $tt.etc_key_probe(@node.hash^move.hash, etc_depth, alpha, beta, child_is_max)
+          return -value, count unless value.nil?
+        end
+      end
 
       # Null Move Pruning
       if can_null && !in_check && adjusted_depth > TWO_PLY && !@node.in_endgame? && @node.value >= beta

@@ -136,30 +136,17 @@ module Chess
         h = node.hash
         if @table.has_key?(h)
           e = @table[h]
+          
           lower, upper = e.lower, e.upper
-          if result <= alpha
-            set_bound(upper, depth, count, result, e, move)
-          elsif result >= beta
-            set_bound(lower, depth, count, result, e, move)
-          elsif alpha < result && result < beta
-            set_bound(upper, depth, count, result, e, move)
-            set_bound(lower, depth, count, result, e, move)
+          adjust_bound(upper, depth, count, result, e, move) if result <= alpha
+          adjust_bound(lower, depth, count, result, e, move) if result >= beta
+          if alpha < result && result < beta
+            adjust_bound(upper, depth, count, result, e, move)
+            adjust_bound(lower, depth, count, result, e, move)
           end
+
         else
-          lower, upper = nil, nil
-          if result <= alpha
-            lower = TTBoundSlot.new(depth, count, alpha)
-            upper = TTBoundSlot.new(depth, count, result)
-          elsif result >= beta
-            lower = TTBoundSlot.new(depth, count, result)
-            upper = TTBoundSlot.new(depth, count, beta) 
-          elsif alpha < result && result < beta
-            lower = TTBoundSlot.new(depth, count, result)   
-            upper = TTBoundSlot.new(depth, count, result)
-          else
-            lower = TTBoundSlot.new(depth, count, alpha)
-            upper = TTBoundSlot.new(depth, count, beta)          
-          end
+          lower, upper = set_bounds(depth, count, result, alpha, beta)
           @table[h] = TTBoundEntry.new(h, lower, upper, move)
         end
         return result, count
@@ -167,7 +154,15 @@ module Chess
 
       private
 
-      def set_bound(slot, depth, count, result, entry, move)
+      def set_bounds(depth, count, result, alpha, beta)
+        a, b = alpha, beta
+        b = result if result <= alpha
+        a = result if result >= beta        
+        a, b = result, result if alpha < result && result < beta
+        TTBoundSlot.new(depth, count, a), TTBoundSlot.new(depth, count, b)          
+      end
+
+      def adjust_bound(slot, depth, count, result, entry, move)
         if count >= slot.count
           slot.depth, slot.count, slot.bound = depth, count, result
           entry.move = move
