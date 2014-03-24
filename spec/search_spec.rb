@@ -25,7 +25,7 @@ describe Chess::Search do
 
   before do 
     @s = Chess::Search
-    @depth = 6
+    @depth = 5
   end
 
   # describe "permits use of Iterative Deepening" do

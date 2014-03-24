@@ -61,16 +61,14 @@ module Chess
           $memory_calls += 1
           e = get(node)
           lower, upper = e.lower, e.upper
-          if !lower.nil? && lower.depth >= depth && lower.bound >= beta
+          if lower.depth >= depth && lower.bound >= beta
             return e.move, lower.bound, lower.count
-          elsif !upper.nil? && upper.depth >= depth && upper.bound <= alpha
+          elsif upper.depth >= depth && upper.bound <= alpha
             return e.move, upper.bound, upper.count
-          elsif !lower.nil? && !upper.nil?
+          elsif alpha < lower.bound && upper.bound < beta && upper.depth >= depth
             # Return scores for exact entries. Exact entries will not occur during zero-width 
             # ('minimal window') searches.
-            if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
-              return e.move, upper.bound, upper.count  # return an 'exact' score
-            end
+            return e.move, upper.bound, upper.count  # return an 'exact' score
           end
           return e.move, nil, nil
         end
@@ -85,18 +83,16 @@ module Chess
           e = get(node)
           lower, upper = e.lower, e.upper
           if is_max
-            if !lower.nil? && lower.depth >= depth && lower.bound >= beta
+            if lower.depth >= depth && lower.bound >= beta
               return lower.bound, lower.count
             end
           else
-            if !upper.nil? && upper.depth >= depth && upper.bound <= alpha
+            if upper.depth >= depth && upper.bound <= alpha
               return upper.bound, upper.count
             end
           end
-          unless lower.nil? || upper.nil?
-            if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
-              return upper.bound, upper.count  # return an 'exact' score
-            end
+          if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
+            return upper.bound, upper.count  # return an 'exact' score
           end
         end
         return nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
@@ -110,18 +106,16 @@ module Chess
           e = @table[key]
           lower, upper = e.lower, e.upper
           if is_max
-            if !lower.nil? && lower.depth >= depth && lower.bound >= beta
+            if lower.depth >= depth && lower.bound >= beta
               return lower.bound, lower.count
             end
           else
-            if !upper.nil? && upper.depth >= depth && upper.bound <= alpha
+            if upper.depth >= depth && upper.bound <= alpha
               return upper.bound, upper.count
             end
           end
-          unless lower.nil? || upper.nil?
-            if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
-              return upper.bound, upper.count  # return an 'exact' score
-            end
+          if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
+            return upper.bound, upper.count  # return an 'exact' score
           end
         end
         return nil, nil
@@ -154,12 +148,17 @@ module Chess
         else
           lower, upper = nil, nil
           if result <= alpha
+            lower = TTBoundSlot.new(depth, count, alpha)
             upper = TTBoundSlot.new(depth, count, result)
           elsif result >= beta
             lower = TTBoundSlot.new(depth, count, result)
+            upper = TTBoundSlot.new(depth, count, beta) 
           elsif alpha < result && result < beta
+            lower = TTBoundSlot.new(depth, count, result)   
             upper = TTBoundSlot.new(depth, count, result)
-            lower = TTBoundSlot.new(depth, count, result)    
+          else
+            lower = TTBoundSlot.new(depth, count, alpha)
+            upper = TTBoundSlot.new(depth, count, beta)          
           end
           @table[h] = TTBoundEntry.new(h, lower, upper, move)
         end
@@ -169,10 +168,7 @@ module Chess
       private
 
       def set_bound(slot, depth, count, result, entry, move)
-        if slot.nil?
-          slot = TTBoundSlot.new(depth, count, result)
-          entry.move = move
-        elsif count >= slot.count
+        if count >= slot.count
           slot.depth, slot.count, slot.bound = depth, count, result
           entry.move = move
         end
