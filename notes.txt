@@ -40,6 +40,7 @@ Search benchmarking (Win at Chess test suite):
   1.1498487733333334 seconds/search at depth 4
   N: 1959413; E: 1878373; B: 3.1147265555903036; Efficiency: 7.170238842716231
 
+
 3/9/14, MTD-f after adding King Tropism heuristic to evaluation.
 
 
@@ -56,9 +57,8 @@ Search benchmarking (Win at Chess test suite):
   17.46751890666667 seconds/search at depth 6
   N: 33422508; E: 31119757; B: 3.0735751357459287; Efficiency: 8.133850286998996
 
-3/13/14 MTD-f 
 
-after separating extensions from search depth:
+3/13/14 MTD-f after separating extensions from search depth:
 
 
   DEPTH | SCORE | PASSES | M_NODES | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
@@ -73,6 +73,7 @@ after separating extensions from search depth:
   Total AI score: 90/300 (30.0%)
   14.399493723333332 seconds/search at depth 6
   N: 24107130; E: 22228973; B: 2.7898043965493544; Efficiency: 10.753442082572642
+
 
 after fixing bug in incremental update of material:
 
@@ -90,6 +91,7 @@ after fixing bug in incremental update of material:
   18.44492197 seconds/search at depth 6
   N: 31562518; E: 29380777; B: 3.0044842186355063; Efficiency: 11.316418235487081
 
+
 after adding incremental update of king safety:
 
 
@@ -105,6 +107,7 @@ after adding incremental update of king safety:
   Total AI score: 106/300 (35.333333333333336%)
   15.703747 seconds/search at depth 6
   N: 30680709; E: 28613180; B: 3.5227516316816816; Efficiency: 10.030038171174164
+
 
 3/14/14 after adding generation of non-capture promotions in q-search:
 
@@ -163,6 +166,7 @@ after adding incremental update of king safety:
   15.215443256666667 seconds/search at depth 6
   N: 27655659; E: 24905056; B: 3.619308242656125; Efficiency: 9.394060334316316
 
+
 3/21/14 after fixing bug in ETC:
 
 
@@ -176,6 +180,23 @@ after adding incremental update of king safety:
   Total AI score: 91/300 (30.333333333333336%)
   0.7714771333333333 seconds/search at depth 4
   N: 1365881; E: 1296587; B: 2.954104226693423; Efficiency: 10.268200105886558
+
+
+3/25/14 MTD(f)-Step after switching to separate depth and count for upper/lower TT bounds 
+
+
+  DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+  ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
+  1     |       | 944    | 26828    | 7604    | 31086    | 4538    | 0.0                | 0.0                | 34432    
+  2     |       | 671    | 44814    | 47116   | 86016    | 9616    | 2.669900092936803  | 2.669900092936803  | 91930    
+  3     |       | 765    | 307617   | 126988  | 408739   | 49348   | 4.72756445121288   | 3.552762976565984  | 434605   
+  4     |       | 683    | 497659   | 337701  | 796286   | 74126   | 1.9221131832353517 | 2.8949238355282874 | 835360   
+  5     |       | 862    | 4999969  | 1827289 | 6297453  | 571944  | 8.172833269488605  | 3.7525027254290326 | 6827258  
+  6     |       | 752    | 13515452 | 5838975 | 17186189 | 2320156 | 2.834875582554519  | 3.547836633294197  | 19354427 
+
+  Total AI score: 112/300 (37.333333333333336%)
+  14.782794813333334 seconds/search at depth 6
+  N: 27578012; E: 24805769; B: 3.547836633294197; Efficiency: 10.522844536578623
 
 
 Performance notes - 
@@ -224,11 +245,6 @@ To Do ----
   
   Comment search, search_analytics, tropism, utilities
 
-  Under current structure, if the move in first_moves does not cause a alpha-beta cutoff, it WILL be re-expanded 
-  if it is encountered again in the main move list. Need to prevent this by removing duplicates.
-
-
-
   add draw by fifty-move rule
 
   Refactor utilities
@@ -240,9 +256,8 @@ Possible Enhancements to Add ----
 
 
   Create a threat square list, indexed by piece type, showing where enemy king can be attacked from.
-  Use to create a 'gives check' move generator. Could also be used for move ordering purposes.
+  Use to create a 'gives check' move generator. 
     -Use to efficiently generate moves that give check while in q-search. Could do this always or only when in endgame.
-
 
   Use separate depth entries for upper and lower bounds in TT entries. This may improve performance of MTD-f step as well.
 

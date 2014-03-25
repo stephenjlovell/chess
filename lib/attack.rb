@@ -25,9 +25,6 @@ module Chess
   # for listing attackers available to each side in a battle over control of a given square.  Lists of attacking pieces
   # are used to perform Static Exchange Evaluation (SEE) during search.
 
-    def king_attacked?(location, attacker_color)        
-      attacked_by_regular_piece?(location, attacker_color)  # kings cannot be attacked by other kings.
-    end
 
     # Determine if given square is attacked by any piece of the specified color, including the enemy king.
     def attacked?(location, attacker_color) 
@@ -56,19 +53,19 @@ module Chess
       false
     end
 
-    # Check for attacks by sliding pieces (bishops, rooks, queens).  
     def ray_attack?(location, threat_piece, queen, directions)
-      directions.each { |vector| return true if ray_attack_direction?(location, threat_piece, queen, vector) }
-      false
-    end
-
-    # Repeatedly add an increment vector to location, scanning along a direction 
-    # until either a threat piece is detected or movement is blocked.
-    def ray_attack_direction?(location, threat_piece, queen, vector) 
-      square = location + vector 
-      while self.on_board?(square)
-        return self[square] == threat_piece || self[square] == queen unless self.empty?(square)
-        square += vector
+      directions.each do |vector|   # Repeatedly add an increment vector to location, scanning along a direction 
+        square = location + vector  # until either a threat piece is detected or movement is blocked.
+        while self.on_board?(square)
+          unless self.empty?(square)
+            if self[square] == threat_piece || self[square] == queen
+              return true
+            else
+              break 
+            end
+          end
+          square += vector
+        end
       end
       false
     end
@@ -76,7 +73,7 @@ module Chess
     # Check for attacks by pieces that move in a single jump (knights and kings).
     def single_attack?(location, threat_piece, directions)  
       directions.each { |vector| return true if self[location + vector] == threat_piece }
-      return false
+      false
     end
 
     # Create lists of all pieces that can attack the given square during an exchange.  This includes 'hidden'
@@ -125,9 +122,31 @@ module Chess
       end
     end
 
-    # Add any available sliding pieces (bishops, rooks, queens) to attackers array. 
+    # # Add any available sliding pieces (bishops, rooks, queens) to attackers array. 
+    # def get_ray_attackers(attackers, location, threat_piece, queen, directions)
+    #   directions.each { |vector| get_ray_attackers_by_direction(attackers, location, threat_piece, queen, vector) }
+    # end
+
     def get_ray_attackers(attackers, location, threat_piece, queen, directions)
-      directions.each { |vector| get_ray_attackers_by_direction(attackers, location, threat_piece, queen, vector) }
+      directions.each do |vector| 
+        square = location + vector
+        blocking_square = nil
+        while self.on_board?(square)
+          unless self.empty?(square)                                 # If square is occupied, it's either a threat piece, 
+            if self[square] == threat_piece || self[square] == queen # a non-attacker of same color, or a piece of opposite color.
+              if blocking_square     
+                insert_hidden_attacker(attackers, square, blocking_square)
+              else
+                insert_attacker(attackers, square)
+              end
+              blocking_square = square
+            else
+              break  # if occupied by non-threat piece, stop searching this direction
+            end
+          end
+          square += vector
+        end
+      end
     end
 
     # Repeatedly add an increment vector to location, scanning along a direction and inserting any available 

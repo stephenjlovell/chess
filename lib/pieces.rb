@@ -116,53 +116,47 @@ module Chess
       end
 
       # Generate all pseudo-legal moves available to the current piece.
-      # Moves are pushed into separate arrays for captures, promotions, promotion captures, and other moves.
-      def get_moves(position, from, moves, captures, promotions) 
-        self.class.directions.each { |vector| get_moves_for_direction(position, position.board, from, vector, moves, captures) }
+      # Moves are pushed into separate arrays for captures, promotions, and other moves.
+      def get_moves(position, from, moves, captures, promotions)
+        board = position.board 
+        self.class.directions.each do |vector| 
+          # Scan along a direction by repeatedly adding a given increment vector to the current square.
+          # Add a move object of the appropriate type to the move array if the square is a valid destination.
+          to = from + vector
+          while board.on_board?(to)
+            if board.empty?(to)
+              moves << Move::Factory.build(self, from, to, :regular_move)
+            else
+              if board.enemy?(to, @color)
+                # raise Memory::HashCollisionError if position.enemy_pieces[to].nil?   
+                captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
+              end
+              break  # if path blocked by any piece, stop evaluating in this direction.
+            end
+            to += vector
+          end
+        end
+
       end
 
       # Generate all pseudo-legal capture moves available to the current piece.
-      # Moves are pushed into separate arrays for captures and promotion captures.
+      # Moves are pushed into separate arrays for captures and promotions.
       def get_captures(position, from, captures, promotions)
-        self.class.directions.each { |vector| get_captures_for_direction(position, position.board, from, vector, captures) }
-      end
-
-      private 
-
-      # Scan along a direction by repeatedly adding a given increment vector to the current square.
-      # Add a move object of the appropriate type to the move array if the square is a valid destination.
-      def get_moves_for_direction(position, board, from, vector, moves, captures)
-        to = from + vector
-        while board.on_board?(to)
-          if board.empty?(to)
-            moves << Move::Factory.build(self, from, to, :regular_move)
-          else
-            if board.enemy?(to, @color)
-              raise Memory::HashCollisionError if position.enemy_pieces[to].nil?   
-              captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
+        board = position.board
+        self.class.directions.each do |vector| 
+          to = from + vector
+          while board.on_board?(to)
+            if board.occupied?(to) 
+              if board.enemy?(to, @color)
+                # raise Memory::HashCollisionError if position.enemy_pieces[to].nil?              
+                captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
+              end
+              break # if path blocked by any piece, stop evaluating in this direction.
             end
-            break  # if path blocked by any piece, stop evaluating in this direction.
+            to += vector
           end
-          to += vector
         end
       end
-
-      # Scan along a direction by repeatedly adding a given increment vector to the current square.
-      # Add a move object of the appropriate type to the move array if the square is a valid capture target.
-      def get_captures_for_direction(position, board, from, vector, captures)
-        to = from + vector
-        while board.on_board?(to)
-          if board.occupied?(to) 
-            if board.enemy?(to, @color)
-              raise Memory::HashCollisionError if position.enemy_pieces[to].nil?              
-              captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
-            end
-            break # if path blocked by any piece, stop evaluating in this direction.
-          end
-          to += vector
-        end
-      end
-
     end
 
     class Pawn < Piece

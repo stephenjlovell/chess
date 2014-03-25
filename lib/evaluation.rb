@@ -127,6 +127,7 @@ module Chess
     def self.create_pst
       pst = { w: { false => {}, true => {} }, b: { false => {}, true => {} } }
       BASE_PST.each do |type, arr|
+
         pst[:b][false][type] = arr
         pst[:b][true][type] = arr
       end
@@ -134,6 +135,7 @@ module Chess
       pst[:b][true][:K] = KING_BASE[true]
 
       BASE_PST.each do |type, arr|
+        
         mirror = mirror_table(arr)
         pst[:w][false][type] = mirror
         pst[:w][true][type] = mirror   

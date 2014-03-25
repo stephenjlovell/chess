@@ -214,6 +214,7 @@ module Chess
 
       # Try the hash move separately first.  If hash move causes a beta cutoff, this saves the effort that would 
       # normally be expended on move generation and sorting.
+
       unless hash_move.nil? # hash move legality is checked by TT.
         $main_calls += 1
         
@@ -277,7 +278,6 @@ module Chess
       first_move, hash_value, hash_count = $tt.probe(@node, adjusted_depth, alpha, beta)
       return hash_value, hash_count unless hash_value.nil?
 
-
       # # Enhanced Transposition Cutoffs
       # if adjusted_depth > TWO_PLY
       #   moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
@@ -291,19 +291,19 @@ module Chess
       #   end
       # end
 
-      # Alternative ETC implementation - hash key update only.
-      if adjusted_depth > TWO_PLY
-        moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
-        etc_depth = adjusted_depth-PLY_VALUE
-        child_is_max = @node.side_to_move != @max_side
-        moves.each do |move|
-          value, count = $tt.etc_key_probe(@node.hash^move.hash, etc_depth, alpha, beta, child_is_max)
-          return -value, count unless value.nil?
-        end
-      end
+      # # Alternative ETC implementation - hash key update only.
+      # if adjusted_depth > TWO_PLY
+      #   moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
+      #   etc_depth = adjusted_depth-PLY_VALUE
+      #   child_is_max = @node.side_to_move != @max_side
+      #   moves.each do |move|
+      #     value, count = $tt.etc_key_probe(@node.hash^move.hash, etc_depth, -beta, -alpha, child_is_max)
+      #     return -value, count unless value.nil?
+      #   end
+      # end
 
       # Null Move Pruning
-      if can_null && !in_check && adjusted_depth > TWO_PLY && !@node.in_endgame? && @node.value >= beta
+      if !in_check && can_null && adjusted_depth > TWO_PLY && !@node.in_endgame? && @node.value >= beta
         enp, reduction = @node.enp_target, TWO_PLY
         MoveGen::flip_null(@node, enp)
         @node.enp_target = nil
@@ -351,7 +351,10 @@ module Chess
       # Extended futility pruning:
       f_margin = adjusted_depth > PLY_VALUE ? F_MARGIN_HIGH : F_MARGIN_LOW
       f_prune = (adjusted_depth <= TWO_PLY) && !in_check && (alpha.abs < MATE) && (@node.value + f_margin <= alpha)
+      
+
       moves ||= @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
+
 
       moves.each do |move|
         MoveGen::make!(@node, move)
@@ -405,6 +408,8 @@ module Chess
       return beta, sum if result >= beta # fail hard beta cutoff
       alpha = result if result > alpha
 
+      # Before generating moves, try the move provided by the TT if any. If this move causes a beta cutoff,
+      # this will save the effort that would have been spent on move generation.
       unless hash_move.nil?
         $quiescence_calls += 1
 
@@ -499,13 +504,13 @@ module Chess
       Chess::current_game.clock.restart
       @node, @max_depth, @aggregator, @verbose = node, max_ply*PLY_VALUE, aggregator, verbose
       @iid_minimum = Chess::max(@max_depth-THREE_PLY, FOUR_PLY)
-      @previous_value = Chess::current_game.previous_value || nil
+      @previous_value = Chess::current_game.previous_value
       @max_side = @node.side_to_move
       
       reset_counters
       clear_memory
 
-      move, value = block_given? ? yield : iterative_deepening_mtdf
+      move, value = block_given? ? yield : iterative_deepening_mtdf_step
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"

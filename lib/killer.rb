@@ -45,28 +45,6 @@ module Chess
         @table[depth]
       end
 
-      # def sort!(moves, depth)
-      #   k = @table[depth]
-      #   return moves if k.first.nil?
-      #   moves.sort! do |x,y|
-      #     if y == k.first
-      #       1
-      #     elsif x == k.first
-      #       -1
-      #     elsif y == k.second
-      #       1
-      #     elsif x == k.second
-      #       -1
-      #     elsif y == k.third
-      #       1
-      #     elsif x == k.third
-      #       -1
-      #     else
-      #       0
-      #     end
-      #   end        
-      # end
-
       # Store a potential killer move, ensuring that each of the three slots contains a different move.
       # Moves are added and replaced in first-in, first-out order.
       def store(pos, move, depth)

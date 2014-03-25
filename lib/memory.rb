@@ -61,16 +61,23 @@ module Chess
           $memory_calls += 1
           e = get(node)
           lower, upper = e.lower, e.upper
-          if lower.depth >= depth && lower.bound >= beta
-            return e.move, lower.bound, lower.count
-          elsif upper.depth >= depth && upper.bound <= alpha
-            return e.move, upper.bound, upper.count
-          elsif alpha < lower.bound && upper.bound < beta && upper.depth >= depth
+
+          move = !e.move.nil? && node.avoids_check?(e.move) ? e.move : nil
+
+          lower_ok = lower.depth >= depth
+          if lower_ok && lower.bound >= beta
+            return move, lower.bound, lower.count
+          end
+          upper_ok = upper.depth >= depth
+          if upper_ok && upper.bound <= alpha
+            return move, upper.bound, upper.count
+          end
+          if lower_ok && upper_ok && alpha < lower.bound && upper.bound < beta
             # Return scores for exact entries. Exact entries will not occur during zero-width 
             # ('minimal window') searches.
-            return e.move, upper.bound, upper.count  # return an 'exact' score
+            return move, upper.bound, upper.count  # return an 'exact' score
           end
-          return e.move, nil, nil
+          return move, nil, nil
         end
         return nil, nil, nil  # sentinel indicating stored bounds were not sufficient to cause immediate cutoff.
       end
@@ -82,16 +89,18 @@ module Chess
           $memory_calls += 1
           e = get(node)
           lower, upper = e.lower, e.upper
+          lower_ok, upper_ok = lower.depth >= depth, upper.depth >= depth
+
           if is_max
-            if lower.depth >= depth && lower.bound >= beta
+            if lower_ok && lower.bound >= beta
               return lower.bound, lower.count
             end
           else
-            if upper.depth >= depth && upper.bound <= alpha
+            if upper_ok && upper.bound <= alpha
               return upper.bound, upper.count
             end
           end
-          if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
+          if lower_ok && upper_ok && alpha < lower.bound && upper.bound < beta
             return upper.bound, upper.count  # return an 'exact' score
           end
         end
@@ -105,23 +114,25 @@ module Chess
           $memory_calls += 1
           e = @table[key]
           lower, upper = e.lower, e.upper
+          lower_ok, upper_ok = lower.depth >= depth, upper.depth >= depth
+
           if is_max
-            if lower.depth >= depth && lower.bound >= beta
+            if lower_ok && lower.bound >= beta
               return lower.bound, lower.count
             end
           else
-            if upper.depth >= depth && upper.bound <= alpha
+            if upper_ok && upper.bound <= alpha
               return upper.bound, upper.count
             end
           end
-          if alpha < lower.bound && upper.bound < beta && upper.depth >= depth
+          if lower_ok && upper_ok && alpha < lower.bound && upper.bound < beta
             return upper.bound, upper.count  # return an 'exact' score
           end
         end
         return nil, nil
       end
 
-      # If an entry is available for node, push the stored best move ("hash move") into first_moves array.
+      # If an entry is available for node, return the best move stored from the previous search.
       def get_hash_move(node)
         if ok?(node)
           e = get(node)  # if hash move is illegal, don't use it:
@@ -136,37 +147,43 @@ module Chess
         h = node.hash
         if @table.has_key?(h)
           e = @table[h]
-          
           lower, upper = e.lower, e.upper
-          adjust_bound(upper, depth, count, result, e, move) if result <= alpha
-          adjust_bound(lower, depth, count, result, e, move) if result >= beta
-          if alpha < result && result < beta
-            adjust_bound(upper, depth, count, result, e, move)
-            adjust_bound(lower, depth, count, result, e, move)
+          lower_ok, upper_ok = count >= lower.count, count >= upper.count
+          
+          if lower_ok
+            e.move = move
+            if result <= alpha
+              upper.depth, upper.count, upper.bound = depth, count, result
+            else
+              upper.depth, upper.count, upper.bound = depth, count, beta
+            end
           end
-
-        else
-          lower, upper = set_bounds(depth, count, result, alpha, beta)
-          @table[h] = TTBoundEntry.new(h, lower, upper, move)
+          if upper_ok
+            e.move = move
+            if result >= beta
+              lower.depth, lower.count, lower.bound = depth, count, result
+            else
+              lower.depth, lower.count, lower.bound = depth, count, alpha
+            end
+          end
+          if lower_ok && upper_ok
+            e.move = move
+            if alpha < result && result < beta
+              upper.depth, upper.count, upper.bound = depth, count, result
+              lower.depth, lower.count, lower.bound = depth, count, result
+            end
+          end
+        else 
+          a, b = alpha, beta
+          fail_low, fail_high = result <= alpha, result >= beta
+          b = result if fail_low
+          a = result if fail_high      
+          if !fail_low && !fail_high
+            a, b = result, result 
+          end
+          @table[h] = TTBoundEntry.new(h, TTBoundSlot.new(depth, count, a), TTBoundSlot.new(depth, count, b), move)
         end
         return result, count
-      end
-
-      private
-
-      def set_bounds(depth, count, result, alpha, beta)
-        a, b = alpha, beta
-        b = result if result <= alpha
-        a = result if result >= beta        
-        a, b = result, result if alpha < result && result < beta
-        TTBoundSlot.new(depth, count, a), TTBoundSlot.new(depth, count, b)          
-      end
-
-      def adjust_bound(slot, depth, count, result, entry, move)
-        if count >= slot.count
-          slot.depth, slot.count, slot.bound = depth, count, result
-          entry.move = move
-        end
       end
 
     end # end TranspostionTable class

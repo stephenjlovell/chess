@@ -159,7 +159,7 @@ module Chess
     # Uses methods provided by the Attack module to determine if the king for the specified color is in check.
     def king_in_check?(position, color, king_location=nil)
       king_location ||= position.king_location[color] # get location of king for color.
-      king_attacked?(king_location, FLIP_COLOR[color])
+      attacked_by_regular_piece?(king_location, FLIP_COLOR[color])
     end
 
     # Provide an initial hash for position object by merging (via XOR) the hash keys for each # piece/square.

@@ -100,6 +100,10 @@ def take_test(problems, depth, verbose=false)
   puts aggregator.print_summary(accuracy)
 end
 
+def colorize(str, color_code)
+  "\e[#{color_code}m#{str}\e[0m"
+end
+
 def answer_questions(problems, depth, aggregator, verbose=false)
   correct, total = 0, 0
   problems.each_with_index do |prob, i|
@@ -113,7 +117,9 @@ def answer_questions(problems, depth, aggregator, verbose=false)
       puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves} AI Answer: #{prob.ai_response}"
       puts "Running score: #{correct}/#{total} (#{(correct+0.0)/total*100}%)"
     else
-      print " | #{i+1}.#{prob.score > 0 ? "-" : "X" }"
+      # print " | #{i+1}.#{prob.score > 0 ? "-" : "X" }"
+      number = prob.score > 0 ? colorize(i+1,32) : colorize(i+1,31)
+      print "| #{number} "
     end
   end
 end 

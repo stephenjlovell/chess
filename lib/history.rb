@@ -51,7 +51,6 @@ module Chess
       end
 
       private
-
       # Create a 12 x 64 table associating piece symbol and square with an integer history counter.
       def create_history_table
         hsh = {}
@@ -61,7 +60,6 @@ module Chess
         return hsh
       end
 
-
       def create_locations_table
         locations = Chess::Location::LOCATIONS[2..9].collect { |r| r[2..9] }.flatten
         hsh = {}
@@ -70,7 +68,6 @@ module Chess
         end
         return hsh
       end
-
     end
 
   end
