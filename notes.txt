@@ -195,7 +195,7 @@ after adding incremental update of king safety:
   6     |       | 752    | 13515452 | 5838975 | 17186189 | 2320156 | 2.834875582554519  | 3.547836633294197  | 19354427 
 
   Total AI score: 112/300 (37.333333333333336%)
-  14.782794813333334 seconds/search at depth 6
+  14.344271433333333 seconds/search at depth 6
   N: 27578012; E: 24805769; B: 3.547836633294197; Efficiency: 10.522844536578623
 
 

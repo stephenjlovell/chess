@@ -125,9 +125,9 @@ module Chess
               return upper.bound, upper.count
             end
           end
-          if lower_ok && upper_ok && alpha < lower.bound && upper.bound < beta
-            return upper.bound, upper.count  # return an 'exact' score
-          end
+          # if lower_ok && upper_ok && alpha < lower.bound && upper.bound < beta
+          #   return upper.bound, upper.count  # return an 'exact' score
+          # end
         end
         return nil, nil
       end

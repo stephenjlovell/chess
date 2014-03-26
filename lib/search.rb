@@ -281,23 +281,9 @@ module Chess
       # # Enhanced Transposition Cutoffs
       # if adjusted_depth > TWO_PLY
       #   moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
-      #   etc_depth = adjusted_depth-PLY_VALUE
-      #   child_is_max = @node.side_to_move != @max_side
+      #   is_max = @node.side_to_move == @max_side
       #   moves.each do |move|
-      #     MoveGen::make!(@node, move)
-      #     value, count = $tt.etc_probe(@node, etc_depth, -beta, -alpha, child_is_max)
-      #     MoveGen::unmake!(@node, move)
-      #     return -value, count unless value.nil? 
-      #   end
-      # end
-
-      # # Alternative ETC implementation - hash key update only.
-      # if adjusted_depth > TWO_PLY
-      #   moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
-      #   etc_depth = adjusted_depth-PLY_VALUE
-      #   child_is_max = @node.side_to_move != @max_side
-      #   moves.each do |move|
-      #     value, count = $tt.etc_key_probe(@node.hash^move.hash, etc_depth, -beta, -alpha, child_is_max)
+      #     value, count = $tt.etc_key_probe(@node.hash^move.hash, adjusted_depth, -beta, -alpha, is_max)
       #     return -value, count unless value.nil?
       #   end
       # end
@@ -394,7 +380,7 @@ module Chess
       $history.store(move, nodecount)
     end
 
-    # Depth minimax  
+    
     # Quiescence Search (q-search) is called at leaf nodes when depth is less than one full ply.
     #
 
