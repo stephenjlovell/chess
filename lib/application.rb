@@ -126,12 +126,12 @@ module Chess # top-level application namespace.
     def print # print game state info along with board representation
       puts @position.to_s
       opp_score, ai_score = score(@ai_player), score(@opponent)
-      scoreboard = "\n| Move: #{move_clock} | Ply: #{halfmove_clock} " +
+      scoreboard = "| Move: #{move_clock} | Ply: #{halfmove_clock} " +
                    "| Turn: #{@position.side_to_move.to_s} " +
                    "| Castling: #{Notation::castling_availability(@position.castle)} " +
                    "| AI Score: #{ai_score} | Your Score: #{opp_score} |"
       separator = "-" * scoreboard.length
-      puts separator, scoreboard, separator, "\n"
+      puts "\n", separator, scoreboard, separator, "\n"
       @position.board.print
     end
 

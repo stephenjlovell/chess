@@ -62,7 +62,7 @@ module Chess
           e = get(node)
           lower, upper = e.lower, e.upper
 
-          move = !e.move.nil? && node.avoids_check?(e.move) ? e.move : nil
+          move = !e.move.nil? && node.evades_check?(e.move) ? e.move : nil
 
           lower_ok = lower.depth >= depth
           if lower_ok && lower.bound >= beta
@@ -136,7 +136,7 @@ module Chess
       def get_hash_move(node)
         if ok?(node)
           e = get(node)  # if hash move is illegal, don't use it:
-          return e.move unless e.move.nil? || !node.avoids_check?(e.move)
+          return e.move unless e.move.nil? || !node.evades_check?(e.move)
         end
         nil
       end

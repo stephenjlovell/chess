@@ -198,6 +198,21 @@ after adding incremental update of king safety:
   14.344271433333333 seconds/search at depth 6
   N: 27578012; E: 24805769; B: 3.547836633294197; Efficiency: 10.522844536578623
 
+3/27/14 MTD(f)-Step 
+
+  DEPTH | SCORE | PASSES | M_NODES  | Q_NODES | EVALS    | MEMORY  | EFF_BRANCHING      | AVG_EFF_BRANCHING  | ALL_NODES
+  ------|-------|--------|----------|---------|----------|---------|--------------------|--------------------|----------
+  1     |       | 765    | 19907    | 7588    | 25313    | 3343    | 0.0                | 0.0                | 27495    
+  2     |       | 673    | 44675    | 47163   | 85874    | 9661    | 3.3401709401709403 | 3.3401709401709403 | 91838    
+  3     |       | 751    | 306776   | 123848  | 405690   | 48410   | 4.688952285546288  | 3.9575121179890056 | 430624   
+  4     |       | 670    | 490099   | 338214  | 789982   | 71982   | 1.9235179646280747 | 3.111574839980435  | 828313   
+  5     |       | 797    | 4924648  | 1761533 | 6166421  | 563206  | 8.072046436552366  | 3.948945147713081  | 6686181  
+  6     |       | 731    | 12897754 | 5534755 | 16370386 | 2229260 | 2.7568067630834405 | 3.6750744892181237 | 18432509 
+
+  Total AI score: 107/300 (35.66666666666667%)
+  13.920589356666666 seconds/search at depth 6
+  N: 26496960; E: 23843666; B: 3.6750744892181237; Efficiency: 9.705018706778592
+
 
 Performance notes - 
 
@@ -207,39 +222,6 @@ Performance notes -
 
 Current Issues ----
     
-  ETC works differently with a complete make/unmake than with hash update only.  Both versions should be identical in node count and playing strength. Instead:
-
-  No ETC:
-    Total AI score: 90/300 (30.0%)
-    0.7669726566666667 seconds/search at depth 4
-    N: 1401155; E: 1326932; B: 2.9969743964274986; Efficiency: 10.010095526929119
-
-  ETC with Hash update only: 
-    Total AI score: 91/300 (30.333333333333336%)
-    0.7714771333333333 seconds/search at depth 4
-    N: 1365881; E: 1296587; B: 2.954104226693423; Efficiency: 10.268200105886558
-
-  ETC with full make/unmake:
-    Total AI score: 92/300 (30.666666666666664%)
-    0.7952847399999999 seconds/search at depth 4
-    N: 1384037; E: 1311331; B: 2.9763315824017686; Efficiency: 10.303511493138144
-
-  After switching to separate depth and count for upper and lower TT bounds:
-
-  No ETC:
-    Total AI score: 95/300 (31.666666666666664%)
-    0.7692356633333334 seconds/search at depth 4
-    N: 1418235; E: 1329646; B: 2.885021654842312; Efficiency: 10.976231881489113
-
-  ETC with Hash update only: 
-    Total AI score: 95/300 (31.666666666666664%)
-    0.7756738033333334 seconds/search at depth 4
-    N: 1412006; E: 1324704; B: 2.877883325216093; Efficiency: 11.003457433177523
-  
-  ETC with full make/unmake:
-    Total AI score: 95/300 (31.666666666666664%)
-    0.7988399199999999 seconds/search at depth 4
-    N: 1415970; E: 1327469; B: 2.8824300925924105; Efficiency: 10.986100494873124
 
 To Do ----
   
@@ -254,23 +236,18 @@ To Do ----
 
 Possible Enhancements to Add ----
 
-
-  Create a threat square list, indexed by piece type, showing where enemy king can be attacked from.
+  
+  Create a threat map showing where enemy king can be attacked from. Incrementally update map on make/unmake.
   Use to create a 'gives check' move generator. 
-    -Use to efficiently generate moves that give check while in q-search. Could do this always or only when in endgame.
+    -Use to efficiently generate moves that give check while in q-search (up to some maximum number of checks between 4-7).
+    -attack map could be used to substantially speed up board.evades_check? method.
 
-  Use separate depth entries for upper and lower bounds in TT entries. This may improve performance of MTD-f step as well.
 
   Add aging scheme for removal of old TT entries
 
-  Integrate PV extractor into Search for analytics.
+  At root, TT entries could be used for more accurate move ordering. Entry value would be used if available, otherwise q-search could be
+  used to establish an initial entry.  This would reduce branching factor and might improve strength revealing beneficial lines that might otherwise have been cut off.
 
-  Move ordering enhancements:
-    -Killer Moves(searched before captures)
-    -Non-captures sorted by History Heuristic.  Structure for History table access:
-      HIST[piece.color][piece.class.type][to]
-
-    -At root, use TT entry result if available, otherwise use q-search.
 
   Additional search extensions:
     -Principal Variation

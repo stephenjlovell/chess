@@ -134,11 +134,11 @@ module Chess
       end
 
       # Verify that the given move would not leave the current side's king in check.
-      def avoids_check?(move)
+      def evades_check?(move)
         if move.from == own_king_location 
-          @board.avoids_check?(self, move.from, move.to, @side_to_move, move.to)
+          @board.evades_check?(self, move.from, move.to, @side_to_move, move.to)
         else
-          @board.avoids_check?(self, move.from, move.to, @side_to_move, own_king_location)
+          @board.evades_check?(self, move.from, move.to, @side_to_move, own_king_location)
         end
       end
 

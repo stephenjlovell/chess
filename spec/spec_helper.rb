@@ -28,7 +28,7 @@ require 'factories.rb'
 def perft(node, depth)  # Legal MoveGen speed/accuracy test. Counts all leaf nodes at depth.
   return 1 if depth == 0
   sum = 0
-  node.get_moves([]).each do |move|
+  node.get_moves(depth, true).each do |move|
     Chess::MoveGen::make!(node, move) 
     sum += perft(node, depth-1)
     Chess::MoveGen::unmake!(node, move)
@@ -39,8 +39,8 @@ end
 def perft_legal(node, depth)  # Pseudolegal MoveGen speed test. Counts all leaf nodes at depth.
   return 1 if depth == 0
   sum = 0
-  node.get_moves([]).each do |move|
-    next unless node.avoids_check?(move)
+  node.get_moves(depth, true).each do |move|
+    next unless node.evades_check?(move)
     Chess::MoveGen::make!(node, move) 
     sum += perft_legal(node, depth-1)
     Chess::MoveGen::unmake!(node, move)

@@ -48,32 +48,45 @@ module Chess
       end
     end
 
+    # Returns a value between 1 (min. distance) and 7 (max. distance)
+    def self.chebyshev_distance(from, to)
+      Chess::max((to.r - from.r).abs, (to.c - from.c).abs)
+    end
+
+    # Returns 1 (maximum bonus) at minimum distance, and 0 (no bonus) at max distance.
+    def self.chebyshev_distance_ratio(from, to)
+      distance = chebyshev_distance(from, to)
+      -distance/6.0 + 7.0/6.0
+    end
+
     # Also called Taxicab Distance.  Returns a value between 1 (min. distance) and 14 (max. distance)
     def self.manhattan_distance(from, to)
       ((to.r - from.r).abs + (to.c - from.c).abs)
     end # distance between 1 and 14
 
     # Returns 1 (maximum bonus) at minimum distance, and 0 (no bonus) at max distance.
-    def self.distance_ratio(from, to)
+    def self.manhattan_distance_ratio(from, to)
       distance = manhattan_distance(from, to)
       -distance/13.0 + 14.0/13.0
     end
 
     # Base bonuses are scaled so that total king tropism eval. component
     # is around 5% of total material value.
-    BASE_BONUS_RATIO = 0.10
-    BASE_BONUS = {  P: Pieces::PIECE_VALUES[:P]*BASE_BONUS_RATIO,  # 10.0
-                    N: Pieces::PIECE_VALUES[:N]*BASE_BONUS_RATIO,  # 32.0
-                    B: Pieces::PIECE_VALUES[:B]*BASE_BONUS_RATIO,  # 33.3
-                    R: Pieces::PIECE_VALUES[:R]*BASE_BONUS_RATIO,  # 51.0
-                    Q: Pieces::PIECE_VALUES[:Q]*BASE_BONUS_RATIO,  # 88.0
-                    K: 0.0 } # 32.0
+    BASE_BONUS_RATIO = 0.15
+    BASE_BONUS = {  P: Pieces::PIECE_VALUES[:P]*BASE_BONUS_RATIO,  #  15.00
+                    N: Pieces::PIECE_VALUES[:N]*BASE_BONUS_RATIO,  #  48.00
+                    B: Pieces::PIECE_VALUES[:B]*BASE_BONUS_RATIO,  #  49.95
+                    R: Pieces::PIECE_VALUES[:R]*BASE_BONUS_RATIO,  #  76.50
+                    Q: Pieces::PIECE_VALUES[:Q]*BASE_BONUS_RATIO,  # 132.00
+                    K: 0.0 } # 0.0
+
 
     # Each piece is awarded a bonus scaled based on how close it is to the enemy king.
     def self.create_bonus_table(from, to)
-      ratio, hsh = distance_ratio(from, to), {}
-      BASE_BONUS.each do |key, bonus|
-        hsh[key] = (bonus*ratio).round.to_i
+      hsh = {}
+      distance = manhattan_distance_ratio(from, to)
+      BASE_BONUS.each do |key, bonus| 
+        hsh[key] = (bonus*distance).round.to_i
       end
       return hsh 
     end

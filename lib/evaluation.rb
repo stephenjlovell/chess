@@ -160,7 +160,8 @@ module Chess
     # then divides the total eval score by EVAL_GRAIN to achieve the desired 'coarseness' of evaluation.
     def self.evaluate(position)
       $evaluation_calls += 1 
-      ((net_material(position) + mobility(position) + net_king_tropism(position))/EVAL_GRAIN).round.to_i
+      # ((net_material(position) + mobility(position) + net_king_tropism(position))/EVAL_GRAIN).round.to_i
+      net_material(position) + net_king_tropism(position) + mobility(position) 
     end
 
     # Sums up the value of all pieces in play for the given side (without any positional bonuses/penalties).

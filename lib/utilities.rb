@@ -72,12 +72,12 @@ module Chess
       create_move(pos, piece, enemy, from, to)
     end
 
-    def self.create_move(pos, from, to)
+    def self.create_move(pos, piece, enemy, from, to)
       own_type = piece.class.type
       if enemy # move is a capture, but not an en-passant capture.
         if own_type == :K
           return Move::Factory.build(piece, from, to, :king_capture, enemy)
-        elsif own_type == :P && to.r == ENEMY_BACK_ROW[piece.color]
+        elsif own_type == :P && to.r == Pieces::ENEMY_BACK_ROW[piece.color]
           return Move::Factory.build(piece, from, to, :pawn_promotion_capture, enemy) # implicit pawn promotion
         else
           return Move::Factory.build(piece, from, to, :regular_capture, enemy)
@@ -86,7 +86,7 @@ module Chess
         case own_type
         when :P
           if from + [1,0] == to || from + [-1,0] == to
-            if to.r == ENEMY_BACK_ROW[piece.color]
+            if to.r == Pieces::ENEMY_BACK_ROW[piece.color]
               return Move::Factory.build(piece, from, to, :pawn_promotion) 
             else
               return Move::Factory.build(piece, from, to, :pawn_move)     

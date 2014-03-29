@@ -143,17 +143,17 @@ module Chess
 
     # Determine if making a move from/to the given squares would leave the king in check for the specified color, 
     # without having to do a full make/unmake of the move in question.
-    def avoids_check?(position, from, to, color, king_location=nil)
+    def evades_check?(position, from, to, color, king_location=nil)
       piece_sym = self[from]
       target_sym = self[to]
       self[from] = nil  # simulate making the specified regular move
       self[to] = piece_sym
 
-      avoids_check = !king_in_check?(position, color, king_location)
+      evades_check = !king_in_check?(position, color, king_location)
 
       self[from] = piece_sym  # undo changes to board
       self[to] = target_sym
-      return avoids_check
+      return evades_check
     end
 
     # Uses methods provided by the Attack module to determine if the king for the specified color is in check.

@@ -51,7 +51,7 @@ module Chess
         if move.quiet?
           e = @table[depth]
           unless move == e.first
-            if pos.avoids_check?(move)
+            if pos.evades_check?(move)
               if move == e.second
                 e.second = e.first
                 e.first = move
@@ -68,9 +68,8 @@ module Chess
       private
 
       def create_killers
-        min = Search::EXT_MAX/Search::PLY_VALUE
         hsh = {}
-        (-min..10).each { |n| hsh[n*Search::PLY_VALUE] = KillerEntry.new }
+        (1..60).each { |n| hsh[n] = KillerEntry.new }
         return hsh
       end
 

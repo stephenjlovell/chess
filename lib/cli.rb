@@ -120,7 +120,7 @@ module Chess
     def self.parse_move(input) # translates an input string into a valid move object.
       begin
         move = Notation::str_to_move(Chess::current_game.position, input)
-        if Chess::current_game.position.avoids_check?(move)
+        if Chess::current_game.position.evades_check?(move)
           return move
         else
           raise Notation::InvalidMoveError, "That move would leave your king in check."

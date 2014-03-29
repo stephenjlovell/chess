@@ -143,9 +143,9 @@ module Chess
     end
 
     # MTD(f) starts with an initial guess on the 'true' heuristic value of the minimax tree.  It makes a series 
-    # of 'zero-window' calls to alpha-beta that establish upper and lower bounds on the 'true' value.
-    # Each subsequent pass causes the bounds to 'converge' on the true minimax value. When the window between 
-    # the bounds reaches size zero, the search is complete and the 'true' value is returned.
+    # of 'zero-window' calls to alpha-beta that establish upper and lower bounds on the heuristic value.
+    # Each subsequent pass causes the bounds to converge on the true minimax value. When the window between 
+    # the bounds reaches size zero, the search is complete and the true value is returned.
 
     def self.mtdf(guess=nil, depth=nil) 
       guess ||= (@previous_value || get_initial_estimate)
@@ -172,31 +172,48 @@ module Chess
       depth ||= @max_depth
       mtdf_passes, best, @lower_bound, @upper_bound, step = 0, -$INF, -$INF, $INF, MTD_STEP_SIZE
       stepped_up, stepped_down = false, false
-
+      # puts "\n#{depth/PLY_VALUE}"
       while @lower_bound != @upper_bound && mtdf_passes < MTDF_MAX_PASSES
+
         $passes += 1
         mtdf_passes += 1
 
         gamma = guess == @lower_bound ? guess+step : guess
-        move, guess = alpha_beta_root(depth, gamma-step, gamma)
+
+        # Before calling alpha_beta_root, verify local bounds stay within global bounds.
+        alpha = Chess::max(gamma-step, @lower_bound)
+        beta = Chess::min(gamma, @upper_bound)
+        # puts "beta == alpha" if alpha == beta
+
+        # puts "MT(#{depth}, #{gamma-step}, #{gamma}), @lower = #{@lower_bound}, @upper = #{@upper_bound}"
+        move, guess = alpha_beta_root(depth, alpha, beta)
+        # move, guess = alpha_beta_root(depth, gamma-step, gamma)
         best_move, best = move, guess unless move.nil?
 
-        if guess < gamma
+        failed_low = guess < gamma
+        if failed_low
           @upper_bound = guess
-          guess = Chess::max(guess-step, @lower_bound+1)
           stepped_down = true
         else
           @lower_bound = guess
-          guess = Chess::min(guess+step, @upper_bound-1)
           stepped_up = true
         end
+
         if stepped_up && stepped_down
-          step /= 2
+          step = Chess::max(step/2, 1)
         elsif step < (@upper_bound - @lower_bound)/2
           step *= 2 
         end
-      
+
+        if failed_low
+          guess = Chess::max(guess-step, @lower_bound+step) # This will occasionally cause gamma to exceed @upper_bound on next pass.
+        else
+          guess = Chess::min(guess+step, @upper_bound) # This will occasionally result in gamma-step below @lower_bound on next pass.
+        end
+
       end
+      # puts "final value: #{best}"
+
       return best_move, best
     end
 
@@ -237,7 +254,7 @@ module Chess
       end
 
       @node.edges(adjusted_depth, true).each do |move| 
-        next unless @node.avoids_check?(move)  # no illegal moves allowed at root.
+        next unless @node.evades_check?(move)  # no illegal moves allowed at root.
         $main_calls += 1
         
         MoveGen::make!(@node, move)
@@ -374,10 +391,8 @@ module Chess
     end
 
     def self.store_cutoff(move, depth, nodecount)
-      # If the move that caused the cutoff is a 'quiet' move (i.e. not a capture or promotion), then
-      # store the move in the Killer Moves table.
-      $killer.store(@node, move, depth)
-      $history.store(move, nodecount)
+      $killer.store(@node, move, depth)  # If the move that caused the cutoff is a 'quiet' move (i.e. not a capture 
+      $history.store(move, nodecount)    # or promotion), then store the move in the Killer Moves table.
     end
 
     
@@ -490,7 +505,7 @@ module Chess
       Chess::current_game.clock.restart
       @node, @max_depth, @aggregator, @verbose = node, max_ply*PLY_VALUE, aggregator, verbose
       @iid_minimum = Chess::max(@max_depth-THREE_PLY, FOUR_PLY)
-      @previous_value = Chess::current_game.previous_value
+      # @previous_value = Chess::current_game.previous_value
       @max_side = @node.side_to_move
       
       reset_counters

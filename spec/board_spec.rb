@@ -79,8 +79,8 @@ describe Chess::Board do
     end
 
     it 'should test if a move would get specified side out of check' do
-      @board.avoids_check?(@position, @from, @to, :w).should be_true
-      @board.avoids_check?(@position, @alt_from, @alt_to, :w).should be_false
+      @board.evades_check?(@position, @from, @to, :w).should be_true
+      @board.evades_check?(@position, @alt_from, @alt_to, :w).should be_false
     end
 
   end

@@ -1,4 +1,27 @@
 
-## Chess
+## RubyChess
 
-A Chess AI written in Ruby for fun and learning.
+A Chess AI written in Ruby! 
+
+
+
+
+
+
+
+
+### Search Features
+  
+  
+
+
+
+
+### Evaluation Features
+
+
+
+
+  
+
+
