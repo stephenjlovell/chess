@@ -45,7 +45,7 @@ require 'spec_helper'
       before { @from = FactoryGirl.build(:location, r: 5, c: 5) }
       let(:moves) do
         moves = []
-        @knight.get_moves(@position, @from, moves, [], [], [])
+        @knight.get_moves(@position, @from, moves, [], [])
         return moves
       end
 
