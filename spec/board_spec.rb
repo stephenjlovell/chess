@@ -88,13 +88,13 @@ describe Chess::Board do
   describe 'when finding pieces that attack a given square' do
     before do
       @board = FactoryGirl.build(:test_board)
-      @location = Chess::Location::get_location(5,8)
+      @location = Chess::Location::get_location_by_coordinates(5,8)
       @attackers = @board.get_square_attackers(@location)
     end
 
     it 'should generate a list of squares holding pieces that attack the given square' do
-      @attackers[:w].should == [Chess::Location::get_location(2,5)]
-      @attackers[:b].should == [Chess::Location::get_location(7,7)]
+      @attackers[:w].should == [Chess::Location::get_location_by_coordinates(2,5)]
+      @attackers[:b].should == [Chess::Location::get_location_by_coordinates(7,7)]
     end
 
   end

@@ -64,26 +64,21 @@ module Chess
     C_BQ = 0b0010  # Black castle queen side
     C_BK = 0b0001  # Black castle king side
 
-    # Initial piece locations:
-    WRQ_FROM = Location::get_location(2,2) # white rook queenside from square (a1)
-    WK_FROM  = Location::get_location(2,6) # white king from square (e1)
-    WRK_FROM = Location::get_location(2,9) # white rook kingside from square (h1)
-
-    BRQ_FROM = Location::get_location(9,2) # black rook queenside from square (a8)
-    BK_FROM  = Location::get_location(9,6) # black king from square (e8)
-    BRK_FROM = Location::get_location(9,9) # black rook kingside from square (h8)
-
-    WRQ_TO = Location::get_location(2,5) # white rook queenside to square (d1)
-    WKQ_TO = Location::get_location(2,4) # white king queenside to square (c1)
-
-    WRK_TO = Location::get_location(2,7) # white rook kingside to square (f1)
-    WKK_TO = Location::get_location(2,8) # white king kingside to square (g1)
-
-    BRQ_TO = Location::get_location(9,5) # black rook queenside to square (d8)
-    BKQ_TO = Location::get_location(9,4) # black king queenside to square (c8)
-
-    BRK_TO = Location::get_location(9,7) # black rook kingside to square (f8)
-    BKK_TO = Location::get_location(9,8) # black king kingside to square (g8)
+    # Squares involved in castling:
+    WRQ_FROM = Location::get_location_by_symbol(:a1) # white rook queenside from square
+    WK_FROM  = Location::get_location_by_symbol(:e1) # white king from square
+    WRK_FROM = Location::get_location_by_symbol(:h1) # white rook kingside from square 
+    BRQ_FROM = Location::get_location_by_symbol(:a8) # black rook queenside from square 
+    BK_FROM  = Location::get_location_by_symbol(:e8) # black king from square 
+    BRK_FROM = Location::get_location_by_symbol(:h8) # black rook kingside from square 
+    WRQ_TO  =  Location::get_location_by_symbol(:d1) # white rook queenside to square 
+    WKQ_TO  =  Location::get_location_by_symbol(:c1) # white king queenside to square 
+    WRK_TO  =  Location::get_location_by_symbol(:f1) # white rook kingside to square 
+    WKK_TO  =  Location::get_location_by_symbol(:g1) # white king kingside to square 
+    BRQ_TO  =  Location::get_location_by_symbol(:d8) # black rook queenside to square 
+    BKQ_TO  =  Location::get_location_by_symbol(:c8) # black king queenside to square 
+    BRK_TO  =  Location::get_location_by_symbol(:f8) # black rook kingside to square 
+    BKK_TO  =  Location::get_location_by_symbol(:g8) # black king kingside to square 
 
     # Bitwise operations for updating castling rights.
     WATCH = { WRQ_FROM => Proc.new { |pos| pos.castle &= ~C_WQ }, 

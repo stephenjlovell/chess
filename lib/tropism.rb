@@ -27,7 +27,7 @@ module Chess
 
 
     def self.create_distance_table
-      locations = Chess::Location::LOCATIONS[2..9].collect { |r| r[2..9] }.flatten
+      locations = Chess::Location::valid_locations
       hsh = create_location_hash(locations)
       hsh.each { |loc, value| hsh[loc] = create_location_hash(locations) }
       populate_distance_table(locations, hsh)

@@ -98,19 +98,6 @@ module Chess
         @tropism[@enemy] = value
       end
 
-      # def own_attack_map
-      #   @king_attack_map[@side_to_move]
-      # end
-
-      # def enemy_attack_map
-      #   @king_attack_map[@enemy]
-      # end
-
-      # def update_attack_maps(move)
-      #   own_attack_map.own_move_update(move)
-      #   enemy_attack_map.enemy_move_update(move)
-      # end
-
       def own_king_location
         @king_location[@side_to_move]
       end
@@ -259,7 +246,7 @@ module Chess
         board.each_square_with_location do |r,c,sym|
           unless sym.nil?
             piece = create_piece_by_sym(sym)
-            pieces[piece.color][Location::get_location(r,c)] = piece
+            pieces[piece.color][Location::get_location_by_coordinates(r,c)] = piece
           end
         end
         return pieces
@@ -281,9 +268,9 @@ module Chess
         kings = {}
         @board.each_square_with_location do |r,c,s|
           if s == :wK
-            kings[:w] = Location::get_location(r,c)
+            kings[:w] = Location::get_location_by_coordinates(r,c)
           elsif s == :bK
-            kings[:b] = Location::get_location(r,c)
+            kings[:b] = Location::get_location_by_coordinates(r,c)
           end
         end
         return kings

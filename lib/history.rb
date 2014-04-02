@@ -61,9 +61,8 @@ module Chess
       end
 
       def create_locations_table
-        locations = Chess::Location::LOCATIONS[2..9].collect { |r| r[2..9] }.flatten
         hsh = {}
-        locations.each do |to|
+        Chess::Location::valid_locations.each do |to|
           hsh[to] = 0
         end
         return hsh

@@ -47,7 +47,7 @@ describe Chess::Search do
   # end
 
   # describe "static exchange evaluation" do
-  #   let(:loc) { Chess::Location::get_location(5,6) }
+  #   let(:loc) { Chess::Location::get_location_by_coordinates(5,6) }
   #   let(:see_pos) { FactoryGirl.build(:see_position) }
   #   it "should correctly value an exchange over a single square" do
   #     # see_pos.board.print

@@ -1,0 +1,17 @@
+
+
+
+
+Bitboards needed for board representation:
+
+  12 bitboards for piece type / color combinations
+
+
+Additional bitboards needed:
+
+  # 1. 12 x 64 array of bitboards showing where each square can be attacked from (given a blank board)
+
+  # 2. A bitboard indicating which squares are occupied
+  # 3. 2 bitboards indicating which squares are occupied for each side
+  # 4. 64 x 64 array of bitboards indicating the squares 'in between' each pair of squares, for generating check evasions.
+

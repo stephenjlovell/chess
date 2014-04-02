@@ -96,7 +96,29 @@ module Chess
       arr
     end
 
+    def self.valid_locations
+      LOCATIONS[2..9].collect { |r| r[2..9] }.flatten
+    end
+
+    # set up location lookup access by symbol, index, and bitcode
+    def self.setup_locations_access
+      by_sym, by_index, by_bitcode = {}, {}, {}
+      valid_locations.each do |loc|
+        by_sym[loc.to_sym] = loc
+        by_index[loc.index] = loc
+        by_bitcode[loc.to_b] = loc
+      end
+      return by_sym, by_index, by_bitcode
+    end
+
+
     LOCATIONS = create_locations
+
+    # Create hashes for looking up valid locations by various properties.
+    LOCATIONS_BY_SYM, LOCATIONS_BY_INDEX, LOCATIONS_BY_BITCODE = setup_locations_access
+
+    LOCATIONS_BY_SYM.each do |sym, loc|
+  end
 
     # :+ method is used for vector addition.  It accepts an increment vector as a 2-element
     # array and returns the Location object corresponding to the new row and column coordinates.
@@ -106,14 +128,26 @@ module Chess
     end                                # LOCATIONS array is created at startup).
 
     # Return the location object corresponding to the given coordinates.
-    def self.get_location(r, c)
+    def self.get_location_by_coordinates(r, c)
       return nil if LOCATIONS[r].nil?
       LOCATIONS[r][c]
     end
 
+    def self.get_location_by_symbol(sym)
+      LOCATIONS_BY_SYM[sym]
+    end
+
+    def self.get_location_by_index(index)
+      LOCATIONS_BY_INDEX[index]
+    end
+
+    def self.get_location_by_bitcode(bitcode)
+      LOCATIONS_BY_BITCODE[bitcode]
+    end
+
     # Return the location object corresponding to the given string (i.e. "a1").
     def self.string_to_location(str)
-      location = get_location(str[1].to_i + 1, LETTER_TO_NUMBER[str[0]])
+      location = get_location_by_coordinates(str[1].to_i + 1, LETTER_TO_NUMBER[str[0]])
       raise "invalid location for #{str}" if location.nil?
       location
     end
@@ -122,5 +156,68 @@ module Chess
 end
 
 
-
+# a1: (2, 2)
+# b1: (2, 3)
+# c1: (2, 4)
+# d1: (2, 5)
+# e1: (2, 6)
+# f1: (2, 7)
+# g1: (2, 8)
+# h1: (2, 9)
+# a2: (3, 2)
+# b2: (3, 3)
+# c2: (3, 4)
+# d2: (3, 5)
+# e2: (3, 6)
+# f2: (3, 7)
+# g2: (3, 8)
+# h2: (3, 9)
+# a3: (4, 2)
+# b3: (4, 3)
+# c3: (4, 4)
+# d3: (4, 5)
+# e3: (4, 6)
+# f3: (4, 7)
+# g3: (4, 8)
+# h3: (4, 9)
+# a4: (5, 2)
+# b4: (5, 3)
+# c4: (5, 4)
+# d4: (5, 5)
+# e4: (5, 6)
+# f4: (5, 7)
+# g4: (5, 8)
+# h4: (5, 9)
+# a5: (6, 2)
+# b5: (6, 3)
+# c5: (6, 4)
+# d5: (6, 5)
+# e5: (6, 6)
+# f5: (6, 7)
+# g5: (6, 8)
+# h5: (6, 9)
+# a6: (7, 2)
+# b6: (7, 3)
+# c6: (7, 4)
+# d6: (7, 5)
+# e6: (7, 6)
+# f6: (7, 7)
+# g6: (7, 8)
+# h6: (7, 9)
+# a7: (8, 2)
+# b7: (8, 3)
+# c7: (8, 4)
+# d7: (8, 5)
+# e7: (8, 6)
+# f7: (8, 7)
+# g7: (8, 8)
+# h7: (8, 9)
+# a8: (9, 2)
+# b8: (9, 3)
+# c8: (9, 4)
+# d8: (9, 5)
+# e8: (9, 6)
+# f8: (9, 7)
+# g8: (9, 8)
+# h8: (9, 9)
 
