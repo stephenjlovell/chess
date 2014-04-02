@@ -25,7 +25,7 @@ describe Chess::Search do
 
   before do 
     @s = Chess::Search
-    @depth = 6
+    @depth = 4
   end
 
   # describe "permits use of Iterative Deepening" do
@@ -55,13 +55,13 @@ describe Chess::Search do
   #   end
   # end
 
-  # describe "playing strength" do
-  #   let(:problems) { load_test_suite('./test_suites/wac_300.epd') }
+  describe "playing strength" do
+    let(:problems) { load_test_suite('./test_suites/wac_300.epd') }
     
-  #   it "should be able to take standardized tests" do
-  #     take_test(problems, @depth, false)
-  #   end
-  # end
+    it "should be able to take standardized tests" do
+      take_test(problems, @depth, false)
+    end
+  end
 
 end
 

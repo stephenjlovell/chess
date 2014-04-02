@@ -237,22 +237,19 @@ To Do ----
 Possible Enhancements to Add ----
 
   
-  Create a threat map showing where enemy king can be attacked from. Incrementally update map on make/unmake.
-  Use to create a 'gives check' move generator. 
-    -Use to efficiently generate moves that give check while in q-search (up to some maximum number of checks between 4-7).
-    -attack map could be used to substantially speed up board.evades_check? method.
+  -Create a threat map showing where enemy king can be attacked from. Incrementally update map on make/unmake.
+    Use to create a 'gives check' move generator. 
+    Use to efficiently generate moves that give check while in q-search (up to some maximum number of checks between 4-7).
+    Attack map could be used to substantially speed up board.evades_check? method.
+
+  -Extend search on 'winning' promotions
 
 
-  Add aging scheme for removal of old TT entries
+  -At root, TT entries could be used for more accurate move ordering. Entry value would be used if available, 
+   otherwise q-search could be used to establish an initial entry.  This would reduce branching factor and might improve strength,
+   revealing beneficial lines that might otherwise have been cut off.
 
-  At root, TT entries could be used for more accurate move ordering. Entry value would be used if available, otherwise q-search could be
-  used to establish an initial entry.  This would reduce branching factor and might improve strength revealing beneficial lines that might otherwise have been cut off.
-
-
-  Additional search extensions:
-    -Principal Variation
-    -pawn promotions
-
+  -Switch to bitboard board representation.  This would involve very substantial re-writing, but would increase execution speed and make it easier to add more advanced features.
 
   
 

@@ -58,35 +58,48 @@ module Chess
       position.hash ^= Memory::SIDE ^ Memory::enp_key(enp_target)
     end
 
-
     # Castling rights:
-    C_WQ =   0b1000  # White castle queen side
-    C_WK =   0b0100  # White castle king side
-    C_BQ =   0b0010  # Black castle queen side
-    C_BK =   0b0001  # Black castle king side
+    C_WQ = 0b1000  # White castle queen side
+    C_WK = 0b0100  # White castle king side
+    C_BQ = 0b0010  # Black castle queen side
+    C_BK = 0b0001  # Black castle king side
 
     # Initial piece locations:
-    WRQ_INIT = Location::get_location(2,2) # a1 - White queenside rook
-    WK_INIT = Location::get_location(2,6)  # e1 - White king
-    WRK_INIT = Location::get_location(2,9) # h1 - White kingside rook
-    BRQ_INIT = Location::get_location(9,2) # a8 - Black queenside rook
-    BK_INIT = Location::get_location(9,6)  # e8 - Black king
-    BRK_INIT = Location::get_location(9,9) # h8 - Black kingside rook
+    WRQ_FROM = Location::get_location(2,2) # white rook queenside from square (a1)
+    WK_FROM  = Location::get_location(2,6) # white king from square (e1)
+    WRK_FROM = Location::get_location(2,9) # white rook kingside from square (h1)
+
+    BRQ_FROM = Location::get_location(9,2) # black rook queenside from square (a8)
+    BK_FROM  = Location::get_location(9,6) # black king from square (e8)
+    BRK_FROM = Location::get_location(9,9) # black rook kingside from square (h8)
+
+    WRQ_TO = Location::get_location(2,5) # white rook queenside to square (d1)
+    WKQ_TO = Location::get_location(2,4) # white king queenside to square (c1)
+
+    WRK_TO = Location::get_location(2,7) # white rook kingside to square (f1)
+    WKK_TO = Location::get_location(2,8) # white king kingside to square (g1)
+
+    BRQ_TO = Location::get_location(9,5) # black rook queenside to square (d8)
+    BKQ_TO = Location::get_location(9,4) # black king queenside to square (c8)
+
+    BRK_TO = Location::get_location(9,7) # black rook kingside to square (f8)
+    BKK_TO = Location::get_location(9,8) # black king kingside to square (g8)
 
     # Bitwise operations for updating castling rights.
-    WATCH = { WRQ_INIT => Proc.new { |pos| pos.castle &= ~C_WQ }, 
-              WK_INIT => Proc.new { |pos| pos.castle &= ~(C_WK|C_WQ) },
-              WRK_INIT => Proc.new { |pos| pos.castle &= ~C_WK },
-              BRQ_INIT => Proc.new { |pos| pos.castle &= ~C_BQ },
-              BK_INIT => Proc.new { |pos| pos.castle &= ~(C_BK|C_BQ) },
-              BRK_INIT => Proc.new { |pos| pos.castle &= ~C_BK } }
+    WATCH = { WRQ_FROM => Proc.new { |pos| pos.castle &= ~C_WQ }, 
+              WK_FROM  => Proc.new { |pos| pos.castle &= ~(C_WK|C_WQ) },
+              WRK_FROM => Proc.new { |pos| pos.castle &= ~C_WK },
+              BRQ_FROM => Proc.new { |pos| pos.castle &= ~C_BQ },
+              BK_FROM  => Proc.new { |pos| pos.castle &= ~(C_BK|C_BQ) },
+              BRK_FROM => Proc.new { |pos| pos.castle &= ~C_BK } }
 
     # Whenever a king or rook moves off its initial square or is captured, update castle rights via the procedure
-    # associated with that intial square.
+    # associated with that initial square.
     def self.set_castle_flag(position, move)
       WATCH[move.from].call(position) if WATCH[move.from]
       WATCH[move.to].call(position) if WATCH[move.to]
     end
+
 
     # Generate any legal castling moves available given castling rights for pos.
     def self.get_castles(pos)
@@ -95,39 +108,27 @@ module Chess
       if pos.side_to_move == :w
         if castle & C_WQ != 0b0
           if b.square_empty?(2,3) && b.square_empty?(2,4) && b.square_empty?(2,5)
-            rook_from, rook_to = WRQ_INIT, Location::get_location(2,5)
-            rook = pos.own_pieces[rook_from]
-            king_from, king_to = WK_INIT, Location::get_location(2,4)
-            king = pos.own_pieces[king_from]
-            castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
+            rook, king = pos.own_pieces[WRQ_FROM], pos.own_pieces[WK_FROM]
+            castles << Move::Factory.build(king, WK_FROM, WKQ_TO, :castle, rook, WRQ_FROM, WRQ_TO) if king
           end 
         end
         if castle & C_WK != 0b0
           if b.square_empty?(2,7) && b.square_empty?(2,8)
-            rook_from, rook_to = WRK_INIT, Location::get_location(2,7)
-            rook = pos.own_pieces[rook_from]
-            king_from, king_to = WK_INIT, Location::get_location(2,8)
-            king = pos.own_pieces[king_from]
-            castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
+            rook, king = pos.own_pieces[WRK_FROM], pos.own_pieces[WK_FROM]
+            castles << Move::Factory.build(king, WK_FROM, WRK_TO, :castle, rook, WRK_FROM, WRK_TO) if king
           end
         end
       else
         if castle & C_BQ != 0b0
           if b.square_empty?(9,3) && b.square_empty?(9,4) && b.square_empty?(9,5)
-            rook_from, rook_to = BRQ_INIT, Location::get_location(9,5)
-            rook = pos.own_pieces[rook_from]
-            king_from, king_to = BK_INIT, Location::get_location(9,4)
-            king = pos.own_pieces[king_from]
-            castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
+            rook, king = pos.own_pieces[BRQ_FROM], pos.own_pieces[BK_FROM]
+            castles << Move::Factory.build(king, BK_FROM, BKQ_TO, :castle, rook, BRQ_FROM, BRQ_TO) if king
           end 
         end
         if castle & C_BK != 0b0
           if b.square_empty?(9,7) && b.square_empty?(9,8)
-            rook_from, rook_to = BRK_INIT, Location::get_location(9,7)
-            rook = pos.own_pieces[rook_from]
-            king_from, king_to = BK_INIT, Location::get_location(9,8)
-            king = pos.own_pieces[king_from]
-            castles << Move::Factory.build(king, king_from, king_to, :castle, rook, rook_from, rook_to) if king
+            rook, king = pos.own_pieces[BRK_FROM], pos.own_pieces[BK_FROM]
+            castles << Move::Factory.build(king, BK_FROM, BKK_TO, :castle, rook, BRK_FROM, BRK_TO) if king
           end
         end
       end

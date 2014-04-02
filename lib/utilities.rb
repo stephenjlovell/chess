@@ -106,19 +106,19 @@ module Chess
           if from + [0,2] == to || from + [0,-2] == to
             # add checks for castling rights here.
             if from + [0,-2] == to # castle queen-side
-              if from == MoveGen::WK_INIT
-                rook_from, rook_to = MoveGen::WRQ_INIT, Location::get_location(2,5)
+              if from == MoveGen::WK_FROM
+                rook_from, rook_to = MoveGen::WRK_FROM, Location::get_location(2,5)
                 rook = pos.own_pieces[rook_from]
               else
-                rook_from, rook_to = MoveGen::BRQ_INIT, Location::get_location(9,5)
+                rook_from, rook_to = MoveGen::BRQ_FROM, Location::get_location(9,5)
                 rook = pos.own_pieces[rook_from]
               end
             else # castle king-side
-              if from == MoveGen::WK_INIT
-                rook_from, rook_to = MoveGen::WRK_INIT, Location::get_location(2,7)
+              if from == MoveGen::WK_FROM
+                rook_from, rook_to = MoveGen::WRK_FROM, Location::get_location(2,7)
                 rook = pos.own_pieces[rook_from]
               else
-                rook_from, rook_to = MoveGen::BRK_INIT, Location::get_location(9,7)
+                rook_from, rook_to = MoveGen::BRK_FROM, Location::get_location(9,7)
                 rook = pos.own_pieces[rook_from]
               end
             end

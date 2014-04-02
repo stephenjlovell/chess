@@ -21,14 +21,124 @@
 
 module Chess
 
-  class AttackMap
+  # During move generation, the 'to' and 'from' squares are compared to the attack maps for each color 
+  # to determine if the move gives check or evades check, and to update the attack maps if needed.
 
-    def initialize(position, color)
+  # Responsibility for tracking king location will be shifted to this class.
+
+  class KingAttackMap
+    attr_accessor :king_location
+    attr_reader :threat_direction
+
+    def initialize(position, color, king_location)
+      @map = {}
+      @color = color
+      @king_location = king_location
+      @threat_direction = nil
+    end
+
+    def in_check?
+      !@threat_direction.nil?
+    end
+
+    def on_map?(square)
+      @map.has_key?(square)
+    end
+
+    # Determine orientation of the given attack map square relative to king location. Only used for sliding pieces.
+    def direction_from_king(square)
+      if @king_location.r < square.r 
+        if @king_location.c < square.c
+          Pieces::NE
+        elsif @king_location.c == square.c
+          Pieces::NORTH
+        else
+          Pieces::NW
+        end
+      elsif @king_location.r == square.r
+        if @king_location.c < square.c
+          Pieces::EAST
+        elsif @king_location.c == square.c
+          # king capture
+        else
+          Pieces::WEST
+        end
+      else
+        if @king_location.c < square.c
+          Pieces::SE
+        elsif @king_location.c == square.c
+          Pieces::SOUTH
+        else
+          Pieces::SW
+        end
+      end
+    end
+
+
+
+    # Check if either the 'to' or 'from' square is in the attack map for the current side to move.  Update 
+    # the attack map if needed.
+    def own_move_update(move)
+      is_from = on_map?(move.from)
+      is_to = on_map?(move.to)
+
+      if is_from && is_to
+
+      elsif is_from
+        vector = direction_from_king(move.from)
+
+      elsif is_to
+        vector = direction_from_king(move.to)
+
+      end
+
+    end
+
+    # Check if the 'to' or 'from' square is in the enemy attack map. If found, update the attack map.
+    def enemy_move_update(move)
+      is_from = on_map?(move.from)
+      is_to = on_map?(move.to)
+
+      if is_from && is_to
+
+      elsif is_from
+        vector = direction_from_king(move.from)
+
+      elsif is_to
+        vector = direction_from_king(move.to)
+
+      end
+
+      # # save the threat direction for use in generating check evasions.
+      # @threat_direction = direction_from_king(move.to)
 
     end
 
 
-    def update(square)
+
+    # When an enemy piece moves onto the map, determine if the piece moved is a threat to the 
+    # enemy king.
+    def gives_check?(move)
+      if on_map?(move.to)
+
+
+
+      end
+    end
+
+    # Determine if a move to this square would get the king out of check.
+    def evades_check?(move)
+      if on_map?(move.to)
+
+      end
+    end
+
+
+    private
+
+    # Used to build new attack maps for a newly instantiated position objects. Also used to re-calculate
+    # the map on king movement.
+    def generate_attack_map(king_location)
 
     end
 

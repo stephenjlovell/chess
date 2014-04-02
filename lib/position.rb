@@ -98,6 +98,19 @@ module Chess
         @tropism[@enemy] = value
       end
 
+      # def own_attack_map
+      #   @king_attack_map[@side_to_move]
+      # end
+
+      # def enemy_attack_map
+      #   @king_attack_map[@enemy]
+      # end
+
+      # def update_attack_maps(move)
+      #   own_attack_map.own_move_update(move)
+      #   enemy_attack_map.enemy_move_update(move)
+      # end
+
       def own_king_location
         @king_location[@side_to_move]
       end
