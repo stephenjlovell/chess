@@ -122,7 +122,7 @@ module Chess
 
     # :+ method is used for vector addition.  It accepts an increment vector as a 2-element
     # array and returns the Location object corresponding to the new row and column coordinates.
-    
+  
     Location.include(:+) do |arr|      # Append :+ method to Location class
       LOCATIONS[@r+arr[0]][@c+arr[1]]  # (hack to avoid a circular definition when 
     end                                # LOCATIONS array is created at startup).
