@@ -30,6 +30,9 @@ module Chess
     KING_OFFSETS   = [ -9, -7, 7, 9, -8, -1, 1, 8 ]
     PAWN_OFFSETS = { w: [9, 7], b: [-9, -7] }
 
+    # Generate a bitboard representing all 64 legal squares on the chessboard.
+    UNI_MASK = 64.times.inject(0) { |bitboard, n| bitboard |= (1<<n) }
+
     def self.empty_bb_array
       Array.new(64, 0)
     end
@@ -40,7 +43,7 @@ module Chess
       64.times.map do |from|
         KNIGHT_OFFSETS.inject(0) do |b, offset|
           to = from + offset     # bitboard via bitwise OR.
-          if to >= 0 && to <= 63 && manhattan_distance(from, to) == 3
+          if on_board?(to) && manhattan_distance(from, to) == 3
             b |= (1<<to)
           end
           b
@@ -54,7 +57,7 @@ module Chess
       64.times.map do |from|
         KING_OFFSETS.inject(0) do |b, offset|
           to = from + offset     # bitboard via bitwise OR.
-          if to >= 0 && to <= 63 && manhattan_distance(from, to) <= 2
+          if on_board?(to) && manhattan_distance(from, to) <= 2
             b |= (1<<to)
           end
           b
@@ -70,7 +73,7 @@ module Chess
         BISHOP_OFFSETS.each do |offset|
           previous, current = from, from + offset
           # Make sure the search doesn't wrap around the end of a row or go off the 8x8 board.
-          while current >= 0 && current <= 63 && manhattan_distance(current, previous) == 2               
+          while on_board?(current) && manhattan_distance(current, previous) == 2               
             square_key = 1 << current
             if offset == 7
               nw[from] |= square_key 
@@ -97,7 +100,7 @@ module Chess
         ROOK_OFFSETS.each do |offset|
           previous, current = from, from + offset
           # # Make sure the search doesn't wrap around the end of a row or go off the 8x8 board.
-          while current >= 0 && current <= 63 && manhattan_distance(current, previous) == 1
+          while on_board?(current) && manhattan_distance(current, previous) == 1
             square_key = 1 << current
             if offset == -8
               south[from] |= square_key 
@@ -149,13 +152,31 @@ module Chess
     end
 
     # Calculate bitboard attack maps ('masks') showing where the piece type can move to from each square.
-    MASKS = setup_masks
-    # MASKS[:K].each_with_index { |board, i| puts i; print_bitboard(board, i) }
+    PIECE_MASKS = setup_masks
+
+    # PIECE_MASKS[:N].each_with_index { |board, i| puts i; print_bitboard(board, i) }
+
+    def self.setup_row_masks
+      rows = Array.new(8, 0)
+      rows[0] = 0b11111111
+      (1..7).to_a.each do |r|
+        rows[r] = rows[r-1] << 8
+      end
+      return rows
+    end
+
+    def self.setup_column_masks
+      cols = Array.new(8, 0)
+      cols[0] = 1
+      7.times { cols[0] |= cols[0]<<8 } # set column A
+      (1..7).to_a.each { |c| cols[c] = cols[c-1]<<1 } # set the remaining columns by shifting the previous
+    end                                               # column rightward.
 
 
+    ROW_MASKS = setup_row_masks
+    COLUMN_MASKS = setup_column_masks
 
-
-
+    # COLUMN_MASKS.each_with_index { |b,i| puts i; print_bitboard(b) }
 
 
   end

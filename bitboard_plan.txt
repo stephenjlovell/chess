@@ -5,22 +5,19 @@
 Bitboards needed for board representation:
 
   2 x 6 bitboards for piece type/color
+  1 bitboard for occupancy (includes both colors)
+
 
 
 Bitboard move generation:
-
-  for sliding pieces:
-
-  
+  7 x 64 bitboards showing where each square can be attacked from by each piece type (given a blank board).  
 
 
 
 Additional bitboards needed:
 
   Attack maps:
-  # 1. 2 x 6 x 64 array of bitboards showing where each square can be attacked from by each piece type (given a blank board).
 
-  # 2. A bitboard indicating which squares are occupied
-  # 3. 2 bitboards indicating which squares are occupied for each side
+
   # 4. 64 x 64 array of bitboards indicating the squares 'in between' each pair of squares, for generating check evasions.
 

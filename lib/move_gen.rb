@@ -71,15 +71,15 @@ module Chess
     BRQ_FROM = Location::get_location_by_symbol(:a8) # black rook queenside from square 
     BK_FROM  = Location::get_location_by_symbol(:e8) # black king from square 
     BRK_FROM = Location::get_location_by_symbol(:h8) # black rook kingside from square 
-    WRQ_TO  =  Location::get_location_by_symbol(:d1) # white rook queenside to square 
-    WKQ_TO  =  Location::get_location_by_symbol(:c1) # white king queenside to square 
-    WRK_TO  =  Location::get_location_by_symbol(:f1) # white rook kingside to square 
-    WKK_TO  =  Location::get_location_by_symbol(:g1) # white king kingside to square 
-    BRQ_TO  =  Location::get_location_by_symbol(:d8) # black rook queenside to square 
-    BKQ_TO  =  Location::get_location_by_symbol(:c8) # black king queenside to square 
-    BRK_TO  =  Location::get_location_by_symbol(:f8) # black rook kingside to square 
-    BKK_TO  =  Location::get_location_by_symbol(:g8) # black king kingside to square 
-
+    WRQ_TO   = Location::get_location_by_symbol(:d1) # white rook queenside to square 
+    WKQ_TO   = Location::get_location_by_symbol(:c1) # white king queenside to square 
+    WRK_TO   = Location::get_location_by_symbol(:f1) # white rook kingside to square 
+    WKK_TO   = Location::get_location_by_symbol(:g1) # white king kingside to square 
+    BRQ_TO   = Location::get_location_by_symbol(:d8) # black rook queenside to square 
+    BKQ_TO   = Location::get_location_by_symbol(:c8) # black king queenside to square 
+    BRK_TO   = Location::get_location_by_symbol(:f8) # black rook kingside to square 
+    BKK_TO   = Location::get_location_by_symbol(:g8) # black king kingside to square 
+ 
     # Bitwise operations for updating castling rights.
     WATCH = { WRQ_FROM => Proc.new { |pos| pos.castle &= ~C_WQ }, 
               WK_FROM  => Proc.new { |pos| pos.castle &= ~(C_WK|C_WQ) },
@@ -101,26 +101,26 @@ module Chess
       castle, b = pos.castle, pos.board
       castles = []
       if pos.side_to_move == :w
-        if castle & C_WQ != 0b0
+        if castle & C_WQ != 0
           if b.square_empty?(2,3) && b.square_empty?(2,4) && b.square_empty?(2,5)
             rook, king = pos.own_pieces[WRQ_FROM], pos.own_pieces[WK_FROM]
             castles << Move::Factory.build(king, WK_FROM, WKQ_TO, :castle, rook, WRQ_FROM, WRQ_TO) if king
           end 
         end
-        if castle & C_WK != 0b0
+        if castle & C_WK != 0
           if b.square_empty?(2,7) && b.square_empty?(2,8)
             rook, king = pos.own_pieces[WRK_FROM], pos.own_pieces[WK_FROM]
             castles << Move::Factory.build(king, WK_FROM, WRK_TO, :castle, rook, WRK_FROM, WRK_TO) if king
           end
         end
       else
-        if castle & C_BQ != 0b0
+        if castle & C_BQ != 0
           if b.square_empty?(9,3) && b.square_empty?(9,4) && b.square_empty?(9,5)
             rook, king = pos.own_pieces[BRQ_FROM], pos.own_pieces[BK_FROM]
             castles << Move::Factory.build(king, BK_FROM, BKQ_TO, :castle, rook, BRQ_FROM, BRQ_TO) if king
           end 
         end
-        if castle & C_BK != 0b0
+        if castle & C_BK != 0
           if b.square_empty?(9,7) && b.square_empty?(9,8)
             rook, king = pos.own_pieces[BRK_FROM], pos.own_pieces[BK_FROM]
             castles << Move::Factory.build(king, BK_FROM, BKK_TO, :castle, rook, BRK_FROM, BRK_TO) if king
