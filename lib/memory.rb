@@ -28,7 +28,7 @@ module Chess
       end
 
       def clear
-        @table = {}
+        @table.clear
       end
 
       def length
@@ -64,18 +64,11 @@ module Chess
 
           move = !e.move.nil? && node.evades_check?(e.move) ? e.move : nil
 
-          lower_ok = lower.depth >= depth
-          if lower_ok && lower.bound >= beta
+          if lower.depth >= depth && lower.bound >= beta
             return move, lower.bound, lower.count
           end
-          upper_ok = upper.depth >= depth
-          if upper_ok && upper.bound <= alpha
+          if upper.depth >= depth && upper.bound <= alpha
             return move, upper.bound, upper.count
-          end
-          if lower_ok && upper_ok && alpha < lower.bound && upper.bound < beta
-            # Return scores for exact entries. Exact entries will not occur during zero-width 
-            # ('minimal window') searches.
-            return move, upper.bound, upper.count  # return an 'exact' score
           end
           return move, nil, nil
         end
@@ -89,19 +82,15 @@ module Chess
           $memory_calls += 1
           e = get(node)
           lower, upper = e.lower, e.upper
-          lower_ok, upper_ok = lower.depth >= depth, upper.depth >= depth
 
           if is_max
-            if lower_ok && lower.bound >= beta
+            if lower.depth >= depth && lower.bound >= beta
               return lower.bound, lower.count
             end
           else
-            if upper_ok && upper.bound <= alpha
+            if upper.depth >= depth && upper.bound <= alpha
               return upper.bound, upper.count
             end
-          end
-          if lower_ok && upper_ok && alpha < lower.bound && upper.bound < beta
-            return upper.bound, upper.count  # return an 'exact' score
           end
         end
         return nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
@@ -114,20 +103,16 @@ module Chess
           $memory_calls += 1
           e = @table[key]
           lower, upper = e.lower, e.upper
-          lower_ok, upper_ok = lower.depth >= depth, upper.depth >= depth
 
           if is_max
-            if lower_ok && lower.bound >= beta
+            if lower.depth >= depth && lower.bound >= beta
               return lower.bound, lower.count
             end
           else
-            if upper_ok && upper.bound <= alpha
+            if upper.depth >= depth && upper.bound <= alpha
               return upper.bound, upper.count
             end
           end
-          # if lower_ok && upper_ok && alpha < lower.bound && upper.bound < beta
-          #   return upper.bound, upper.count  # return an 'exact' score
-          # end
         end
         return nil, nil
       end
@@ -148,9 +133,8 @@ module Chess
         if @table.has_key?(h)
           e = @table[h]
           lower, upper = e.lower, e.upper
-          lower_ok, upper_ok = count >= lower.count, count >= upper.count
           
-          if lower_ok
+          if count >= lower.count
             e.move = move
             if result <= alpha
               upper.depth, upper.count, upper.bound = depth, count, result
@@ -158,7 +142,7 @@ module Chess
               upper.depth, upper.count, upper.bound = depth, count, beta
             end
           end
-          if upper_ok
+          if count >= upper.count
             e.move = move
             if result >= beta
               lower.depth, lower.count, lower.bound = depth, count, result
@@ -166,22 +150,11 @@ module Chess
               lower.depth, lower.count, lower.bound = depth, count, alpha
             end
           end
-          if lower_ok && upper_ok
-            e.move = move
-            if alpha < result && result < beta
-              upper.depth, upper.count, upper.bound = depth, count, result
-              lower.depth, lower.count, lower.bound = depth, count, result
-            end
-          end
         else 
-          a, b = alpha, beta
-          fail_low, fail_high = result <= alpha, result >= beta
-          b = result if fail_low
-          a = result if fail_high      
-          if !fail_low && !fail_high
-            a, b = result, result 
-          end
-          @table[h] = TTBoundEntry.new(h, TTBoundSlot.new(depth, count, a), TTBoundSlot.new(depth, count, b), move)
+          b = (result <= alpha) ? result : beta
+          a = (result >= beta)  ? result : alpha
+          @table[h] = TTBoundEntry.new(h, TTBoundSlot.new(depth, count, a), 
+                                          TTBoundSlot.new(depth, count, b), move)
         end
         return result, count
       end
