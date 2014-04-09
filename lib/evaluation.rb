@@ -25,7 +25,7 @@ module Chess
     # This module contains methods used to assess the heuristic value of a chess position.
     # RubyChess uses a very simplistic, low-cost evaluation function.  The evaluation score is based on 
     # three factors:
-    
+            
     #   1. Material balance - Sums the value of all pieces in play for each side.  A small bonus/penalty is applied
     #      based on the location of the piece.  Material balance is by far the largest component of the overall evaluation
     #      score.
@@ -37,55 +37,104 @@ module Chess
 
     BASE_PST = {  # Piece Square Tables (PSTs) are used to provide a small positional bonus/penalty for controlling valuable       
                   # real estate on the board. Base PSTs are implemented relative to black side to move. 
-                  # Base PSTs are taken from the ChessProgramming wiki: http://chessprogramming.wikispaces.com/CPW-Engine_eval_init
+
       # Pawn          
-      P: [ 0,   0,   0,   0,   0,   0,   0,   0,
-          -6,  -4,   1,   1,   1,   1,  -4,  -6,
-          -6,  -4,   1,   2,   2,   1,  -4,  -6,
-          -6,  -4,   2,   8,   8,   2,  -4,  -6,
-          -6,  -4,   5,  10,  10,   5,  -4,  -6,
-          -4,  -4,   1,   5,   5,   1,  -4,  -4,
-          -6,  -4,   1, -24, -24,   1,  -4,  -6,
-           0,   0,   0,   0,   0,   0,   0,   0 ],
+      # P: [ 0,   0,   0,   0,   0,   0,   0,   0,
+      #     -6,  -4,   1,   1,   1,   1,  -4,  -6,
+      #     -6,  -4,   1,   2,   2,   1,  -4,  -6,
+      #     -6,  -4,   2,   8,   8,   2,  -4,  -6,
+      #     -6,  -4,   5,  10,  10,   5,  -4,  -6,
+      #     -4,  -4,   1,   5,   5,   1,  -4,  -4,
+      #     -6,  -4,   1, -24, -24,   1,  -4,  -6,
+      #      0,   0,   0,   0,   0,   0,   0,   0 ],
+
+      P: [ 0,  0,  0,  0,  0,  0,  0,  0, 
+          -1,  1,  1,  1,  1,  1,  1, -1, 
+          -2,  0,  1,  2,  2,  1,  0, -2, 
+          -3, -1,  2, 10, 10,  2, -1, -3, 
+          -4, -2,  4, 14, 14,  4, -2, -4, 
+          -5, -3,  0,  9,  9,  0, -3, -5, 
+          -6, -4,  0,-20,-20,  0, -4, -6, 
+           0,  0,  0,  0,  0,  0,  0,  0 ],
+
       # Knight
-      N: [ -8,  -8,  -8,  -8,  -8,  -8,  -8,  -8,
-           -8,   0,   0,   0,   0,   0,   0,  -8,
-           -8,   0,   4,   4,   4,   4,   0,  -8,
-           -8,   0,   4,   8,   8,   4,   0,  -8,
-           -8,   0,   4,   8,   8,   4,   0,  -8,
-           -8,   0,   4,   4,   4,   4,   0,  -8,
-           -8,   0,   1,   2,   2,   1,   0,  -8,
-           -8,  -12, -8,  -8,  -8,  -8, -12,  -8 ],
+      # N: [ -8,  -8,  -8,  -8,  -8,  -8,  -8,  -8,
+      #      -8,   0,   0,   0,   0,   0,   0,  -8,
+      #      -8,   0,   4,   4,   4,   4,   0,  -8,
+      #      -8,   0,   4,   8,   8,   4,   0,  -8,
+      #      -8,   0,   4,   8,   8,   4,   0,  -8,
+      #      -8,   0,   4,   4,   4,   4,   0,  -8,
+      #      -8,   0,   1,   2,   2,   1,   0,  -8,
+      #      -8,  -12, -8,  -8,  -8,  -8, -12,  -8 ],
+
+      N: [  -8, -8, -6, -6, -6, -6, -8, -8, 
+            -8,  0,  0,  0,  0,  0,  0, -8, 
+            -6,  0,  4,  4,  4,  4,  0, -6, 
+            -6,  0,  4,  8,  8,  4,  0, -6, 
+            -6,  0,  4,  8,  8,  4,  0, -6, 
+            -6,  0,  4,  4,  4,  4,  0, -6, 
+            -8,  0,  1,  2,  2,  1,  0, -8, 
+           -10,-12, -6, -6, -6, -6,-12,-10 ],
+
       # Bishop
-      B: [ -4,  -4,  -4,  -4,  -4,  -4,  -4,  -4,
-           -4,   0,   0,   0,   0,   0,   0,  -4,
-           -4,   0,   2,   4,   4,   2,   0,  -4,
-           -4,   0,   4,   6,   6,   4,   0,  -4,
-           -4,   0,   4,   6,   6,   4,   0,  -4,
-           -4,   1,   2,   4,   4,   2,   1,  -4,
-           -4,   2,   1,   1,   1,   1,   2,  -4,
-           -4,  -4, -12,  -4,  -4, -12,  -4,  -4 ],
+      # B: [ -4,  -4,  -4,  -4,  -4,  -4,  -4,  -4,
+      #      -4,   0,   0,   0,   0,   0,   0,  -4,
+      #      -4,   0,   2,   4,   4,   2,   0,  -4,
+      #      -4,   0,   4,   6,   6,   4,   0,  -4,
+      #      -4,   0,   4,   6,   6,   4,   0,  -4,
+      #      -4,   1,   2,   4,   4,   2,   1,  -4,
+      #      -4,   2,   1,   1,   1,   1,   2,  -4,
+      #      -4,  -4, -12,  -4,  -4, -12,  -4,  -4 ],
+
+      B: [ -3, -3, -3, -3, -3, -3, -3, -3, 
+           -3,  0,  0,  0,  0,  0,  0, -3, 
+           -3,  0,  2,  4,  4,  2,  0, -3, 
+           -3,  0,  4,  5,  5,  4,  0, -3, 
+           -3,  0,  4,  5,  5,  4,  0, -3, 
+           -3,  1,  2,  4,  4,  2,  1, -3, 
+           -3,  2,  1,  1,  1,  1,  2, -3, 
+           -3, -3,-10, -3, -3,-10, -3, -3 ],
+
+
       # Rook
-      R: [  5,   5,   5,   5,   5,   5,   5,   5,
-           20,  20,  20,  20,  20,  20,  20,  20,
-           -5,   0,   0,   0,   0,   0,   0,  -5,
-           -5,   0,   0,   0,   0,   0,   0,  -5,
-           -5,   0,   0,   0,   0,   0,   0,  -5,
-           -5,   0,   0,   0,   0,   0,   0,  -5,
-           -5,   0,   0,   0,   0,   0,   0,  -5,
-            0,   0,   0,   2,   2,   0,   0,   0 ],
+      # R: [  5,   5,   5,   5,   5,   5,   5,   5,
+      #      20,  20,  20,  20,  20,  20,  20,  20,
+      #      -5,   0,   0,   0,   0,   0,   0,  -5,
+      #      -5,   0,   0,   0,   0,   0,   0,  -5,
+      #      -5,   0,   0,   0,   0,   0,   0,  -5,
+      #      -5,   0,   0,   0,   0,   0,   0,  -5,
+      #      -5,   0,   0,   0,   0,   0,   0,  -5,
+      #       0,   0,   0,   2,   2,   0,   0,   0 ],
+
+      R: [   4,  4,  4,  4,  4,  4,  4,  4,
+            16, 16, 16, 16, 16, 16, 16, 16,
+            -4,  0,  0,  0,  0,  0,  0, -4,
+            -4,  0,  0,  0,  0,  0,  0, -4,
+            -4,  0,  0,  0,  0,  0,  0, -4,
+            -4,  0,  0,  0,  0,  0,  0, -4,
+            -4,  0,  0,  0,  0,  0,  0, -4,
+             0,  0,  0,  2,  2,  0,  0,  0 ],
+
       # Queen
-      Q: [  0,   0,   0,   0,   0,   0,   0,   0,
-            0,   0,   1,   1,   1,   1,   0,   0,
-            0,   0,   1,   2,   2,   1,   0,   0,
-            0,   0,   2,   3,   3,   2,   0,   0,
-            0,   0,   2,   3,   3,   2,   0,   0,
-            0,   0,   1,   2,   2,   1,   0,   0,
-            0,   0,   1,   1,   1,   1,   0,   0,
-           -5,  -5,  -5,  -5,  -5,  -5,  -5,  -5 ] }
+      # Q: [  0,   0,   0,   0,   0,   0,   0,   0,
+      #       0,   0,   1,   1,   1,   1,   0,   0,
+      #       0,   0,   1,   2,   2,   1,   0,   0,
+      #       0,   0,   2,   3,   3,   2,   0,   0,
+      #       0,   0,   2,   3,   3,   2,   0,   0,
+      #       0,   0,   1,   2,   2,   1,   0,   0,
+      #       0,   0,   1,   1,   1,   1,   0,   0,
+      #      -5,  -5,  -5,  -5,  -5,  -5,  -5,  -5 ] }
+
+      Q: [  0,  0,  0,  1,  1,  0,  0,  0, 
+            0,  0,  1,  2,  2,  1,  0,  0, 
+            0,  1,  2,  2,  2,  2,  1,  0, 
+            0,  1,  2,  3,  3,  2,  1,  0, 
+            0,  1,  2,  3,  3,  2,  1,  0, 
+            0,  1,  1,  2,  2,  1,  1,  0, 
+            0,  0,  1,  1,  1,  1,  0,  0, 
+           -6, -6, -6, -6, -6, -6, -6, -6 ] }
 
     KING_BASE = {
-      # Used when side being evaluated is not in 'endgame'.
       false => [ -40, -40, -40, -40, -40, -40, -40, -40,   # In early game, encourage the king to stay on back 
                  -40, -40, -40, -40, -40, -40, -40, -40,   # row defended by friendly pieces.
                  -40, -40, -40, -40, -40, -40, -40, -40,
@@ -94,18 +143,28 @@ module Chess
                  -40, -40, -40, -40, -40, -40, -40, -40,
                  -15, -15, -20, -20, -20, -20, -15, -15,
                    0,  20,  30, -30,   0, -20,  30,  20 ],
-      # Used when side being evaluated is in 'endgame'.
-      true => [ 0,  10,  20,  30,  30,  20,  10,   0,   # In end game (when few friendly pieces are available
-               10,  20,  30,  40,  40,  30,  20,  10,   # to protect king), the king should move toward the center
-               20,  30,  40,  50,  50,  40,  30,  20,   # and avoid getting trapped in corners.
-               30,  40,  50,  60,  60,  50,  40,  30,
-               30,  40,  50,  60,  60,  50,  40,  30,
-               20,  30,  40,  50,  50,  40,  30,  20,
-               10,  20,  30,  40,  40,  30,  20,  10,
-                0,  10,  20,  30,  30,  20,  10,   0 ] }
-    # Used to create a mirror image of the base PST.
-    MIRROR = [ 56, 57, 58, 59, 60, 61, 62, 63,  
-               48, 49, 50, 51, 52, 53, 54, 55,
+
+       # true => [ 0,  10,  20,  30,  30,  20,  10,   0,     # In end game (when few friendly pieces are available
+       #          10,  20,  30,  40,  40,  30,  20,  10,     # to protect king), the king should move toward the center
+       #          20,  30,  40,  50,  50,  40,  30,  20,     # and avoid getting trapped in corners.
+       #          30,  40,  50,  60,  60,  50,  40,  30,
+       #          30,  40,  50,  60,  60,  50,  40,  30,
+       #          20,  30,  40,  50,  50,  40,  30,  20,
+       #          10,  20,  30,  40,  40,  30,  20,  10,
+       #           0,  10,  20,  30,  30,  20,  10,   0 ] }
+
+       true => [-30,-20,-10,  0,  0,-10,-20,-30,     # In end game (when few friendly pieces are available
+                -20,-10,  0, 10, 10,  0,-10,-20,     # to protect king), the king should move toward the center
+                -10,  0, 10, 20, 20, 10,  0,-10,     # and avoid getting trapped in corners.
+                  0, 10, 20, 30, 30, 20, 10,  0,
+                  0, 10, 20, 30, 30, 20, 10,  0,
+                -10,  0, 10, 20, 20, 10,  0,-10,
+                -20,-10,  0, 10, 10,  0,-10,-20,
+                -30,-20,-10,  0,  0,-10,-20,-30 ] }
+
+    
+    MIRROR = [ 56, 57, 58, 59, 60, 61, 62, 63,  # Used to create a mirror image of the base PST
+               48, 49, 50, 51, 52, 53, 54, 55,  # during initialization.
                40, 41, 42, 43, 44, 45, 46, 47,
                32, 33, 34, 35, 36, 37, 38, 39,
                24, 25, 26, 27, 28, 29, 30, 31,
@@ -116,9 +175,9 @@ module Chess
 
     # Initialize Piece Square Tables for each color, endgame status, and piece type.
     def self.create_pst
-      pst = { w: { false => {}, true => {} }, b: { false => {}, true => {} } }
+      pst = { w: { false => {}, true => {} }, 
+              b: { false => {}, true => {} } }
       BASE_PST.each do |type, arr|
-
         pst[:b][false][type] = arr
         pst[:b][true][type] = arr
       end
@@ -126,7 +185,6 @@ module Chess
       pst[:b][true][:K] = KING_BASE[true]
 
       BASE_PST.each do |type, arr|
-        
         mirror = mirror_table(arr)
         pst[:w][false][type] = mirror
         pst[:w][true][type] = mirror   
@@ -138,9 +196,7 @@ module Chess
 
     # reverse the rows in the base PST 
     def self.mirror_table(arr)
-      new_arr = Array.new(64, nil)
-      (0..63).each { |i| new_arr[i] = arr[MIRROR[i]] }
-      return new_arr
+      64.times.map { |i| arr[MIRROR[i]] }
     end
 
     PST = create_pst
