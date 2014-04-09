@@ -18,21 +18,62 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
-
-require 'table_print'
-# require 'google_hash'
-
-Dir['./lib/*.rb'].each { |f| require f }  # require all 
+ 
+module Chess
+  module Bitboard
 
 
+    class PiecewiseBoard
+      attr_reader :boards
 
-puts "Chess library loaded. \n\n"
+      def initialize(bitboards=nil)
+        @boards = bitboards || create_bitboards 
+      end
+
+      def clear # Removes all pieces from the board
+        @boards.each { |sym, bb| @boards[sym] = 0 }
+      end
+
+      def [](color)
+        @boards[color]
+      end
+
+      def print
+        puts "not implemented"
+      end
+
+      def print_bitboards
+        @boards.each do |color, hsh|
+          hsh.each do |sym, bb|
+            puts color.to_s + sym.to_s
+            Bitboard::print_bitboard(bb)
+          end
+        end
+      end
 
 
+      private
 
+      def create_bitboards  # Sets initial configuration of board at start of game. 
+        hsh = { w: {}, b: {} }
+        hsh[:w][:P] = ROW_MASKS[1]
+        hsh[:w][:N] = (1<<1) | (1<<6)
+        hsh[:w][:B] = (1<<2) | (1<<5)
+        hsh[:w][:R] =     1  | (1<<7)
+        hsh[:w][:Q] = (1<<3)
+        hsh[:w][:K] = (1<<4)
+        hsh[:b][:P] = ROW_MASKS[6]
+        hsh[:b][:N] = hsh[:w][:N] << 56
+        hsh[:b][:B] = hsh[:w][:B] << 56
+        hsh[:b][:R] = hsh[:w][:R] << 56
+        hsh[:b][:Q] = hsh[:w][:Q] << 56
+        hsh[:b][:K] = hsh[:w][:K] << 56
+        return hsh
+      end
 
-def play
-  Chess::CLI::play
+    end
+
+  end
 end
 
 
@@ -41,4 +82,3 @@ end
 
 
 
-  

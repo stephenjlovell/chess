@@ -19,26 +19,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-require 'table_print'
-# require 'google_hash'
-
-Dir['./lib/*.rb'].each { |f| require f }  # require all 
-
-
-
-puts "Chess library loaded. \n\n"
-
-
-
-
-def play
-  Chess::CLI::play
-end
-
-
-
-
-
-
-
-  
+require 'mkmf'
+dir_config('bitboard')
+create_makefile('bitboard')

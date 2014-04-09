@@ -19,7 +19,8 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-require './lib/bitboard.rb'
+require './lib/bitboard_math.rb'
+require './ext/bitboard'
 
 module Chess
   module Bitboard
@@ -28,7 +29,7 @@ module Chess
     BISHOP_OFFSETS = [ -9, -7, 7, 9 ]
     ROOK_OFFSETS   = [ -8, -1, 1, 8 ]
     KING_OFFSETS   = [ -9, -7, 7, 9, -8, -1, 1, 8 ]
-    PAWN_OFFSETS = { w: [9, 7], b: [-9, -7] }
+    PAWN_OFFSETS   = { w: [9, 7], b: [-9, -7] }
 
     # Generate a bitboard representing all 64 legal squares on the chessboard.
     UNI_MASK = 64.times.inject(0) { |bitboard, n| bitboard |= (1<<n) }
@@ -170,8 +171,8 @@ module Chess
       cols[0] = 1
       7.times { cols[0] |= cols[0]<<8 } # set column A
       (1..7).to_a.each { |c| cols[c] = cols[c-1]<<1 } # set the remaining columns by shifting the previous
-    end                                               # column rightward.
-
+      return cols                                     # column rightward.
+    end
 
     ROW_MASKS = setup_row_masks
     COLUMN_MASKS = setup_column_masks
