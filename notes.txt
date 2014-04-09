@@ -95,6 +95,18 @@ Search benchmarking (Win at Chess test suite):
     13.390832373333332 seconds/search at depth 6
     N: 25652048; E: 23067922; B: 3.5953735524979513; Efficiency: 10.198291257160701
 
+  4/9/14 MTD(f)-Step after replacing PSTs
+
+    Total AI score: 94/300 (31.333333333333336%)
+    0.70220744 seconds/search at depth 4
+    N: 1329152; E: 1261613; B: 2.975097929974432; Efficiency: 10.531866200990102
+
+    Total AI score: 114/300 (38.0%)
+    13.538827173333335 seconds/search at depth 6
+    N: 25666314; E: 23056520; B: 3.597718489628773; Efficiency: 10.562249411548871
+
+
+
 Performance notes - 
 
   Piece Square Table testing
