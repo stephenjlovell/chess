@@ -20,7 +20,7 @@
 #-----------------------------------------------------------------------------------
 
 require './lib/utilities.rb'
-require './ext/math/bitwise_math'
+
  
 module Chess
   module Bitboard
@@ -47,27 +47,6 @@ module Chess
       (1<<sq) & UNI_MASK != 0
     end
 
-    # get the integer value of the least significant bit for integer x
-    def self.lsb_value(x)
-      x&-x
-    end
-
-    # Constants used to calculate Hamming Weight via a divide and conquer strategy.
-    M1 = 0x5555555555555555
-    M2 = 0x3333333333333333
-    M4 = 0x0f0f0f0f0f0f0f0f
-    H1 = 0x0101010101010101
-    # puts M1.to_s(2), M2.to_s(2), M4.to_s(2), H1.to_s(2)
-
-
-    # returns the bitwise population count (number of binary 1s, aka Hamming Weight) of some 
-    # integer of size <= 64 bits.
-    def self.pop_count(x)
-      x -= (x>>1) & M1
-      x = (x & M2) + ((x>>2) & M2)
-      x = (x+ (x>>4)) & M4
-      return (x * H1) >> 56
-    end
 
     # puts pop_count(0b0110000101) # 5
 

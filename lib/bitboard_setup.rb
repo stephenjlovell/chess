@@ -21,9 +21,12 @@
 
 require './lib/bitboard_math.rb'
 require './ext/bitboard'
+require './ext/math/bitwise_math'
 
 module Chess
   module Bitboard
+
+    puts msb(0b101), lsb(0b101), pop_count(0b101) # 3, 1, 2
 
     KNIGHT_OFFSETS = [ -17, -15, -10, -6, 6, 10, 15, 17 ]
     BISHOP_OFFSETS = [ -9, -7, 7, 9 ]

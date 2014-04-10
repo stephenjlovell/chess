@@ -22,45 +22,31 @@
 #include "ruby.h"
 #include <stdio.h>
 
-static VALUE object_example_call(VALUE rb_self) {
-  printf("First example C extension call\n");
-  return Qnil;
+
+typedef unsigned long BBRD;
+
+
+static VALUE object_lsb(VALUE rb_self, VALUE x) { 
+  x = NUM2ULONG(x);             // Return the index of the least 
+  x = __builtin_ctzl(x)+1;      // significant bit of integer x.
+  return ULONG2NUM(x);
 }
 
-
-// Least Significant Bit
-static VALUE object_lsb(VALUE rb_self, VALUE x) {  
-  // Return the index of the least significant bit of integer x.
-  return INT2FIX(1);
-}
-
-
-// Most Significant Bit
 static VALUE object_msb(VALUE rb_self, VALUE x) {  
-  // Return the index of the most significant bit of integer x.
-  return INT2FIX(2);
+  x = NUM2ULONG(x);             // Return the index of the most 
+  x = 64-(__builtin_clzl(x));   // significant bit of integer x.
+  return ULONG2NUM(x);
 }
 
-
-// Population Count (Hamming Weight)
 static VALUE object_pop_count(VALUE rb_self, VALUE x) {  
-  // Return the count of binary 1s in the integer x.
-  return INT2FIX(3);
+  x = NUM2ULONG(x);             // Return the population count (Hamming Weight)
+  x = __builtin_popcount(x);    // of binary 1s in the integer x.  
+  return ULONG2NUM(x);      
 }
-
-
-// BitScan Forward
-
-
-
-// BitScan Reverse
-
-
 
 
 void Init_bitwise_math(){
   printf("Now lets do some bitwise operations.\n");
-  // rb_define_method(rb_cObject, "example_call", object_example_call, 0);
   VALUE mod_chess = rb_define_module("Chess");
   VALUE mod_bitboard = rb_define_module_under(mod_chess, "Bitboard");
   rb_define_module_function(mod_bitboard, "lsb", object_lsb, 1);
