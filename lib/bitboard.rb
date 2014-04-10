@@ -30,26 +30,21 @@ module Chess
       (get_row(from)-get_row(to)).abs + (get_column(from)-get_column(to)).abs
     end
 
-    def self.get_row(sq)  # rank
-      sq >> 3
-    end
+    # def self.get_row(sq)  # rank
+    #   sq >> 3
+    # end
 
-    def self.get_column(sq)  # file
-      sq & 7
-    end
+    # def self.get_column(sq)  # file
+    #   sq & 7
+    # end
 
-    def self.get_key(sq)
-      SQUARE_KEYS[sq]
-    end
+    # def self.get_key(sq)
+    #   SQUARE_KEYS[sq]
+    # end
 
-    def self.on_board?(sq)
-      (1<<sq) & UNI_MASK != 0
-    end
-
-    # get the integer value of the least significant bit for integer x
-    def self.lsb_value(x)
-      x&-x
-    end
+    # def self.on_board?(sq)
+    #   (1<<sq) & UNI_MASK != 0
+    # end
 
     def self.print_bitboard(x, square=nil)
       str = x.to_s(2)

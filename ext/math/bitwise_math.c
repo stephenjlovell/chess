@@ -23,8 +23,6 @@
 #include <stdio.h>
 
 
-typedef unsigned long BBRD;
-
 
 static VALUE object_lsb(VALUE rb_self, VALUE x) { 
   x = NUM2ULONG(x);             // Return the index of the least 
@@ -44,14 +42,28 @@ static VALUE object_pop_count(VALUE rb_self, VALUE x) {
   return ULONG2NUM(x);      
 }
 
+static VALUE object_get_ray_attacks(VALUE rb_self, VALUE occupied, VALUE ray, VALUE blocker){
+  // occupied = NUM2ULONG(occupied);
+  // ray = NUM2ULONG(ray);
+  // blocker = NUM2ULONG(blocker);
+  return ULONG2NUM(0);
+}
+
+
+
 
 void Init_bitwise_math(){
   printf("Now lets do some bitwise operations.\n");
+
   VALUE mod_chess = rb_define_module("Chess");
   VALUE mod_bitboard = rb_define_module_under(mod_chess, "Bitboard");
+
+  // set up module helper functions
   rb_define_module_function(mod_bitboard, "lsb", object_lsb, 1);
   rb_define_module_function(mod_bitboard, "msb", object_msb, 1);
   rb_define_module_function(mod_bitboard, "pop_count", object_pop_count, 1);
+
+
 }
 
 
