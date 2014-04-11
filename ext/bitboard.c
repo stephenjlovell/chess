@@ -19,68 +19,19 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
-#include "ruby.h"
-#include <stdio.h>
+#include "ruby_chess.h"
 
-typedef unsigned long BB;
-
-BB UNI_MASK = 0xffffffffffffffff;
-BB EMPTY_MASK = 0x0;
-
-
-BB square_keys[64];
-
-BB pawn_masks[2][64];
-BB knight_masks[64];
-BB bishop_masks[64];
-BB rook_masks[64];
-BB queen_masks[64];
-BB king_masks[64];
+int knight_offsets[8] = { -17, -15, -10, -6, 6, 10, 15, 17 };
+int bishop_offsets[4] = { -9, -7, 7, 9 };
+int rook_offsets[4]   = { -8, -1, 1, 8 };
+int king_offsets[8]   = { -9, -7, 7, 9, -8, -1, 1, 8 };
+int pawn_offsets[4]   = { 9, 7, -9, -7 };
 
 
-BB ray_north_masks[64];
-BB ray_ne_masks[64];
-BB ray_east_masks[64];
-BB ray_se_masks[64];
-BB ray_south_masks[64];
-BB ray_sw_masks[64];
-BB ray_west_masks[64];
-BB ray_nw_masks[64];
 
-typedef enum { NORTH, NE, EAST, SE, SOUTH, SW, WEST, NW } RayDirection;
-
-// BB *ray_masks[8];
-
-const int KNIGHT_OFFSETS[8] = { -17, -15, -10, -6, 6, 10, 15, 17 };
-const int BISHOP_OFFSETS[4] = { -9, -7, 7, 9 };
-const int ROOK_OFFSETS[4]   = { -8, -1, 1, 8 };
-const int KING_OFFSETS[8]   = { -9, -7, 7, 9, -8, -1, 1, 8 };
-const int PAWN_OFFSETS[4]   = { 9, 7, -9, -7 };
-
-#define on_board(sq) ((sq&0xffffffffffffffff) != 0)
-#define column(sq) (sq >> 3)
-#define row(sq) (sq & 7)
-#define manhattan_distance(from, to) (abs(row(from)-row(to))+(abs(column(from)-column(to))))
-
-void setup_knight_masks(){
-  int sq;
+void setup_square_keys(){      // Precalculate the value of the bit representing each square.
   for(int i=0; i<64; i++){
-    knight_masks[i] = 0;
-    for(int j=0; j<8; j++){
-      sq = i + KNIGHT_OFFSETS[j];
-      if (on_board(sq) && manhattan_distance(sq, i) == 3) knight_masks[i] |= (1<sq);
-    }
-  }
-}
-
-void setup_king_masks(){
-  int sq;
-  for(int i=0; i<64; i++){
-    king_masks[i] = 0;
-    for(int j=0; j<8; j++){
-      sq = i + KING_OFFSETS[j];
-      if (on_board(sq) && manhattan_distance(sq, i) <= 2) king_masks[i] |= (1<sq);
-    }
+    square_keys[i] = (1<<i);
   }
 }
 
@@ -89,15 +40,26 @@ void setup_pawn_masks(){
   for(int i=0; i<64; i++){
     if (i < 56){
       for(int j=0; j<2; j++){
-        sq = i + PAWN_OFFSETS[j];
+        sq = i + pawn_offsets[j];
         if (manhattan_distance(sq, i)==2) pawn_masks[0][i] |= (1<<sq);     
       }
     }
     if (i > 7){
       for(int j=2; j<4; j++){
-        sq = i + PAWN_OFFSETS[j];
+        sq = i + pawn_offsets[j];
         if (manhattan_distance(sq, i)==2) pawn_masks[1][i] |= (1<<sq);       
       }
+    }
+  }
+}
+
+void setup_knight_masks(){
+  int sq;
+  for(int i=0; i<64; i++){
+    knight_masks[i] = 0;
+    for(int j=0; j<8; j++){
+      sq = i + knight_offsets[j];
+      if (on_board(sq) && manhattan_distance(sq, i) == 3) knight_masks[i] |= (1<sq);
     }
   }
 }
@@ -109,24 +71,24 @@ void setup_bishop_masks(){
   for(int i=0; i<64; i++){
     for(int j=0; j<4; j++){
       previous = i;
-      current = i + BISHOP_OFFSETS[j];
+      current = i + bishop_offsets[j];
       while(on_board(current) && manhattan_distance(current, previous)==2){
         square_key = 1 << current;
         switch(square_key){
           case 7:
-            ray_nw_masks[i] |= square_key;        
+            ray_masks[NW][i] |= square_key;        
           case 9:
-            ray_ne_masks[i] |= square_key;
+            ray_masks[NE][i] |= square_key;
           case -7:
-            ray_se_masks[i] |= square_key;
+            ray_masks[SE][i] |= square_key;
           case -9:
-            ray_sw_masks[i] |= square_key;
+            ray_masks[SW][i] |= square_key;
         }
         previous = current;
-        current += BISHOP_OFFSETS[j];
+        current += bishop_offsets[j];
       }
     }
-    bishop_masks[i] = ray_nw_masks[i]|ray_ne_masks[i]|ray_se_masks[i]|ray_sw_masks[i];
+    bishop_masks[i] = ray_masks[NW][i]|ray_masks[NE][i]|ray_masks[SE][i]|ray_masks[SW][i];
   }
 }
 
@@ -137,41 +99,84 @@ void setup_rook_masks(){
   for(int i=0; i<64; i++){
     for(int j=0; j<4; j++){
       previous = i;
-      current = i + ROOK_OFFSETS[j];
+      current = i + rook_offsets[j];
       while(on_board(current) && manhattan_distance(current, previous)==1){
         square_key = 1 << current;
         switch(square_key){
           case 8:
-            ray_north_masks[i] |= square_key;        
+            ray_masks[NORTH][i] |= square_key;        
           case -8:
-            ray_south_masks[i] |= square_key;
+            ray_masks[SOUTH][i] |= square_key;
           case 1:
-            ray_east_masks[i] |= square_key;
+            ray_masks[EAST][i] |= square_key;
           case -1:
-            ray_west_masks[i] |= square_key;
+            ray_masks[WEST][i] |= square_key;
         }
         previous = current;
-        current += BISHOP_OFFSETS[j];
+        current += bishop_offsets[j];
       }
     }
-    rook_masks[i] = ray_north_masks[i]|ray_south_masks[i]|ray_east_masks[i]|ray_west_masks[i];
+    rook_masks[i] = ray_masks[NORTH][i]|ray_masks[SOUTH][i]|ray_masks[EAST][i]|ray_masks[WEST][i];
   }
 }
 
-void setup_masks(){
-  setup_pawn_masks();
-  setup_knight_masks();
-  setup_bishop_masks();
+void setup_queen_masks(){
+  for(int i=0; i<64; i++) queen_masks[i] = (bishop_masks[i] | rook_masks[i]);
+}
+
+void setup_king_masks(){
+  int sq;
+  for(int i=0; i<64; i++){
+    king_masks[i] = 0;
+    for(int j=0; j<8; j++){
+      sq = i + king_offsets[j];
+      if (on_board(sq) && manhattan_distance(sq, i) <= 2) king_masks[i] |= (1<sq);
+    }
+  }
+}
+
+void setup_row_masks(){
+  row_masks[0] = 0xff;    // set the first row to binary 11111111, or 255.
+  for(int i=1; i<8; i++){
+    row_masks[i] = (row_masks[i-1] << 8);  // create the remaining rows by shifting the previous
+  }                                        // row up by 8 squares.
+}
+
+void setup_column_masks(){
+  column_masks[0] = 1;
+  for(int i=0; i<8; i++) column_masks[0] |= (column_masks[0]<<8);  // set the first column
+  for(int i=1; i<8; i++){
+    column_masks[i] = (column_masks[i-1]<<1);  // create the remaining columns by transposing the 
+  }                                           // previous column rightward.
+}
+
+void setup_consecutive_bits(){    // Pre-calculated array of n integers representing
+  consecutive_bits[0] = 0;        // bitsets of 1-bits of length n, indexed by length.
+  for(int i=1; i<64; i++){
+    consecutive_bits[i] = (consecutive_bits[i-1] | (1<<(i-1)));
+  }
+}
+
+void setup_masks(){     
+  setup_pawn_masks();     // For each square, calculate bitboard attack maps showing 
+  setup_knight_masks();   // the squares to which the given piece type may move. These are
+  setup_bishop_masks();   // used as bitmasks during move generation to find pseudolegal moves.
   setup_rook_masks();
+  setup_queen_masks();     
   setup_king_masks();
+
+  setup_row_masks();      // Create bitboard masks for each row and column.
+  setup_column_masks();
 }
 
 void Init_bitboard(){
-  printf("Ruby and C are good friends.\n");
+  printf("Loading bitboard extension...");
+
+  setup_square_keys();
+  setup_masks();
+
+  printf("done.\n");
 }
-
-
-
 
 
 

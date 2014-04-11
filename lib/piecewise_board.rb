@@ -22,9 +22,9 @@
 module Chess
   module Bitboard
 
+    require './ext/ruby_chess'
 
     class PiecewiseBoard
-      attr_reader :boards
 
       def initialize(bitboards=nil)
         @boards = bitboards || create_bitboards 
@@ -52,23 +52,17 @@ module Chess
       end
 
 
-      private
-
-      def create_bitboards  # Sets initial configuration of board at start of game. 
-        hsh = { w: {}, b: {} }
-        hsh[:w][:P] = ROW_MASKS[1]
-        hsh[:w][:N] = (1<<1) | (1<<6)
-        hsh[:w][:B] = (1<<2) | (1<<5)
-        hsh[:w][:R] =     1  | (1<<7)
-        hsh[:w][:Q] = (1<<3)
-        hsh[:w][:K] = (1<<4)
-        hsh[:b][:P] = ROW_MASKS[6]
-        hsh[:b][:N] = hsh[:w][:N] << 56
-        hsh[:b][:B] = hsh[:w][:B] << 56
-        hsh[:b][:R] = hsh[:w][:R] << 56
-        hsh[:b][:Q] = hsh[:w][:Q] << 56
-        hsh[:b][:K] = hsh[:w][:K] << 56
-        return hsh
+      def print_bitboard(x, square=nil)
+        str = x.to_s(2)
+        str = "0"*(64-str.length) + str
+        puts "   0 1 2 3 4 5 6 7"
+        puts " -----------------"
+        i=7
+        str.reverse.split(//).each_slice(8).reverse_each do |row| 
+          puts "#{i}| #{row.join(" ").gsub("1", Chess::colorize("1",32))}" 
+          i-=1
+        end
+        puts "\n"
       end
 
     end

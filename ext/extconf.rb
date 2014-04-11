@@ -20,5 +20,6 @@
 #-----------------------------------------------------------------------------------
 
 require 'mkmf'
-dir_config('bitboard')
-create_makefile('bitboard')
+target = 'ruby_chess'
+dir_config(target)
+create_makefile(target)

@@ -133,12 +133,12 @@ extout_prefix =
 target_prefix = 
 LOCAL_LIBS = 
 LIBS =   -lpthread -ldl -lobjc 
-ORIG_SRCS = bitboard.c
+ORIG_SRCS = bitboard.c bitwise_math.c move_gen.c ruby_chess.c
 SRCS = $(ORIG_SRCS) 
-OBJS = bitboard.o
-HDRS = 
-TARGET = bitboard
-TARGET_NAME = bitboard
+OBJS = bitboard.o bitwise_math.o move_gen.o ruby_chess.o
+HDRS = $(srcdir)/bitboard.h $(srcdir)/bitwise_math.h $(srcdir)/move_gen.h $(srcdir)/ruby_chess.h
+TARGET = ruby_chess
+TARGET_NAME = ruby_chess
 TARGET_ENTRY = Init_$(TARGET_NAME)
 DLLIB = $(TARGET).bundle
 EXTSTATIC = 
@@ -189,7 +189,7 @@ install-rb-default: pre-install-rb-default
 pre-install-rb: Makefile
 pre-install-rb-default: Makefile
 pre-install-rb-default:
-	$(ECHO) installing default bitboard libraries
+	$(ECHO) installing default ruby_chess libraries
 $(TIMESTAMP_DIR)/.RUBYARCHDIR.time:
 	$(Q) $(MAKEDIRS) $(@D) $(RUBYARCHDIR)
 	$(Q) $(TOUCH) $@
