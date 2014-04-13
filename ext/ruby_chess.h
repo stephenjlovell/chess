@@ -63,6 +63,7 @@ static BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} };
 // Include child header files
 #include "bitboard.h"
 #include "bitwise_math.h"
+#include "board.h"
 #include "move_gen.h"
 
 

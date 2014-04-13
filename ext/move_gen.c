@@ -90,6 +90,10 @@ BB get_queen_attacks(BB occupied, enumSq sq){
 
 
 
+
+
+
+
 void Init_move_gen(){
 
 }

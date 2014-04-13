@@ -1,14 +1,47 @@
 
 
+C Extension handles the following:
+
+  Bitboards for board representation are stored in a C struct.  The struct is wrapped in a Ruby class
+  via data_wrap_struct(), and maintained as an instance variable inside a Ruby Position object.
+
+  C generates move target squares for move generation. Move generation should be segmented by the kind of move that Ruby will need to instantiate.
+
+  C updates bitboards during move generation.  Board wrapper class will provide interface for Ruby to send the appropriate data.
+
+  C provides function for determining if in check.
+
+  C separately generates moves that evade check, for generation in Q-Search
+
+  C generates attack maps (including 'hidden' attackers) for each side for use in SEE
+
+
+Ruby handles the rest, including:
+
+  Creating initial values for bitboards based on FEN notation.
+
+  Making and unmaking moves via existing Ruby objects. Ruby will pass data required by C to update bitboards.
+
+  Maintaining/updating a supplemental 'square-centric' board representation for easily determining what piece if any is on a given square.  Existing Ruby Board class will be used for this.
+
+
+Issues to resolve:
+
+  Ruby Location object - rendered obsolete? used in pieces, position, board, history, killer, move, tropism.
+
+  King Tropism - would be more efficient to calculate using bitboards, even if incremental update is maintained.
+
+
+
+
 
 
 
 Bitboards needed for board representation:
 
   2 x 6 bitboards for piece type/color
+  2 x bitboards for side piece placement
   1 bitboard for occupancy (includes both colors)
-
-
 
 Bitboard move generation:
   7 x 64 bitboards showing where each square can be attacked from by each piece type (given a blank board).  
@@ -17,10 +50,4 @@ Bitboard move generation:
   to get first blocker.  For SE, S, SW, W directions, use bitscan reverse (msb) to get first blocker
 
 
-Additional bitboards needed:
-
-  Attack maps:
-
-
-  # 4. 64 x 64 array of bitboards indicating the squares 'in between' each pair of squares, for generating check evasions.
 
