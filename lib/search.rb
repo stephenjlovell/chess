@@ -133,7 +133,7 @@ module Chess
 
     # Make an initial guess at the heuristic value of the root node. Used in MTD(f) when no estimate from a previous
     # search or from the previous ID iteration is available.
-    def self.get_initial_estimate
+    def self.get_first_guess
       if @node.in_check?
         move, value = alpha_beta_root(PLY_VALUE)
       else
@@ -148,7 +148,7 @@ module Chess
     # the bounds reaches size zero, the search is complete and the true value is returned.
 
     def self.mtdf(guess=nil, depth=nil) 
-      guess ||= (@previous_value || get_initial_estimate)
+      guess ||= (@previous_value || get_first_guess)
       depth ||= @max_depth
       best, @lower_bound, @upper_bound, mtdf_passes = -$INF, -$INF, $INF, 0
 
@@ -168,7 +168,7 @@ module Chess
     # MTD(f)-Step modifies the MTD(f) algorithm to dynamically increase/decrease the 
 
     def self.mtdf_step(guess=nil, depth=nil) # MTD(f) with 'convergence accelerator'.
-      guess ||= (@previous_value || get_initial_estimate)
+      guess ||= (@previous_value || get_first_guess)
       depth ||= @max_depth
       mtdf_passes, best, @lower_bound, @upper_bound, step = 0, -$INF, -$INF, $INF, MTD_STEP_SIZE
       stepped_up, stepped_down = false, false

@@ -25,13 +25,13 @@ module Chess
     # Assign each piece a base material value approximating its relative importance.      
     PIECE_VALUES = { P: 100, N: 320, B: 333, R: 510, Q: 880, K: 100000 }
 
-    # This constant represents the maximum value of all non-king pieces for each side.
+    # This constant represents the maximum value of all non-king pieces for each side.  ~4,006
     NON_KING_VALUE = PIECE_VALUES[:P]*8 + PIECE_VALUES[:N]*2 + PIECE_VALUES[:B]*2 + 
                      PIECE_VALUES[:R]*2 + PIECE_VALUES[:Q]
 
     # When a player has lost 2/3 of their pieces by value, they are considered to be in the 'endgame'.  
     # Endgame state is used during Evaluation.
-    ENDGAME_VALUE = PIECE_VALUES[:K] + NON_KING_VALUE/3
+    ENDGAME_VALUE = PIECE_VALUES[:K] + NON_KING_VALUE/4
 
     # During search, an evaluation score less than KING_LOSS indicates that the king will be captured in the next ply.  This
     # is used to avoid illegal moves without the overhead cost of checking each possible move for full legality.
@@ -445,14 +445,19 @@ module Chess
       end
     end
 
+    def self.set_piece_sym_values
+      hsh = { wP: PIECE_VALUES[:P], wN: PIECE_VALUES[:N], wB: PIECE_VALUES[:B], 
+              wR: PIECE_VALUES[:R], wQ: PIECE_VALUES[:Q], wK: PIECE_VALUES[:K],
+              bP: PIECE_VALUES[:P], bN: PIECE_VALUES[:N], bB: PIECE_VALUES[:B], 
+              bR: PIECE_VALUES[:R], bQ: PIECE_VALUES[:Q], bK: PIECE_VALUES[:K] }
+      hsh.default = 0
+      return hsh
+    end
+
     # This hash associates piece symbols with the value of their piece type.
-    PIECE_SYM_VALUES = { wP: PIECE_VALUES[:P], wN: PIECE_VALUES[:N], wB: PIECE_VALUES[:B], 
-                         wR: PIECE_VALUES[:R], wQ: PIECE_VALUES[:Q], wK: PIECE_VALUES[:K],
-                         bP: PIECE_VALUES[:P], bN: PIECE_VALUES[:N], bB: PIECE_VALUES[:B], 
-                         bR: PIECE_VALUES[:R], bQ: PIECE_VALUES[:Q], bK: PIECE_VALUES[:K] }
+    PIECE_SYM_VALUES = set_piece_sym_values
 
     def self.get_value_by_sym(sym)
-      return 0 if sym == nil || sym == :XX
       PIECE_SYM_VALUES[sym]
     end
 
