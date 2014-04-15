@@ -20,8 +20,10 @@
 //-----------------------------------------------------------------------------------
 
 
-#ifndef BOARD_H
-#define BOARD_H
+#ifndef BOARD
+#define BOARD
+
+#include "shared.h"
 
 typedef struct {
   BB pawns[2];
@@ -30,22 +32,20 @@ typedef struct {
   BB rooks[2];
   BB queens[2];
   BB kings[2];
-
   BB all[2];
-
-} BOARD;
-
+} BRD;
 
 // This module wraps a Ruby object around the BOARD struct to make it accessible within Ruby.
 
-static BOARD current_board;
+static BRD current_board;
 static VALUE wrap_Board_alloc(VALUE klass);
-static void wrap_Board_free(BOARD* board);
-static VALUE wrap_Board_init(VALUE self, VALUE bb_hash);
-static BOARD* get_board(VALUE self);
+static void wrap_Board_free(BRD* board);
+static VALUE wrap_Board_init(VALUE self);
+static BRD* get_board(VALUE self);
 static VALUE object_set_bitboard(VALUE self, VALUE piece_type, VALUE color, VALUE bitboard);
+static VALUE object_get_bitboard(VALUE self, VALUE piece_type, VALUE color);
 
-void Init_board();
+extern void Init_board();
   
 #endif
 

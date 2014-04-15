@@ -24,48 +24,60 @@ module Chess
 
     require './ext/ruby_chess'
 
-    # class PiecewiseBoard
+    class PiecewiseBoard  # This definition adds some additional methods to the PiecewiseBoard class
+                          # provided by board.c
 
-    #   def initialize(bitboards=nil)
-    #     @boards = bitboards || create_bitboards 
-    #   end
+      def initialize(sboard=nil)
+        setup(sboard) unless sboard.nil?
+      end
 
-    #   def clear # Removes all pieces from the board
-    #     @boards.each { |sym, bb| @boards[sym] = 0 }
-    #   end
+      def [](type, color)
+        get_bitboard(type, color)
+      end
 
-    #   def [](color)
-    #     @boards[color]
-    #   end
+      def []=(type, color, bitboard)
+        set_bitboard(type, color, bitboard)
+      end
 
-    #   def print
-    #     puts "not implemented"
-    #   end
+      def print
+        COLORS.each do |color|
+          Pieces::PIECE_TYPES.each do |type|
+            puts "\n", (color.to_s + type.to_s), "\n"
+            print_bitboard(get_bitboard(type, color))
+          end
+        end
+      end
 
-    #   def print_bitboards
-    #     @boards.each do |color, hsh|
-    #       hsh.each do |sym, bb|
-    #         puts color.to_s + sym.to_s
-    #         Bitboard::print_bitboard(bb)
-    #       end
-    #     end
-    #   end
+      def print_bitboard(x, square=nil)
+        str = x.to_s(2)
+        str = "0"*(64-str.length) + str
+        puts "   0 1 2 3 4 5 6 7"
+        puts " -----------------"
+        i=7
+        str.reverse.split(//).each_slice(8).reverse_each do |row| 
+          puts "#{i}| #{row.join(" ").gsub("1", Chess::colorize("1",32))}" 
+          i-=1
+        end
+        puts "\n"
+      end
 
+      private
 
-    #   def print_bitboard(x, square=nil)
-    #     str = x.to_s(2)
-    #     str = "0"*(64-str.length) + str
-    #     puts "   0 1 2 3 4 5 6 7"
-    #     puts " -----------------"
-    #     i=7
-    #     str.reverse.split(//).each_slice(8).reverse_each do |row| 
-    #       puts "#{i}| #{row.join(" ").gsub("1", Chess::colorize("1",32))}" 
-    #       i-=1
-    #     end
-    #     puts "\n"
-    #   end
+      def setup(sboard)     # Initialize the piecewise board at start of game by scanning
+        hsh = Hash.new(0)   # the square-centric board.
+        Pieces::PIECE_SYMBOLS.each {|sym| hsh[sym] = 0 }
+        sboard.flatten.each_with_index {|sym, i| hsh[sym] |= (1<<i) unless sym.nil? }
+        hsh.each do |sym, bitboard|
+          type, color = sym.to_s[1].to_sym, sym.to_s[0].to_sym
+          # puts type, color
+          # print_bitboard(bitboard)
+          self[type, color] = bitboard
+        end
+      end
 
-    # end
+    end
+
+    # PiecewiseBoard.new(Board.new).print
 
   end
 end

@@ -19,56 +19,13 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
-// #include "shared.h"
-#include "bitwise_math.h"
+#include "shared.h"
 
-
-static VALUE object_lsb(VALUE rb_self, VALUE x) { 
-  x = NUM2ULONG(x);             // Return the index of the least 
-  x = lsb(x);                   // significant bit of integer x.
-  return ULONG2NUM(x);
+extern void Init_ruby_chess(){
+  printf("Loading native extension:\n");
+  Init_bitwise_math();
+  Init_bitboard();
+  Init_board();
+  Init_move_gen();
+  printf("...finished.\n\n");
 }
-
-static VALUE object_msb(VALUE rb_self, VALUE x) {  
-  x = NUM2ULONG(x);             // Return the index of the most 
-  x = msb(x);                   // significant bit of integer x.
-  return ULONG2NUM(x);
-}
-
-static VALUE object_pop_count(VALUE rb_self, VALUE x) {  
-  x = NUM2ULONG(x);             // Return the population count (Hamming Weight)
-  x = pop_count(x);             // of binary 1s in the integer x.  
-  return ULONG2NUM(x);      
-}
-
-
-extern void Init_bitwise_math(){
-  printf("  -Loading bitwise_math extension...");
-
-  VALUE mod_chess = rb_define_module("Chess");
-  VALUE mod_bitboard = rb_define_module_under(mod_chess, "Bitboard");
-
-  // set up module helper functions
-  rb_define_module_function(mod_bitboard, "lsb", object_lsb, 1);
-  rb_define_module_function(mod_bitboard, "msb", object_msb, 1);
-  rb_define_module_function(mod_bitboard, "pop_count", object_pop_count, 1);
-
-  printf("done.\n");;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

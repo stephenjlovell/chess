@@ -71,6 +71,10 @@ module Chess
       return self
     end
 
+    def flatten
+      @squares[2..9].collect { |r| r[2..9] }.flatten
+    end
+
     def each
       each_square_with_location { |r,c,s| yield (@squares[r][c]) }
     end

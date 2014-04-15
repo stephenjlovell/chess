@@ -19,8 +19,10 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
-#ifndef BITBOARD_H
-#define BITBOARD_H
+#ifndef BITBOARD
+#define BITBOARD
+
+#include "shared.h"
 
 void setup_square_masks_on();
 
@@ -37,7 +39,7 @@ void setup_consecutive_bits();
 
 void setup_masks();
 
-void Init_bitboard();
+extern void Init_bitboard();
 
 
 #endif

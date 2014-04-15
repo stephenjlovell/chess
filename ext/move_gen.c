@@ -19,8 +19,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
-#include "ruby_chess.h"
-
+#include "move_gen.h"
 
 BB get_ray_attacks_reverse(BB occupied, enumDir dir, enumSq sq){
   BB ray = ray_masks[dir][sq];   // Get a bitmask for all ray moves along direction dir from origin square sq.
@@ -69,16 +68,18 @@ BB get_queen_attacks(BB occupied, enumSq sq){
 }
 
 
-
-void generate_non_captures(BOARD *position, enumSide side){
-  BB occupied = position->all[WHITE] | position->all[BLACK];
+void generate_non_captures(enumSide side){
+  BB occupied = current_board.all[WHITE] | current_board.all[BLACK];
   BB empty = ~occupied;
   int from, to;
-  // generate regular knight moves
   BB pieces, attacks;
 
+  // Pawns
+
+
+
   // Knights
-  for(pieces = position->knights[side]; pieces; clear(from, pieces)){
+  for(pieces = current_board.knights[side]; pieces; clear(from, pieces)){
     from = furthest_forward(pieces, side);  // Locate each knight for the side to move.  
     attacks = knight_masks[from] & empty;
 
@@ -87,7 +88,7 @@ void generate_non_captures(BOARD *position, enumSide side){
   }
 
   // Bishops
-  for(pieces = position->bishops[side]; pieces; clear(from, pieces)){
+  for(pieces = current_board.bishops[side]; pieces; clear(from, pieces)){
     from = furthest_forward(pieces, side);  // Locate each bishop for the side to move.  
     attacks = get_bishop_attacks(occupied, from) & empty;
 
@@ -96,7 +97,7 @@ void generate_non_captures(BOARD *position, enumSide side){
   }
 
   // Rooks
-  for(pieces = position->bishops[side]; pieces; clear(from, pieces)){
+  for(pieces = current_board.rooks[side]; pieces; clear(from, pieces)){
     from = furthest_forward(pieces, side);  // Locate each rook for the side to move.  
     attacks = get_rook_attacks(occupied, from) & empty;
 
@@ -105,7 +106,7 @@ void generate_non_captures(BOARD *position, enumSide side){
   }
 
   // Queens
-  for(pieces = position->bishops[side]; pieces; clear(from, pieces)){
+  for(pieces = current_board.queens[side]; pieces; clear(from, pieces)){
     from = furthest_forward(pieces, side);  // Locate each queen for the side to move.  
     attacks = get_queen_attacks(occupied, from) & empty;
 
@@ -125,8 +126,11 @@ void generate_non_captures(BOARD *position, enumSide side){
 
 
 
-void Init_move_gen(){
+extern void Init_move_gen(){
+  printf("  -Loading move_gen extension...");
 
+
+  printf("done.\n");
 }
 
 

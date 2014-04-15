@@ -19,26 +19,22 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
-#ifndef MOVE_GEN_H
-#define MOVE_GEN_H
+#ifndef MOVE_GEN
+#define MOVE_GEN
 
+#include "shared.h"
+#include "board.h"
+#include "bitwise_math.h"
 
-BB get_quiet_moves_reverse(BB occupied, enumDir dir, enumSq sq);
-
-BB get_quiet_moves_forward(BB occupied, enumDir dir, enumSq sq);
-
-BB get_all_moves_reverse(BB occupied, enumDir dir, enumSq sq);
-
-BB get_all_moves_forward(BB occupied, enumDir dir, enumSq sq);
-
+BB get_ray_attacks_reverse(BB occupied, enumDir dir, enumSq sq);
+BB get_ray_attacks_forward(BB occupied, enumDir dir, enumSq sq);
 BB get_bishop_attacks(BB occupied, enumSq sq);
-
-
 BB get_rook_attacks(BB occupied, enumSq sq);
-
 BB get_queen_attacks(BB occupied, enumSq sq);
 
-void Init_move_gen();
+void generate_non_captures(enumSide side);
+
+extern void Init_move_gen();
 
 
 #endif

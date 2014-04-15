@@ -19,9 +19,10 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
-#ifndef BITWISE_MATH_H
-#define BITWISE_MATH_H
+#ifndef BITWISE_MATH
+#define BITWISE_MATH
 
+#include "shared.h"
 
 #define lsb(bitboard) (__builtin_ctzl(bitboard)+1)
 #define msb(bitboard) (64-__builtin_clzl(bitboard))
@@ -35,7 +36,7 @@ static VALUE object_msb(VALUE rb_self, VALUE bitboard);
 
 static VALUE object_pop_count(VALUE rb_self, VALUE bitboard);
 
-void Init_bitwise_math();
+extern void Init_bitwise_math();
 
 
 

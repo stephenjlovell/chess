@@ -22,6 +22,9 @@
 module Chess
   module Pieces
 
+    PIECE_TYPES = [:P, :N, :B, :R, :Q, :K]
+    PIECE_SYMBOLS = [:wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK]
+
     # Assign each piece a base material value approximating its relative importance.      
     PIECE_VALUES = { P: 100, N: 320, B: 333, R: 510, Q: 880, K: 100000 }
 

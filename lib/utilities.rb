@@ -31,9 +31,11 @@ module Chess
   $killer = Killer::KillerTable.new     # single global killer table instance.
   $history = History::HistoryTable.new  # single global history table instance.
 
+
   # application-level constants:
   FLIP_COLOR = { w: :b, b: :w }
   TIME_LIMIT = 30  # default search time limit
+  COLORS = [:w, :b]
 
   def self.max(x,y)
     x > y ? x : y

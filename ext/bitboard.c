@@ -19,7 +19,8 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
-#include "ruby_chess.h"
+// #include "shared.h"
+#include "bitboard.h"
 
 int knight_offsets[8] = { -17, -15, -10, -6, 6, 10, 15, 17 };
 int bishop_offsets[4] = { -9, -7, 7, 9 };
@@ -29,7 +30,7 @@ int pawn_offsets[4]   = { 9, 7, -9, -7 };
 
 
 
-void setup_square_masks_on(){      // Precalculate the value of the bit representing each square.
+void setup_square_masks(){      // Precalculate the value of the bit representing each square.
   for(int i=0; i<64; i++){
     square_masks_on[i] = (1<<i);
     square_masks_off[i] = ~(square_masks_on[i]);
@@ -158,7 +159,9 @@ void setup_consecutive_bits(){    // Pre-calculated array of n integers represen
   }
 }
 
-void setup_masks(){     
+void setup_masks(){ 
+  setup_square_masks();
+
   setup_pawn_masks();     // For each square, calculate bitboard attack maps showing 
   setup_knight_masks();   // the squares to which the given piece type may move. These are
   setup_bishop_masks();   // used as bitmasks during move generation to find pseudolegal moves.
@@ -170,10 +173,9 @@ void setup_masks(){
   setup_column_masks();
 }
 
-void Init_bitboard(){
-  printf("Loading bitboard extension...");
+extern void Init_bitboard(){
+  printf("  -Loading bitboard extension...");
 
-  setup_square_masks_on();
   setup_masks();
 
   printf("done.\n");

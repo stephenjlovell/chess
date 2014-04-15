@@ -19,36 +19,24 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
-#include ""
-#include "ruby_chess.h"
-
+#include "board.h"
 
 
 static VALUE wrap_Board_alloc(VALUE klass){
-  return Data_Wrap_Struct(klass, NULL, wrap_Board_free, ruby_xmalloc(sizeof(BOARD)));
+  return Data_Wrap_Struct(klass, NULL, wrap_Board_free, ruby_xmalloc(sizeof(BRD)));
 }
 
-static void wrap_Board_free(BOARD* board){
+static void wrap_Board_free(BRD* board){
   ruby_xfree(board);
 }
 
-static VALUE wrap_Board_init(VALUE self, VALUE bb_hash){ 
-  if(!bb_hash == Qnil){
-    // Parse a Ruby hash of the form hash[piece][color] = bitboard and store each value in the struct.
-  }
-  return Qnil;
-}
-
-
-static BOARD* getBoard(VALUE self){
-  BOARD* b;
-  Data_Get_Struct(self, BOARD, b);
+static BRD* getBoard(VALUE self){
+  BRD* b;
+  Data_Get_Struct(self, BRD, b);
   return b;
 }
 
 static VALUE object_set_bitboard(VALUE self, VALUE piece_type, VALUE color, VALUE bitboard){
-  color = SYM2ID(color);
-  piece_type = SYM2ID(piece_type);
   bitboard = NUM2ULONG(bitboard);
   enumSide side;
   if (color == ID2SYM(rb_intern("w"))){
@@ -66,41 +54,56 @@ static VALUE object_set_bitboard(VALUE self, VALUE piece_type, VALUE color, VALU
     current_board.rooks[side] = bitboard;
   } else if (piece_type == ID2SYM(rb_intern("Q"))){
     current_board.queens[side] = bitboard;
-  } else {
+  } else if (piece_type == ID2SYM(rb_intern("K"))){
     current_board.kings[side] = bitboard;
+  } else {
+    printf("bitboard not set.\n");
+    return Qnil;
   }
+
   return ULONG2NUM(bitboard);
 }
 
 
-void Init_board(){
-  printf("Loading PiecewiseBoard extension...");
-  VALUE mod_chess = rb_define_module("Chess");
-  VALUE mod_bitboard = rb_define_module_under(mod_chess, "Bitboard");
-  VALUE class = rb_define_class_under(mod_bitboard, "PiecewiseBoard", rb_cObject);
-  rb_define_alloc_func(class, wrap_Board_alloc);
-  rb_define_private_method(class, "initialize", RUBY_METHOD_FUNC(wrap_Board_init), 1);
-  rb_define_method(class, "set_bitboard", RUBY_METHOD_FUNC(object_set_bitboard), 3);
-  printf("done.\n");
+static VALUE object_get_bitboard(VALUE self, VALUE piece_type, VALUE color){
 
+  enumSide side;
+  if (color == ID2SYM(rb_intern("w"))){
+    side = WHITE;
+  } else {
+    side = BLACK;
+  }
+  if (piece_type == ID2SYM(rb_intern("P"))){
+    return ULONG2NUM(current_board.pawns[side]);
+  } else if (piece_type == ID2SYM(rb_intern("N"))){
+    return ULONG2NUM(current_board.knights[side]);
+  } else if (piece_type == ID2SYM(rb_intern("B"))){
+    return ULONG2NUM(current_board.bishops[side]);
+  } else if (piece_type == ID2SYM(rb_intern("R"))){
+    return ULONG2NUM(current_board.rooks[side]);
+  } else if (piece_type == ID2SYM(rb_intern("Q"))){
+    return ULONG2NUM(current_board.queens[side]);
+  } else if (piece_type == ID2SYM(rb_intern("K"))){
+    return ULONG2NUM(current_board.kings[side]);
+  } else {
+    printf("bitboard not found.\n");
+    return Qnil;    
+  }
 
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+extern void Init_board(){
+  printf("  -Loading board extension...");
+  VALUE mod_chess = rb_define_module("Chess");
+  VALUE mod_bitboard = rb_define_module_under(mod_chess, "Bitboard");
+  VALUE class = rb_define_class_under(mod_bitboard, "PiecewiseBoard", rb_cObject);
+  rb_define_alloc_func(class, wrap_Board_alloc);
+  // rb_define_private_method(class, "initialize", RUBY_METHOD_FUNC(wrap_Board_init), 0);
+  rb_define_method(class, "get_bitboard", RUBY_METHOD_FUNC(object_get_bitboard), 2);
+  rb_define_method(class, "set_bitboard", RUBY_METHOD_FUNC(object_set_bitboard), 3);
+  printf("done.\n");
+}
 
 
 
