@@ -29,9 +29,10 @@ int pawn_offsets[4]   = { 9, 7, -9, -7 };
 
 
 
-void setup_square_keys(){      // Precalculate the value of the bit representing each square.
+void setup_square_masks_on(){      // Precalculate the value of the bit representing each square.
   for(int i=0; i<64; i++){
-    square_keys[i] = (1<<i);
+    square_masks_on[i] = (1<<i);
+    square_masks_off[i] = ~(square_masks_on[i]);
   }
 }
 
@@ -172,7 +173,7 @@ void setup_masks(){
 void Init_bitboard(){
   printf("Loading bitboard extension...");
 
-  setup_square_keys();
+  setup_square_masks_on();
   setup_masks();
 
   printf("done.\n");

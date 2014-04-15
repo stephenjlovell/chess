@@ -23,22 +23,30 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-  typedef struct {
-    BB pawns[2];
-    BB knights[2];
-    BB bishops[2];
-    BB rooks[2];
-    BB queens[2];
-    BB kings[2];
+typedef struct {
+  BB pawns[2];
+  BB knights[2];
+  BB bishops[2];
+  BB rooks[2];
+  BB queens[2];
+  BB kings[2];
 
-    BB placement[2];
-    BB occupied;
+  BB all[2];
 
-  } Board;
-
+} BOARD;
 
 
+// This module wraps a Ruby object around the BOARD struct to make it accessible within Ruby.
 
+static BOARD current_board;
+static VALUE wrap_Board_alloc(VALUE klass);
+static void wrap_Board_free(BOARD* board);
+static VALUE wrap_Board_init(VALUE self, VALUE bb_hash);
+static BOARD* get_board(VALUE self);
+static VALUE object_set_bitboard(VALUE self, VALUE piece_type, VALUE color, VALUE bitboard);
+
+void Init_board();
+  
 #endif
 
 

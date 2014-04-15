@@ -33,6 +33,8 @@
 #define manhattan_distance(from, to) (abs(row(from)-row(to))+(abs(column(from)-column(to))))
 
 
+
+
 typedef unsigned long BB;
 typedef enum { NORTH, EAST, NW, NE, SOUTH, WEST, SE, SW } enumDir;
 
@@ -44,6 +46,8 @@ typedef enum {  A1, B1, C1, D1, E1, F1, G1, H1,
                 A6, B6, C6, D6, E6, F6, G6, H6, 
                 A7, B7, C7, D7, E7, F7, G7, H7, 
                 A8, B8, C8, D8, E8, F8, G8, H8  } enumSq;
+
+typedef enum { BLACK, WHITE } enumSide;
 
 
 static BB uni_mask = 0xffffffffffffffff;
@@ -57,8 +61,14 @@ static BB bishop_masks[64] = {0};
 static BB rook_masks[64] = {0};
 static BB queen_masks[64] = {0};
 static BB king_masks[64] = {0};
-static BB square_keys[64] = {0};
+
 static BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} };
+
+static BB square_masks_on[64] = {0};
+static BB square_masks_off[64] = {0};
+
+#define clear(sq, bitboard) ((bitboard)&(square_masks_off[sq]))
+#define add(sq, bitboard)   ((bitboard)&(square_masks_on[sq]))
 
 // Include child header files
 #include "bitboard.h"
@@ -68,7 +78,7 @@ static BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} };
 
 
 
-void Init_ruby_chess();
+static void Init_ruby_chess();
 
 
 #endif

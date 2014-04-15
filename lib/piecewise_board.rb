@@ -24,48 +24,48 @@ module Chess
 
     require './ext/ruby_chess'
 
-    class PiecewiseBoard
+    # class PiecewiseBoard
 
-      def initialize(bitboards=nil)
-        @boards = bitboards || create_bitboards 
-      end
+    #   def initialize(bitboards=nil)
+    #     @boards = bitboards || create_bitboards 
+    #   end
 
-      def clear # Removes all pieces from the board
-        @boards.each { |sym, bb| @boards[sym] = 0 }
-      end
+    #   def clear # Removes all pieces from the board
+    #     @boards.each { |sym, bb| @boards[sym] = 0 }
+    #   end
 
-      def [](color)
-        @boards[color]
-      end
+    #   def [](color)
+    #     @boards[color]
+    #   end
 
-      def print
-        puts "not implemented"
-      end
+    #   def print
+    #     puts "not implemented"
+    #   end
 
-      def print_bitboards
-        @boards.each do |color, hsh|
-          hsh.each do |sym, bb|
-            puts color.to_s + sym.to_s
-            Bitboard::print_bitboard(bb)
-          end
-        end
-      end
+    #   def print_bitboards
+    #     @boards.each do |color, hsh|
+    #       hsh.each do |sym, bb|
+    #         puts color.to_s + sym.to_s
+    #         Bitboard::print_bitboard(bb)
+    #       end
+    #     end
+    #   end
 
 
-      def print_bitboard(x, square=nil)
-        str = x.to_s(2)
-        str = "0"*(64-str.length) + str
-        puts "   0 1 2 3 4 5 6 7"
-        puts " -----------------"
-        i=7
-        str.reverse.split(//).each_slice(8).reverse_each do |row| 
-          puts "#{i}| #{row.join(" ").gsub("1", Chess::colorize("1",32))}" 
-          i-=1
-        end
-        puts "\n"
-      end
+    #   def print_bitboard(x, square=nil)
+    #     str = x.to_s(2)
+    #     str = "0"*(64-str.length) + str
+    #     puts "   0 1 2 3 4 5 6 7"
+    #     puts " -----------------"
+    #     i=7
+    #     str.reverse.split(//).each_slice(8).reverse_each do |row| 
+    #       puts "#{i}| #{row.join(" ").gsub("1", Chess::colorize("1",32))}" 
+    #       i-=1
+    #     end
+    #     puts "\n"
+    #   end
 
-    end
+    # end
 
   end
 end

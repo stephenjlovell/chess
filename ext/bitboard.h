@@ -22,7 +22,7 @@
 #ifndef BITBOARD_H
 #define BITBOARD_H
 
-void setup_square_keys();
+void setup_square_masks_on();
 
 void setup_pawn_masks();
 void setup_knight_masks();

@@ -1,7 +1,29 @@
+#-----------------------------------------------------------------------------------
+# Copyright (c) 2013 Stephen J. Lovell
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#-----------------------------------------------------------------------------------
+
+require './lib/location.rb'
+require 'SecureRandom'
+
 module Chess
   module Memory
-    require 'SecureRandom'
-
     #  The TranspositionTable (TT) class handles storage and retrieval of results for previous subtree searches.
     #  This allows the re-use of information gained in previous searches, and avoids wasteful re-expansion of the same
     #  subtree. Design considerations:
@@ -11,16 +33,15 @@ module Chess
     #       was based on the largest subtree will be saved, and the smaller (and presumably less accurate)
     #       search result is discarded.
     #     
-    #    2. Storage - Each saved result is stored in a TTBoundEntry instance.  Rather than saving the value and a
+    #    2. Storage - Each saved result is stored in a TTEntry instance.  Rather than saving the value and a
     #       flag indicating node type, each entry saves both lower and upper bounds on the search.  These bounds
     #       can be used to adjust local bounds, and are required for some MTD(f) based search algorithms to perform well.
     #
     #    3. Hashing - 64-bit hash keys for nodes are computed via Zobrist hashing (see below).  Hash keys are incrementally
     #       updated during move generation.
 
-    TTBoundEntry = Struct.new(:key, :lower, :upper, :move)
-
-    TTBoundSlot = Struct.new(:depth, :count, :bound)
+    TTEntry = Struct.new(:key, :lower, :upper, :move)
+    TTBound = Struct.new(:depth, :count, :bound)
 
     class TranspositionTable
       def initialize
@@ -153,8 +174,7 @@ module Chess
         else 
           b = (result <= alpha) ? result : beta
           a = (result >= beta)  ? result : alpha
-          @table[h] = TTBoundEntry.new(h, TTBoundSlot.new(depth, count, a), 
-                                          TTBoundSlot.new(depth, count, b), move)
+          @table[h] = TTEntry.new(h, TTBound.new(depth, count, a), TTBound.new(depth, count, b), move)
         end
         return result, count
       end
@@ -168,7 +188,7 @@ module Chess
 
     class HashCollisionError < StandardError 
     end
-
+    
 
     # Zobrist Hashing
     #
@@ -179,16 +199,17 @@ module Chess
 
     # Create a 10 x 10 array containing the results of the block passed to create_key_array.
     # The block should return either a random integer key, or a data structure containing random integer keys.
+
     def self.create_key_array
-      Array.new(10) { Array.new(10) { yield } } 
+      hsh = Hash.new(0)
+      Chess::Location::valid_locations.each { |loc| hsh[loc] = yield }
+      return hsh
     end
     
     # Create a 12 element hash associating each piece symbol to a random 64-bit integer.
     def self.piece_hash 
       hsh = {}          
-      [:wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK].each do |sym| 
-        hsh[sym] = create_key
-      end
+      [:wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK].each { |sym| hsh[sym] = create_key }
       return hsh
     end
 
@@ -196,31 +217,28 @@ module Chess
       SecureRandom::random_number(2**64)
     end
 
-    # Create a 10 x 10 x 12 structure associating each possible square and piece combination 
-    # with its own random 64-bit key.
+    # Associate each possible square and piece combination with its own random 64-bit key.
     PSQ = create_key_array { piece_hash } 
 
-    # Create a 10 x 10 array associating possible en-passant target squares with their own 
-    # random 64-bit integer key.
+    # Associate each possible en-passant target square with its own random 64-bit key.
     ENP = create_key_array { create_key }
 
-    SIDE = 1  # Integer key representing a change in side-to-move.  Used during make/unmake to update 
+    SIDE = 1  # Integer key representing a change in side-to-move. Used during make/unmake to update 
               # hash key of node.
 
     # Return the Zobrist key for the given en-passant target.
     def self.enp_key(enp_target)
-      return 0 if enp_target.nil?
-      ENP[enp_target.r][enp_target.c]
+      enp_target.nil? ? 0 : ENP[enp_target]
     end
 
     # Return the Zobrist key corresponding to the given piece and location.
     def self.psq_key(piece, location)
-      PSQ[location.r][location.c][piece.symbol]
+      PSQ[location][piece.symbol]
     end
 
     # Return the Zobrist key corresponding to the given piece and square coordinates.
     def self.psq_key_by_square(r, c, sym)  # Alternative method for use with board object. 
-      PSQ[r][c][sym]
+      PSQ[Chess::Location::get_location_by_coordinates(r,c)][sym]
     end
 
   end

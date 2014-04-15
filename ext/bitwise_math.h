@@ -23,16 +23,17 @@
 #define BITWISE_MATH_H
 
 
-#define lsb(x) (__builtin_ctzl(x)+1)
-#define msb(x) (64-__builtin_clzl(x))
-#define pop_count(x) (__builtin_popcount(x))
+#define lsb(bitboard) (__builtin_ctzl(bitboard)+1)
+#define msb(bitboard) (64-__builtin_clzl(bitboard))
+#define furthest_forward(bitboard, color) (color ? msb(bitboard) : lsb(bitboard))
+#define pop_count(bitboard) (__builtin_popcount(bitboard))
 
 
-static VALUE object_lsb(VALUE rb_self, VALUE x);
+static VALUE object_lsb(VALUE rb_self, VALUE bitboard);
 
-static VALUE object_msb(VALUE rb_self, VALUE x);
+static VALUE object_msb(VALUE rb_self, VALUE bitboard);
 
-static VALUE object_pop_count(VALUE rb_self, VALUE x);
+static VALUE object_pop_count(VALUE rb_self, VALUE bitboard);
 
 void Init_bitwise_math();
 

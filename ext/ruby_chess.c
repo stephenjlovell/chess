@@ -19,12 +19,15 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
+#include "ruby.h"
 #include "ruby_chess.h"
+
 
 
 void Init_ruby_chess(){
   printf("loading ruby_chess extension...");
 
+  Init_bitwise_math();
 
   printf("done.\n");
 }
