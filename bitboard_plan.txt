@@ -22,7 +22,7 @@ Ruby handles the rest, including:
 
   Making and unmaking moves via existing Ruby objects. Ruby will pass data required by C to update bitboards.
 
-  Maintaining/updating a supplemental 'square-centric' board representation for easily determining what piece if any is on a given square.  Existing Ruby Board class will be used for this.
+  Maintaining/updating a supplemental 'square-centric' board representation for easily determining what piece if any is on a given square.  Existing Ruby Board class will be adapted for this.
 
 
 Issues to resolve:
@@ -31,6 +31,10 @@ Issues to resolve:
 
   King Tropism - would be more efficient to calculate using bitboards, even if incremental update is maintained.
 
+
+To Do:
+
+  
 
 
 

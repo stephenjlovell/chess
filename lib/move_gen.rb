@@ -130,6 +130,27 @@ module Chess
       return castles
     end
 
+
+    def self.get_non_captures(pos, moves)
+      pieces, occupied = pos.own_pieces, pos.occupied
+      Pieces::send_to_each(:get_non_captures, pos, moves, pieces, occupied)
+
+    end
+
+    def self.get_captures(pos, moves)
+      pieces, occupied, enemy = pos.own_pieces, pos.occupied, pos.enemy_pieces
+      Pieces::send_to_each(:get_captures, pos, moves, pieces, occupied, enemy)
+    end
+
+    def self.get_checks(pos, moves)
+
+    end
+
+    def self.get_check_evasions(pos, moves)
+
+    end
+
+
   end
 end
 

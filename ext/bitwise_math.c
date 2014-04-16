@@ -41,6 +41,18 @@ static VALUE object_pop_count(VALUE rb_self, VALUE x) {
   return ULONG2NUM(x);      
 }
 
+static VALUE object_add(VALUE rb_self, VALUE sq, VALUE bitboard) {  
+  sq = NUM2ULONG(sq);             
+  bitboard = NUM2ULONG(bitboard);
+  return ULONG2NUM(add(sq, bitboard));
+}
+
+static VALUE object_clear(VALUE rb_self, VALUE sq, VALUE bitboard) {  
+  sq = NUM2ULONG(sq);             
+  bitboard = NUM2ULONG(bitboard);
+  return ULONG2NUM(clear(sq, bitboard));
+}
+
 
 extern void Init_bitwise_math(){
   printf("  -Loading bitwise_math extension...");
@@ -52,6 +64,8 @@ extern void Init_bitwise_math(){
   rb_define_module_function(mod_bitboard, "lsb", object_lsb, 1);
   rb_define_module_function(mod_bitboard, "msb", object_msb, 1);
   rb_define_module_function(mod_bitboard, "pop_count", object_pop_count, 1);
+  rb_define_module_function(mod_bitboard, "add", object_add, 1);
+  rb_define_module_function(mod_bitboard, "clear", object_clear, 1);
 
   printf("done.\n");;
 }

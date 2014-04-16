@@ -31,21 +31,15 @@ module Chess
         setup(sboard) unless sboard.nil?
       end
 
-      def [](type, color)
-        get_bitboard(type, color)
-      end
-
-      def []=(type, color, bitboard)
-        set_bitboard(type, color, bitboard)
-      end
-
       def print
         COLORS.each do |color|
           Pieces::PIECE_TYPES.each do |type|
             puts "\n", (color.to_s + type.to_s), "\n"
-            print_bitboard(get_bitboard(type, color))
+            print_bitboard(@bitboards[color][type])
           end
-        end
+          puts "\n", color.to_s + " placement", "\n"
+          print_bitboard(@occupied[color])
+        end    
       end
 
       def print_bitboard(x, square=nil)
@@ -63,21 +57,23 @@ module Chess
 
       private
 
-      def setup(sboard)     # Initialize the piecewise board at start of game by scanning
-        hsh = Hash.new(0)   # the square-centric board.
-        Pieces::PIECE_SYMBOLS.each {|sym| hsh[sym] = 0 }
-        sboard.flatten.each_with_index {|sym, i| hsh[sym] |= (1<<i) unless sym.nil? }
-        hsh.each do |sym, bitboard|
-          type, color = sym.to_s[1].to_sym, sym.to_s[0].to_sym
-          # puts type, color
-          # print_bitboard(bitboard)
-          self[type, color] = bitboard
+      def setup(sboard)
+        @bitboards = { w: { P: 0, N: 0, B: 0, R: 0, Q: 0, K: 0 }, 
+                       b: { P: 0, N: 0, B: 0, R: 0, Q: 0, K: 0 } }
+        @occupied = { w: 0, b: 0 }
+
+        sboard.flatten.each_with_index do |sym, i| 
+          unless sym.nil? || sym == :XX
+            @bitboards[Pieces::PIECE_COLOR[sym]][Pieces::PIECE_TYPE[sym]] |= (1<<i)
+          end 
         end
+        @occupied[:w] = @bitboards[:w].each.inject(0) {|all, (t, bb)| all |= bb }
+        @occupied[:b] = @bitboards[:b].each.inject(0) {|all, (t, bb)| all |= bb }
       end
 
     end
 
-    # PiecewiseBoard.new(Board.new).print
+    PiecewiseBoard.new(Board.new).print
 
   end
 end

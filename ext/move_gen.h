@@ -32,7 +32,20 @@ BB get_bishop_attacks(BB occupied, enumSq sq);
 BB get_rook_attacks(BB occupied, enumSq sq);
 BB get_queen_attacks(BB occupied, enumSq sq);
 
-void generate_non_captures(enumSide side);
+VALUE get_knight_non_captures(VALUE self, VALUE knights, VALUE occupied);
+VALUE get_knight_captures(VALUE self, VALUE knights, VALUE enemy);
+
+VALUE get_bishop_non_captures(VALUE self, VALUE bishops, VALUE occupied);
+VALUE get_bishop_captures(VALUE self, VALUE bishops, VALUE occupied, VALUE enemy);
+
+VALUE get_rook_non_captures(VALUE self, VALUE rooks, VALUE occupied);
+VALUE get_rook_captures(VALUE self, VALUE rooks, VALUE occupied, VALUE enemy);
+
+VALUE get_queen_non_captures(VALUE self, VALUE queens, VALUE occupied);
+VALUE get_queen_captures(VALUE self, VALUE queens, VALUE occupied, VALUE enemy);
+
+VALUE get_king_non_captures(VALUE self, VALUE kings, VALUE occupied);
+VALUE get_king_captures(VALUE self, VALUE kings, VALUE enemy);
 
 extern void Init_move_gen();
 

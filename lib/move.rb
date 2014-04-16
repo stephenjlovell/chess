@@ -488,15 +488,15 @@ module Chess
     # hiding creation of strategy object instances from the client.
     class Factory  
       PROCS = { regular_move:           Proc.new { |*args| RegularMove.new },
-                king_move:              Proc.new { |*args| KingMove.new },
                 regular_capture:        Proc.new { |*args| RegularCapture.new(*args) },
+                castle:                 Proc.new { |*args| Castle.new(*args) },
+                king_move:              Proc.new { |*args| KingMove.new },
                 king_capture:           Proc.new { |*args| KingCapture.new(*args) },
                 enp_capture:            Proc.new { |*args| EnPassantCapture.new(*args) },
                 pawn_move:              Proc.new { |*args| PawnMove.new },
                 enp_advance:            Proc.new { |*args| EnPassantAdvance.new },
                 pawn_promotion:         Proc.new { |*args| PawnPromotion.new(*args) },
-                pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args) },
-                castle:                 Proc.new { |*args| Castle.new(*args) } } 
+                pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args) } } 
 
       def self.build(piece, from, to, sym, *args)  # create a Move object containing the specified strategy.
         raise "no product strategy #{sym} available for Move::MoveFactory" unless PROCS[sym]

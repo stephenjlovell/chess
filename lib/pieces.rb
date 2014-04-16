@@ -100,6 +100,9 @@ module Chess
                         en_passant: [ EAST, WEST ] } }
 
 
+    # set up bitmask used to unpack to/from pairs sent from movegen.c
+    FROM_MASK = 0b111111
+
     #  The abstract Piece class provides a shared interface and defualt behavior for its subclasses. Each concrete 
     #  piece instance can:
     #
@@ -118,49 +121,15 @@ module Chess
         @symbol.to_s
       end
 
-      # Generate all pseudo-legal moves available to the current piece.
-      # Moves are pushed into separate arrays for captures, promotions, and other moves.
-      def get_moves(position, from, moves, captures, promotions)
-        board = position.board 
-        self.class.directions.each do |vector| 
-          # Scan along a direction by repeatedly adding a given increment vector to the current square.
-          # Add a move object of the appropriate type to the move array if the square is a valid destination.
-          to = from + vector
-          while board.on_board?(to)
-            if board.empty?(to)
-              moves << Move::Factory.build(self, from, to, :regular_move)
-            else
-              if board.enemy?(to, @color)
-                # raise Memory::HashCollisionError if position.enemy_pieces[to].nil?   
-                captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
-              end
-              break  # if path blocked by any piece, stop evaluating in this direction.
-            end
-            to += vector
-          end
-        end
-
-      end
-
-      # Generate all pseudo-legal capture moves available to the current piece.
-      # Moves are pushed into separate arrays for captures and promotions.
-      def get_captures(position, from, captures, promotions)
-        board = position.board
-        self.class.directions.each do |vector| 
-          to = from + vector
-          while board.on_board?(to)
-            if board.occupied?(to) 
-              if board.enemy?(to, @color)
-                # raise Memory::HashCollisionError if position.enemy_pieces[to].nil?              
-                captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
-              end
-              break # if path blocked by any piece, stop evaluating in this direction.
-            end
-            to += vector
-          end
-        end
-      end
     end
+
+
+    #  Pawns behave differently than other pieces. They: 
+    #  1. can move only in one direction;
+    #  2. can attack diagonally but can only advance on file (forward);
+    #  3. can move an extra space from the starting square;
+    #  4. can capture other pawns via the En-Passant Rule;
+    #  5. are promoted to another piece type if they reach the enemy's back rank.
 
     class Pawn < Piece
       def initialize(color)
@@ -196,88 +165,30 @@ module Chess
         def directions
           PAWN_DIRECTIONS
         end
-      end
 
-      #  Pawns behave differently than other pieces. They: 
-      #  1. can move only in one direction;
-      #  2. can attack diagonally but can only advance on file (forward);
-      #  3. can move an extra space from the starting square;
-      #  4. can capture other pawns via the En-Passant Rule;
-      #  5. are promoted to another piece type if they reach the enemy's back rank.
 
-      def get_moves(position, from, moves, captures, promotions) 
-        get_attacks(position, position.board, from, captures, promotions)
-        # get non-capture promotions only after capture promotions have been found. 
-        # This ensures capture promotions are ordered first.
-        get_en_passant(position, position.board, from, captures) unless position.enp_target.nil?
-        get_advances(position, position.board, from, moves, promotions)
-      end
-
-      def get_captures(position, from, captures, promotions)         
-        get_attacks(position, position.board, from, captures, promotions)
-        # get non-capture promotions only after capture promotions have been found. 
-        # This ensures capture promotions are ordered first.
-        get_promotion(position, position.board, from, promotions) if from.r == @can_promote_row
-        get_en_passant(position, position.board, from, captures) unless position.enp_target.nil?
-      end
-
-      private
-
-      # Add any valid regular pawn attacks to move array. Pawns may only attack toward the enemy side.
-      def get_attacks(position, board, from, captures, promotions)
-        @attacks.each do |vector|  # normal attacks
-          to = from + vector
-          if board.enemy?(to, @color)
-            enemy = position.enemy_pieces[to]
-            if to.r == @enemy_back_row # determine if pawn promotion
-              promotions << Move::Factory.build(self, from, to, :pawn_promotion_capture, enemy)
-            else
-              captures << Move::Factory.build(self, from, to, :regular_capture, enemy)
-            end
-          end
+        def get_non_captures(pos, moves, pieces, occupied)
+          
         end
-      end
 
-      # Add any valid En-Passant captures to move array. Any pawn that made a double move on the previous turn 
-      # is vulnerable to an En-Passant attack by enemy pawns for one turn.
-      def get_en_passant(position, board, from, captures)
-        self.class.check_en_passant.each do |vector|
-          target = from + vector
-          if position.enp_target == target
-            to = target + @enp_offset
-            enemy = position.enemy_pieces[target]
-            captures << Move::Factory.build(self, from, to, :enp_capture, enemy, target)
-          end
-        end
-      end
+        def get_captures(pos, moves, pieces, occupied, enemy)
 
-      # Add any valid non-capture moves to move array, including promotions and double moves (En-Passant advances).
-      def get_advances(position, board, from, moves, promotions)
-        to = from + @advance
-        if board.empty?(to)
-          if to.r == @enemy_back_row # determine if pawn promotion
-            promotions << Move::Factory.build(self, from, to, :pawn_promotion, @color)
-          else
-            moves << Move::Factory.build(self, from, to, :regular_move)
-          end
-          if from.r == @start_row
-            to = from + @double_advance
-            if board.empty?(to)
-              moves << Move::Factory.build(self, from, to, :enp_advance)
-            end
-          end
-        end
-      end
+        end 
+        
+        private
 
-      # Get only advances resulting in pawn promotion.
-      def get_promotion(position, board, from, promotions)
-        to = from + @advance
-        if board.empty?(to)
-          promotions << Move::Factory.build(self, from, to, :pawn_promotion, @color)
-        end
+        # Add any valid regular pawn attacks to move array. Pawns may only attack toward the enemy side.
+
+        # Add any valid En-Passant captures to move array. Any pawn that made a double move on the previous turn 
+
+        # Add any valid non-capture moves to move array, including promotions and double moves (En-Passant advances).
+
+        # Get only advances resulting in pawn promotion.
+
       end
 
     end
+
 
     class Knight < Piece
       class << self
@@ -299,34 +210,27 @@ module Chess
         def directions
           KNIGHT_DIRECTIONS
         end
-      end
 
-      # Generate all pseudo-legal moves available to the current knight.
-      # Moves are pushed into separate arrays for captures, promotions, promotion captures, and other moves.
-      def get_moves(position, from, moves, captures, promotions)              
-        board = position.board
-        self.class.directions.each do |vector|
-          to = from + vector
-          if board.empty?(to)
-            moves << Move::Factory.build(self, from, to, :regular_move)
-          else
-            if board.enemy?(to, @color)
-              captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
-            end
+        def get_non_captures(pos, moves, pieces, occupied)
+          knights = pieces[:N]
+          get_knight_non_captures(knights, occupied).each do |pair|
+            from, to = (pair & FROM_MASK), (pair >> 6)
+            moved_piece ||= pos.board[from]
+            moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
           end
         end
-      end
 
-      # Generate all pseudo-legal capture moves available to the current knight.
-      # Moves are pushed into separate arrays for captures and promotion captures.
-      def get_captures(position, from, captures, promotions)
-        board = position.board
-        self.class.directions.each do |vector|
-          to = from + vector
-          if board.enemy?(to, @color)
-            captures << Move::Factory.build(self, from, to, :regular_capture, position.enemy_pieces[to])
+        def get_captures(pos, moves, pieces, occupied, enemy)
+          knights = pieces[:N]
+          moved_piece = nil
+          get_knight_captures(knights, enemy).each do |pair|
+            from, to = (pair & FROM_MASK), (pair >> 6)
+            moved_piece ||= pos.board[from]
+            captured_piece = pos.board[to]
+            moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
           end
-        end
+        end 
+
       end
     end
 
@@ -350,6 +254,26 @@ module Chess
         def directions
           BISHOP_DIRECTIONS
         end
+
+        def get_non_captures(pos, moves, pieces, occupied)
+          bishops = pieces[:B]
+          get_bishop_non_captures(bishops, occupied).each do |pair|
+            from, to = (pair & FROM_MASK), (pair >> 6)
+            moved_piece ||= pos.board[from]
+            moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
+          end
+        end
+
+        def get_captures(pos, moves, pieces, occupied, enemy)
+          bishops = pieces[:B]
+          get_bishop_captures(bishops, occupied, enemy).each do |pair|
+            from, to = (pair & FROM_MASK), (pair >> 6)
+            moved_piece ||= pos.board[from]
+            captured_piece = pos.board[to]
+            moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
+          end
+        end
+
       end
     end
 
@@ -373,6 +297,26 @@ module Chess
         def directions
           ROOK_DIRECTIONS
         end
+
+        def get_non_captures(pos, moves, pieces, occupied)
+          rooks = pieces[:R]
+          get_rook_non_captures(rooks, occupied).each do |pair|
+            from, to = (pair & FROM_MASK), (pair >> 6)
+            moved_piece ||= pos.board[from]
+            moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
+          end
+        end
+
+        def get_captures(pos, moves, pieces, occupied, enemy)
+          rooks = pieces[:R]
+          get_rook_captures(rooks, occupied, enemy).each do |pair|
+            from, to = (pair & FROM_MASK), (pair >> 6)
+            moved_piece ||= pos.board[from]
+            captured_piece = pos.board[to]
+            moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
+          end
+        end
+
       end
     end
 
@@ -396,6 +340,28 @@ module Chess
         def directions
           QUEEN_DIRECTIONS
         end
+
+
+        def get_non_captures(pos, moves, pieces, occupied)
+          queens = pieces[:Q]
+          get_queen_non_captures(queens, occupied).each do |pair|
+            from, to = (pair & FROM_MASK), (pair >> 6)
+            moved_piece ||= pos.board[from]
+            moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
+          end
+        end
+
+        def get_captures(pos, moves, pieces, occupied, enemy)
+          queens = pieces[:Q]
+          get_queen_captures(queens, occupied, enemy).each do |pair|
+            from, to = (pair & FROM_MASK), (pair >> 6)
+            moved_piece ||= pos.board[from]
+            captured_piece = pos.board[to]
+            moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
+          end
+        end
+
+
       end
     end
 
@@ -419,32 +385,27 @@ module Chess
         def directions
           KING_DIRECTIONS
         end
-      end
 
-      # Generate all pseudo-legal moves available to the current king.
-      # Moves are pushed into separate arrays for captures, promotions, promotion captures, and other moves.
-      def get_moves(position, from, moves, captures, promotions)   
-        board = position.board
-        self.class.directions.each do |vector|
-          to = from + vector
-          if board.empty?(to)
-            moves << Move::Factory.build(self, from, to, :king_move)
-          elsif board.enemy?(to, @color)
-            captures << Move::Factory.build(self, from, to, :king_capture, position.enemy_pieces[to])
+        def get_non_captures(pos, moves, pieces, occupied)
+          kings = pieces[:K]
+          get_king_non_captures(kings, occupied).each do |pair|
+            from, to = (pair & FROM_MASK), (pair >> 6)
+            moved_piece ||= pos.board[from]
+            moves.push(Move::Factory.build(moved_piece, from, to, :king_move))
           end
         end
-      end
 
-      # Generate all pseudo-legal capture moves available to the current king.
-      # Moves are pushed into separate arrays for captures and promotion captures.
-      def get_captures(position, from, captures, promotions) 
-        board = position.board
-        self.class.directions.each do |vector|
-          to = from + vector
-          if board.enemy?(to, @color)
-            captures << Move::Factory.build(self, from, to, :king_capture, position.enemy_pieces[to])
+        def get_captures(pos, moves, pieces, occupied, enemy)
+          kings = pieces[:K]
+          moved_piece = nil
+          get_king_captures(kings, enemy).each do |pair|
+            from, to = (pair & FROM_MASK), (pair >> 6)
+            moved_piece ||= pos.board[from]
+            captured_piece = pos.board[to]
+            moves.push(Move::Factory.build(moved_piece, from, to, :king_capture, captured_piece))
           end
         end
+
       end
     end
 
@@ -462,6 +423,15 @@ module Chess
 
     def self.get_value_by_sym(sym)
       PIECE_SYM_VALUES[sym]
+    end
+
+    def self.send_to_each(method, *args)
+      Pawn.send(method, *args)
+      Knight.send(method, *args)
+      Bishop.send(method, *args)
+      Rook.send(method, *args)
+      Queen.send(method, *args)
+      King.send(method, *args)
     end
 
   end

@@ -31,10 +31,10 @@
 
 
 static VALUE object_lsb(VALUE rb_self, VALUE bitboard);
-
 static VALUE object_msb(VALUE rb_self, VALUE bitboard);
-
 static VALUE object_pop_count(VALUE rb_self, VALUE bitboard);
+static VALUE object_add(VALUE rb_self, VALUE sq, VALUE bitboard);
+static VALUE object_clear(VALUE rb_self, VALUE sq, VALUE bitboard);
 
 extern void Init_bitwise_math();
 
