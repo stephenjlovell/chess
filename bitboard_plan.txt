@@ -32,11 +32,6 @@ Issues to resolve:
   King Tropism - would be more efficient to calculate using bitboards, even if incremental update is maintained.
 
 
-To Do:
-
-  
-
-
 
 
 

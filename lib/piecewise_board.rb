@@ -27,19 +27,17 @@ module Chess
     class PiecewiseBoard  # This definition adds some additional methods to the PiecewiseBoard class
                           # provided by board.c
 
-      def initialize(sboard=nil)
-        setup(sboard) unless sboard.nil?
-      end
+      # initialize method defined in C extension. 
 
       def print
+        Pieces::PIECE_ID.each do |sym, piece_id|
+          puts "\n#{sym}\n"
+          print_bitboard(get_bitboard(piece_id))
+        end
         COLORS.each do |color|
-          Pieces::PIECE_TYPES.each do |type|
-            puts "\n", (color.to_s + type.to_s), "\n"
-            print_bitboard(@bitboards[color][type])
-          end
-          puts "\n", color.to_s + " placement", "\n"
-          print_bitboard(@occupied[color])
-        end    
+          puts "\n #{color} placement\n"
+          print_bitboard(get_occupancy(color))
+        end 
       end
 
       def print_bitboard(x, square=nil)
@@ -58,19 +56,13 @@ module Chess
       private
 
       def setup(sboard)
-        @bitboards = { w: { P: 0, N: 0, B: 0, R: 0, Q: 0, K: 0 }, 
-                       b: { P: 0, N: 0, B: 0, R: 0, Q: 0, K: 0 } }
-        @occupied = { w: 0, b: 0 }
-
-        sboard.flatten.each_with_index do |sym, i| 
-          unless sym.nil? || sym == :XX
-            @bitboards[Pieces::PIECE_COLOR[sym]][Pieces::PIECE_TYPE[sym]] |= (1<<i)
-          end 
+        sboard.each_with_index do |piece_id, sq| 
+          unless piece_id == 0
+            add_square(piece_id, sq) 
+          end
         end
-        @occupied[:w] = @bitboards[:w].each.inject(0) {|all, (t, bb)| all |= bb }
-        @occupied[:b] = @bitboards[:b].each.inject(0) {|all, (t, bb)| all |= bb }
       end
-
+      
     end
 
     PiecewiseBoard.new(Board.new).print

@@ -88,10 +88,11 @@ module Chess
       end
 
       def to_s
-        @from.to_s + @to.to_s
+        Location::get_location(@from).to_s + Location::get_location(@to).to_s
       end
 
       def ==(other)
+        # may be able to replace this with single comparison
         return false if other.nil?
         @from == other.from && @to == other.to
       end
@@ -154,10 +155,14 @@ module Chess
       end
 
       def relocate_piece(position, piece, from, to)
-        position.own_pieces.delete(from) # relocate piece within piece list
-        position.own_pieces[to] = piece
+        # position.own_pieces.delete(from) # relocate piece within piece list
+        # position.own_pieces[to] = piece
+
+        # relocate piece on bitboard:
+
+
         position.board[from] = nil  # relocate piece on board.
-        position.board[to] = piece.symbol
+        position.board[to] = piece
       end
 
       # XOR out the key for piece at from, and XOR in the key for piece at to.
@@ -213,15 +218,22 @@ module Chess
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
-        position.enemy_pieces.delete(to)
-        # @enemy_material -= Evaluation::adjusted_value(position, @captured_piece, to)
+        
+
+        #remove enemy piece from bitboard:
+
+        # position.enemy_pieces.delete(to)
+
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         unmake_clock_adjustment(position)
         position.board[to] = @captured_piece.symbol
-        position.enemy_pieces[to] = @captured_piece
+
+        # replace stored enemy piece on bitboard:
+
+        # position.enemy_pieces[to] = @captured_piece
       end
 
       def enemy_material(position, piece, from, to)
@@ -247,11 +259,11 @@ module Chess
       end
 
       def mvv_lva(piece)  # Most valuable victim, least valuable attacker heuristic. Used for move ordering of captures.
-        begin
-          return @captured_piece.class.value - piece.class.id
-        rescue => err
-          raise Memory::HashCollisionError
-        end
+        # begin
+        return Pieces::PIECE_VALUES[@captured_piece] - Pieces::PIECE_ID[piece]
+        # rescue => err
+        #   raise Memory::HashCollisionError
+        # end
       end
 
       def quiet?
@@ -265,16 +277,6 @@ module Chess
 
     class KingMove < MoveStrategy
       include Reversible
-
-      def make!(position, piece, from, to)
-        super # call make! method inherited from MoveStrategy
-        position.own_king_location = to  # update king location
-      end
-
-      def unmake!(position, piece, from, to)
-        super # call unmake! method inherited from MoveStrategy
-        position.own_king_location = from  # update king location
-      end
 
       def own_tropism(pos, piece, from, to)
         @own_tropism ||= 0
@@ -291,16 +293,6 @@ module Chess
 
     class KingCapture < MoveStrategy
       include MakesCapture
-
-      def make!(position, piece, from, to)
-        super # call make! method mixed-in by MakesCapture
-        position.own_king_location = to  # update king location
-      end
-
-      def unmake!(position, piece, from, to)
-        super # call unmake! method mixed-in by MakesCapture
-        position.own_king_location = from  # update king location
-      end
 
       def own_tropism(pos, piece, from, to)
         @own_tropism ||= 0
@@ -322,15 +314,26 @@ module Chess
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
+
         position.board[@enp_target] = nil
-        position.enemy_pieces.delete(@enp_target)
+
+        # position.enemy_pieces.delete(@enp_target)
+        
+        # remove stored enemy piece on bitboard:
+
+      
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         unmake_clock_adjustment(position)
-        position.board[@enp_target] = @captured_piece.symbol
-        position.enemy_pieces[@enp_target] = @captured_piece
+        
+        position.board[@enp_target] = @captured_piece
+        
+        # position.enemy_pieces[@enp_target] = @captured_piece
+
+        # replace stored enemy piece on bitboard:
+
       end
 
       def enemy_material(position, piece, from, to)

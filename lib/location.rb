@@ -28,6 +28,15 @@ module Chess
     LETTER_TO_NUMBER = { "a" => 2, "b" => 3, "c" => 4, "d" => 5,
                          "e" => 6, "f" => 7, "g" => 8, "h" => 9 }
 
+    SQUARE_SYMS = [ :a1, :b1, :c1, :d1, :e1, :f1, :g1, :h1, 
+                    :a2, :b2, :c2, :d2, :e2, :f2, :g2, :h2, 
+                    :a3, :b3, :c3, :d3, :e3, :f3, :g3, :h3, 
+                    :a4, :b4, :c4, :d4, :e4, :f4, :g4, :h4, 
+                    :a5, :b5, :c5, :d5, :e5, :f5, :g5, :h5, 
+                    :a6, :b6, :c6, :d6, :e6, :f6, :g6, :h6, 
+                    :a7, :b7, :c7, :d7, :e7, :f7, :g7, :h7, 
+                    :a8, :b8, :c8, :d8, :e8, :f8, :g8, :h8 ]
+
     SQUARES = { a1: 0,  b1: 1,  c1: 2,  d1: 3,  e1: 4,  f1: 5,  g1: 6,  h1: 7,
                 a2: 8,  b2: 9,  c2: 10, d2: 11, e2: 12, f2: 13, g2: 14, h2: 15,
                 a3: 16, b3: 17, c3: 18, d3: 19, e3: 20, f3: 21, g3: 22, h3: 23,
@@ -48,16 +57,20 @@ module Chess
     #    3. Simplified interface for vector addition through the :+ method. Displacement
     #       vectors are used for move generation, king saftey, and Static Exchange Evaluation.       
 
+
+    class InvalidLocationError
+    end
+
     class Location
-      attr_reader :r, :c, :hash, :index
+      attr_reader :hash, :index, :mask_on, :mask_off
       
-      def initialize(r,c)
-        @r, @c = r, c
-        @symbol = to_s.to_sym  # Since instances are immutable, :symbol and :hash values
-        @hash = to_a.hash      # can be calculated once at object initialization.
-        @index = SQUARES[@symbol]
-        @bitcode = @index.nil? ? 0 : 2**(@index)
+      def initialize(square)
+        @index = square
+        @symbol = SQUARE_SYMS[square]
+        @mask_on = (1<<square)
+        @mask_off = (~@mask_on)
       end
+
 
       def eql?(other)
         @hash == other.hash
@@ -65,91 +78,45 @@ module Chess
       alias :== :eql? 
 
       def to_s  # Represent the location as a string, i.e. "a1"
-        if NUMBER_TO_LETTER[@c]
-          (NUMBER_TO_LETTER[@c]) + (@r - 1).to_s 
-        else
-          "XX_#{@r}_#{@c}"
-        end
+        @symbol.to_s
       end
 
       def to_b
-        @bitcode
+        @mask_on
       end
 
       def to_sym
         @symbol
       end
+      alias :symbol :to_sym
 
-      def to_a
-        [@r, @c]
+      def hash
+        @index
       end
 
-      def self.include(sym, &proc)  # Public class method allowing new instance methods
-        define_method(sym, &proc)   # to be dynamically added.  Used to add the :+ method
-      end                           # during startup.
     end
 
-    # Create a 12 x 12 array of location objects (including locations for out-of-bounds coordinates)
-    def self.create_locations
-      arr = Array.new(12) { Array.new(12) }
-      arr.each_with_index { |row, r| row.each_with_index { |loc, c| row[c] = Location.new(r,c) } }
-      arr
-    end
+    LOCATIONS = 64.times.map {|sq| Location.new(sq) }
 
-    def self.valid_locations
-      LOCATIONS[2..9].collect { |r| r[2..9] }.flatten
-    end
-
-    # set up location lookup access by symbol, index, and bitcode
-    def self.setup_locations_access
-      by_sym, by_index, by_bitcode = {}, {}, {}
-      valid_locations.each do |loc|
-        by_sym[loc.to_sym] = loc
-        by_index[loc.index] = loc
-        by_bitcode[loc.to_b] = loc
-      end
-      return by_sym, by_index, by_bitcode
-    end
-
-
-    LOCATIONS = create_locations
-
-    # Create hashes for looking up valid locations by various properties.
-    LOCATIONS_BY_SYM, LOCATIONS_BY_INDEX, LOCATIONS_BY_BITCODE = setup_locations_access
-
-    LOCATIONS_BY_SYM.each do |sym, loc|
-  end
-
-    # :+ method is used for vector addition.  It accepts an increment vector as a 2-element
-    # array and returns the Location object corresponding to the new row and column coordinates.
-  
-    Location.include(:+) do |arr|      # Append :+ method to Location class
-      LOCATIONS[@r+arr[0]][@c+arr[1]]  # (hack to avoid a circular definition when 
-    end                                # LOCATIONS array is created at startup).
-
-    # Return the location object corresponding to the given coordinates.
-    def self.get_location_by_coordinates(r, c)
-      return nil if LOCATIONS[r].nil?
-      LOCATIONS[r][c]
-    end
 
     def self.get_location_by_symbol(sym)
-      LOCATIONS_BY_SYM[sym]
+      LOCATIONS[SQUARES[sym]]
     end
 
-    def self.get_location_by_index(index)
-      LOCATIONS_BY_INDEX[index]
+    def self.get_location(square)
+      LOCATIONS[square]
     end
 
-    def self.get_location_by_bitcode(bitcode)
-      LOCATIONS_BY_BITCODE[bitcode]
+    def self.get_location_by_mask(mask)
+      LOCATIONS[Bitboard::lsb(mask)-1]
     end
 
     # Return the location object corresponding to the given string (i.e. "a1").
     def self.string_to_location(str)
-      location = get_location_by_coordinates(str[1].to_i + 1, LETTER_TO_NUMBER[str[0]])
-      raise "invalid location for #{str}" if location.nil?
-      location
+      location = LOCATIONS[SQUARES[str.to_sym]]
+      if location.nil?
+        raise Notation::NotationFormatError, "No valid Chess::Location::Location object for string '#{str}'"
+      end
     end
 
   end

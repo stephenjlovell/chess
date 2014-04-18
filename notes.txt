@@ -125,14 +125,27 @@ Performance notes -
 Current Issues ----
 
 To Do ----
-  
-  Comment search, search_analytics, tropism, utilities
 
-  add draw by fifty-move rule
+  replace attack.rb with bitboard-based 'can_attack(square)'' and 'is_attacked_by(square)' methods in C.
+  
+  Use new piece IDs with square-centric board to indicate occupancy.  This will provide an easy way to pass 
+  piece type/color data to C extension.  
+
+  Pass piece ID and square to PiecewiseBoard
+
+
+
 
   Refactor utilities
 
   Create readme
+
+
+
+
+
+
+
 
 
 Possible Enhancements to Add ----
@@ -145,12 +158,10 @@ Possible Enhancements to Add ----
 
   -Extend search on 'winning' promotions
 
-
   -At root, TT entries could be used for more accurate move ordering. Entry value would be used if available, 
    otherwise q-search could be used to establish an initial entry.  This would reduce branching factor and might improve strength,
    revealing beneficial lines that might otherwise have been cut off.
 
-  -Switch to bitboard board representation.  This would involve very substantial re-writing, but would increase execution speed and make it easier to add more advanced features.
 
 
 

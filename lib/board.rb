@@ -34,143 +34,46 @@ module Chess
     include Enumerable
     include Attack
     attr_accessor :squares
-
-    def initialize(squares=nil)  # sets initial configuration of board at start of game.      # row  board #
-      @squares = squares || [[ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
-                             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
-                             [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, :wB, :wN, :wR, :XX, :XX ],  # 2    1
-                             [ :XX, :XX, :wP, :wP, :wP, :wP, :wP, :wP, :wP, :wP, :XX, :XX ],  # 3    2
-                             [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 4    3
-                             [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 5    4
-                             [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
-                             [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7    6
-                             [ :XX, :XX, :bP, :bP, :bP, :bP, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
-                             [ :XX, :XX, :bR, :bN, :bB, :bQ, :bK, :bB, :bN, :bR, :XX, :XX ],  # 9    8
-                             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
-                             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ]] # 11   
-                      # column  0    1    2    3    4    5    6    7    8    9    10   11
-                      # letter            A    B    C    D    E    F    G    H
+   
+    # sets initial configuration of board, defaulting to the opening position.
+    def initialize(squares=nil)
+      id = Pieces::PIECE_ID       
+      @squares = squares || [ id[:wR], id[:wN], id[:wB], id[:wQ], id[:wK], id[:wB], id[:wN], id[:wR],  # 1 row
+                              id[:wP], id[:wP], id[:wP], id[:wP], id[:wP], id[:wP], id[:wP], id[:wP],  # 2  
+                                    0,       0,       0,       0,       0,       0,       0,       0,  # 3    
+                                    0,       0,       0,       0,       0,       0,       0,       0,  # 4    
+                                    0,       0,       0,       0,       0,       0,       0,       0,  # 5    
+                                    0,       0,       0,       0,       0,       0,       0,       0,  # 6    
+                              id[:bP], id[:bP], id[:bP], id[:bP], id[:bP], id[:bP], id[:bP], id[:bP],  # 7    
+                              id[:bR], id[:bN], id[:bB], id[:bQ], id[:bK], id[:bB], id[:bN], id[:bR] ] # 8 
+                      # col     A    B    C    D    E    F    G    H
       return self
     end
 
-    def clear  # Clears all pieces from the board, leaving only out-of-bounds symbols.
-      @squares = [[ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
-                  [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
-                  [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 2    1
-                  [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 3    2
-                  [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 4    3
-                  [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 5    4
-                  [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
-                  [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7    6
-                  [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 8    7
-                  [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 9    8
-                  [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
-                  [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ]] # 11   
-            # column  0    1    2    3    4    5    6    7    8    9    10   11
-            # letter            A    B    C    D    E    F    G    H
+    def clear  # Clears all pieces from the board.
+      @squares = Array.new(64)
       return self
-    end
-
-    def flatten
-      @squares[2..9].collect { |r| r[2..9] }.flatten
     end
 
     def each
-      each_square_with_location { |r,c,s| yield (@squares[r][c]) }
+      @squares.each { |s| yield(s) }
     end
     alias :each_square :each
 
-    def each_square_with_location
-      (2..9).each do |r|
-        (2..9).each do |c|
-          yield r, c, @squares[r][c]
-        end
-      end
+    def [](square)
+      @squares[square]
     end
 
-    def reverse_each_square_with_location
-      (2..9).reverse_each do |r|
-        (2..9).reverse_each do |c|
-          yield r, c, @squares[r][c]
-        end
-      end
-    end
-
-    def each_row  # read-only
-      (2..9).each do |r|
-        yield @squares[r][2..9]
-      end
-    end
-
-    def reverse_each_row  # read-only
-      (2..9).reverse_each do |r|
-        yield @squares[r][2..9]
-      end
-    end
-
-    def square(r, c)  # get the contents of a square by its coordinates.
-      @squares[r][c]
-    end
-
-    def [](location)
-      @squares[location.r][location.c]
-    end
-
-    def []=(location, value)
-      @squares[location.r][location.c] = value
-    end
-
-    def empty?(location)
-      self[location].nil?
-    end
-
-    def square_empty?(r,c)
-      @squares[r][c].nil?
-    end
-
-    def on_board?(location)
-      self[location] != :XX
-    end
-
-    def square_on_board?(r, c)
-      @squares[r][c] != :XX
-    end
-
-    def occupied?(location) # Return true if the given square is occupied by any piece of either color.
-      sym = self[location]
-      sym != nil && sym != :XX
-    end
-
-    def enemy?(location, color) # Return true if a piece of the opposite color is found at the given square.
-      occupied?(location) && Pieces::PIECE_COLOR[self[location]] != color
-    end
-
-    # Determine if making a move from/to the given squares would leave the king in check for the specified color, 
-    # without having to do a full make/unmake of the move in question.
-    def evades_check?(position, from, to, color, king_location=nil)
-      piece_sym = self[from]
-      target_sym = self[to]
-      self[from] = nil  # simulate making the specified regular move
-      self[to] = piece_sym
-
-      evades_check = !king_in_check?(position, color, king_location)
-
-      self[from] = piece_sym  # undo changes to board
-      self[to] = target_sym
-      return evades_check
-    end
-
-    # Uses methods provided by the Attack module to determine if the king for the specified color is in check.
-    def king_in_check?(position, color, king_location=nil)
-      king_location ||= position.king_location[color] # get location of king for color.
-      attacked_by_regular_piece?(king_location, FLIP_COLOR[color])
+    def []=(square, value)
+      @squares[square] = value
     end
 
     # Provide an initial hash for position object by merging (via XOR) the hash keys for each # piece/square.
     def hash   
-      key = 0  
-      each_square_with_location { |r,c,sym| key ^= Memory::psq_key_by_square(r,c,sym) unless sym.nil? }
-      return key
+      # key = 0  
+      # each_with_index { |sym, i| key ^= Memory::psq_key(sym, i) unless sym.nil? }
+      # return key
+      each_with_index.inject(0) {|h, (sym, i)| h ^= sym.nil? ? 0 : Memory::psq_key(sym, i) }
     end
 
     # Unicode symbols for chess pieces:
@@ -181,12 +84,12 @@ module Chess
       i = 8
       puts (headings = "    A   B   C   D   E   F   G   H")
       puts (divider =  "  " + ("-" * 33))
-      @squares[2..9].reverse_each do |row|
+      @squares.each_slice(8).to_a.reverse do |row|
         line = []
         row.each do |square|
           if square == nil 
             line << " "
-          elsif square != :XX
+          else
             line << GRAPHICS[square]
           end
         end

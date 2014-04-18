@@ -23,27 +23,34 @@
 #ifndef BOARD
 #define BOARD
 
+// This module wraps a Ruby object around a BRD struct to make it accessible and provide methods for
+// manipulating it efficiently from Ruby.
+
 #include "shared.h"
 
+#define piece_type(piece_id)  ((piece_id & 0xe) >> 1 )
+#define piece_color(piece_id)  (piece_id & 0x1)
+
 typedef struct {
-  BB pawns[2];
-  BB knights[2];
-  BB bishops[2];
-  BB rooks[2];
-  BB queens[2];
-  BB kings[2];
-  BB all[2];
+  BB pieces[2][6];
+  BB occupied[2];
 } BRD;
 
-// This module wraps a Ruby object around the BOARD struct to make it accessible within Ruby.
+static BRD current_board = { { {0}, {0} }, {0} };
 
-static BRD current_board;
-static VALUE wrap_Board_alloc(VALUE klass);
-static void wrap_Board_free(BRD* board);
-static VALUE wrap_Board_init(VALUE self);
-static BRD* get_board(VALUE self);
-static VALUE object_set_bitboard(VALUE self, VALUE piece_type, VALUE color, VALUE bitboard);
-static VALUE object_get_bitboard(VALUE self, VALUE piece_type, VALUE color);
+void add_square(int color, int type, int sq);
+
+static void free_cBoard(BRD* board);
+static BRD* get_cBoard(VALUE self);
+static VALUE o_alloc(VALUE klass);
+static VALUE o_initialize(VALUE self, VALUE sq_board);
+
+static VALUE o_get_bitboard(VALUE self, VALUE piece_id);
+static VALUE o_get_occupancy(VALUE self, VALUE color_sym);
+static VALUE o_set_bitboard(VALUE self, VALUE piece_id, VALUE bitboard);
+static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square);
+static VALUE o_move_update(VALUE self, VALUE piece_id, VALUE from, VALUE to);
+
 
 extern void Init_board();
   

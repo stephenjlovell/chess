@@ -54,19 +54,12 @@ module Chess
       # Create a 12 x 64 table associating piece symbol and square with an integer history counter.
       def create_history_table
         hsh = {}
-        [:wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK].each do |sym|
-          hsh[sym] = create_locations_table
+        Pieces::PIECE_SYMBOLS.each do |sym|
+          hsh[sym] = Array.new(64, 0)
         end
         return hsh
       end
 
-      def create_locations_table
-        hsh = {}
-        Chess::Location::valid_locations.each do |to|
-          hsh[to] = 0
-        end
-        return hsh
-      end
     end
 
   end

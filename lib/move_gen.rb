@@ -102,26 +102,26 @@ module Chess
       castles = []
       if pos.side_to_move == :w
         if castle & C_WQ != 0
-          if b.square_empty?(2,3) && b.square_empty?(2,4) && b.square_empty?(2,5)
+          if b.square_empty?(2,3) && b.square_empty?(2,4) && b.square_empty?(2,5) # B1, C1, D1
             rook, king = pos.own_pieces[WRQ_FROM], pos.own_pieces[WK_FROM]
             castles << Move::Factory.build(king, WK_FROM, WKQ_TO, :castle, rook, WRQ_FROM, WRQ_TO) if king
           end 
         end
         if castle & C_WK != 0
-          if b.square_empty?(2,7) && b.square_empty?(2,8)
+          if b.square_empty?(2,7) && b.square_empty?(2,8)   # F1, G1
             rook, king = pos.own_pieces[WRK_FROM], pos.own_pieces[WK_FROM]
             castles << Move::Factory.build(king, WK_FROM, WRK_TO, :castle, rook, WRK_FROM, WRK_TO) if king
           end
         end
       else
         if castle & C_BQ != 0
-          if b.square_empty?(9,3) && b.square_empty?(9,4) && b.square_empty?(9,5)
+          if b.square_empty?(9,3) && b.square_empty?(9,4) && b.square_empty?(9,5) # B8, C8, D8
             rook, king = pos.own_pieces[BRQ_FROM], pos.own_pieces[BK_FROM]
             castles << Move::Factory.build(king, BK_FROM, BKQ_TO, :castle, rook, BRQ_FROM, BRQ_TO) if king
           end 
         end
         if castle & C_BK != 0
-          if b.square_empty?(9,7) && b.square_empty?(9,8)
+          if b.square_empty?(9,7) && b.square_empty?(9,8)   # F8, G8
             rook, king = pos.own_pieces[BRK_FROM], pos.own_pieces[BK_FROM]
             castles << Move::Factory.build(king, BK_FROM, BKK_TO, :castle, rook, BRK_FROM, BRK_TO) if king
           end
@@ -134,7 +134,6 @@ module Chess
     def self.get_non_captures(pos, moves)
       pieces, occupied = pos.own_pieces, pos.occupied
       Pieces::send_to_each(:get_non_captures, pos, moves, pieces, occupied)
-
     end
 
     def self.get_captures(pos, moves)

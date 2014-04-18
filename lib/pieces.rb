@@ -22,8 +22,18 @@
 module Chess
   module Pieces
 
-    PIECE_TYPES = [:P, :N, :B, :R, :Q, :K]
-    PIECE_SYMBOLS = [:wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK]
+    # Create an integer representation of each piece.  This allows a piece from the board to be quickly unpacked into
+    # its color and type, and allows this information to be passed to the C extension without incurring much overhead.
+    # The first (least-significant) bit is always 1 and indicates occupancy of a square.
+    # The second bit represents the color (white = 1).  
+    # The next 3 bits represent the piece ID.
+    PIECE_ID = { wP: 17, wN: 19, wB: 21, wR: 23, wQ: 25, wK: 27,
+                 bP: 16, bN: 18, bB: 20, bR: 22, bQ: 24, bK: 26 }
+
+
+    PIECE_TYPES = [ :P, :N, :B, :R, :Q, :K ] 
+
+    PIECE_SYMBOLS = [ :wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK ]
 
     # Assign each piece a base material value approximating its relative importance.      
     PIECE_VALUES = { P: 100, N: 320, B: 333, R: 510, Q: 880, K: 100000 }
@@ -36,7 +46,7 @@ module Chess
     # Endgame state is used during Evaluation.
     ENDGAME_VALUE = PIECE_VALUES[:K] + NON_KING_VALUE/4
 
-    # During search, an evaluation score less than KING_LOSS indicates that the king will be captured in the next ply.  This
+    # During search, an evaluation score less than KING_LOSS indicates that the king will be captured in the next ply. This
     # is used to avoid illegal moves without the overhead cost of checking each possible move for full legality.
     KING_LOSS = NON_KING_VALUE - PIECE_VALUES[:K] 
 
@@ -51,63 +61,20 @@ module Chess
     PIECE_TYPE = { wP: :P, wN: :N, wB: :B, wR: :R, wQ: :Q, wK: :K,
                    bP: :P, bN: :N, bB: :B, bR: :R, bQ: :Q, bK: :K }
 
-    # This hash associates each color with its corresponding set of piece symbols.
-    PIECES_BY_COLOR = { w: { P: :wP, N: :wN, B: :wB, R: :wR, Q: :wQ, K: :wK }, 
-                        b: { P: :bP, N: :bN, B: :bB, R: :bR, Q: :bQ, K: :bK } }
-
-    PIECE_ID = { P: 1, N: 2, B: 3, R: 4, Q: 5, K: 6 } # Used for move ordering by MVV-LVA heuristic.
-    
-    # This hash associates each piece symbol with the ID of the underlying piece type.
-    PIECE_SYM_ID = { wP: PIECE_ID[:P], wN: PIECE_ID[:N], wB: PIECE_ID[:B], wR: PIECE_ID[:R], wQ: PIECE_ID[:Q], wK: PIECE_ID[:K],
-                     bP: PIECE_ID[:P], bN: PIECE_ID[:N], bB: PIECE_ID[:B], bR: PIECE_ID[:R], bQ: PIECE_ID[:Q], bK: PIECE_ID[:K] }
-
     ENEMY_BACK_ROW = { w: 9, b: 2 }
 
     CAN_PROMOTE = { w: 8, b: 3 }
-
-    # Increment vectors used for move generation:
-    NORTH = [1,0]
-    NE = [1,1]
-    EAST = [0,1]
-    SE = [-1,1]
-    SOUTH = [-1,0]
-    SW = [-1,-1]
-    WEST = [0,-1]
-    NW = [1,-1]
-    NORTH_NW = [2,-1]
-    NORTH_NE = [2,1]
-    EAST_NE = [1,2]
-    EAST_SE = [-1,2]
-    SOUTH_SE = [-2,1]
-    SOUTH_SW = [-2,-1]
-    WEST_SW = [-1,-2]
-    WEST_NW = [1,-2]
-
-    DIRECTIONS = { straight: [ NORTH, SOUTH, EAST, WEST ], 
-                   diagonal: [ NE, NW, SE, SW ],
-                   ray: [ NORTH, NE, EAST, SE, SOUTH, SW, WEST, NW ], 
-                   N: [ NORTH_NW, NORTH_NE, EAST_NE, EAST_SE, SOUTH_SE, SOUTH_SW, WEST_SW, WEST_NW ], 
-                   P: { w: { attack: [ NE, NW ],
-                             advance: NORTH,
-                             initial: [2,0],
-                             enp_offset: NORTH, 
-                             start_row: 3 },
-                        b: { attack: [ SE, SW ],
-                             advance: SOUTH,                               
-                             initial: [-2,0],
-                             enp_offset: SOUTH,  
-                             start_row: 8 }, 
-                        en_passant: [ EAST, WEST ] } }
 
 
     # set up bitmask used to unpack to/from pairs sent from movegen.c
     FROM_MASK = 0b111111
 
+
     #  The abstract Piece class provides a shared interface and defualt behavior for its subclasses. Each concrete 
     #  piece instance can:
     #
     #  1. generate all pseudo-legal moves (moves that may or may not leave the king in check, but which are
-    #     otherwise legal) available to it, including captures, for the current position. 
+    #     otherwise legal) available to its type, including captures, for the current position. 
     #  2. generate captures only. This is used during Quiesence Search.
 
     class Piece  
@@ -132,14 +99,6 @@ module Chess
     #  5. are promoted to another piece type if they reach the enemy's back rank.
 
     class Pawn < Piece
-      def initialize(color)
-        super
-        directions = self.class.directions[@color]
-        @attacks, @advance, @double_advance = directions[:attack], directions[:advance], directions[:initial]
-        @enp_offset = directions[:enp_offset]
-        @start_row = directions[:start_row]
-        @enemy_back_row, @can_promote_row = ENEMY_BACK_ROW[@color], CAN_PROMOTE[@color]
-      end
 
       class << self
         VALUE = PIECE_VALUES[:P]
@@ -147,23 +106,8 @@ module Chess
           VALUE
         end
 
-        ID = PIECE_ID[:P]
-        def id
-          ID
-        end
-
         def type
           :P
-        end
-
-        CHECK_EN_PASSANT = DIRECTIONS[:P][:en_passant]
-        def check_en_passant
-          CHECK_EN_PASSANT
-        end
-
-        PAWN_DIRECTIONS = DIRECTIONS[:P]
-        def directions
-          PAWN_DIRECTIONS
         end
 
 
@@ -197,18 +141,8 @@ module Chess
           VALUE
         end
 
-        ID = PIECE_ID[:N]
-        def id
-          ID
-        end
-
         def type
           :N
-        end
-
-        KNIGHT_DIRECTIONS = DIRECTIONS[:N]
-        def directions
-          KNIGHT_DIRECTIONS
         end
 
         def get_non_captures(pos, moves, pieces, occupied)
@@ -241,18 +175,8 @@ module Chess
           VALUE
         end
 
-        ID = PIECE_ID[:B]
-        def id
-          ID
-        end
-
         def type
           :B
-        end
-
-        BISHOP_DIRECTIONS = DIRECTIONS[:diagonal]
-        def directions
-          BISHOP_DIRECTIONS
         end
 
         def get_non_captures(pos, moves, pieces, occupied)
@@ -284,18 +208,8 @@ module Chess
           VALUE
         end
 
-        ID = PIECE_ID[:R]
-        def id
-          ID
-        end
-
         def type
           :R
-        end
-
-        ROOK_DIRECTIONS = DIRECTIONS[:straight]
-        def directions
-          ROOK_DIRECTIONS
         end
 
         def get_non_captures(pos, moves, pieces, occupied)
@@ -327,20 +241,9 @@ module Chess
           VALUE
         end
 
-        ID = PIECE_ID[:Q]
-        def id
-          ID
-        end
-
         def type
           :Q
         end
-
-        QUEEN_DIRECTIONS = DIRECTIONS[:diagonal] + DIRECTIONS[:straight]
-        def directions
-          QUEEN_DIRECTIONS
-        end
-
 
         def get_non_captures(pos, moves, pieces, occupied)
           queens = pieces[:Q]
@@ -361,7 +264,6 @@ module Chess
           end
         end
 
-
       end
     end
 
@@ -372,18 +274,8 @@ module Chess
           VALUE
         end
 
-        ID = PIECE_ID[:K]
-        def id
-          ID
-        end
-
         def type
           :K
-        end
-
-        KING_DIRECTIONS = DIRECTIONS[:diagonal] + DIRECTIONS[:straight]
-        def directions
-          KING_DIRECTIONS
         end
 
         def get_non_captures(pos, moves, pieces, occupied)

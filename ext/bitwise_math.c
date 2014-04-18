@@ -42,15 +42,15 @@ static VALUE object_pop_count(VALUE rb_self, VALUE x) {
 }
 
 static VALUE object_add(VALUE rb_self, VALUE sq, VALUE bitboard) {  
-  sq = NUM2ULONG(sq);             
+  sq = NUM2INT(sq);             
   bitboard = NUM2ULONG(bitboard);
-  return ULONG2NUM(add(sq, bitboard));
+  return ULONG2NUM(add_sq(sq, bitboard));
 }
 
 static VALUE object_clear(VALUE rb_self, VALUE sq, VALUE bitboard) {  
   sq = NUM2ULONG(sq);             
   bitboard = NUM2ULONG(bitboard);
-  return ULONG2NUM(clear(sq, bitboard));
+  return ULONG2NUM(clear_sq(sq, bitboard));
 }
 
 

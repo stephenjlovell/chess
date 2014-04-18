@@ -21,87 +21,104 @@
 
 #include "board.h"
 
-
-static VALUE wrap_Board_alloc(VALUE klass){
-  return Data_Wrap_Struct(klass, NULL, wrap_Board_free, ruby_xmalloc(sizeof(BRD)));
+void free_cBoard(BRD *b){
+  ruby_xfree(b);
 }
 
-static void wrap_Board_free(BRD* board){
-  ruby_xfree(board);
-}
-
-static BRD* getBoard(VALUE self){
-  BRD* b;
+static BRD* get_cBoard(VALUE self){
+  BRD *b;
   Data_Get_Struct(self, BRD, b);
   return b;
 }
 
-static VALUE object_set_bitboard(VALUE self, VALUE piece_type, VALUE color, VALUE bitboard){
-  bitboard = NUM2ULONG(bitboard);
-  enumSide side;
-  if (color == ID2SYM(rb_intern("w"))){
-    side = WHITE;
-  } else {
-    side = BLACK;
-  }
-  if (piece_type == ID2SYM(rb_intern("P"))){
-    current_board.pawns[side] = bitboard;
-  } else if (piece_type == ID2SYM(rb_intern("N"))){
-    current_board.knights[side] = bitboard;
-  } else if (piece_type == ID2SYM(rb_intern("B"))){
-    current_board.bishops[side] = bitboard;
-  } else if (piece_type == ID2SYM(rb_intern("R"))){
-    current_board.rooks[side] = bitboard;
-  } else if (piece_type == ID2SYM(rb_intern("Q"))){
-    current_board.queens[side] = bitboard;
-  } else if (piece_type == ID2SYM(rb_intern("K"))){
-    current_board.kings[side] = bitboard;
-  } else {
-    printf("bitboard not set.\n");
-    return Qnil;
-  }
-
-  return ULONG2NUM(bitboard);
+static VALUE o_alloc(VALUE klass){
+  return Data_Wrap_Struct(klass, 0, free_cBoard, ruby_xmalloc(sizeof(BRD)));
 }
 
+static VALUE o_initialize(VALUE self, VALUE sq_board){
+  BRD board = { { {0}, {0} }, {0} };
+  BRD *b = get_cBoard(self);
+  *b = board;
 
-static VALUE object_get_bitboard(VALUE self, VALUE piece_type, VALUE color){
+  rb_funcall(self, rb_intern("setup"), 1, sq_board);
 
-  enumSide side;
-  if (color == ID2SYM(rb_intern("w"))){
-    side = WHITE;
-  } else {
-    side = BLACK;
-  }
-  if (piece_type == ID2SYM(rb_intern("P"))){
-    return ULONG2NUM(current_board.pawns[side]);
-  } else if (piece_type == ID2SYM(rb_intern("N"))){
-    return ULONG2NUM(current_board.knights[side]);
-  } else if (piece_type == ID2SYM(rb_intern("B"))){
-    return ULONG2NUM(current_board.bishops[side]);
-  } else if (piece_type == ID2SYM(rb_intern("R"))){
-    return ULONG2NUM(current_board.rooks[side]);
-  } else if (piece_type == ID2SYM(rb_intern("Q"))){
-    return ULONG2NUM(current_board.queens[side]);
-  } else if (piece_type == ID2SYM(rb_intern("K"))){
-    return ULONG2NUM(current_board.kings[side]);
-  } else {
-    printf("bitboard not found.\n");
-    return Qnil;    
-  }
+  return self;
+}
 
+static VALUE o_setup(VALUE self, VALUE sq_board){
+  return Qnil;
+}
+
+static VALUE o_get_bitboard(VALUE self, VALUE piece_id){
+  int id = NUM2INT(piece_id);
+  return ULONG2NUM(get_cBoard(self)->pieces[piece_color(id)][piece_type(id)]);    
+}
+
+static VALUE o_get_occupancy(VALUE self, VALUE color_sym){
+  BB b = get_cBoard(self)->occupied[(color_sym == ID2SYM(rb_intern("w")) ? 1 : 0)];
+  return ULONG2NUM(b);
+}
+
+static VALUE o_set_bitboard(VALUE self, VALUE piece_id, VALUE bitboard){
+  int id = NUM2INT(piece_id);
+  get_cBoard(self)->pieces[piece_color(id)][piece_type(id)] = NUM2ULONG(bitboard);
+  return bitboard;
+}
+
+static VALUE o_add_square(VALUE self, VALUE piece_id, VALUE square){
+  int sq = NUM2INT(square);
+  int id = NUM2INT(piece_id);
+  int c = piece_color(id);
+  BRD *b = get_cBoard(self);
+  add_sq(sq, b->pieces[c][piece_type(id)]);
+  add_sq(sq, b->occupied[c]);
+  return Qnil;  
+}
+
+static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square){
+  int sq = NUM2INT(square);
+  int id = NUM2INT(piece_id);
+  int c = piece_color(id);
+  BRD *b = get_cBoard(self);
+  clear_sq(sq, b->pieces[c][piece_type(id)]);
+  clear_sq(sq, b->occupied[c]);
+  return Qnil;  
+}
+
+static VALUE o_move_update(VALUE self, VALUE piece_id, VALUE from, VALUE to){
+  int id = NUM2INT(piece_id);
+  from = NUM2INT(from);
+  to = NUM2INT(to);
+  int t = piece_type(piece_id);
+  int c = piece_color(piece_id);
+  int delta = sq_mask_on(from)|sq_mask_on(to);
+  BRD *b = get_cBoard(self);
+  b->pieces[c][t] ^= delta;
+  b->occupied[c] ^= delta;
+  return Qnil;
 }
 
 
 extern void Init_board(){
   printf("  -Loading board extension...");
+
   VALUE mod_chess = rb_define_module("Chess");
   VALUE mod_bitboard = rb_define_module_under(mod_chess, "Bitboard");
-  VALUE class = rb_define_class_under(mod_bitboard, "PiecewiseBoard", rb_cObject);
-  rb_define_alloc_func(class, wrap_Board_alloc);
-  // rb_define_private_method(class, "initialize", RUBY_METHOD_FUNC(wrap_Board_init), 0);
-  rb_define_method(class, "get_bitboard", RUBY_METHOD_FUNC(object_get_bitboard), 2);
-  rb_define_method(class, "set_bitboard", RUBY_METHOD_FUNC(object_set_bitboard), 3);
+  VALUE cls_board = rb_define_class_under(mod_bitboard, "PiecewiseBoard", rb_cObject);
+  
+  rb_define_alloc_func(cls_board, o_alloc);
+  
+  rb_define_method(cls_board, "get_bitboard", RUBY_METHOD_FUNC(o_get_bitboard), 1);
+  rb_define_method(cls_board, "get_occupancy", RUBY_METHOD_FUNC(o_get_occupancy), 1);
+  rb_define_method(cls_board, "set_bitboard", RUBY_METHOD_FUNC(o_set_bitboard), 2);
+
+  rb_define_method(cls_board, "add_square", RUBY_METHOD_FUNC(o_add_square), 2);
+  rb_define_method(cls_board, "remove_square", RUBY_METHOD_FUNC(o_add_square), 2);
+  rb_define_method(cls_board, "move_update", RUBY_METHOD_FUNC(o_move_update), 3);
+  rb_define_method(cls_board, "initialize", RUBY_METHOD_FUNC(o_initialize), 1);
+
+  rb_define_private_method(cls_board, "setup", RUBY_METHOD_FUNC(o_setup), 0);
+
   printf("done.\n");
 }
 

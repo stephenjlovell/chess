@@ -153,7 +153,9 @@ module Chess
 
     # Sums up the value of all pieces in play for the given side (without any positional bonuses/penalties).
     def self.base_material(position, side)
-      position.pieces[side].inject(0) { |total, (key, piece)| total += piece.class.value }
+
+      # position.pieces[side].inject(0) { |total, (key, piece)| total += piece.class.value }
+    
     end
 
     private
@@ -185,12 +187,15 @@ module Chess
     # Award a bonus/penalty for each piece in play based on the value of the piece and its distance 
     # to the opposing king.
     def self.king_tropism(pos, side, enemy_king_location=nil)
-      sum = 0 
-      enemy_king_location ||= pos.enemy_king_location
-      pos.pieces[side].each do |loc, piece|
-        sum += Tropism::get_bonus(piece, loc, enemy_king_location)
-      end
-      return sum
+      # sum = 0 
+      # enemy_king_location ||= pos.enemy_king_location
+      # pos.pieces[side].each do |loc, piece|
+      #   sum += Tropism::get_bonus(piece, loc, enemy_king_location)
+      # end
+      # return sum
+      
+
+
     end
 
     def self.material(position, side, endgame=nil) # =~ 1,040 at start
@@ -199,13 +204,13 @@ module Chess
       end
     end
 
-    def self.adjusted_value(position, piece, loc, endgame=nil)
-      piece.class.value + pst_value(position, piece, loc, endgame)
+    def self.adjusted_value(position, piece, square, endgame=nil)
+      Pieces::PIECE_VALUES[piece] + pst_value(position, piece, square, endgame)
     end    
 
-    def self.pst_value(position, piece, loc, endgame=nil)
-      endgame = position.endgame?(piece.color) if endgame.nil?
-      PST[piece.color][endgame][piece.class.type][loc.index]
+    def self.pst_value(position, piece, square, endgame=nil)
+      endgame = position.endgame?(position.side_to_move) if endgame.nil?
+      PST[position.side_to_move][endgame][piece][square]
     end
 
   end

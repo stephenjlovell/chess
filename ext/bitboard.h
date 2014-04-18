@@ -24,7 +24,7 @@
 
 #include "shared.h"
 
-void setup_square_masks_on();
+void setup_square_masks();
 
 void setup_pawn_masks();
 void setup_knight_masks();
@@ -34,8 +34,6 @@ void setup_queen_masks();
 void setup_king_masks();
 void setup_row_masks();
 void setup_column_masks();
-
-void setup_consecutive_bits();
 
 void setup_masks();
 

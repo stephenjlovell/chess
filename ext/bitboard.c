@@ -28,12 +28,27 @@ int rook_offsets[4]   = { -8, -1, 1, 8 };
 int king_offsets[8]   = { -9, -7, 7, 9, -8, -1, 1, 8 };
 int pawn_offsets[4]   = { 9, 7, -9, -7 };
 
+BB square_masks_on[64] = {0};
+BB square_masks_off[64] = {0};
+BB uni_mask = 0xffffffffffffffff;
+BB empty_mask = 0x0;
+BB row_masks[8] = {0};
+BB column_masks[8] = {0};
+BB pawn_masks[2][64] = { {0}, {0} };
+BB knight_masks[64] = {0};
+BB bishop_masks[64] = {0};
+BB rook_masks[64] = {0};
+BB queen_masks[64] = {0};
+BB king_masks[64] = {0};
+BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} };
 
 
 void setup_square_masks(){      // Precalculate the value of the bit representing each square.
   for(int i=0; i<64; i++){
-    square_masks_on[i] = (1<<i);
-    square_masks_off[i] = ~(square_masks_on[i]);
+    square_masks_on[i]  =  ((BB) 1 << i);
+    printf("%lu\n", square_masks_on[i] );
+    square_masks_off[i] = ~((BB) square_masks_on[i]);
+    printf("%lu\n", square_masks_off[i] );
   }
 }
 
@@ -152,12 +167,6 @@ void setup_column_masks(){
   }                                           // previous column rightward.
 }
 
-void setup_consecutive_bits(){    // Pre-calculated array of n integers representing
-  consecutive_bits[0] = 0;        // bitsets of 1-bits of length n, indexed by length.
-  for(int i=1; i<64; i++){
-    consecutive_bits[i] = (consecutive_bits[i-1] | (1<<(i-1)));
-  }
-}
 
 void setup_masks(){ 
   setup_square_masks();

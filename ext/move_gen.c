@@ -76,9 +76,9 @@ VALUE get_knight_non_captures(VALUE self, VALUE knights, VALUE occupied){
   VALUE arr = rb_ary_new();
   int from, to, packed;
 
-  for(knights = NUM2ULONG(knights); knights; clear(from, knights)){
+  for(knights = NUM2ULONG(knights); knights; clear_sq(from, knights)){
     from = lsb(knights); // Locate each knight for the side to move.  
-    for( moves = (knight_masks[from] & empty); moves; clear(to, moves)){ // generate to squares
+    for( moves = (knight_masks[from] & empty); moves; clear_sq(to, moves)){ // generate to squares
       to = lsb(moves);
       packed = from & (to<<6); // pack each to/from pair into an integer 
       rb_ary_push(arr, ULONG2NUM(packed));
@@ -93,9 +93,9 @@ VALUE get_knight_captures(VALUE self, VALUE knights, VALUE enemy){
   VALUE arr = rb_ary_new();
   int from, to, packed;
 
-  for(knights = NUM2ULONG(knights); knights; clear(from, knights)){
+  for(knights = NUM2ULONG(knights); knights; clear_sq(from, knights)){
     from = lsb(knights); // Locate each knight for the side to move.  
-    for(moves = (knight_masks[from] & enemy); moves; clear(to, moves)){ // generate to squares
+    for(moves = (knight_masks[from] & enemy); moves; clear_sq(to, moves)){ // generate to squares
       to = lsb(moves);
       packed = from & (to<<6); // pack each to/from pair into an integer 
       rb_ary_push(arr, ULONG2NUM(packed));
@@ -111,9 +111,9 @@ VALUE get_bishop_non_captures(VALUE self, VALUE bishops, VALUE occupied){
   VALUE arr = rb_ary_new();
   int from, to, packed;
 
-  for(bishops = NUM2ULONG(bishops); bishops; clear(from, bishops)){
+  for(bishops = NUM2ULONG(bishops); bishops; clear_sq(from, bishops)){
     from = lsb(bishops); // Locate each bishop for the side to move.  
-    for(moves = (get_bishop_attacks(occupied, from) & empty); moves; clear(to, moves)){ // generate to squares
+    for(moves = (get_bishop_attacks(occupied, from) & empty); moves; clear_sq(to, moves)){ // generate to squares
       to = lsb(moves);
       packed = from & (to<<6); // pack each to/from pair into an integer 
       rb_ary_push(arr, ULONG2NUM(packed));
@@ -130,9 +130,9 @@ VALUE get_bishop_captures(VALUE self, VALUE bishops, VALUE occupied, VALUE enemy
   VALUE arr = rb_ary_new();
   int from, to, packed;
 
-  for(bishops = NUM2ULONG(bishops); bishops; clear(from, bishops)){
+  for(bishops = NUM2ULONG(bishops); bishops; clear_sq(from, bishops)){
     from = lsb(bishops); // Locate each bishop for the side to move.  
-    for(moves = (get_bishop_attacks(occupied, from) & enemy); moves; clear(to, moves)){ // generate to squares
+    for(moves = (get_bishop_attacks(occupied, from) & enemy); moves; clear_sq(to, moves)){ // generate to squares
       to = lsb(moves);
       packed = from & (to<<6); // pack each to/from pair into an integer 
       rb_ary_push(arr, ULONG2NUM(packed));
@@ -149,9 +149,9 @@ VALUE get_rook_non_captures(VALUE self, VALUE rooks, VALUE occupied){
   VALUE arr = rb_ary_new();
   int from, to, packed;
 
-  for(rooks = NUM2ULONG(rooks); rooks; clear(from, rooks)){
+  for(rooks = NUM2ULONG(rooks); rooks; clear_sq(from, rooks)){
     from = lsb(rooks); // Locate each bishop for the side to move.  
-    for(moves = (get_rook_attacks(occupied, from) & empty); moves; clear(to, moves)){ // generate to squares
+    for(moves = (get_rook_attacks(occupied, from) & empty); moves; clear_sq(to, moves)){ // generate to squares
       to = lsb(moves);
       packed = from & (to<<6); // pack each to/from pair into an integer 
       rb_ary_push(arr, ULONG2NUM(packed));
@@ -168,9 +168,9 @@ VALUE get_rook_captures(VALUE self, VALUE rooks, VALUE occupied, VALUE enemy){
   VALUE arr = rb_ary_new();
   int from, to, packed;
 
-  for(rooks = NUM2ULONG(rooks); rooks; clear(from, rooks)){
+  for(rooks = NUM2ULONG(rooks); rooks; clear_sq(from, rooks)){
     from = lsb(rooks); // Locate each bishop for the side to move.  
-    for(moves = (get_rook_attacks(occupied, from) & enemy); moves; clear(to, moves)){ // generate to squares
+    for(moves = (get_rook_attacks(occupied, from) & enemy); moves; clear_sq(to, moves)){ // generate to squares
       to = lsb(moves);
       packed = from & (to<<6); // pack each to/from pair into an integer 
       rb_ary_push(arr, ULONG2NUM(packed));
@@ -187,9 +187,9 @@ VALUE get_queen_non_captures(VALUE self, VALUE queens, VALUE occupied){
   VALUE arr = rb_ary_new();
   int from, to, packed;
 
-  for(queens = NUM2ULONG(queens); queens; clear(from, queens)){
+  for(queens = NUM2ULONG(queens); queens; clear_sq(from, queens)){
     from = lsb(queens); // Locate each bishop for the side to move.  
-    for(moves = (get_queen_attacks(occupied, from) & empty); moves; clear(to, moves)){ // generate to squares
+    for(moves = (get_queen_attacks(occupied, from) & empty); moves; clear_sq(to, moves)){ // generate to squares
       to = lsb(moves);
       packed = from & (to<<6); // pack each to/from pair into an integer 
       rb_ary_push(arr, ULONG2NUM(packed));
@@ -206,9 +206,9 @@ VALUE get_queen_captures(VALUE self, VALUE queens, VALUE occupied, VALUE enemy){
   VALUE arr = rb_ary_new();
   int from, to, packed;
 
-  for(queens = NUM2ULONG(queens); queens; clear(from, queens)){
+  for(queens = NUM2ULONG(queens); queens; clear_sq(from, queens)){
     from = lsb(queens); // Locate each bishop for the side to move.  
-    for(moves = (get_queen_attacks(occupied, from) & enemy); moves; clear(to, moves)){ // generate to squares
+    for(moves = (get_queen_attacks(occupied, from) & enemy); moves; clear_sq(to, moves)){ // generate to squares
       to = lsb(moves);
       packed = from & (to<<6); // pack each to/from pair into an integer 
       rb_ary_push(arr, ULONG2NUM(packed));
@@ -225,7 +225,7 @@ VALUE get_king_non_captures(VALUE self, VALUE kings, VALUE occupied){
   int from, to, packed;
 
   from = lsb(kings); // Locate each knight for the side to move.  
-  for( moves = (king_masks[from] & empty); moves; clear(to, moves)){ // generate to squares
+  for( moves = (king_masks[from] & empty); moves; clear_sq(to, moves)){ // generate to squares
     to = lsb(moves);
     packed = from & (to<<6); // pack each to/from pair into an integer 
     rb_ary_push(arr, ULONG2NUM(packed));
@@ -240,7 +240,7 @@ VALUE get_king_captures(VALUE self, VALUE kings, VALUE enemy){
   int from, to, packed;
 
   from = lsb(kings); // Locate each knight for the side to move.  
-  for(moves = (king_masks[from] & enemy); moves; clear(to, moves)){ // generate to squares
+  for(moves = (king_masks[from] & enemy); moves; clear_sq(to, moves)){ // generate to squares
     to = lsb(moves);
     packed = from & (to<<6); // pack each to/from pair into an integer 
     rb_ary_push(arr, ULONG2NUM(packed));

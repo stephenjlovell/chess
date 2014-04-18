@@ -23,6 +23,7 @@
 
 extern void Init_ruby_chess(){
   printf("Loading native extension:\n");
+
   Init_bitwise_math();
   Init_bitboard();
   Init_board();

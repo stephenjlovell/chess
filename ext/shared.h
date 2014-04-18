@@ -30,8 +30,6 @@
 #define column(sq) (sq >> 3)
 #define row(sq) (sq & 7)
 #define manhattan_distance(from, to) (abs(row(from)-row(to))+(abs(column(from)-column(to))))
-#define clear(sq, bitboard) ((bitboard)&(square_masks_off[sq]))
-#define add(sq, bitboard)   ((bitboard)&(square_masks_on[sq]))
 
 typedef unsigned long BB;
 typedef enum { NORTH, EAST, NW, NE, SOUTH, WEST, SE, SW } enumDir;
@@ -47,22 +45,28 @@ typedef enum {  A1, B1, C1, D1, E1, F1, G1, H1,
 
 typedef enum { BLACK, WHITE } enumSide;
 
+typedef enum { P, N, B, R, Q, K } enumPiece;
 
-static BB uni_mask = 0xffffffffffffffff;
-static BB empty_mask = 0x0;
-static BB consecutive_bits[64] = {0};
-static BB row_masks[8] = {0};
-static BB column_masks[8] = {0};
-static BB pawn_masks[2][64] = { {0}, {0} };
-static BB knight_masks[64] = {0};
-static BB bishop_masks[64] = {0};
-static BB rook_masks[64] = {0};
-static BB queen_masks[64] = {0};
-static BB king_masks[64] = {0};
+extern BB uni_mask;
+extern BB empty_mask;
+extern BB row_masks[8];
+extern BB column_masks[8];
+extern BB pawn_masks[2][64];
+extern BB knight_masks[64];
+extern BB bishop_masks[64];
+extern BB rook_masks[64];
+extern BB queen_masks[64];
+extern BB king_masks[64];
+extern BB ray_masks[8][64];
+extern BB square_masks_on[64];
+extern BB square_masks_off[64];
 
-static BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} };
-static BB square_masks_on[64] = {0};
-static BB square_masks_off[64] = {0};
+#define sq_mask_on(sq) (square_masks_on[sq])
+#define sq_mask_off(sq) (square_masks_off[sq])
+
+#define clear_sq(sq, bitboard) (bitboard &= sq_mask_off(sq))
+#define add_sq(sq, bitboard)   (bitboard |= sq_mask_on(sq))
+
 
 // Include child header files
 #include "bitboard.h"
