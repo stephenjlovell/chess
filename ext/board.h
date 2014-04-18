@@ -46,6 +46,7 @@ static VALUE o_alloc(VALUE klass);
 static VALUE o_initialize(VALUE self, VALUE sq_board);
 
 static VALUE o_get_bitboard(VALUE self, VALUE piece_id);
+static VALUE o_get_king_square(VALUE self, VALUE color_sym);
 static VALUE o_get_occupancy(VALUE self, VALUE color_sym);
 static VALUE o_set_bitboard(VALUE self, VALUE piece_id, VALUE bitboard);
 static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square);

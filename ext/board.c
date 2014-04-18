@@ -54,9 +54,12 @@ static VALUE o_get_bitboard(VALUE self, VALUE piece_id){
   return ULONG2NUM(get_cBoard(self)->pieces[piece_color(id)][piece_type(id)]);    
 }
 
+static VALUE o_get_king_square(VALUE self, VALUE color_sym){
+  return INT2NUM(lsb(get_cBoard(self)->pieces[SYM2COLOR(color_sym)][5]));
+}
+
 static VALUE o_get_occupancy(VALUE self, VALUE color_sym){
-  BB b = get_cBoard(self)->occupied[(color_sym == ID2SYM(rb_intern("w")) ? 1 : 0)];
-  return ULONG2NUM(b);
+  return ULONG2NUM(get_cBoard(self)->occupied[SYM2COLOR(color_sym)]);
 }
 
 static VALUE o_set_bitboard(VALUE self, VALUE piece_id, VALUE bitboard){
@@ -85,7 +88,7 @@ static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square){
   return Qnil;  
 }
 
-static VALUE o_move_update(VALUE self, VALUE piece_id, VALUE from, VALUE to){
+static VALUE o_relocate_piece(VALUE self, VALUE piece_id, VALUE from, VALUE to){
   int id = NUM2INT(piece_id);
   from = NUM2INT(from);
   to = NUM2INT(to);
@@ -109,12 +112,13 @@ extern void Init_board(){
   rb_define_alloc_func(cls_board, o_alloc);
   
   rb_define_method(cls_board, "get_bitboard", RUBY_METHOD_FUNC(o_get_bitboard), 1);
+  rb_define_method(cls_board, "get_king_square", RUBY_METHOD_FUNC(o_get_king_square), 1);
   rb_define_method(cls_board, "get_occupancy", RUBY_METHOD_FUNC(o_get_occupancy), 1);
   rb_define_method(cls_board, "set_bitboard", RUBY_METHOD_FUNC(o_set_bitboard), 2);
 
   rb_define_method(cls_board, "add_square", RUBY_METHOD_FUNC(o_add_square), 2);
   rb_define_method(cls_board, "remove_square", RUBY_METHOD_FUNC(o_add_square), 2);
-  rb_define_method(cls_board, "move_update", RUBY_METHOD_FUNC(o_move_update), 3);
+  rb_define_method(cls_board, "relocate_piece", RUBY_METHOD_FUNC(o_relocate_piece), 3);
   rb_define_method(cls_board, "initialize", RUBY_METHOD_FUNC(o_initialize), 1);
 
   rb_define_private_method(cls_board, "setup", RUBY_METHOD_FUNC(o_setup), 0);

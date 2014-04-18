@@ -30,7 +30,6 @@ module Chess
     PIECE_ID = { wP: 17, wN: 19, wB: 21, wR: 23, wQ: 25, wK: 27,
                  bP: 16, bN: 18, bB: 20, bR: 22, bQ: 24, bK: 26 }
 
-
     PIECE_TYPES = [ :P, :N, :B, :R, :Q, :K ] 
 
     PIECE_SYMBOLS = [ :wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK ]

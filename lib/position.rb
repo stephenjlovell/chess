@@ -42,13 +42,10 @@ module Chess
         @side_to_move, @castle, @enp_target, @halfmove_clock = side_to_move, castle, enp_target, halfmove_clock
         @enemy = FLIP_COLOR[@side_to_move]
         @board = board || Board.new
-        # Create lists of pieces in play for each side.  This allows for move generation without having to scan 
-        # the board.
-        @pieces = create_pieces(@board) 
+        # Generate bitboards for each piece color and type given the board representation.
+        @pieces = Bitboard::PiecewiseBoard.new(@board)
         # Calculate an initial Zobrist hash key for the position.
         @hash = @board.hash ^ Memory::enp_key(enp_target) ^ (@side_to_move==:w ? 1 : 0)
-        # Find and store the initial location of each king. Locations are updated on make/unmake of king moves.
-        @king_location = set_king_location
         # Set initial value of material (sum of each piece value adjusted for it's location on board) for each side.
         # material values are incrementally updated during move generation.
         @material = { w: Evaluation::material(self, :w, Evaluation::base_material(self, :w) <= Pieces::ENDGAME_VALUE), 
@@ -56,14 +53,6 @@ module Chess
         # Set initial king tropism bonuses (closeness of a side's non-king pieces to the enemy king) for each side.
         # King tropism bonuses are incrementally updated during move generation.
         @tropism = { w: Evaluation::king_tropism(self, :w), b: Evaluation::king_tropism(self, :w) } 
-      end
-
-      def own_pieces
-        @pieces[@side_to_move]
-      end
-
-      def enemy_pieces
-        @pieces[@enemy]
       end
 
       def own_material
@@ -99,15 +88,11 @@ module Chess
       end
 
       def own_king_location
-        @king_location[@side_to_move]
-      end
-
-      def own_king_location=(location)
-        @king_location[@side_to_move] = location
+        @pieces.get_king_square(@side_to_move)
       end
 
       def enemy_king_location
-        @king_location[@enemy]
+        @pieces.get_king_square(@enemy)
       end
 
       # Perform a static evaluation of the current position to asses its heuristic value to the current side.
@@ -126,20 +111,16 @@ module Chess
       end
 
       def in_check?
-        @board.king_in_check?(self, @side_to_move)
+
       end
 
       def enemy_in_check?
-        @board.king_in_check?(self, @enemy)
+
       end
 
       # Verify that the given move would not leave the current side's king in check.
       def evades_check?(move)
-        if move.from == own_king_location 
-          @board.evades_check?(self, move.from, move.to, @side_to_move, move.to)
-        else
-          @board.evades_check?(self, move.from, move.to, @side_to_move, own_king_location)
-        end
+
       end
 
       # Return a string decribing the position in Forsyth-Edwards Notation.
@@ -236,44 +217,6 @@ module Chess
 
       def history_sort!(moves)
         moves.sort! { |x,y| $history[y.piece.symbol][y.to] <=> $history[x.piece.symbol][x.to] }
-      end
-
-      private 
-
-      # Create piece lists indexed by board location, based on the given board.
-      def create_pieces(board)        
-        pieces = { w: {}, b: {} }
-        board.each_square_with_location do |r,c,sym|
-          unless sym.nil?
-            piece = create_piece_by_sym(sym)
-            pieces[piece.color][Location::get_location_by_coordinates(r,c)] = piece
-          end
-        end
-        return pieces
-      end
-
-      def create_piece_by_sym(sym)
-        color, type = sym[0].to_sym, sym[1]
-        case type
-        when "P" then Pieces::Pawn.new(color)
-        when "R" then Pieces::Rook.new(color)
-        when "N" then Pieces::Knight.new(color)
-        when "B" then Pieces::Bishop.new(color)
-        when "Q" then Pieces::Queen.new(color)
-        when "K" then Pieces::King.new(color)
-        end
-      end
-
-      def set_king_location
-        kings = {}
-        @board.each_square_with_location do |r,c,s|
-          if s == :wK
-            kings[:w] = Location::get_location_by_coordinates(r,c)
-          elsif s == :bK
-            kings[:b] = Location::get_location_by_coordinates(r,c)
-          end
-        end
-        return kings
       end
 
     end

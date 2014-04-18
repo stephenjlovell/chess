@@ -155,13 +155,8 @@ module Chess
       end
 
       def relocate_piece(position, piece, from, to)
-        # position.own_pieces.delete(from) # relocate piece within piece list
-        # position.own_pieces[to] = piece
-
-        # relocate piece on bitboard:
-
-
-        position.board[from] = nil  # relocate piece on board.
+        position.pieces.relocate_piece(piece, from, to) # relocate piece on bitboard.
+        position.board[from] = nil                      # relocate piece on square-centric board.
         position.board[to] = piece
       end
 
@@ -218,22 +213,14 @@ module Chess
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
-        
-
-        #remove enemy piece from bitboard:
-
-        # position.enemy_pieces.delete(to)
-
+        position.pieces.remove_square(@captured_piece, to)  # Remove enemy piece from bitboard.
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         unmake_clock_adjustment(position)
         position.board[to] = @captured_piece.symbol
-
-        # replace stored enemy piece on bitboard:
-
-        # position.enemy_pieces[to] = @captured_piece
+        position.pieces.add_square(@captured_piece, to) # Replace stored enemy piece on bitboard
       end
 
       def enemy_material(position, piece, from, to)
@@ -260,7 +247,7 @@ module Chess
 
       def mvv_lva(piece)  # Most valuable victim, least valuable attacker heuristic. Used for move ordering of captures.
         # begin
-        return Pieces::PIECE_VALUES[@captured_piece] - Pieces::PIECE_ID[piece]
+        return Pieces::PIECE_VALUES[@captured_piece] - piece
         # rescue => err
         #   raise Memory::HashCollisionError
         # end
@@ -314,26 +301,15 @@ module Chess
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
-
         position.board[@enp_target] = nil
-
-        # position.enemy_pieces.delete(@enp_target)
-        
-        # remove stored enemy piece on bitboard:
-
-      
+        position.pieces.remove_square(@captured_piece, @enp_target) # Remove stored enemy piece on bitboard
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         unmake_clock_adjustment(position)
-        
         position.board[@enp_target] = @captured_piece
-        
-        # position.enemy_pieces[@enp_target] = @captured_piece
-
-        # replace stored enemy piece on bitboard:
-
+        position.pieces.add_square(@captured_piece, @enp_target) # Replace stored enemy piece on bitboard
       end
 
       def enemy_material(position, piece, from, to)
@@ -375,9 +351,12 @@ module Chess
 
     # Strategy used when a pawn moves onto the enemy back row, promoting it to a Queen.
     class PawnPromotion < MoveStrategy # Stores the existing pawn in move object and places a new Queen.
+      WQ_ID = Pieces::PIECE_ID[:wQ]
+      BQ_ID = Pieces::PIECE_ID[:bQ]
+
       include Irreversible
       def initialize(side_to_move)
-        @queen = Pieces::Queen.new(side_to_move)
+        @queen = side_to_move == :w ? WQ_ID : BQ_ID  # piece_id constants for queens.
       end
 
       def make!(position, piece, from, to)
@@ -413,7 +392,8 @@ module Chess
       include MakesCapture
 
       def initialize(captured_piece)  
-        @queen, @captured_piece = Pieces::Queen.new(FLIP_COLOR[captured_piece.color]), captured_piece
+        @captured_piece = captured_piece
+        @queen = captured_piece.color == :w ? BQ_ID : WQ_ID
       end
 
       def make!(position, piece, from, to)
@@ -444,8 +424,8 @@ module Chess
 
     class Castle < MoveStrategy # Caches info on movement of the rook. King information is stored in the Move instance.
       include Reversible
-
       attr_accessor :rook, :rook_from, :rook_to
+
       def initialize(rook, rook_from, rook_to)
         @rook, @rook_from, @rook_to = rook, rook_from, rook_to
       end
@@ -453,13 +433,11 @@ module Chess
       def make!(position, piece, from, to)
         super # call make! method inherited from MoveStrategy
         relocate_piece(position, @rook, @rook_from, @rook_to)
-        position.own_king_location = to
       end
 
       def unmake!(position, piece, from, to)
         super # call unmake! method inherited from MoveStrategy
         relocate_piece(position, @rook, @rook_to, @rook_from)
-        position.own_king_location = from
       end
 
       def own_material(position, piece, from, to)
@@ -474,7 +452,7 @@ module Chess
                        - Tropism::get_bonus(@rook, @rook_from, pos.enemy_king_location)
       end
 
-      def enemy_tropism(pos, piece, from, to)  # recalculation of enemy tropism is caused by king movement.
+      def enemy_tropism(pos, piece, from, to) # recalculation of enemy tropism is caused by king movement.
         @enemy_tropism ||= Evaluation::king_tropism(pos, pos.enemy, to) - pos.enemy_tropism
       end
 

@@ -61,6 +61,8 @@ extern BB ray_masks[8][64];
 extern BB square_masks_on[64];
 extern BB square_masks_off[64];
 
+#define SYM2COLOR(sym) (sym == ID2SYM(rb_intern("w")) ? 1 : 0)
+
 #define sq_mask_on(sq) (square_masks_on[sq])
 #define sq_mask_off(sq) (square_masks_off[sq])
 

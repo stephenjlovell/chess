@@ -70,10 +70,7 @@ module Chess
 
     # Provide an initial hash for position object by merging (via XOR) the hash keys for each # piece/square.
     def hash   
-      # key = 0  
-      # each_with_index { |sym, i| key ^= Memory::psq_key(sym, i) unless sym.nil? }
-      # return key
-      each_with_index.inject(0) {|h, (sym, i)| h ^= sym.nil? ? 0 : Memory::psq_key(sym, i) }
+      each_with_index.inject(0) {|h, (sym, i)| h ^= (sym.nil? ? 0 : Memory::psq_key(sym, i)) }
     end
 
     # Unicode symbols for chess pieces:
