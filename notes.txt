@@ -126,14 +126,15 @@ Current Issues ----
 
 To Do ----
 
-  replace attack.rb with bitboard-based 'can_attack(square)'' and 'is_attacked_by(square)' methods in C.
+
+  Without piece list, updating tropism score will require looping over opposing bitboards to sum tropism
+  bonuses.  Migrate tropism module and Evaluation::king_tropism to C.
+
+  Replace attack.rb with bitboard-based 'can_attack(square)'' and 'is_attacked_by(square)' methods in C.
   
-  Use new piece IDs with square-centric board to indicate occupancy.  This will provide an easy way to pass 
-  piece type/color data to C extension.  
+  Create 'attacks_to(square)' method in attack.c to find all attacking squares (incl. hidden attackers). Write an iterative SEE(sboard, sq) implementation in C that uses this function to get the SEE score for an attack.
 
-  Pass piece ID and square to PiecewiseBoard
-
-
+  Piece classes no longer needed.  Reorganize move_gen.c into single move generator each for captures, non-captures, checks, and check evasions. The last 2 will require a new attack.c module.
 
 
   Refactor utilities

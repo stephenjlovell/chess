@@ -32,25 +32,12 @@ module Chess
       def print
         Pieces::PIECE_ID.each do |sym, piece_id|
           puts "\n#{sym}\n"
-          print_bitboard(get_bitboard(piece_id))
+          Chess::print_bitboard(get_bitboard(piece_id))
         end
         COLORS.each do |color|
           puts "\n #{color} placement\n"
-          print_bitboard(get_occupancy(color))
+          Chess::print_bitboard(get_occupancy(color))
         end 
-      end
-
-      def print_bitboard(x, square=nil)
-        str = x.to_s(2)
-        str = "0"*(64-str.length) + str
-        puts "   0 1 2 3 4 5 6 7"
-        puts " -----------------"
-        i=7
-        str.reverse.split(//).each_slice(8).reverse_each do |row| 
-          puts "#{i}| #{row.join(" ").gsub("1", Chess::colorize("1",32))}" 
-          i-=1
-        end
-        puts "\n"
       end
 
       private
@@ -65,7 +52,10 @@ module Chess
       
     end
 
-    PiecewiseBoard.new(Board.new).print
+    PiecewiseBoard.new(Board.new)
+    MOVES = MoveGen::get_non_captures(:w, [])
+    puts MOVES.count
+    MOVES.each {|m| puts m}
 
   end
 end

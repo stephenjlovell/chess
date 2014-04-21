@@ -31,13 +31,6 @@
 #define piece_type(piece_id)  ((piece_id & 0xe) >> 1 )
 #define piece_color(piece_id)  (piece_id & 0x1)
 
-typedef struct {
-  BB pieces[2][6];
-  BB occupied[2];
-} BRD;
-
-static BRD current_board = { { {0}, {0} }, {0} };
-
 void add_square(int color, int type, int sq);
 
 static void free_cBoard(BRD* board);

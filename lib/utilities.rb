@@ -49,6 +49,18 @@ module Chess
     "\e[#{color_code}m#{str}\e[0m"
   end
 
+  def self.print_bitboard(b)
+    str = "0"*(64-b.to_s(2).length) + b.to_s(2)
+    puts "   0 1 2 3 4 5 6 7"
+    puts " -----------------"
+    i=7
+    str.reverse.split(//).each_slice(8).reverse_each do |row| 
+      puts "#{i}| #{row.join(" ").gsub("1", Chess::colorize("1",32))}" 
+      i-=1
+    end
+    puts "\n"
+  end
+
   module Notation # supports translation to and from algebraic notation, EPD, and FEN.
 
     class InvalidMoveError < StandardError

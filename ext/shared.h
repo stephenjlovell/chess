@@ -22,17 +22,21 @@
 #ifndef SHARED
 #define SHARED
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
 #include "ruby.h"
 
-#define on_board(sq) (!!(sq & 0xffffffffffffffff))
-#define column(sq) (sq >> 3)
-#define row(sq) (sq & 7)
-#define manhattan_distance(from, to) (abs(row(from)-row(to))+(abs(column(from)-column(to))))
 
 typedef unsigned long BB;
-typedef enum { NORTH, EAST, NW, NE, SOUTH, WEST, SE, SW } enumDir;
+
+typedef struct {
+  BB pieces[2][6];
+  BB occupied[2];
+} BRD;
+
+// typedef enum { NORTH, EAST, NW, NE, SOUTH, WEST, SE, SW } enumDir;
+typedef enum { NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST } enumDir;
 
 typedef enum {  A1, B1, C1, D1, E1, F1, G1, H1, 
                 A2, B2, C2, D2, E2, F2, G2, H2, 
@@ -45,29 +49,54 @@ typedef enum {  A1, B1, C1, D1, E1, F1, G1, H1,
 
 typedef enum { BLACK, WHITE } enumSide;
 
-typedef enum { P, N, B, R, Q, K } enumPiece;
+typedef enum { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING } enumPiece;
+
+extern BRD *current_board;
 
 extern BB uni_mask;
 extern BB empty_mask;
+
 extern BB row_masks[8];
 extern BB column_masks[8];
-extern BB pawn_masks[2][64];
+extern BB ray_masks[8][64];
+
+extern BB pawn_attack_masks[2][64];
+
+extern BB pawn_from_squares[2][64];
+extern BB pawn_double_from_squares[2][64];
+extern BB pawn_left_attack_from_squares[2][64];
+extern BB pawn_right_attack_from_squares[2][64];
+extern BB pawn_enp_masks[64];
+
 extern BB knight_masks[64];
 extern BB bishop_masks[64];
 extern BB rook_masks[64];
 extern BB queen_masks[64];
 extern BB king_masks[64];
-extern BB ray_masks[8][64];
+
 extern BB square_masks_on[64];
 extern BB square_masks_off[64];
 
+
+#define on_board(sq) (0 <= sq && sq <= 63)
+
+#define row(sq) (sq >> 3)
+#define column(sq) (sq & 7)
+
+#define manhattan_distance(from, to) ((abs(row(from)-row(to)))+(abs(column(from)-column(to))))
+
 #define SYM2COLOR(sym) (sym == ID2SYM(rb_intern("w")) ? 1 : 0)
+#define SYM2OPPCOLOR(sym) (sym == ID2SYM(rb_intern("w")) ? 0 : 1)
 
 #define sq_mask_on(sq) (square_masks_on[sq])
 #define sq_mask_off(sq) (square_masks_off[sq])
 
 #define clear_sq(sq, bitboard) (bitboard &= sq_mask_off(sq))
 #define add_sq(sq, bitboard)   (bitboard |= sq_mask_on(sq))
+
+#define Occupied() ((current_board->occupied[0])|(current_board->occupied[1]))
+#define Placement(color) (current_board->occupied[color])
+
 
 
 // Include child header files

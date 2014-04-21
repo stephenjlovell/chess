@@ -22,49 +22,76 @@
 // #include "shared.h"
 #include "bitboard.h"
 
+static VALUE mod_chess;
+
 int knight_offsets[8] = { -17, -15, -10, -6, 6, 10, 15, 17 };
-int bishop_offsets[4] = { -9, -7, 7, 9 };
-int rook_offsets[4]   = { -8, -1, 1, 8 };
+int bishop_offsets[4] = { 7, 9, -7, -9 };
+int rook_offsets[4]   = { 8, 1, -8, -1 };
 int king_offsets[8]   = { -9, -7, 7, 9, -8, -1, 1, 8 };
-int pawn_offsets[4]   = { 9, 7, -9, -7 };
+
+int pawn_attack_offsets[4]   = { 9, 7, -9, -7 };
+int pawn_advance_offsets[4] = {8, 16, -8, -16};
+int pawn_enpassant_offsets[2] = {1, -1};
+
+BB uni_mask = 0xffffffffffffffff;
+BB empty_mask = 0x0;
 
 BB square_masks_on[64] = {0};
 BB square_masks_off[64] = {0};
-BB uni_mask = 0xffffffffffffffff;
-BB empty_mask = 0x0;
+
 BB row_masks[8] = {0};
 BB column_masks[8] = {0};
-BB pawn_masks[2][64] = { {0}, {0} };
+BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} };
+
+BB pawn_attack_masks[2][64] = { {0}, {0} };
+BB pawn_from_squares[2][64] = { {0}, {0} };
+BB pawn_double_from_squares[2][64] = { {0}, {0} };
+
+BB pawn_left_attack_from_squares[2][64] = { {0}, {0} };
+BB pawn_right_attack_from_squares[2][64] = { {0}, {0} };
+BB pawn_enp_masks[64] = {0};
+
 BB knight_masks[64] = {0};
 BB bishop_masks[64] = {0};
 BB rook_masks[64] = {0};
 BB queen_masks[64] = {0};
 BB king_masks[64] = {0};
-BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} };
 
 
 void setup_square_masks(){      // Precalculate the value of the bit representing each square.
   for(int i=0; i<64; i++){
     square_masks_on[i]  =  ((BB) 1 << i);
-    printf("%lu\n", square_masks_on[i] );
-    square_masks_off[i] = ~((BB) square_masks_on[i]);
-    printf("%lu\n", square_masks_off[i] );
+    square_masks_off[i] = ~(square_masks_on[i]);
   }
 }
 
 void setup_pawn_masks(){
   int sq;
   for(int i=0; i<64; i++){
+    if(row(i)==3 || row(i)==4){
+      if (column(i)!=7) pawn_enp_masks[i] |= sq_mask_on(i+1);
+      if (column(i)!=0) pawn_enp_masks[i] |= sq_mask_on(i-1);
+    }
     if (i < 56){
+      pawn_from_squares[BLACK][i] = (i+8);
+      if (row(i)==4) pawn_double_from_squares[BLACK][i] = (i+16);
+      if (column(i)!=7) pawn_left_attack_from_squares[BLACK][i] = (i+9);
+      if (column(i)!=0) pawn_right_attack_from_squares[BLACK][i] = (i+7);
+
       for(int j=0; j<2; j++){
-        sq = i + pawn_offsets[j];
-        if (manhattan_distance(sq, i)==2) pawn_masks[0][i] |= (1<<sq);     
+        sq = i + pawn_attack_offsets[j];
+        if (manhattan_distance(sq, i)==2) pawn_attack_masks[WHITE][i] |= sq_mask_on(sq);  
       }
     }
     if (i > 7){
+      pawn_from_squares[WHITE][i] = (i-8);
+      if (row(i)==3) pawn_double_from_squares[WHITE][i] = (i-16);
+      if (column(i)!=7) pawn_left_attack_from_squares[WHITE][i] = (i-7);
+      if (column(i)!=0) pawn_right_attack_from_squares[WHITE][i] = (i-9);
+
       for(int j=2; j<4; j++){
-        sq = i + pawn_offsets[j];
-        if (manhattan_distance(sq, i)==2) pawn_masks[1][i] |= (1<<sq);       
+        sq = i + pawn_attack_offsets[j];
+        if (manhattan_distance(sq, i)==2) pawn_attack_masks[BLACK][i] |= sq_mask_on(sq); 
       }
     }
   }
@@ -73,64 +100,43 @@ void setup_pawn_masks(){
 void setup_knight_masks(){
   int sq;
   for(int i=0; i<64; i++){
-    knight_masks[i] = 0;
     for(int j=0; j<8; j++){
       sq = i + knight_offsets[j];
-      if (on_board(sq) && manhattan_distance(sq, i) == 3) knight_masks[i] |= (1<sq);
+      if (on_board(sq) && manhattan_distance(sq, i) == 3) knight_masks[i] |= sq_mask_on(sq);
     }
   }
 }
 
 void setup_bishop_masks(){
-  int square_key;
-  int previous;
-  int current;
+  int previous, current, offset;
   for(int i=0; i<64; i++){
     for(int j=0; j<4; j++){
       previous = i;
-      current = i + bishop_offsets[j];
+      offset = bishop_offsets[j];
+      current = i + offset;
       while(on_board(current) && manhattan_distance(current, previous)==2){
-        square_key = 1 << current;
-        switch(square_key){
-          case 7:
-            ray_masks[NW][i] |= square_key;        
-          case 9:
-            ray_masks[NE][i] |= square_key;
-          case -7:
-            ray_masks[SE][i] |= square_key;
-          case -9:
-            ray_masks[SW][i] |= square_key;
-        }
+        ray_masks[j][i] |= sq_mask_on(current);
         previous = current;
-        current += bishop_offsets[j];
+        current += offset;
       }
     }
+    // rb_funcall(mod_chess, rb_intern("print_bitboard"), 1, ULONG2NUM(ray_masks[NE][i]));
+    // printf("----------\n");  
     bishop_masks[i] = ray_masks[NW][i]|ray_masks[NE][i]|ray_masks[SE][i]|ray_masks[SW][i];
   }
 }
 
 void setup_rook_masks(){
-  int square_key;
-  int previous;
-  int current;
+  int previous, current, offset;
   for(int i=0; i<64; i++){
     for(int j=0; j<4; j++){
       previous = i;
-      current = i + rook_offsets[j];
+      offset = rook_offsets[j];
+      current = i + offset;
       while(on_board(current) && manhattan_distance(current, previous)==1){
-        square_key = 1 << current;
-        switch(square_key){
-          case 8:
-            ray_masks[NORTH][i] |= square_key;        
-          case -8:
-            ray_masks[SOUTH][i] |= square_key;
-          case 1:
-            ray_masks[EAST][i] |= square_key;
-          case -1:
-            ray_masks[WEST][i] |= square_key;
-        }
+        ray_masks[j+4][i] |= sq_mask_on(current);
         previous = current;
-        current += bishop_offsets[j];
+        current += offset;
       }
     }
     rook_masks[i] = ray_masks[NORTH][i]|ray_masks[SOUTH][i]|ray_masks[EAST][i]|ray_masks[WEST][i];
@@ -144,10 +150,9 @@ void setup_queen_masks(){
 void setup_king_masks(){
   int sq;
   for(int i=0; i<64; i++){
-    king_masks[i] = 0;
     for(int j=0; j<8; j++){
       sq = i + king_offsets[j];
-      if (on_board(sq) && manhattan_distance(sq, i) <= 2) king_masks[i] |= (1<sq);
+      if (on_board(sq) && manhattan_distance(sq, i) <= 2) king_masks[i] |= sq_mask_on(sq);
     }
   }
 }
@@ -184,6 +189,8 @@ void setup_masks(){
 
 extern void Init_bitboard(){
   printf("  -Loading bitboard extension...");
+
+  mod_chess = rb_define_module("Chess");
 
   setup_masks();
 

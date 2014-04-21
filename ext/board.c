@@ -21,7 +21,10 @@
 
 #include "board.h"
 
+BRD *current_board = NULL;
+
 void free_cBoard(BRD *b){
+  current_board = NULL;
   ruby_xfree(b);
 }
 
@@ -39,7 +42,7 @@ static VALUE o_initialize(VALUE self, VALUE sq_board){
   BRD board = { { {0}, {0} }, {0} };
   BRD *b = get_cBoard(self);
   *b = board;
-
+  current_board = b;
   rb_funcall(self, rb_intern("setup"), 1, sq_board);
 
   return self;

@@ -144,13 +144,19 @@ module Chess
           :N
         end
 
-        def get_non_captures(pos, moves, pieces, occupied)
-          knights = pieces[:N]
-          get_knight_non_captures(knights, occupied).each do |pair|
-            from, to = (pair & FROM_MASK), (pair >> 6)
-            moved_piece ||= pos.board[from]
-            moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
-          end
+        def get_non_captures(pos, moves)
+
+          # knights = pieces[:N]
+          # get_knight_non_captures(knights, occupied).each do |pair|
+          #   from, to = (pair & FROM_MASK), (pair >> 6)
+          #   moved_piece ||= pos.board[from]
+          #   moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
+          # end
+
+          # no longer need to pass in bitboard.  Append moves to list directly in C.
+          get_knight_non_captures(pos.color, moves)
+
+
         end
 
         def get_captures(pos, moves, pieces, occupied, enemy)
