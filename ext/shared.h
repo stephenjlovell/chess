@@ -85,7 +85,7 @@ extern BB square_masks_off[64];
 
 #define manhattan_distance(from, to) ((abs(row(from)-row(to)))+(abs(column(from)-column(to))))
 
-#define SYM2COLOR(sym) (sym == ID2SYM(rb_intern("w")) ? 1 : 0)
+#define SYM2COLOR(sym)    (sym == ID2SYM(rb_intern("w")) ? 1 : 0)
 #define SYM2OPPCOLOR(sym) (sym == ID2SYM(rb_intern("w")) ? 0 : 1)
 
 #define sq_mask_on(sq) (square_masks_on[sq])

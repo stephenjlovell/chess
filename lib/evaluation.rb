@@ -153,7 +153,7 @@ module Chess
 
     # Sums up the value of all pieces in play for the given side (without any positional bonuses/penalties).
     def self.base_material(position, side)
-
+      0
       # position.pieces[side].inject(0) { |total, (key, piece)| total += piece.class.value }
     
     end
@@ -194,14 +194,14 @@ module Chess
       # end
       # return sum
       
-
-
     end
 
     def self.material(position, side, endgame=nil) # =~ 1,040 at start
-      position.pieces[side].inject(0) do |total, (key, piece)| 
-        total += adjusted_value(position, piece, key, endgame)
-      end
+      # position.pieces[side].inject(0) do |total, (key, piece)| 
+      #   total += adjusted_value(position, piece, key, endgame)
+      # end
+      0
+
     end
 
     def self.adjusted_value(position, piece, square, endgame=nil)

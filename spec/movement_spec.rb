@@ -27,20 +27,23 @@ MAX_TREE = [1,20,400,8902,197281,4865609,119060324,3195901860,84998978956,243953
 describe Chess::MoveGen do
   
   before do 
-    @game = FactoryGirl.build(:game)
+    # @game = FactoryGirl.build(:game)
+    @game = Chess::Game.new
     @root = @game.position
+    # @root.board[31] = 23
+    # @root.pieces.add_square(23, 31)
     @depth = 4
   end
 
   describe "move generation" do
 
-    it "should generate the correct number of legal positions" do
-      t0 = Time.now
-      node_count = perft_legal(@root, @depth) # first castling moves would occur at minimum ply 7.
-      t1 = Time.now
-      puts "Legal MoveGen: #{node_count/(t1-t0)} NPS"
-      node_count.should == MAX_TREE[@depth]
-    end
+    # it "should generate the correct number of legal positions" do
+    #   t0 = Time.now
+    #   node_count = perft_legal(@root, @depth) # first castling moves would occur at minimum ply 7.
+    #   t1 = Time.now
+    #   puts "Legal MoveGen: #{node_count/(t1-t0)} NPS"
+    #   node_count.should == MAX_TREE[@depth]
+    # end
 
     it "can generate pseudo-legal positions at lower computational cost" do
       t0 = Time.now

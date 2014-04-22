@@ -24,17 +24,64 @@
 static BB castle_queenside_intervening[2] = {0};
 static BB castle_kingside_intervening[2] = {0};
 
-static const int C_WQ = 8;
-static const int C_WK = 4;
-static const int C_BQ = 2;
-static const int C_BK = 1;
+static const int C_WQ = 0x8;
+static const int C_WK = 0x4;
+static const int C_BQ = 0x2;
+static const int C_BK = 0x1;
 
 void setup_castle_masks(){
   castle_queenside_intervening[1] |= (sq_mask_on(B1)|sq_mask_on(C1)|sq_mask_on(D1));
-  castle_kingside_intervening[1] |= (sq_mask_on(F1)|sq_mask_on(G1));
+  castle_kingside_intervening[1]  |= (sq_mask_on(F1)|sq_mask_on(G1));
   castle_queenside_intervening[0] = castle_queenside_intervening[1]<<56;
   castle_kingside_intervening[0] = castle_kingside_intervening[1]<<56;  
 }
+
+
+static BB get_ray_attacks_reverse(BB occ, enumDir dir, enumSq sq) {
+  BB ray = ray_masks[dir][sq];
+  BB blockers = (ray & occ);
+  if(blockers) ray ^= (ray_masks[dir][msb(blockers)]);
+  return ray;
+}
+
+static BB get_ray_attacks_forward(BB occ, enumDir dir, enumSq sq) {
+  BB ray = ray_masks[dir][sq];
+  BB blockers = (ray & occ);
+  if(blockers) ray ^= (ray_masks[dir][lsb(blockers)]);
+  return ray;
+}
+
+BB get_rook_attacks(BB occ, enumSq sq) {
+  BB attacks = 0;
+  // printf("North:\n");
+  attacks |= get_ray_attacks_forward(occ, NORTH, sq);
+  // rb_funcall(mod_chess, rb_intern("print_bitboard"), 1, ULONG2NUM(attacks));
+  // printf("North|East:\n");
+  attacks |= get_ray_attacks_forward(occ, EAST, sq);
+  // rb_funcall(mod_chess, rb_intern("print_bitboard"), 1, ULONG2NUM(attacks));
+  // printf("South:\n");
+  attacks |= get_ray_attacks_reverse(occ, SOUTH, sq);
+  // rb_funcall(mod_chess, rb_intern("print_bitboard"), 1, ULONG2NUM(attacks));
+  attacks |= get_ray_attacks_reverse(occ, WEST, sq);
+  // printf("West:\n");
+  // rb_funcall(mod_chess, rb_intern("print_bitboard"), 1, ULONG2NUM(attacks));
+  // rb_funcall(mod_chess, rb_intern("print_bitboard"), 1, ULONG2NUM(attacks));
+  // printf("----------\n");  
+  return attacks;
+} 
+
+BB get_bishop_attacks(BB occ, enumSq sq) {
+  BB attacks = 0;
+  attacks |= get_ray_attacks_forward(occ, NW, sq);
+  attacks |= get_ray_attacks_forward(occ, NE, sq);
+  attacks |= get_ray_attacks_reverse(occ, SE, sq);
+  attacks |= get_ray_attacks_reverse(occ, SW, sq);
+  return attacks;
+}
+
+BB get_queen_attacks(BB occ, enumSq sq){
+  return (get_bishop_attacks(occ, sq) | get_rook_attacks(occ, sq));
+}                                                 
 
 
 VALUE get_non_captures(VALUE self, VALUE color, VALUE castle_rights, VALUE moves){
@@ -46,28 +93,29 @@ VALUE get_non_captures(VALUE self, VALUE color, VALUE castle_rights, VALUE moves
   VALUE piece_id;
   VALUE move;
   VALUE strategy;
-  VALUE args[4];
+
   BB single_advances, double_advances;
 
   // Castles
   int castle = NUM2INT(castle_rights);
   if(c){
     if ((castle & C_WQ) && !(castle_queenside_intervening[c] & occupied)){
-      build_castle(args, 0x1b, E1, C1, 0x17, A1, D1, strategy, moves)
+      build_castle(0x1b, E1, C1, 0x17, A1, D1, strategy, moves)
     }
     if ((castle & C_WK) && !(castle_kingside_intervening[c] & occupied)){
-      build_castle(args, 0x1b, E1, G1, 0x17, H1, F1, strategy, moves)
+      build_castle(0x1b, E1, G1, 0x17, H1, F1, strategy, moves)
     }
   } else {
     if ((castle & C_BQ) && !(castle_queenside_intervening[c] & occupied)){
-      build_castle(args, 0x1a, E8, C8, 0x16, A8, D8, strategy, moves)
+      build_castle(0x1a, E8, C8, 0x16, A8, D8, strategy, moves)
     }
     if ((castle & C_BK) && !(castle_kingside_intervening[c] & occupied)){
-      build_castle(args, 0x1a, E8, C8, 0x16, A8, D8, strategy, moves)
+      build_castle(0x1a, E8, C8, 0x16, A8, D8, strategy, moves)
     }
   }
   // Pawns
   piece_id = INT2NUM(0x10|c);
+
   if(c){ // white to move
     single_advances = (current_board->pieces[WHITE][PAWN]<<8) & empty & (~row_masks[7]); // promotions generated in get_captures
     double_advances = ((single_advances & row_masks[2])<<8) & empty;
@@ -75,75 +123,88 @@ VALUE get_non_captures(VALUE self, VALUE color, VALUE castle_rights, VALUE moves
     single_advances = (current_board->pieces[BLACK][PAWN]>>8) & empty & (~row_masks[0]);  
     double_advances = ((single_advances & row_masks[5])>>8) & empty;
   }
+
   for(; double_advances; clear_sq(to, double_advances)){
-    to = lsb(double_advances);
-    build_move(args, piece_id, pawn_double_from_squares[c][to], to, cls_enp_advance, strategy, moves);
+    // to = lsb(double_advances);
+    to = furthest_forward(c, double_advances);
+    build_move(piece_id, pawn_double_from_squares[c][to], to, cls_enp_advance, strategy, moves);
   }
   for(; single_advances; clear_sq(to, single_advances)){
-    to = lsb(single_advances);
-    build_move(args, piece_id, pawn_from_squares[c][to], to, cls_pawn_move, strategy, moves);  
+    // to = lsb(single_advances);
+    to = furthest_forward(c, single_advances);
+    build_move(piece_id, pawn_from_squares[c][to], to, cls_pawn_move, strategy, moves);  
   }
+
   // Knights
   piece_id = INT2NUM(0x12|c); // get knight piece ID for color c.
   for(BB f = current_board->pieces[c][KNIGHT]; f; clear_sq(from, f)){
-    from = lsb(f); // Locate each knight for the side to move.
+    // from = lsb(f);
+    from = furthest_forward(c, f); // Locate each knight for the side to move.
     for(BB t = (knight_masks[from] & empty); t; clear_sq(to, t)){ // generate to squares
-      to = lsb(t);
-      build_move(args, piece_id, from, to, cls_regular_move, strategy, moves);
+      // to = lsb(t);
+      to = furthest_forward(c, t);
+      build_move(piece_id, from, to, cls_regular_move, strategy, moves);
     }
   }
   // Bishops
   piece_id = INT2NUM(0x14|c); // get bishop piece ID for color c.
   for(BB f = current_board->pieces[c][BISHOP]; f; clear_sq(from, f)){
-    from = lsb(f); // Locate each bishop for the side to move.
+    // from = lsb(f); // Locate each bishop for the side to move.
+    from = furthest_forward(c, f);
     for(BB t = (get_bishop_attacks(occupied, from) & empty); t; clear_sq(to, t)){ // generate to squares
-      to = lsb(t);
-      build_move(args, piece_id, from, to, cls_regular_move, strategy, moves);
+      // to = lsb(t);
+      to = furthest_forward(c, t);
+      build_move(piece_id, from, to, cls_regular_move, strategy, moves);
     }
   }
+
   // Rooks
   piece_id = INT2NUM(0x16|c); // get rook piece ID for color c.
   for(BB f = current_board->pieces[c][ROOK]; f; clear_sq(from, f)){
-    from = lsb(f); // Locate each rook for the side to move.
+    // from = lsb(f); // Locate each rook for the side to move.
+    from = furthest_forward(c, f);
     for(BB t = (get_rook_attacks(occupied, from) & empty); t; clear_sq(to, t)){ // generate to squares
-      to = lsb(t);
-      build_move(args, piece_id, from, to, cls_regular_move, strategy, moves);
+      // to = lsb(t);
+      to = furthest_forward(c, t);
+      build_move(piece_id, from, to, cls_regular_move, strategy, moves);
     }
   }
   // Queens
   piece_id = INT2NUM(0x18|c); // get queen piece ID for color c.
   for(BB f = current_board->pieces[c][QUEEN]; f; clear_sq(from, f)){
-    from = lsb(f); // Locate each queen for the side to move.
+    // from = lsb(f); // Locate each queen for the side to move.
+    from = furthest_forward(c, f);
     for(BB t = (get_queen_attacks(occupied, from) & empty); t; clear_sq(to, t)){ // generate to squares
-      to = lsb(t);
-      build_move(args, piece_id, from, to, cls_regular_move, strategy, moves);
+      // to = lsb(t);
+      to = furthest_forward(c, t);
+      build_move(piece_id, from, to, cls_regular_move, strategy, moves);
     }
   }
   // Kings
   piece_id = INT2NUM(0x1a|c); // get king piece ID for color c.
-  from = lsb(current_board->pieces[c][KING]); // Locate the king for the side to move.
-  for(BB t = (king_masks[from] & empty); t; clear_sq(to, t)){ // generate to squares
-    to = lsb(t);
-    build_move(args, piece_id, from, to, cls_king_move, strategy, moves);
-  }
-  return moves;
-}
 
+  // from = lsb(current_board->pieces[c][KING]); // Locate the king for the side to move.
+  from = furthest_forward(c, current_board->pieces[c][KING]); 
+  for(BB t = (king_masks[from] & empty); t; clear_sq(to, t)){ // generate to squares
+    // to = lsb(t);
+    to = furthest_forward(c, t);
+    build_move(piece_id, from, to, cls_king_move, strategy, moves);
+  }
+  return Qnil;
+}
 // Pawn promotions are also generated during get_captures routine.
 
-VALUE get_captures(VALUE self, VALUE color, VALUE sq_board, VALUE enp_target, VALUE moves, VALUE captures){
+VALUE get_captures(VALUE self, VALUE color, VALUE sq_board, VALUE enp_target, VALUE moves, VALUE promotions){
   assert(current_board != NULL); // pointer BRD *current_board is NULL. Create a PiecewiseBoard 
                                  // instance before generating moves.
   int c = SYM2COLOR(color); // color of side to move
-  int e = c ^ 1; // enemy color
   int from, to;
   BB occupied = Occupied();
-  BB enemy = Placement(e);
+  BB enemy = Placement(c^1);
   VALUE piece_id;
   VALUE move;
   VALUE captured_piece;
   VALUE strategy;
-  VALUE args[5];
 
   // Pawns
   piece_id = INT2NUM(0x10|c);
@@ -170,79 +231,95 @@ VALUE get_captures(VALUE self, VALUE color, VALUE sq_board, VALUE enp_target, VA
   // promotion captures
   for(; promotion_captures_left; clear_sq(to, promotion_captures_left)){
     to = lsb(promotion_captures_left);
-    build_capture(args, piece_id, pawn_left_attack_from_squares[c][to], to, cls_promotion_capture, strategy, sq_board, moves);
+    build_capture(piece_id, pawn_left_attack_from_squares[c][to], to, cls_promotion_capture, strategy, sq_board, promotions);
   }
   for(; promotion_captures_right; clear_sq(to, promotion_captures_right)){
     to = lsb(promotion_captures_right);
-    build_capture(args, piece_id, pawn_right_attack_from_squares[c][to], to, cls_promotion_capture, strategy, sq_board, moves);
+    build_capture(piece_id, pawn_right_attack_from_squares[c][to], to, cls_promotion_capture, strategy, sq_board, promotions);
   }
   // promotion advances
   for(; promotion_advances; clear_sq(to, promotion_advances)){
     to = lsb(promotion_advances);
-    build_move(args, piece_id, pawn_from_squares[c][to], to, cls_promotion, strategy, moves); 
+    build_promotion(piece_id, pawn_from_squares[c][to], to, color, cls_promotion, strategy, promotions); 
   }
+
   // regular pawn attacks
   for(; left_attacks; clear_sq(to, left_attacks)){
-    to = lsb(left_attacks);
-    build_capture(args, piece_id, pawn_left_attack_from_squares[c][to], to, cls_regular_capture, strategy, sq_board, moves);
+    // to = lsb(left_attacks);
+    to = furthest_forward(c, left_attacks);
+    build_capture(piece_id, pawn_left_attack_from_squares[c][to], to, cls_regular_capture, strategy, sq_board, moves);
   }
   for(; right_attacks; clear_sq(to, right_attacks)){
-    to = lsb(right_attacks);
-    build_capture(args, piece_id, pawn_right_attack_from_squares[c][to], to, cls_regular_capture, strategy, sq_board, moves);
+    // to = lsb(right_attacks);
+    to = furthest_forward(c, right_attacks);
+    build_capture(piece_id, pawn_right_attack_from_squares[c][to], to, cls_regular_capture, strategy, sq_board, moves);
   }
+
   // en-passant captures
   if(enp_target != Qnil){
     int target = NUM2INT(enp_target);
     for(BB f = current_board->pieces[c][PAWN] & (pawn_enp_masks[target]); f; clear_sq(from, f)){
-      from = lsb(f);
-      build_enp_capture(args, piece_id, from, (c?(from+8):(from-8)), cls_enp_capture, strategy, target, sq_board, moves);   
+      // from = lsb(f);
+      from = furthest_forward(c, f);
+      build_enp_capture(piece_id, from, (c?(from+8):(from-8)), cls_enp_capture, strategy, target, sq_board, moves);   
     }
   }
 
   // Knights
   piece_id = INT2NUM(0x12|c); // get knight piece ID for color c.
   for(BB f = current_board->pieces[c][KNIGHT]; f; clear_sq(from, f)){
-    from = lsb(f); // Locate each knight for the side to move.
+    // from = lsb(f); // Locate each knight for the side to move.
+    from = furthest_forward(c, f);
     for(BB t = (knight_masks[from] & enemy); t; clear_sq(to, t)){ // generate to squares
-      to = lsb(t);
-      build_capture(args, piece_id, from, to, cls_regular_capture, strategy, sq_board, moves);
+      // to = lsb(t);
+      to = furthest_forward(c, t);
+      build_capture(piece_id, from, to, cls_regular_capture, strategy, sq_board, moves);
     }
   }
+
   // Bishops
   piece_id = INT2NUM(0x14|c); // get bishop piece ID for color c.
   for(BB f = current_board->pieces[c][BISHOP]; f; clear_sq(from, f)){
-    from = lsb(f); // Locate each bishop for the side to move.
+    // from = lsb(f); // Locate each bishop for the side to move.
+    from = furthest_forward(c, f);
     for(BB t = (get_bishop_attacks(occupied, from) & enemy); t; clear_sq(to, t)){ // generate to squares
-      to = lsb(t);
-      build_capture(args, piece_id, from, to, cls_regular_capture, strategy, sq_board, moves);
+      // to = lsb(t);
+      to = furthest_forward(c, t);
+      build_capture(piece_id, from, to, cls_regular_capture, strategy, sq_board, moves);
     }
   }
   // Rooks
   piece_id = INT2NUM(0x16|c); // get rook piece ID for color c.
   for(BB f = current_board->pieces[c][ROOK]; f; clear_sq(from, f)){
-    from = lsb(f); // Locate each rook for the side to move.
+    // from = lsb(f); // Locate each rook for the side to move.
+    from = furthest_forward(c, f);
     for(BB t = (get_rook_attacks(occupied, from) & enemy); t; clear_sq(to, t)){ // generate to squares
-      to = lsb(t);
-      build_capture(args, piece_id, from, to, cls_regular_capture, strategy, sq_board, moves);
+      // to = lsb(t);
+      to = furthest_forward(c, t);
+      build_capture(piece_id, from, to, cls_regular_capture, strategy, sq_board, moves);
     }
   }
   // Queens
   piece_id = INT2NUM(0x18|c); // get queen piece ID for color c.
   for(BB f = current_board->pieces[c][QUEEN]; f; clear_sq(from, f)){
-    from = lsb(f); // Locate each queen for the side to move.
+    // from = lsb(f); // Locate each queen for the side to move.
+    from = furthest_forward(c, f);
     for(BB t = (get_queen_attacks(occupied, from) & enemy); t; clear_sq(to, t)){ // generate to squares
-      to = lsb(t);
-      build_capture(args, piece_id, from, to, cls_regular_capture, strategy, sq_board, moves);
+      // to = lsb(t);
+      to = furthest_forward(c, t);
+      build_capture(piece_id, from, to, cls_regular_capture, strategy, sq_board, moves);
     }
   }
   // King
   piece_id = INT2NUM(0x1a|c); // get king piece ID for color c.
-  from = lsb(current_board->pieces[c][KING]); // Locate the king for the side to move.
+  // from = lsb(current_board->pieces[c][KING]); // Locate the king for the side to move.
+  from = furthest_forward(c, current_board->pieces[c][KING]);
   for(BB t = (king_masks[from] & enemy); t; clear_sq(to, t)){ // generate to squares
-    to = lsb(t);
-    build_capture(args, piece_id, from, to, cls_king_capture, strategy, sq_board, moves);
+    // to = lsb(t);
+    to = furthest_forward(c, t);
+    build_capture(piece_id, from, to, cls_king_capture, strategy, sq_board, moves);
   }
-  return moves;
+  return Qnil;
 }
 
 

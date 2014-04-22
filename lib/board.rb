@@ -46,7 +46,7 @@ module Chess
                                     0,       0,       0,       0,       0,       0,       0,       0,  # 6    
                               id[:bP], id[:bP], id[:bP], id[:bP], id[:bP], id[:bP], id[:bP], id[:bP],  # 7    
                               id[:bR], id[:bN], id[:bB], id[:bQ], id[:bK], id[:bB], id[:bN], id[:bR] ] # 8 
-                      # col     A    B    C    D    E    F    G    H
+                          # col     A        B        C        D        E        F        G        H
       return self
     end
 
@@ -69,25 +69,26 @@ module Chess
     end
 
     # Provide an initial hash for position object by merging (via XOR) the hash keys for each # piece/square.
-    def hash   
-      each_with_index.inject(0) {|h, (sym, i)| h ^= (sym.nil? ? 0 : Memory::psq_key(sym, i)) }
+    def hash
+      each_with_index.inject(0) {|h, (id, i)| h ^= (id==0 ? 0 : Memory::psq_key(id, i)); h }
     end
 
     # Unicode symbols for chess pieces:
     GRAPHICS = { wP: "\u2659", wN: "\u2658", wB: "\u2657", wR: "\u2656", wQ: "\u2655", wK: "\u2654" , 
                  bP: "\u265F", bN: "\u265E", bB: "\u265D", bR: "\u265C", bQ: "\u265B", bK: "\u265A" }
-
+                 
     def print  # prints out a visual representation of the chessboard to the console.
       i = 8
+      piece_codes = Pieces::PIECE_ID.invert
       puts (headings = "    A   B   C   D   E   F   G   H")
       puts (divider =  "  " + ("-" * 33))
-      @squares.each_slice(8).to_a.reverse do |row|
+      @squares.each_slice(8).to_a.reverse.each do |row|
         line = []
         row.each do |square|
-          if square == nil 
+          if square == 0 
             line << " "
           else
-            line << GRAPHICS[square]
+            line << GRAPHICS[piece_codes[square]]
           end
         end
         puts "#{i} | " + line.join(" | ") + " | #{i}"

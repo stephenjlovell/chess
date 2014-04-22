@@ -25,8 +25,8 @@
 #include "shared.h"
 
 #define lsb(bitboard) (__builtin_ctzl(bitboard))
-#define msb(bitboard) (__builtin_clzl(bitboard))
-#define furthest_forward(bitboard, color) (color ? msb(bitboard) : lsb(bitboard))
+#define msb(bitboard) (63-__builtin_clzl(bitboard))
+#define furthest_forward(color, bitboard) (color ? msb(bitboard) : lsb(bitboard))
 #define pop_count(bitboard) (__builtin_popcount(bitboard))
 
 

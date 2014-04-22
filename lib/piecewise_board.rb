@@ -52,10 +52,10 @@ module Chess
       
     end
 
-    PiecewiseBoard.new(Board.new)
-    MOVES = MoveGen::get_non_captures(:w, [])
-    puts MOVES.count
-    MOVES.each {|m| puts m}
+    # PiecewiseBoard.new(Board.new)
+    # MOVES = MoveGen::get_non_captures(:w, 0, [])
+    # puts MOVES.count
+    # MOVES.each {|m| puts m}
 
   end
 end

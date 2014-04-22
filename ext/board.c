@@ -24,6 +24,7 @@
 BRD *current_board = NULL;
 
 void free_cBoard(BRD *b){
+  printf("current_board freed\n");
   current_board = NULL;
   ruby_xfree(b);
 }
@@ -43,6 +44,7 @@ static VALUE o_initialize(VALUE self, VALUE sq_board){
   BRD *b = get_cBoard(self);
   *b = board;
   current_board = b;
+  printf("current_board set\n");
   rb_funcall(self, rb_intern("setup"), 1, sq_board);
 
   return self;
@@ -75,6 +77,7 @@ static VALUE o_add_square(VALUE self, VALUE piece_id, VALUE square){
   int sq = NUM2INT(square);
   int id = NUM2INT(piece_id);
   int c = piece_color(id);
+  
   BRD *b = get_cBoard(self);
   add_sq(sq, b->pieces[c][piece_type(id)]);
   add_sq(sq, b->occupied[c]);
@@ -84,7 +87,8 @@ static VALUE o_add_square(VALUE self, VALUE piece_id, VALUE square){
 static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square){
   int sq = NUM2INT(square);
   int id = NUM2INT(piece_id);
-  int c = piece_color(id);
+  int  c = piece_color(id);
+
   BRD *b = get_cBoard(self);
   clear_sq(sq, b->pieces[c][piece_type(id)]);
   clear_sq(sq, b->occupied[c]);
@@ -92,12 +96,9 @@ static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square){
 }
 
 static VALUE o_relocate_piece(VALUE self, VALUE piece_id, VALUE from, VALUE to){
-  int id = NUM2INT(piece_id);
-  from = NUM2INT(from);
-  to = NUM2INT(to);
-  int t = piece_type(piece_id);
-  int c = piece_color(piece_id);
-  int delta = sq_mask_on(from)|sq_mask_on(to);
+  int t = piece_type(NUM2INT(piece_id));
+  int c = piece_color(NUM2INT(piece_id));
+  BB delta = sq_mask_on(NUM2INT(from))|sq_mask_on(NUM2INT(to));
   BRD *b = get_cBoard(self);
   b->pieces[c][t] ^= delta;
   b->occupied[c] ^= delta;

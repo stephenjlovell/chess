@@ -144,7 +144,7 @@ module Chess
           :N
         end
 
-        def get_non_captures(pos, moves)
+        # def get_non_captures(pos, moves)
 
           # knights = pieces[:N]
           # get_knight_non_captures(knights, occupied).each do |pair|
@@ -154,21 +154,21 @@ module Chess
           # end
 
           # no longer need to pass in bitboard.  Append moves to list directly in C.
-          get_knight_non_captures(pos.color, moves)
+        #   get_knight_non_captures(pos.color, moves)
 
 
-        end
+        # end
 
-        def get_captures(pos, moves, pieces, occupied, enemy)
-          knights = pieces[:N]
-          moved_piece = nil
-          get_knight_captures(knights, enemy).each do |pair|
-            from, to = (pair & FROM_MASK), (pair >> 6)
-            moved_piece ||= pos.board[from]
-            captured_piece = pos.board[to]
-            moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
-          end
-        end 
+        # def get_captures(pos, moves, pieces, occupied, enemy)
+        #   knights = pieces[:N]
+        #   moved_piece = nil
+        #   get_knight_captures(knights, enemy).each do |pair|
+        #     from, to = (pair & FROM_MASK), (pair >> 6)
+        #     moved_piece ||= pos.board[from]
+        #     captured_piece = pos.board[to]
+        #     moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
+        #   end
+        # end 
 
       end
     end
@@ -184,24 +184,24 @@ module Chess
           :B
         end
 
-        def get_non_captures(pos, moves, pieces, occupied)
-          bishops = pieces[:B]
-          get_bishop_non_captures(bishops, occupied).each do |pair|
-            from, to = (pair & FROM_MASK), (pair >> 6)
-            moved_piece ||= pos.board[from]
-            moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
-          end
-        end
+        # def get_non_captures(pos, moves, pieces, occupied)
+        #   bishops = pieces[:B]
+        #   get_bishop_non_captures(bishops, occupied).each do |pair|
+        #     from, to = (pair & FROM_MASK), (pair >> 6)
+        #     moved_piece ||= pos.board[from]
+        #     moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
+        #   end
+        # end
 
-        def get_captures(pos, moves, pieces, occupied, enemy)
-          bishops = pieces[:B]
-          get_bishop_captures(bishops, occupied, enemy).each do |pair|
-            from, to = (pair & FROM_MASK), (pair >> 6)
-            moved_piece ||= pos.board[from]
-            captured_piece = pos.board[to]
-            moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
-          end
-        end
+        # def get_captures(pos, moves, pieces, occupied, enemy)
+        #   bishops = pieces[:B]
+        #   get_bishop_captures(bishops, occupied, enemy).each do |pair|
+        #     from, to = (pair & FROM_MASK), (pair >> 6)
+        #     moved_piece ||= pos.board[from]
+        #     captured_piece = pos.board[to]
+        #     moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
+        #   end
+        # end
 
       end
     end
@@ -217,24 +217,24 @@ module Chess
           :R
         end
 
-        def get_non_captures(pos, moves, pieces, occupied)
-          rooks = pieces[:R]
-          get_rook_non_captures(rooks, occupied).each do |pair|
-            from, to = (pair & FROM_MASK), (pair >> 6)
-            moved_piece ||= pos.board[from]
-            moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
-          end
-        end
+        # def get_non_captures(pos, moves, pieces, occupied)
+        #   rooks = pieces[:R]
+        #   get_rook_non_captures(rooks, occupied).each do |pair|
+        #     from, to = (pair & FROM_MASK), (pair >> 6)
+        #     moved_piece ||= pos.board[from]
+        #     moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
+        #   end
+        # end
 
-        def get_captures(pos, moves, pieces, occupied, enemy)
-          rooks = pieces[:R]
-          get_rook_captures(rooks, occupied, enemy).each do |pair|
-            from, to = (pair & FROM_MASK), (pair >> 6)
-            moved_piece ||= pos.board[from]
-            captured_piece = pos.board[to]
-            moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
-          end
-        end
+        # def get_captures(pos, moves, pieces, occupied, enemy)
+        #   rooks = pieces[:R]
+        #   get_rook_captures(rooks, occupied, enemy).each do |pair|
+        #     from, to = (pair & FROM_MASK), (pair >> 6)
+        #     moved_piece ||= pos.board[from]
+        #     captured_piece = pos.board[to]
+        #     moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
+        #   end
+        # end
 
       end
     end
@@ -250,24 +250,24 @@ module Chess
           :Q
         end
 
-        def get_non_captures(pos, moves, pieces, occupied)
-          queens = pieces[:Q]
-          get_queen_non_captures(queens, occupied).each do |pair|
-            from, to = (pair & FROM_MASK), (pair >> 6)
-            moved_piece ||= pos.board[from]
-            moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
-          end
-        end
+        # def get_non_captures(pos, moves, pieces, occupied)
+        #   queens = pieces[:Q]
+        #   get_queen_non_captures(queens, occupied).each do |pair|
+        #     from, to = (pair & FROM_MASK), (pair >> 6)
+        #     moved_piece ||= pos.board[from]
+        #     moves.push(Move::Factory.build(moved_piece, from, to, :regular_move))
+        #   end
+        # end
 
-        def get_captures(pos, moves, pieces, occupied, enemy)
-          queens = pieces[:Q]
-          get_queen_captures(queens, occupied, enemy).each do |pair|
-            from, to = (pair & FROM_MASK), (pair >> 6)
-            moved_piece ||= pos.board[from]
-            captured_piece = pos.board[to]
-            moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
-          end
-        end
+        # def get_captures(pos, moves, pieces, occupied, enemy)
+        #   queens = pieces[:Q]
+        #   get_queen_captures(queens, occupied, enemy).each do |pair|
+        #     from, to = (pair & FROM_MASK), (pair >> 6)
+        #     moved_piece ||= pos.board[from]
+        #     captured_piece = pos.board[to]
+        #     moves.push(Move::Factory.build(moved_piece, from, to, :regular_capture, captured_piece))
+        #   end
+        # end
 
       end
     end
@@ -283,25 +283,25 @@ module Chess
           :K
         end
 
-        def get_non_captures(pos, moves, pieces, occupied)
-          kings = pieces[:K]
-          get_king_non_captures(kings, occupied).each do |pair|
-            from, to = (pair & FROM_MASK), (pair >> 6)
-            moved_piece ||= pos.board[from]
-            moves.push(Move::Factory.build(moved_piece, from, to, :king_move))
-          end
-        end
+        # def get_non_captures(pos, moves, pieces, occupied)
+        #   kings = pieces[:K]
+        #   get_king_non_captures(kings, occupied).each do |pair|
+        #     from, to = (pair & FROM_MASK), (pair >> 6)
+        #     moved_piece ||= pos.board[from]
+        #     moves.push(Move::Factory.build(moved_piece, from, to, :king_move))
+        #   end
+        # end
 
-        def get_captures(pos, moves, pieces, occupied, enemy)
-          kings = pieces[:K]
-          moved_piece = nil
-          get_king_captures(kings, enemy).each do |pair|
-            from, to = (pair & FROM_MASK), (pair >> 6)
-            moved_piece ||= pos.board[from]
-            captured_piece = pos.board[to]
-            moves.push(Move::Factory.build(moved_piece, from, to, :king_capture, captured_piece))
-          end
-        end
+        # def get_captures(pos, moves, pieces, occupied, enemy)
+        #   kings = pieces[:K]
+        #   moved_piece = nil
+        #   get_king_captures(kings, enemy).each do |pair|
+        #     from, to = (pair & FROM_MASK), (pair >> 6)
+        #     moved_piece ||= pos.board[from]
+        #     captured_piece = pos.board[to]
+        #     moves.push(Move::Factory.build(moved_piece, from, to, :king_capture, captured_piece))
+        #   end
+        # end
 
       end
     end

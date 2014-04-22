@@ -26,15 +26,15 @@ describe Chess::Notation do
   INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
   EPD =  '2rr3k/pp3pp1/1nnqbN1p/3pN3/2pP4/2P3Q1/PPB4P/R4RK1 w - - bm Qg6; id "WAC.001";' # example EPD record
 
-  let(:test_pos) { FactoryGirl.build(:test_position) }
+  # let(:test_pos) { FactoryGirl.build(:test_position) }
 
   it 'can accurately translate to and from Forsyth-Edwards Notation' do
     pos = Chess::Notation::fen_to_position(INITIAL_FEN) # FEN to position
     pos.to_s.should == INITIAL_FEN  # and back to FEN.
 
-    midgame_fen = test_pos.to_s  # position to FEN
-    new_pos = Chess::Notation::fen_to_position(midgame_fen) # and back to position.
-    new_pos.to_s.should == midgame_fen
+    # midgame_fen = test_pos.to_s  # position to FEN
+    # new_pos = Chess::Notation::fen_to_position(midgame_fen) # and back to position.
+    # new_pos.to_s.should == midgame_fen
   end
 
   it 'can also convert from EPD notation' do  # does not consider halfmove clock.

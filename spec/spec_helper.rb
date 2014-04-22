@@ -24,12 +24,13 @@ require 'factory_girl'
 RSpec.configure { |config| config.include FactoryGirl::Syntax::Methods }
 require 'factories.rb'
 
+$print_count = 0
 
 def perft(node, depth)  # Legal MoveGen speed/accuracy test. Counts all leaf nodes at depth.
   return 1 if depth == 0
   sum = 0
   node.get_moves(depth, true).each do |move|
-    Chess::MoveGen::make!(node, move) 
+    Chess::MoveGen::make!(node, move)
     sum += perft(node, depth-1)
     Chess::MoveGen::unmake!(node, move)
   end

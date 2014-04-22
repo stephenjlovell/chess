@@ -20,84 +20,67 @@
 #-----------------------------------------------------------------------------------
 
 # an empty board with no pieces, only out-of-bounds symbols.
-EMPTY = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
-          [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
-          [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 2    1
-          [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 3    2
-          [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 4    3
-          [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 5    4
-          [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
-          [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7    6
-          [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 8    7
-          [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 9    8
-          [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
-          [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
-    # column  0    1    2    3    4    5    6    7    8    9    10   11
-    # letter            A    B    C    D    E    F    G    H
+EMPTY = Array.new(64, 0)
 
-# sets up a board with some useful properties for testing.
-SQUARES = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
-            [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
-            [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, nil, nil, :wR, :XX, :XX ],  # 2    1
-            [ :XX, :XX, :wP, :wP, :wP, :wP, nil, :wP, :wP, :wP, :XX, :XX ],  # 3    2
-            [ :XX, :XX, nil, nil, :bP, nil, :wP, nil, nil, nil, :XX, :XX ],  # 4    3
-            [ :XX, :XX, nil, nil, nil, nil, nil, nil, :bB, nil, :XX, :XX ],  # 5    4
-            [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
-            [ :XX, :XX, nil, nil, nil, :bP, nil, :bN, nil, nil, :XX, :XX ],  # 7    6
-            [ :XX, :XX, :bP, :bP, nil, nil, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
-            [ :XX, :XX, :bR, :bN, nil, :bQ, :bK, :bB, nil, :bR, :XX, :XX ],  # 9    8
-            [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
-            [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
-      # column  0    1    2    3    4    5    6    7    8    9    10   11
-      # letter            A    B    C    D    E    F    G    H
+# the initial chess position at start of a new game
+id = Chess::Pieces::PIECE_ID     
+INITIAL = [ id[:wR], id[:wN], id[:wB], id[:wQ], id[:wK], id[:wB], id[:wN], id[:wR],  # 1 row
+            id[:wP], id[:wP], id[:wP], id[:wP], id[:wP], id[:wP], id[:wP], id[:wP],  # 2  
+                  0,       0,       0,       0,       0,       0,       0,       0,  # 3    
+                  0,       0,       0,       0,       0,       0,       0,       0,  # 4    
+                  0,       0,       0,       0,       0,       0,       0,       0,  # 5    
+                  0,       0,       0,       0,       0,       0,       0,       0,  # 6    
+            id[:bP], id[:bP], id[:bP], id[:bP], id[:bP], id[:bP], id[:bP], id[:bP],  # 7    
+            id[:bR], id[:bN], id[:bB], id[:bQ], id[:bK], id[:bB], id[:bN], id[:bR] ] # 8 
+        # col     A        B        C        D        E        F        G        H
 
-# the initial chess position at start of a new game                          # row  board #
-INITIAL = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
-            [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
-            [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, :wB, :wN, :wR, :XX, :XX ],  # 2    1
-            [ :XX, :XX, :wP, :wP, :wP, :wP, :wP, :wP, :wP, :wP, :XX, :XX ],  # 3    2
-            [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 4    3
-            [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 5    4
-            [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
-            [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7    6
-            [ :XX, :XX, :bP, :bP, :bP, :bP, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
-            [ :XX, :XX, :bR, :bN, :bB, :bQ, :bK, :bB, :bN, :bR, :XX, :XX ],  # 9    8
-            [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
-            [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
-      # column  0    1    2    3    4    5    6    7    8    9    10   11
-      # letter            A    B    C    D    E    F    G    H
+# # sets up a board with some useful properties for testing.
+# SQUARES = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
+#             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
+#             [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, nil, nil, :wR, :XX, :XX ],  # 2    1
+#             [ :XX, :XX, :wP, :wP, :wP, :wP, nil, :wP, :wP, :wP, :XX, :XX ],  # 3    2
+#             [ :XX, :XX, nil, nil, :bP, nil, :wP, nil, nil, nil, :XX, :XX ],  # 4    3
+#             [ :XX, :XX, nil, nil, nil, nil, nil, nil, :bB, nil, :XX, :XX ],  # 5    4
+#             [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
+#             [ :XX, :XX, nil, nil, nil, :bP, nil, :bN, nil, nil, :XX, :XX ],  # 7    6
+#             [ :XX, :XX, :bP, :bP, nil, nil, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
+#             [ :XX, :XX, :bR, :bN, nil, :bQ, :bK, :bB, nil, :bR, :XX, :XX ],  # 9    8
+#             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
+#             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
+#       # column  0    1    2    3    4    5    6    7    8    9    10   11
+#       # letter            A    B    C    D    E    F    G    H
 
-# used for testing Static Exchange Evaluation                                 # row  board #
-SEE_TEST = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
-             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1
-             [ :XX, :XX, :wK, nil, nil, nil, :wR, nil, nil, :wB, :XX, :XX ],  # 2 1
-             [ :XX, :XX, nil, nil, nil, :wN, nil, nil, nil, nil, :XX, :XX ],  # 3 2
-             [ :XX, :XX, nil, nil, nil, nil, nil, :wP, nil, nil, :XX, :XX ],  # 4 3
-             [ :XX, :XX, nil, nil, nil, nil, :bP, nil, nil, nil, :XX, :XX ],  # 5 4
-             [ :XX, :XX, nil, nil, :bN, nil, nil, :bP, nil, nil, :XX, :XX ],  # 6 5
-             [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7 6
-             [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 8 7
-             [ :XX, :XX, :bK, nil, nil, nil, :bR, nil, nil, nil, :XX, :XX ],  # 9 8
-             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10
-             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11
-      # column  0    1    2    3    4    5    6    7    8    9    10   11
-      # letter            A    B    C    D    E    F    G    H
+# # used for testing Static Exchange Evaluation                                 # row  board #
+# SEE_TEST = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
+#              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1
+#              [ :XX, :XX, :wK, nil, nil, nil, :wR, nil, nil, :wB, :XX, :XX ],  # 2 1
+#              [ :XX, :XX, nil, nil, nil, :wN, nil, nil, nil, nil, :XX, :XX ],  # 3 2
+#              [ :XX, :XX, nil, nil, nil, nil, nil, :wP, nil, nil, :XX, :XX ],  # 4 3
+#              [ :XX, :XX, nil, nil, nil, nil, :bP, nil, nil, nil, :XX, :XX ],  # 5 4
+#              [ :XX, :XX, nil, nil, :bN, nil, nil, :bP, nil, nil, :XX, :XX ],  # 6 5
+#              [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7 6
+#              [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 8 7
+#              [ :XX, :XX, :bK, nil, nil, nil, :bR, nil, nil, nil, :XX, :XX ],  # 9 8
+#              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10
+#              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11
+#       # column  0    1    2    3    4    5    6    7    8    9    10   11
+#       # letter            A    B    C    D    E    F    G    H
 
-# used for testing king safety methods.
-CHECK = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
-          [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
-          [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, nil, nil, :wR, :XX, :XX ],  # 2    1
-          [ :XX, :XX, :wP, :wP, :wP, :wP, nil, nil, :wP, :wP, :XX, :XX ],  # 3    2
-          [ :XX, :XX, nil, nil, :bP, nil, :wP, nil, nil, nil, :XX, :XX ],  # 4    3
-          [ :XX, :XX, :wB, nil, nil, nil, nil, nil, nil, :bB, :XX, :XX ],  # 5    4
-          [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
-          [ :XX, :XX, nil, nil, nil, :bP, nil, :bN, nil, nil, :XX, :XX ],  # 7    6
-          [ :XX, :XX, :bP, :bP, nil, nil, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
-          [ :XX, :XX, :bR, :bN, nil, :bQ, :bK, :bB, nil, :bR, :XX, :XX ],  # 9    8
-          [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
-          [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
-    # column  0    1    2    3    4    5    6    7    8    9    10   11
-    # letter            A    B    C    D    E    F    G    H
+# # used for testing king safety methods.
+# CHECK = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
+#           [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
+#           [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, nil, nil, :wR, :XX, :XX ],  # 2    1
+#           [ :XX, :XX, :wP, :wP, :wP, :wP, nil, nil, :wP, :wP, :XX, :XX ],  # 3    2
+#           [ :XX, :XX, nil, nil, :bP, nil, :wP, nil, nil, nil, :XX, :XX ],  # 4    3
+#           [ :XX, :XX, :wB, nil, nil, nil, nil, nil, nil, :bB, :XX, :XX ],  # 5    4
+#           [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
+#           [ :XX, :XX, nil, nil, nil, :bP, nil, :bN, nil, nil, :XX, :XX ],  # 7    6
+#           [ :XX, :XX, :bP, :bP, nil, nil, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
+#           [ :XX, :XX, :bR, :bN, nil, :bQ, :bK, :bB, nil, :bR, :XX, :XX ],  # 9    8
+#           [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
+#           [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
+#     # column  0    1    2    3    4    5    6    7    8    9    10   11
+#     # letter            A    B    C    D    E    F    G    H
 
 FactoryGirl.define do
 
@@ -138,17 +121,17 @@ FactoryGirl.define do
   factory :board, class: Chess::Board do  
     squares INITIAL
 
-    factory :test_board do  
-      squares SQUARES
-    end
+    # factory :test_board do  
+    #   squares SQUARES
+    # end
 
-    factory :see_board do
-      squares SEE_TEST
-    end
+    # factory :see_board do
+    #   squares SEE_TEST
+    # end
 
-    factory :check_board do
-      squares CHECK
-    end
+    # factory :check_board do
+    #   squares CHECK
+    # end
   end
 
   factory :location, class: Chess::Location::Location do

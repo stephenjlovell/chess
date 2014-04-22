@@ -46,34 +46,37 @@ static VALUE cls_enp_capture;
 static VALUE cls_promotion;
 static VALUE cls_promotion_capture;
 
-#define get_ray_attacks_reverse(occ, dir, sq) ((ray_masks[dir][sq] & occ) ?   \
-  (ray_masks[dir][sq]^ray_masks[dir][msb(ray_masks[dir][sq] & occ)]) :        \
-  (ray_masks[dir][sq]))
+// #define get_ray_attacks_reverse(occ, dir, sq) ((ray_masks[dir][sq] & occ) ?   \
+//   (ray_masks[dir][sq]^(ray_masks[dir][msb(ray_masks[dir][sq] & occ)])) :      \
+//   (ray_masks[dir][sq]))
 
-#define get_ray_attacks_forward(occ, dir, sq) ((ray_masks[dir][sq] & occ) ?   \
-  (ray_masks[dir][sq]^ray_masks[dir][lsb(ray_masks[dir][sq] & occ)]) :        \
-  (ray_masks[dir][sq]))
 
-#define get_rook_attacks(occ, sq)                                                          \
-  (get_ray_attacks_forward(occ, NORTH, sq) | get_ray_attacks_forward(occ, SOUTH, sq)       \
-   | get_ray_attacks_reverse(occ, EAST, sq) | get_ray_attacks_reverse(occ, WEST, sq))
+// #define get_ray_attacks_forward(occ, dir, sq) ((ray_masks[dir][sq] & occ) ?   \
+//   (ray_masks[dir][sq]^(ray_masks[dir][lsb(ray_masks[dir][sq] & occ)])) :      \
+//   (ray_masks[dir][sq]))
 
-#define get_bishop_attacks(occ, sq)                                                   \
-  (get_ray_attacks_forward(occ, NW, sq) | get_ray_attacks_forward(occ, NE, sq)        \
-   | get_ray_attacks_reverse(occ, SW, sq) | get_ray_attacks_reverse(occ, SE, sq))
+// #define get_rook_attacks(occ, sq)                                                          \
+//   (get_ray_attacks_forward(occ, NORTH, sq)  | get_ray_attacks_forward(occ, EAST, sq)      \
+// //    | get_ray_attacks_reverse(occ, SOUTH, sq) | get_ray_attacks_reverse(occ, WEST, sq))
 
-#define get_queen_attacks(occ, sq) (get_bishop_attacks(occ, sq)|get_rook_attacks(occ, sq))
+// #define get_bishop_attacks(occ, sq)                                                     \
+//   (get_ray_attacks_forward(occ, NW, sq)   | get_ray_attacks_forward(occ, NE, sq)        \
+//    | get_ray_attacks_reverse(occ, SW, sq) | get_ray_attacks_reverse(occ, SE, sq))
 
-#define build_move(args, id, from, to, cls, strategy, moves) do {           \
+// #define get_queen_attacks(occ, sq) (get_bishop_attacks(occ, sq)|get_rook_attacks(occ, sq))
+
+#define build_move(id, from, to, cls, strategy, moves) do {                 \
   strategy = rb_class_new_instance(0, NULL, cls);                           \
+  VALUE args[4];                                                            \
   args[0] = id;                                                             \
   args[1] = INT2NUM(from);                                                  \
   args[2] = INT2NUM(to);                                                    \
   args[3] = strategy;                                                       \
-  rb_ary_push(moves, rb_class_new_instance(4, args, cls_move)); } while(0);     
+  rb_ary_push(moves, rb_class_new_instance(4, args, cls_move));             \
+} while(0);     
 
-
-#define build_castle(args, id, from, to, r_id, r_from, r_to, strategy, moves) do {  \
+#define build_castle(id, from, to, r_id, r_from, r_to, strategy, moves) do {        \
+  VALUE args[4];                                                                    \
   args[0] = r_id;                                                                   \
   args[1] = INT2NUM(r_from);                                                        \
   args[2] = INT2NUM(r_to);                                                          \
@@ -82,28 +85,43 @@ static VALUE cls_promotion_capture;
   args[1] = INT2NUM(from);                                                          \
   args[2] = INT2NUM(to);                                                            \
   args[3] = strategy;                                                               \
-  rb_ary_push(moves, rb_class_new_instance(4, args, cls_move)); } while(0);  
+  rb_ary_push(moves, rb_class_new_instance(4, args, cls_move));                     \
+} while(0);  
+
+#define build_capture(id, from, to, cls, strategy, sq_board, moves) do {      \
+  VALUE args[4];                                                              \
+  args[0] = rb_ary_entry(sq_board, to);                                       \
+  strategy = rb_class_new_instance(1, args, cls);                             \
+  args[0] = id;                                                               \
+  args[1] = INT2NUM(from);                                                    \
+  args[2] = INT2NUM(to);                                                      \
+  args[3] = strategy;                                                         \
+  rb_ary_push(moves, rb_class_new_instance(4, args, cls_move));               \
+} while(0);
+
+#define build_promotion(id, from, to, color, cls, strategy, moves) do {   \
+  VALUE args[4];                                                                    \
+  args[0] = color;                                                                  \
+  strategy = rb_class_new_instance(1, args, cls);                                   \
+  args[0] = id;                                                                     \
+  args[1] = INT2NUM(from);                                                          \
+  args[2] = INT2NUM(to);                                                            \
+  args[3] = strategy;                                                               \
+  rb_ary_push(moves, rb_class_new_instance(4, args, cls_move));                     \
+} while(0);
 
 
-#define build_capture(args, id, from, to, cls, strategy, sq_board, moves) do {  \
-    strategy = rb_class_new_instance(0, NULL, cls);                             \
-    args[0] = id;                                                               \
-    args[1] = INT2NUM(from);                                                    \
-    args[2] = INT2NUM(to);                                                      \
-    args[3] = strategy;                                                         \
-    args[4] = rb_ary_entry(sq_board, to);                                       \
-    rb_ary_push(moves, rb_class_new_instance(4, args, cls_move));               \
-  } while(0);
-
-#define build_enp_capture(args, id, from, to, cls, strategy, target, sq_board, moves) do {  \
-    strategy = rb_class_new_instance(0, NULL, cls);                                         \
-    args[0] = id;                                                                           \
-    args[1] = INT2NUM(from);                                                                \
-    args[2] = INT2NUM(to);                                                                  \
-    args[3] = strategy;                                                                     \
-    args[4] = rb_ary_entry(sq_board, target);                                               \
-    rb_ary_push(moves, rb_class_new_instance(4, args, cls_move));                           \
-  } while(0);
+#define build_enp_capture(id, from, to, cls, strategy, target, sq_board, moves) do {      \
+  VALUE args[4];                                                                          \
+  args[0] = rb_ary_entry(sq_board, target);                                               \
+  args[1] = INT2NUM(target);                                                              \
+  strategy = rb_class_new_instance(2, args, cls);                                         \
+  args[0] = id;                                                                           \
+  args[1] = INT2NUM(from);                                                                \
+  args[2] = INT2NUM(to);                                                                  \
+  args[3] = strategy;                                                                     \
+  rb_ary_push(moves, rb_class_new_instance(4, args, cls_move));                           \
+} while(0);
 
 
 VALUE get_non_captures(VALUE self, VALUE color, VALUE castle_rights, VALUE moves);

@@ -120,8 +120,6 @@ void setup_bishop_masks(){
         current += offset;
       }
     }
-    // rb_funcall(mod_chess, rb_intern("print_bitboard"), 1, ULONG2NUM(ray_masks[NE][i]));
-    // printf("----------\n");  
     bishop_masks[i] = ray_masks[NW][i]|ray_masks[NE][i]|ray_masks[SE][i]|ray_masks[SW][i];
   }
 }

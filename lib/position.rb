@@ -136,15 +136,17 @@ module Chess
       # number of alpha/beta cutoffs during search, reducing the size of the actual search tree toward the minimal tree.
 
       def get_moves(depth, enhanced_sort) 
-        captures, promotions, moves = [], [], []
-        # Loop over piece list for the current side, collecting moves available to each piece.
-        own_pieces.each { |key, piece| piece.get_moves(self, key, moves, captures, promotions) }
+        promotions, captures, moves = [], [], []
+        # MoveGen::get_captures(@side_to_move, @pieces, @enp_target, captures, promotions)
+        MoveGen::get_non_captures(@side_to_move, @castle, moves)
         # At higher depths, expend additional effort on move ordering.
-        return promotions + if enhanced_sort
-          enhanced_sort(captures, moves, depth)
-        else
-          basic_sort(captures, moves, depth)
-        end
+
+        # return promotions + if enhanced_sort
+        #   enhanced_sort(captures, moves, depth)
+        # else
+        #   basic_sort(captures, moves, depth)
+        # end
+        return promotions + captures + moves
       end
       alias :edges :get_moves
 
@@ -163,10 +165,8 @@ module Chess
       # Used during Quiescence search to seek out positions from which a stable static evaluation can 
       # be performed.
       def get_captures # returns a sorted array of all possible moves for the current player.
-        captures, promotions = [], []
-        # Loop over piece list for the current side, collecting capture moves and promotions available to each piece.
-        own_pieces.each { |key, piece| piece.get_captures(self, key, captures, promotions) }
-        
+        promotions, captures = [], []
+        MoveGen::get_captures(@side_to_move, @pieces, @enp_target, captures, promotions)
         # During quiesence search, sorting captures by SEE has the added benefit of enabling the pruning of bad
         # captures (those with SEE < 0). In practice, this reduced the average number of q-nodes by around half. 
         promotions + sort_captures_by_see!(captures)

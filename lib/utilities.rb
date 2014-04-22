@@ -156,8 +156,7 @@ module Chess
     SYM_TO_FEN = { wP: 'P', wN: 'N', wB: 'B', wR: 'R', wQ: 'Q', wK: 'K',
                    bP: 'p', bN: 'n', bB: 'b', bR: 'r', bQ: 'q', bK: 'k' }
 
-    FEN_TO_SYM = { 'P'=>:wP, 'N'=>:wN, 'B'=>:wB, 'R'=>:wR, 'Q'=>:wQ, 'K'=>:wK,
-                   'p'=>:bP, 'n'=>:bN, 'b'=>:bB, 'r'=>:bR, 'q'=>:bQ, 'k'=>:bK }
+    FEN_TO_SYM = SYM_TO_FEN.invert
 
     def self.position_to_fen(position)
       # opening position example: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
@@ -171,15 +170,16 @@ module Chess
     end
 
     def self.piece_placement(board)  # converts board object to a piece placement string in FEN notation.
-      board.squares.collect do |row|
+      id_to_sym = Pieces::PIECE_ID.invert
+      board.each_slice(8).to_a.map do |row|
         fen_row, space_counter = '', 0
-        row.each do |sym|
-          if SYM_TO_FEN[sym]
-            fen_row += space_counter.to_s if space_counter > 0
-            fen_row += SYM_TO_FEN[sym]
-            space_counter = 0
-          elsif sym.nil?
+        row.each do |id|
+          if id == 0
             space_counter += 1  # square is empty
+          else
+            fen_row += space_counter.to_s if space_counter > 0
+            fen_row += SYM_TO_FEN[id_to_sym[id]]
+            space_counter = 0
           end
         end
         fen_row += space_counter.to_s if space_counter > 0
@@ -228,22 +228,20 @@ module Chess
     IS_NUMERIC = /\d/
     
     def self.fen_to_board(fen)
+      id_to_sym = Pieces::PIECE_ID.invert
       board = Chess::Board.new.clear
       squares = board.squares
       fen_rows = fen.split('/').reverse
-
-      board_row = 2
+      sq = 0
       fen_rows.each do |fen_row|
-        board_col = 2
-        fen_row.each_char do |c|
-          if c =~ IS_NUMERIC
-            board_col += c.to_i
+        fen_row.each_char do |char|
+          if char =~ IS_NUMERIC
+            sq += char.to_i
           else
-            squares[board_row][board_col] = FEN_TO_SYM[c]
-            board_col +=1
+            board[sq] = Pieces::PIECE_ID[FEN_TO_SYM[char]]
+            sq+=1
           end
         end
-        board_row += 1
       end
       return board
     end

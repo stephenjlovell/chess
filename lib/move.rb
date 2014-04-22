@@ -44,26 +44,28 @@ module Chess
         begin
           @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
           position.enp_target = nil
-          position.own_tropism += @strategy.own_tropism(position, @piece, @from, @to)
-          position.enemy_tropism += @strategy.enemy_tropism(position, @piece, @from, @to)
+          # position.own_tropism += @strategy.own_tropism(position, @piece, @from, @to)
+          # position.enemy_tropism += @strategy.enemy_tropism(position, @piece, @from, @to)
 
           @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
 
-          position.own_material += @strategy.own_material(position, @piece, @from, @to)
-          position.enemy_material += @strategy.enemy_material(position, @piece, @from, @to)
+          # position.own_material += @strategy.own_material(position, @piece, @from, @to)
+          # position.enemy_material += @strategy.enemy_material(position, @piece, @from, @to)
         rescue => err
-          raise Memory::HashCollisionError
+          puts self.inspect
+          raise
+        #   raise Memory::HashCollisionError
         end 
       end
 
       def unmake!(position)
-        position.own_material -= @strategy.own_material(position, @piece, @from, @to)
-        position.enemy_material -= @strategy.enemy_material(position, @piece, @from, @to)
+        # position.own_material -= @strategy.own_material(position, @piece, @from, @to)
+        # position.enemy_material -= @strategy.enemy_material(position, @piece, @from, @to)
 
         @strategy.unmake!(position, @piece, @from, @to)  # delegate to the strategy class.
 
-        position.own_tropism -= @strategy.own_tropism(position, @piece, @from, @to)
-        position.enemy_tropism -= @strategy.enemy_tropism(position, @piece, @from, @to)
+        # position.own_tropism -= @strategy.own_tropism(position, @piece, @from, @to)
+        # position.enemy_tropism -= @strategy.enemy_tropism(position, @piece, @from, @to)
         position.enp_target, position.castle = @enp_target, @castle_rights
       end
 
@@ -156,7 +158,7 @@ module Chess
 
       def relocate_piece(position, piece, from, to)
         position.pieces.relocate_piece(piece, from, to) # relocate piece on bitboard.
-        position.board[from] = nil                      # relocate piece on square-centric board.
+        position.board[from] = 0                        # relocate piece on square-centric board.
         position.board[to] = piece
       end
 
@@ -213,13 +215,23 @@ module Chess
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
+      begin
         position.pieces.remove_square(@captured_piece, to)  # Remove enemy piece from bitboard.
+      rescue
+        puts "uhoh"
+        puts "piece: #{piece}"
+        puts @captured_piece
+        puts Location::SQUARE_SYMS[from] unless from.nil?
+        puts Location::SQUARE_SYMS[to] unless to.nil?
+        position.board.print
+        raise
+      end
       end
 
       def unmake!(position, piece, from, to)
         relocate_piece(position, piece, to, from)
         unmake_clock_adjustment(position)
-        position.board[to] = @captured_piece.symbol
+        position.board[to] = @captured_piece
         position.pieces.add_square(@captured_piece, to) # Replace stored enemy piece on bitboard
       end
 
@@ -301,7 +313,7 @@ module Chess
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
-        position.board[@enp_target] = nil
+        position.board[@enp_target] = 0
         position.pieces.remove_square(@captured_piece, @enp_target) # Remove stored enemy piece on bitboard
       end
 
@@ -389,17 +401,22 @@ module Chess
 
     # Strategy used when a pawn moves onto the enemy back row by capturing another piece.
     class PawnPromotionCapture < MoveStrategy
+      WQ_ID = Pieces::PIECE_ID[:wQ]
+      BQ_ID = Pieces::PIECE_ID[:bQ]
+      
       include MakesCapture
 
       def initialize(captured_piece)  
         @captured_piece = captured_piece
-        @queen = captured_piece.color == :w ? BQ_ID : WQ_ID
+        @queen = (captured_piece & 1) == 0 ? WQ_ID : BQ_ID  # piece_id constants for queens.
       end
 
       def make!(position, piece, from, to)
         relocate_piece(position, @queen, from, to) # do not add PST delta for this move, since the moved piece
         make_clock_adjustment(position)            # is replaced by a new queen.
-        position.enemy_pieces.delete(to)
+        
+        # position.enemy_pieces.delete(to)
+
       end
 
       def own_material(position, piece, from, to)
