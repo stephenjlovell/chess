@@ -46,24 +46,20 @@ static VALUE cls_enp_capture;
 static VALUE cls_promotion;
 static VALUE cls_promotion_capture;
 
-// #define get_ray_attacks_reverse(occ, dir, sq) ((ray_masks[dir][sq] & occ) ?   \
-//   (ray_masks[dir][sq]^(ray_masks[dir][msb(ray_masks[dir][sq] & occ)])) :      \
-//   (ray_masks[dir][sq]))
+// // blockers ? (ray ^ blocked_pieces) : ray
+// #define scan_up(occ,dir,sq) ((ray_masks[dir][sq] & occ)?(ray_masks[dir][sq]^(ray_masks[dir][lsb(ray_masks[dir][sq])])):(ray_masks[dir][sq]))
 
+// #define scan_down(occ,dir,sq) ((ray_masks[dir][sq] & occ)?(ray_masks[dir][sq]^(ray_masks[dir][msb(ray_masks[dir][sq])])):(ray_masks[dir][sq]))
 
-// #define get_ray_attacks_forward(occ, dir, sq) ((ray_masks[dir][sq] & occ) ?   \
-//   (ray_masks[dir][sq]^(ray_masks[dir][lsb(ray_masks[dir][sq] & occ)])) :      \
-//   (ray_masks[dir][sq]))
+// #define rook_attacks(occ, sq) (scan_up(occ, NORTH, sq)|scan_up(occ, EAST, sq)|scan_down(occ, SOUTH, sq)|scan_down(occ, WEST, sq))
 
-// #define get_rook_attacks(occ, sq)                                                          \
-//   (get_ray_attacks_forward(occ, NORTH, sq)  | get_ray_attacks_forward(occ, EAST, sq)      \
-// //    | get_ray_attacks_reverse(occ, SOUTH, sq) | get_ray_attacks_reverse(occ, WEST, sq))
+// #define bishop_attacks(occ, sq) (scan_up(occ, NW, sq)|scan_up(occ, NE, sq)|scan_down(occ, SW, sq)|scan_down(occ, SE, sq))
 
-// #define get_bishop_attacks(occ, sq)                                                     \
-//   (get_ray_attacks_forward(occ, NW, sq)   | get_ray_attacks_forward(occ, NE, sq)        \
-//    | get_ray_attacks_reverse(occ, SW, sq) | get_ray_attacks_reverse(occ, SE, sq))
+// #define queen_attacks(occ, sq) (bishop_attacks(occ, sq)|rook_attacks(occ, sq))
 
-// #define get_queen_attacks(occ, sq) (get_bishop_attacks(occ, sq)|get_rook_attacks(occ, sq))
+BB bishop_attacks(BB occ, enumSq sq);
+BB rook_attacks(BB occ, enumSq sq);
+BB queen_attacks(BB occ, enumSq sq);
 
 #define build_move(id, from, to, cls, strategy, moves) do {                 \
   strategy = rb_class_new_instance(0, NULL, cls);                           \

@@ -19,16 +19,14 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
+#ifndef ATTACK
+#define ATTACK
+
 #include "shared.h"
 
 
-extern void Init_ruby_chess(){
-  printf("Loading native extension:\n");
 
-  Init_bitwise_math();
-  Init_bitboard();
-  Init_board();
-  Init_attack();
-  Init_move_gen();
-  printf("...finished.\n\n");
-}
+
+extern void Init_attack();
+
+#endif

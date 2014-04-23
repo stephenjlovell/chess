@@ -44,6 +44,7 @@ BB column_masks[8] = {0};
 BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} };
 
 BB pawn_attack_masks[2][64] = { {0}, {0} };
+
 BB pawn_from_squares[2][64] = { {0}, {0} };
 BB pawn_double_from_squares[2][64] = { {0}, {0} };
 

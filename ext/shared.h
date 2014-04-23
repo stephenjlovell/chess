@@ -35,8 +35,12 @@ typedef struct {
   BB occupied[2];
 } BRD;
 
-// typedef enum { NORTH, EAST, NW, NE, SOUTH, WEST, SE, SW } enumDir;
+
+// typedef enum { NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST } enumDir;
+
 typedef enum { NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST } enumDir;
+
+
 
 typedef enum {  A1, B1, C1, D1, E1, F1, G1, H1, 
                 A2, B2, C2, D2, E2, F2, G2, H2, 
@@ -51,7 +55,7 @@ typedef enum { BLACK, WHITE } enumSide;
 
 typedef enum { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING } enumPiece;
 
-extern BRD *current_board;
+extern BRD *cBoard;
 
 extern BB uni_mask;
 extern BB empty_mask;
@@ -94,8 +98,8 @@ extern BB square_masks_off[64];
 #define clear_sq(sq, bitboard) (bitboard &= sq_mask_off(sq))
 #define add_sq(sq, bitboard)   (bitboard |= sq_mask_on(sq))
 
-#define Occupied() ((current_board->occupied[0])|(current_board->occupied[1]))
-#define Placement(color) (current_board->occupied[color])
+#define Occupied() ((cBoard->occupied[0])|(cBoard->occupied[1]))
+#define Placement(color) (cBoard->occupied[color])
 
 
 
@@ -103,6 +107,7 @@ extern BB square_masks_off[64];
 #include "bitboard.h"
 #include "bitwise_math.h"
 #include "board.h"
+#include "attack.h"
 #include "move_gen.h"
 
 extern void Init_ruby_chess();

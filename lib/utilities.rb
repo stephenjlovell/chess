@@ -31,7 +31,6 @@ module Chess
   $killer = Killer::KillerTable.new     # single global killer table instance.
   $history = History::HistoryTable.new  # single global history table instance.
 
-
   # application-level constants:
   FLIP_COLOR = { w: :b, b: :w }
   TIME_LIMIT = 30  # default search time limit
@@ -90,67 +89,67 @@ module Chess
       create_move(pos, piece, enemy, from, to)
     end
 
-    def self.create_move(pos, piece, enemy, from, to)
-      own_type = piece.class.type
-      if enemy # move is a capture, but not an en-passant capture.
-        if own_type == :K
-          return Move::Factory.build(piece, from, to, :king_capture, enemy)
-        elsif own_type == :P && to.r == Pieces::ENEMY_BACK_ROW[piece.color]
-          return Move::Factory.build(piece, from, to, :pawn_promotion_capture, enemy) # implicit pawn promotion
-        else
-          return Move::Factory.build(piece, from, to, :regular_capture, enemy)
-        end
-      else
-        case own_type
-        when :P
-          if from + [1,0] == to || from + [-1,0] == to
-            if to.r == Pieces::ENEMY_BACK_ROW[piece.color]
-              return Move::Factory.build(piece, from, to, :pawn_promotion) 
-            else
-              return Move::Factory.build(piece, from, to, :pawn_move)     
-            end
-          elsif from + [2,0] == to || from + [-2,0] == to
-            return Move::Factory.build(piece, from, to, :enp_advance)    
-          else
-            target = pos.enp_target
-            enemy = pos.enemy_pieces[target]
-            if enemy.nil? || (from + [0,1] != target && from + [0,-1] != target)
-              raise InvalidMoveError, 'invalid pawn move' 
-            else
-              return Move::Factory.build(piece, from, to, :enp_capture, enemy)
-            end    
-          end
-        when :K
-          if from + [0,2] == to || from + [0,-2] == to
-            # add checks for castling rights here.
-            if from + [0,-2] == to # castle queen-side
-              if from == MoveGen::WK_FROM
-                rook_from, rook_to = MoveGen::WRK_FROM, Location::get_location_by_coordinates(2,5)
-                rook = pos.own_pieces[rook_from]
-              else
-                rook_from, rook_to = MoveGen::BRQ_FROM, Location::get_location_by_coordinates(9,5)
-                rook = pos.own_pieces[rook_from]
-              end
-            else # castle king-side
-              if from == MoveGen::WK_FROM
-                rook_from, rook_to = MoveGen::WRK_FROM, Location::get_location_by_coordinates(2,7)
-                rook = pos.own_pieces[rook_from]
-              else
-                rook_from, rook_to = MoveGen::BRK_FROM, Location::get_location_by_coordinates(9,7)
-                rook = pos.own_pieces[rook_from]
-              end
-            end
+    # def self.create_move(pos, piece, enemy, from, to)
+    #   own_type = piece.class.type
+    #   if enemy # move is a capture, but not an en-passant capture.
+    #     if own_type == :K
+    #       return Move::Factory.build(piece, from, to, :king_capture, enemy)
+    #     elsif own_type == :P && to.r == Pieces::ENEMY_BACK_ROW[piece.color]
+    #       return Move::Factory.build(piece, from, to, :pawn_promotion_capture, enemy) # implicit pawn promotion
+    #     else
+    #       return Move::Factory.build(piece, from, to, :regular_capture, enemy)
+    #     end
+    #   else
+    #     case own_type
+    #     when :P
+    #       if from + [1,0] == to || from + [-1,0] == to
+    #         if to.r == Pieces::ENEMY_BACK_ROW[piece.color]
+    #           return Move::Factory.build(piece, from, to, :pawn_promotion) 
+    #         else
+    #           return Move::Factory.build(piece, from, to, :pawn_move)     
+    #         end
+    #       elsif from + [2,0] == to || from + [-2,0] == to
+    #         return Move::Factory.build(piece, from, to, :enp_advance)    
+    #       else
+    #         target = pos.enp_target
+    #         enemy = pos.enemy_pieces[target]
+    #         if enemy.nil? || (from + [0,1] != target && from + [0,-1] != target)
+    #           raise InvalidMoveError, 'invalid pawn move' 
+    #         else
+    #           return Move::Factory.build(piece, from, to, :enp_capture, enemy)
+    #         end    
+    #       end
+    #     when :K
+    #       if from + [0,2] == to || from + [0,-2] == to
+    #         # add checks for castling rights here.
+    #         if from + [0,-2] == to # castle queen-side
+    #           if from == MoveGen::WK_FROM
+    #             rook_from, rook_to = MoveGen::WRK_FROM, Location::get_location_by_coordinates(2,5)
+    #             rook = pos.own_pieces[rook_from]
+    #           else
+    #             rook_from, rook_to = MoveGen::BRQ_FROM, Location::get_location_by_coordinates(9,5)
+    #             rook = pos.own_pieces[rook_from]
+    #           end
+    #         else # castle king-side
+    #           if from == MoveGen::WK_FROM
+    #             rook_from, rook_to = MoveGen::WRK_FROM, Location::get_location_by_coordinates(2,7)
+    #             rook = pos.own_pieces[rook_from]
+    #           else
+    #             rook_from, rook_to = MoveGen::BRK_FROM, Location::get_location_by_coordinates(9,7)
+    #             rook = pos.own_pieces[rook_from]
+    #           end
+    #         end
 
-            raise InvalidMoveError, 'invalid castle move' if rook.nil?
-            return Move::Factory.build(piece, from, to, :castle, rook, rook_from, rook_to) 
-          else
-            return Move::Factory.build(piece, from, to, :king_move)
-          end
-        else
-          return Move::Factory.build(piece, from, to, :regular_move)
-        end
-      end
-    end
+    #         raise InvalidMoveError, 'invalid castle move' if rook.nil?
+    #         return Move::Factory.build(piece, from, to, :castle, rook, rook_from, rook_to) 
+    #       else
+    #         return Move::Factory.build(piece, from, to, :king_move)
+    #       end
+    #     else
+    #       return Move::Factory.build(piece, from, to, :regular_move)
+    #     end
+    #   end
+    # end
 
 
     SYM_TO_FEN = { wP: 'P', wN: 'N', wB: 'B', wR: 'R', wQ: 'Q', wK: 'K',
