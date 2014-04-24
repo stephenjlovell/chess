@@ -185,24 +185,28 @@ VALUE get_captures(VALUE self, VALUE color, VALUE sq_board, VALUE enp_target, VA
 
   // Pawns
   piece_id = INT2NUM(0x10|c);
-  BB left_temp, right_temp, left_attacks, right_attacks, 
-     promotion_captures_left, promotion_captures_right, promotion_advances;
+  BB left_temp, right_temp, left_attacks, right_attacks; 
+  BB promotion_captures_left, promotion_captures_right, promotion_advances;
 
   if(c){ // white to move
-    left_temp = (cBoard->pieces[c][PAWN]<<7) & (~column_masks[0]) & enemy;
+    left_temp = ((cBoard->pieces[c][PAWN] & (~column_masks[0]))<<7) & enemy;
     left_attacks =  left_temp & (~row_masks[7]);
     promotion_captures_left = left_temp & (row_masks[7]);
-    right_temp = (cBoard->pieces[c][PAWN]<<9) & (~column_masks[7]) & enemy;
+    
+    right_temp = ((cBoard->pieces[c][PAWN] & (~column_masks[7]))<<9) & enemy;
     right_attacks = right_temp & (~row_masks[7]);
     promotion_captures_right = right_temp & (row_masks[7]);
+    
     promotion_advances = ((cBoard->pieces[c][PAWN]<<8) & row_masks[7]) & (~occupied);
   } else { // black to move
-    left_temp = (cBoard->pieces[c][PAWN]>>9) & (~column_masks[0]) & enemy;
+    left_temp = ((cBoard->pieces[c][PAWN] & (~column_masks[0]))>>9) & enemy;
     left_attacks =  left_temp & (~row_masks[0]);
     promotion_captures_left = left_temp & (row_masks[0]);
-    right_temp = (cBoard->pieces[c][PAWN]>>7) & (~column_masks[7]) & enemy;
+
+    right_temp = ((cBoard->pieces[c][PAWN] & (~column_masks[7]))>>7) & enemy;
     right_attacks = right_temp & (~row_masks[0]);
     promotion_captures_right = right_temp & (row_masks[0]);
+    
     promotion_advances = ((cBoard->pieces[c][PAWN]>>8) & row_masks[0]) & (~occupied); 
   }
   // promotion captures

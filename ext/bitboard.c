@@ -46,20 +46,19 @@ BB row_masks[8] = {0};
 BB column_masks[8] = {0};
 BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} };
 
-BB pawn_attack_masks[2][64] = { {0}, {0} };
-
-BB pawn_from_squares[2][64] = { {0}, {0} };
-BB pawn_double_from_squares[2][64] = { {0}, {0} };
-
-BB pawn_left_attack_from_squares[2][64] = { {0}, {0} };
-BB pawn_right_attack_from_squares[2][64] = { {0}, {0} };
-BB pawn_enp_masks[64] = {0};
-
 BB knight_masks[64] = {0};
 BB bishop_masks[64] = {0};
 BB rook_masks[64] = {0};
 BB queen_masks[64] = {0};
 BB king_masks[64] = {0};
+
+BB pawn_attack_masks[2][64] = { {0}, {0} };
+BB pawn_enp_masks[64] = {0};
+
+int pawn_from_squares[2][64] = { {INVALID}, {INVALID} };
+int pawn_double_from_squares[2][64] = { {INVALID}, {INVALID} };
+int pawn_left_attack_from_squares[2][64] = { {INVALID}, {INVALID} };
+int pawn_right_attack_from_squares[2][64] = { {INVALID}, {INVALID} };
 
 static VALUE load_piece_values(VALUE self, VALUE piece_array){
   for(int i =0; i<6; i++) piece_values[i] = NUM2INT(rb_ary_entry(piece_array, i));
@@ -83,8 +82,8 @@ void setup_pawn_masks(){
     if (i < 56){
       pawn_from_squares[BLACK][i] = (i+8);
       if (row(i)==4) pawn_double_from_squares[BLACK][i] = (i+16);
-      if (column(i)!=7) pawn_left_attack_from_squares[BLACK][i] = (i+9);
-      if (column(i)!=0) pawn_right_attack_from_squares[BLACK][i] = (i+7);
+      if (column(i)!=0) pawn_left_attack_from_squares[BLACK][i] = (i+9);
+      if (column(i)!=7) pawn_right_attack_from_squares[BLACK][i] = (i+7);
 
       for(int j=0; j<2; j++){
         sq = i + pawn_attack_offsets[j];
@@ -94,8 +93,8 @@ void setup_pawn_masks(){
     if (i > 7){
       pawn_from_squares[WHITE][i] = (i-8);
       if (row(i)==3) pawn_double_from_squares[WHITE][i] = (i-16);
-      if (column(i)!=7) pawn_left_attack_from_squares[WHITE][i] = (i-7);
-      if (column(i)!=0) pawn_right_attack_from_squares[WHITE][i] = (i-9);
+      if (column(i)!=0) pawn_left_attack_from_squares[WHITE][i] = (i-7);
+      if (column(i)!=7) pawn_right_attack_from_squares[WHITE][i] = (i-9);
 
       for(int j=2; j<4; j++){
         sq = i + pawn_attack_offsets[j];

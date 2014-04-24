@@ -49,7 +49,7 @@ typedef enum {  A1, B1, C1, D1, E1, F1, G1, H1,
                 A5, B5, C5, D5, E5, F5, G5, H5, 
                 A6, B6, C6, D6, E6, F6, G6, H6, 
                 A7, B7, C7, D7, E7, F7, G7, H7, 
-                A8, B8, C8, D8, E8, F8, G8, H8  } enumSq;
+                A8, B8, C8, D8, E8, F8, G8, H8, INVALID  } enumSq;
 
 typedef enum { BLACK, WHITE } enumSide;
 
@@ -67,12 +67,12 @@ extern BB column_masks[8];
 extern BB ray_masks[8][64];
 
 extern BB pawn_attack_masks[2][64];
-
-extern BB pawn_from_squares[2][64];
-extern BB pawn_double_from_squares[2][64];
-extern BB pawn_left_attack_from_squares[2][64];
-extern BB pawn_right_attack_from_squares[2][64];
 extern BB pawn_enp_masks[64];
+
+extern int pawn_from_squares[2][64];
+extern int pawn_double_from_squares[2][64];
+extern int pawn_left_attack_from_squares[2][64];
+extern int pawn_right_attack_from_squares[2][64];
 
 extern BB knight_masks[64];
 extern BB bishop_masks[64];

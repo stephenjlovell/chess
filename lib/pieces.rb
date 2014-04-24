@@ -19,7 +19,7 @@
 # CONORTH_NECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-require './ext/ruby_chess' 
+
 
 module Chess
   module Pieces
@@ -41,7 +41,7 @@ module Chess
 
     # Send the piece values to the C extension so that any changes made to PIECE_VALUES will be reflected in 
     # the extension.
-    load_piece_values(PIECE_VALUES.values)
+    # load_piece_values(PIECE_VALUES.values)
 
     # This constant represents the maximum value of all non-king pieces for each side.  ~4,006
     NON_KING_VALUE = PIECE_VALUES[:P]*8 + PIECE_VALUES[:N]*2 + PIECE_VALUES[:B]*2 + 
@@ -90,14 +90,6 @@ module Chess
       PIECE_SYM_VALUES[sym]
     end
 
-    def self.send_to_each(method, *args)
-      Pawn.send(method, *args)
-      Knight.send(method, *args)
-      Bishop.send(method, *args)
-      Rook.send(method, *args)
-      Queen.send(method, *args)
-      King.send(method, *args)
-    end
 
   end
 end
