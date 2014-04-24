@@ -36,7 +36,7 @@ BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int
 
 BB attack_map(enumSq sq);
 
-int is_attacked(enumSq sq);
+int is_attacked_by(enumSq sq, int c);
 
 VALUE is_in_check(VALUE self, VALUE side_to_move);
 

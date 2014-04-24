@@ -22,7 +22,6 @@
 #include "attack.h"
 
 
-
 BB attack_map(enumSq sq){
   BB attacks = 0;
   BB occ = Occupied();
@@ -33,41 +32,38 @@ BB attack_map(enumSq sq){
   attacks |= (knight_masks[sq] & (cBoard->pieces[WHITE][KNIGHT]|cBoard->pieces[BLACK][KNIGHT]));
   // Bishops and Queens
   BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
-                        cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
+                   cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
   attacks |= (bishop_attacks(occ, sq) & b_attackers);
   // Rooks and Queens
   BB r_attackers = cBoard->pieces[WHITE][ROOK]  | cBoard->pieces[BLACK][ROOK] | 
-                      cBoard->pieces[WHITE][QUEEN] | cBoard->pieces[BLACK][QUEEN];
+                   cBoard->pieces[WHITE][QUEEN] | cBoard->pieces[BLACK][QUEEN];
   attacks |= (rook_attacks(occ, sq) & r_attackers);
   // Kings
   attacks |= (king_masks[sq] & (cBoard->pieces[WHITE][KING]|cBoard->pieces[BLACK][KING]));
   return attacks;
 }
 
-int is_attacked(enumSq sq){
+int is_attacked_by(enumSq sq, int c){
+  int e = c^1;  // enemy color
   BB occ = Occupied();
   // Pawns
-  if((pawn_attack_masks[BLACK][sq] & cBoard->pieces[WHITE][PAWN]) |
-     (pawn_attack_masks[WHITE][sq] & cBoard->pieces[BLACK][PAWN])) return 1; 
+  if(pawn_attack_masks[c][sq] & cBoard->pieces[e][PAWN]) return 1; 
   // Knights
-  if(knight_masks[sq] & (cBoard->pieces[WHITE][KNIGHT]|cBoard->pieces[BLACK][KNIGHT])) return 1;
-  // Bishops
-  BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
-                        cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
-  if(bishop_attacks(occ, sq) & b_attackers) return 1;
-  // Rooks
-  BB r_attackers = cBoard->pieces[WHITE][ROOK]  | cBoard->pieces[BLACK][ROOK] | 
-                      cBoard->pieces[WHITE][QUEEN] | cBoard->pieces[BLACK][QUEEN];
-  if(rook_attacks(occ, sq) & r_attackers) return 1;
+  if(knight_masks[sq] & (cBoard->pieces[e][KNIGHT])) return 1;
+  // Bishops and Queens
+  if(bishop_attacks(occ, sq) & (cBoard->pieces[e][BISHOP]|cBoard->pieces[e][QUEEN])) return 1;
+  // Rooks and Queens
+  if(rook_attacks(occ, sq) & (cBoard->pieces[e][ROOK]|cBoard->pieces[e][QUEEN])) return 1;
   // Kings
-  if(king_masks[sq] & (cBoard->pieces[WHITE][KING]|cBoard->pieces[BLACK][KING])) return 1;
+  if(king_masks[sq] & (cBoard->pieces[e][KING])) return 1;
   return 0;
 }
 
 VALUE is_in_check(VALUE self, VALUE side_to_move){
   int c = SYM2COLOR(side_to_move);
-  return (is_attacked(furthest_forward(c, cBoard->pieces[c][KING])) ? Qtrue : Qfalse);
+  return (is_attacked_by(furthest_forward(c, cBoard->pieces[c][KING]), c) ? Qtrue : Qfalse);
 }
+
 
 BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int type, int sq){
   if(type != KNIGHT && type != KING){

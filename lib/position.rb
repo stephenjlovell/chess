@@ -120,9 +120,13 @@ module Chess
 
       # Verify that the given move would not leave the current side's king in check.
       def evades_check?(move)
+        # puts "\n"
+        # puts in_check?
+
         captured_piece = @board[move.to]
         piece, from, to = move.piece, move.from, move.to
         @pieces.relocate_piece(piece, from, to)
+
         if captured_piece > 0
           @pieces.remove_square(captured_piece, to)
           in_check = self.in_check?
@@ -131,7 +135,8 @@ module Chess
           in_check = self.in_check?   
         end
         @pieces.relocate_piece(piece, from, to)
-        return in_check
+        # puts in_check
+        return !in_check
       end
 
       # Return a string decribing the position in Forsyth-Edwards Notation.
