@@ -87,6 +87,8 @@ module Chess
         row.each do |square|
           if square == 0 
             line << " "
+          elsif square.nil?
+            line << "X"
           else
             line << GRAPHICS[piece_codes[square]]
           end

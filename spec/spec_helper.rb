@@ -31,6 +31,7 @@ def perft(node, depth)  # Legal MoveGen speed/accuracy test. Counts all leaf nod
   sum = 0
   node.get_moves(depth, true).each do |move|
     Chess::MoveGen::make!(node, move)
+    # node.board.print
     sum += perft(node, depth-1)
     Chess::MoveGen::unmake!(node, move)
   end

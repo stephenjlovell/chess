@@ -54,7 +54,6 @@ module Chess
                     Pieces::PIECE_VALUES[:R]*BASE_BONUS_RATIO,  #  76.50
                     Pieces::PIECE_VALUES[:Q]*BASE_BONUS_RATIO,  # 132.00
                     0.0  ]                                      # 0.0
-
       
 
     # Create a 64 x 64 x 6 table containing bonuses for each piece type and from/to square combination.

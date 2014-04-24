@@ -121,7 +121,7 @@ extern void Init_board(){
   rb_define_method(cls_board, "set_bitboard", RUBY_METHOD_FUNC(o_set_bitboard), 2);
 
   rb_define_method(cls_board, "add_square", RUBY_METHOD_FUNC(o_add_square), 2);
-  rb_define_method(cls_board, "remove_square", RUBY_METHOD_FUNC(o_add_square), 2);
+  rb_define_method(cls_board, "remove_square", RUBY_METHOD_FUNC(o_remove_square), 2);
   rb_define_method(cls_board, "relocate_piece", RUBY_METHOD_FUNC(o_relocate_piece), 3);
   rb_define_method(cls_board, "initialize", RUBY_METHOD_FUNC(o_initialize), 1);
 

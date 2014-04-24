@@ -19,6 +19,8 @@
 # CONORTH_NECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
+require './ext/ruby_chess' 
+
 module Chess
   module Pieces
 
@@ -36,6 +38,10 @@ module Chess
 
     # Assign each piece a base material value approximating its relative importance.      
     PIECE_VALUES = { P: 100, N: 320, B: 333, R: 510, Q: 880, K: 100000 }
+
+    # Send the piece values to the C extension so that any changes made to PIECE_VALUES will be reflected in 
+    # the extension.
+    load_piece_values(PIECE_VALUES.values)
 
     # This constant represents the maximum value of all non-king pieces for each side.  ~4,006
     NON_KING_VALUE = PIECE_VALUES[:P]*8 + PIECE_VALUES[:N]*2 + PIECE_VALUES[:B]*2 + 

@@ -111,16 +111,27 @@ module Chess
       end
 
       def in_check?
-
+        side_in_check?(@side_to_move)
       end
 
       def enemy_in_check?
-
+        side_in_check?(@enemy)
       end
 
       # Verify that the given move would not leave the current side's king in check.
       def evades_check?(move)
-
+        captured_piece = @board[move.to]
+        piece, from, to = move.piece, move.from, move.to
+        @pieces.relocate_piece(piece, from, to)
+        if captured_piece > 0
+          @pieces.remove_square(captured_piece, to)
+          in_check = self.in_check?
+          @pieces.add_square(captured_piece, to)
+        else 
+          in_check = self.in_check?   
+        end
+        @pieces.relocate_piece(piece, from, to)
+        return in_check
       end
 
       # Return a string decribing the position in Forsyth-Edwards Notation.
@@ -137,7 +148,8 @@ module Chess
 
       def get_moves(depth, enhanced_sort) 
         promotions, captures, moves = [], [], []
-        # MoveGen::get_captures(@side_to_move, @pieces, @enp_target, captures, promotions)
+
+        MoveGen::get_captures(@side_to_move, @board.squares, @enp_target, captures, promotions)
         MoveGen::get_non_captures(@side_to_move, @castle, moves)
         # At higher depths, expend additional effort on move ordering.
 
@@ -169,7 +181,8 @@ module Chess
         MoveGen::get_captures(@side_to_move, @pieces, @enp_target, captures, promotions)
         # During quiesence search, sorting captures by SEE has the added benefit of enabling the pruning of bad
         # captures (those with SEE < 0). In practice, this reduced the average number of q-nodes by around half. 
-        promotions + sort_captures_by_see!(captures)
+        # promotions + sort_captures_by_see!(captures)
+        promotions + captures
       end
       alias :tactical_edges :get_captures
 
