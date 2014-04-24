@@ -255,7 +255,13 @@ module Chess
 
       # XOR out key for piece at from. XOR in the key for piece at to. XOR out key for @captured_piece at to.
       def hash(piece, from, to)
+        begin
         from_to_key(piece, from, to) ^ Memory::psq_key(@captured_piece, to)
+      rescue
+        puts piece
+        puts "captured piece: #{@captured_piece}"
+        raise
+      end
       end
 
       def mvv_lva(piece)  # Most valuable victim, least valuable attacker heuristic. Used for move ordering of captures.

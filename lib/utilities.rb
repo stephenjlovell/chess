@@ -200,17 +200,17 @@ module Chess
     end
 
     def self.epd_to_position(epd)
-      begin
+      # begin
         fen = epd.split(' ')[0..3].join(' ')
         fen_to_position(fen)
-      rescue NotationFormatError => e
-        raise e
-      end
+      # rescue NotationFormatError => e
+      #   raise e
+      # end
     end
 
 
     def self.fen_to_position(fen) # Parses a FEN string and returns an equivalent position object.
-      begin
+      # begin
         fields = fen.split(' ') # break the FEN string into its constituent fields
         board = fen_to_board(fields[0])
         side_to_move = fields[1].to_sym
@@ -219,9 +219,9 @@ module Chess
         halfmove_clock = fields[4] ? fields[4].to_i : 0
         position = Position.new(board, side_to_move, castle, enp_target, halfmove_clock)
         return position
-      rescue
-        raise NotationFormatError, "could not convert fen to position: #{fen}"
-      end
+      # rescue
+      #   raise NotationFormatError, "could not convert fen to position: #{fen}"
+      # end
     end
 
     IS_NUMERIC = /\d/
@@ -229,7 +229,6 @@ module Chess
     def self.fen_to_board(fen)
       id_to_sym = Pieces::PIECE_ID.invert
       board = Chess::Board.new.clear
-      squares = board.squares
       fen_rows = fen.split('/').reverse
       sq = 0
       fen_rows.each do |fen_row|

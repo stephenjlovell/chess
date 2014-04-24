@@ -69,10 +69,7 @@ extern BB ray_masks[8][64];
 extern BB pawn_attack_masks[2][64];
 extern BB pawn_enp_masks[64];
 
-extern int pawn_from_squares[2][64];
-extern int pawn_double_from_squares[2][64];
-extern int pawn_left_attack_from_squares[2][64];
-extern int pawn_right_attack_from_squares[2][64];
+extern int pawn_from_offsets[2][4];
 
 extern BB knight_masks[64];
 extern BB bishop_masks[64];

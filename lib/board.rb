@@ -51,7 +51,7 @@ module Chess
     end
 
     def clear  # Clears all pieces from the board.
-      @squares = Array.new(64)
+      @squares = Array.new(64, 0)
       return self
     end
 

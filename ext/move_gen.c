@@ -68,6 +68,7 @@ BB queen_attacks(BB occ, enumSq sq){
 }                                                 
 
 
+
 VALUE get_non_captures(VALUE self, VALUE color, VALUE castle_rights, VALUE moves){
   assert(cBoard != NULL); // pointer BRD *cBoard is NULL. Create a PiecewiseBoard 
   int c = SYM2COLOR(color);      // instance before generating moves.
@@ -117,11 +118,11 @@ VALUE get_non_captures(VALUE self, VALUE color, VALUE castle_rights, VALUE moves
 
   for(; double_advances; clear_sq(to, double_advances)){
     to = furthest_forward(c, double_advances);
-    build_move(piece_id, pawn_double_from_squares[c][to], to, cls_enp_advance, moves);
+    build_move(piece_id, to+pawn_from_offsets[c][1], to, cls_enp_advance, moves);
   }
   for(; single_advances; clear_sq(to, single_advances)){
     to = furthest_forward(c, single_advances);
-    build_move(piece_id, pawn_from_squares[c][to], to, cls_pawn_move, moves);  
+    build_move(piece_id, to+pawn_from_offsets[c][0], to, cls_pawn_move, moves);  
   }
 
   // Knights
@@ -212,26 +213,25 @@ VALUE get_captures(VALUE self, VALUE color, VALUE sq_board, VALUE enp_target, VA
   // promotion captures
   for(; promotion_captures_left; clear_sq(to, promotion_captures_left)){
     to = furthest_forward(c, promotion_captures_left);
-    build_capture(piece_id, pawn_left_attack_from_squares[c][to], to, cls_promotion_capture, sq_board, promotions);
+    build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_promotion_capture, sq_board, promotions);
   }
   for(; promotion_captures_right; clear_sq(to, promotion_captures_right)){
     to = furthest_forward(c, promotion_captures_right);
-    build_capture(piece_id, pawn_right_attack_from_squares[c][to], to, cls_promotion_capture, sq_board, promotions);
+    build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_promotion_capture, sq_board, promotions);
   }
   // promotion advances
   for(; promotion_advances; clear_sq(to, promotion_advances)){
     to = furthest_forward(c, promotion_advances);
-    build_promotion(piece_id, pawn_from_squares[c][to], to, color, cls_promotion, promotions); 
+    build_promotion(piece_id, to+pawn_from_offsets[c][0], to, color, cls_promotion, promotions); 
   }
-
   // regular pawn attacks
   for(; left_attacks; clear_sq(to, left_attacks)){
     to = furthest_forward(c, left_attacks);
-    build_capture(piece_id, pawn_left_attack_from_squares[c][to], to, cls_regular_capture, sq_board, moves);
+    build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_regular_capture, sq_board, moves);
   }
   for(; right_attacks; clear_sq(to, right_attacks)){
     to = furthest_forward(c, right_attacks);
-    build_capture(piece_id, pawn_right_attack_from_squares[c][to], to, cls_regular_capture, sq_board, moves);
+    build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_regular_capture, sq_board, moves);
   }
 
   // en-passant captures

@@ -39,12 +39,18 @@ module Chess
 
     # Updates the side to move and hash key for position.
     def self.flip(position, move)
+      begin
       if position.side_to_move == :w
         position.side_to_move, position.enemy = :b, :w
       else
         position.side_to_move, position.enemy = :w, :b
       end
       position.hash ^= move.hash
+    rescue
+      position.board.print
+      puts move.inspect
+      raise
+    end
     end
 
     # Updates the side to move and hash key as if the current side forfeited a turn.  Used for the Null Move Pruning
@@ -81,18 +87,18 @@ module Chess
     BKK_TO   = Location::SQUARES[:g8] # black king kingside to square 
  
     # Bitwise operations for updating castling rights.
-    WATCH = { WRQ_FROM => Proc.new { |pos| pos.castle &= ~C_WQ }, 
-              WK_FROM  => Proc.new { |pos| pos.castle &= ~(C_WK | C_WQ) },
-              WRK_FROM => Proc.new { |pos| pos.castle &= ~C_WK },
-              BRQ_FROM => Proc.new { |pos| pos.castle &= ~C_BQ },
-              BK_FROM  => Proc.new { |pos| pos.castle &= ~(C_BK | C_BQ) },
-              BRK_FROM => Proc.new { |pos| pos.castle &= ~C_BK } }
+    WATCH = { WRQ_FROM => Proc.new { |pos| pos.castle &= ~C_WQ          }, 
+              WK_FROM  => Proc.new { |pos| pos.castle &= ~(C_WK|C_WQ)   },
+              WRK_FROM => Proc.new { |pos| pos.castle &= ~C_WK          },
+              BRQ_FROM => Proc.new { |pos| pos.castle &= ~C_BQ          },
+              BK_FROM  => Proc.new { |pos| pos.castle &= ~(C_BK|C_BQ)   },
+              BRK_FROM => Proc.new { |pos| pos.castle &= ~C_BK          } }
               
     # Whenever a king or rook moves off its initial square or is captured, update castle rights via the procedure
     # associated with that initial square.
     def self.set_castle_flag(position, move)
       WATCH[move.from].call(position) if WATCH[move.from]
-      WATCH[move.to].call(position) if WATCH[move.to]
+      WATCH[move.to].call(position)   if WATCH[move.to]
     end
 
 

@@ -30,7 +30,7 @@ describe Chess::MoveGen do
     # @game = FactoryGirl.build(:game)
     @game = Chess::Game.new
     @root = @game.position
-    @depth = 4
+    @depth = 5
   end
 
   describe "move generation" do
@@ -44,13 +44,13 @@ describe Chess::MoveGen do
       node_count.should == MAX_TREE[@depth]
     end
 
-    it "can generate pseudo-legal positions at lower computational cost" do
-      t0 = Time.now
-      node_count = perft(@root, @depth) # first castling moves would occur at minimum ply 7.
-      t1 = Time.now
-      puts "Pseudo-legal MoveGen: #{node_count/(t1-t0)} NPS"
-      puts "Node count: #{node_count}"
-    end
+    # it "can generate pseudo-legal positions at lower computational cost" do
+    #   t0 = Time.now
+    #   node_count = perft(@root, @depth) # first castling moves would occur at minimum ply 7.
+    #   t1 = Time.now
+    #   puts "Pseudo-legal MoveGen: #{node_count/(t1-t0)} NPS"
+    #   puts "Node count: #{node_count}"
+    # end
 
   end
 
