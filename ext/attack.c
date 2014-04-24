@@ -21,6 +21,8 @@
 
 #include "attack.h"
 
+
+
 BB attack_map(enumSq sq){
   BB attacks = 0;
   BB occ = Occupied();
@@ -30,13 +32,13 @@ BB attack_map(enumSq sq){
   // Knights
   attacks |= (knight_masks[sq] & (cBoard->pieces[WHITE][KNIGHT]|cBoard->pieces[BLACK][KNIGHT]));
   // Bishops and Queens
-  BB bishop_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
+  BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
                         cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
-  attacks |= (bishop_attacks(occ, sq) & bishop_attackers);
+  attacks |= (bishop_attacks(occ, sq) & b_attackers);
   // Rooks and Queens
-  BB rook_attackers = cBoard->pieces[WHITE][ROOK]  | cBoard->pieces[BLACK][ROOK] | 
+  BB r_attackers = cBoard->pieces[WHITE][ROOK]  | cBoard->pieces[BLACK][ROOK] | 
                       cBoard->pieces[WHITE][QUEEN] | cBoard->pieces[BLACK][QUEEN];
-  attacks |= (rook_attacks(occ, sq) & rook_attackers);
+  attacks |= (rook_attacks(occ, sq) & r_attackers);
   // Kings
   attacks |= (king_masks[sq] & (cBoard->pieces[WHITE][KING]|cBoard->pieces[BLACK][KING]));
   return attacks;
@@ -50,57 +52,94 @@ int is_attacked(enumSq sq){
   // Knights
   if(knight_masks[sq] & (cBoard->pieces[WHITE][KNIGHT]|cBoard->pieces[BLACK][KNIGHT])) return 1;
   // Bishops
-  BB bishop_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
+  BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
                         cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
-  if(bishop_attacks(occ, sq) & bishop_attackers) return 1;
+  if(bishop_attacks(occ, sq) & b_attackers) return 1;
   // Rooks
-  BB rook_attackers = cBoard->pieces[WHITE][ROOK]  | cBoard->pieces[BLACK][ROOK] | 
+  BB r_attackers = cBoard->pieces[WHITE][ROOK]  | cBoard->pieces[BLACK][ROOK] | 
                       cBoard->pieces[WHITE][QUEEN] | cBoard->pieces[BLACK][QUEEN];
-  if(rook_attacks(occ, sq) & rook_attackers) return 1;
+  if(rook_attacks(occ, sq) & r_attackers) return 1;
   // Kings
   if(king_masks[sq] & (cBoard->pieces[WHITE][KING]|cBoard->pieces[BLACK][KING])) return 1;
   return 0;
 }
 
-VALUE static_exchange_evaluation(VALUE square, VALUE side_to_move){
-  assert(cBoard != NULL);
-
-  int sq = (NUM2INT(square));
+VALUE is_in_check(VALUE self, VALUE side_to_move){
   int c = SYM2COLOR(side_to_move);
-  int e = (c^1);
-
-  // get a map of all squares directly attacking this square (does not include 'discovered'/hidden attacks)
-  BB map = attack_map(sq);
-
-  BB own_map = (map & cBoard->occupied[c]);
-  BB enemy_map = (map & cBoard->occupied[e]);
-
-
-
-
-  // Add any hidden attacker to the map
-  return Qnil;
+  return (is_attacked(furthest_forward(c, cBoard->pieces[c][KING])) ? Qtrue : Qfalse);
 }
 
-static int place_next_attacker(BB *side_map, int side_color){
-  int target_value = 0;
-
-  // Locate the cheapest attacking piece currently available.
-
-  // After a sliding piece attacks the target square, check behind that piece for any hidden sliding piece attackers.
-
-  // add the hidden attacker (if any) to side_map; it's now available to attack.
-
-
-  return target_value; // return the value of the piece placed.
-}  
+BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int type, int sq){
+  if(type != KNIGHT && type != KING){
+    if(type == PAWN || type == BISHOP || type == QUEEN) temp_map |= bishop_attacks(temp_occ, sq) & b_attackers;
+    if(type == ROOK || type == QUEEN) temp_map |= rook_attacks(temp_occ, sq) & r_attackers;
+  }
+  return temp_map;
+}
 
 
+VALUE static_exchange_evaluation(VALUE self, VALUE from, VALUE to, VALUE side_to_move, VALUE sq_board){
+  assert(cBoard != NULL);
+  to = (NUM2INT(to));
+  from = (NUM2INT(from));
+  int c = SYM2COLOR(side_to_move);
+  int next_victim, type;
+  int temp_color = c;
+  int score = 0;
+  // get initial map of all squares directly attacking this square (does not include 'discovered'/hidden attacks)
+  const BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
+                         cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
+  const BB r_attackers = cBoard->pieces[WHITE][ROOK]  | cBoard->pieces[BLACK][ROOK] | 
+                         cBoard->pieces[WHITE][QUEEN] | cBoard->pieces[BLACK][QUEEN];
+  BB temp_map = attack_map(to);
+  BB temp_occ = Occupied();
+  BB temp_pieces;
 
+  next_victim = piece_value_at(sq_board, to);
+  score += next_victim;  // save the initial target piece to the victims list
+  temp_color^=1;
+  clear_sq(from, temp_occ);
+  next_victim = piece_value_at(sq_board, from);
+  // if the attacker was a pawn, bishop, rook, or queen, re-scan for sliding attacks after removing piece:
+  temp_map = update_temp_map(temp_map, temp_occ, b_attackers, r_attackers, piece_type_at(sq_board, from), from);
+
+  int alpha = -100000;
+  int beta = 100000;
+  for(temp_map &= temp_occ; temp_map; temp_map &= temp_occ){
+    for(type = PAWN; type <= KING; type++){ // loop over piece types in order of value.
+      temp_pieces = cBoard->pieces[temp_color][type];
+      if(temp_pieces & temp_map) break; // stop as soon as a match is found.
+    }
+    // if(type > KING) break;
+
+    // iterative alpha-beta:
+    if(temp_color == c){
+      score += next_victim;
+      if(score <= alpha) return INT2NUM(alpha);
+      if(score < beta) beta = score;
+    } else {
+      score -= next_victim;
+      if(score <= beta) return INT2NUM(beta);
+      if(score > alpha) alpha = score;
+    }
+    next_victim = piece_values[type];
+
+    temp_occ ^= (temp_pieces & -temp_pieces);  // merge the first set bit of temp_pieces into temp_occ
+    temp_map = update_temp_map(temp_map, temp_occ, b_attackers, r_attackers, type, from); // Add any hidden attackers
+    temp_color^=1;
+  }
+
+  return INT2NUM(score);
+}
 
 
 extern void Init_attack(){
+  VALUE mod_chess = rb_define_module("Chess");
+  VALUE cls_position = rb_define_class_under(mod_chess, "Position", rb_cObject);
+  rb_define_method(cls_position, "side_in_check?", RUBY_METHOD_FUNC(is_in_check), 1);
 
+  VALUE mod_search = rb_define_module_under(mod_chess, "Search");
+  rb_define_module_function(mod_search, "static_exchange_evaluation", static_exchange_evaluation, 4);
 }
 
 

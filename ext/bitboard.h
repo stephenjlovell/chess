@@ -24,6 +24,8 @@
 
 #include "shared.h"
 
+static VALUE load_piece_values(VALUE self, VALUE piece_array);
+
 void setup_square_masks();
 
 void setup_pawn_masks();

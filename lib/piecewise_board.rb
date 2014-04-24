@@ -18,11 +18,11 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
- 
+
+require './ext/ruby_chess' 
+
 module Chess
   module Bitboard
-
-    require './ext/ruby_chess'
 
     class PiecewiseBoard  # This definition adds some additional methods to the PiecewiseBoard class
                           # provided by board.c
@@ -52,10 +52,6 @@ module Chess
       
     end
 
-    # PiecewiseBoard.new(Board.new)
-    # MOVES = MoveGen::get_non_captures(:w, 0, [])
-    # puts MOVES.count
-    # MOVES.each {|m| puts m}
 
   end
 end

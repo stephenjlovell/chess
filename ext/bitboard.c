@@ -23,6 +23,9 @@
 #include "bitboard.h"
 
 static VALUE mod_chess;
+static VALUE mod_pieces;
+
+int piece_values[6] = { 100, 320, 333, 510, 880, 100000 };  // default piece values
 
 int knight_offsets[8] = { -17, -15, -10, -6, 6, 10, 15, 17 };
 int bishop_offsets[4] = { 7, 9, -7, -9 };
@@ -58,6 +61,10 @@ BB rook_masks[64] = {0};
 BB queen_masks[64] = {0};
 BB king_masks[64] = {0};
 
+static VALUE load_piece_values(VALUE self, VALUE piece_array){
+  for(int i =0; i<6; i++) piece_values[i] = NUM2INT(rb_ary_entry(piece_array, i));
+  return Qnil;
+}
 
 void setup_square_masks(){      // Precalculate the value of the bit representing each square.
   for(int i=0; i<64; i++){
@@ -173,16 +180,16 @@ void setup_column_masks(){
 
 
 void setup_masks(){ 
-  setup_square_masks();
+  setup_square_masks();  // First set up masks used to add/remove bits by their index.
 
-  setup_pawn_masks();     // For each square, calculate bitboard attack maps showing 
-  setup_knight_masks();   // the squares to which the given piece type may move. These are
-  setup_bishop_masks();   // used as bitmasks during move generation to find pseudolegal moves.
+  setup_pawn_masks();    // For each square, calculate bitboard attack maps showing 
+  setup_knight_masks();  // the squares to which the given piece type may move. These are
+  setup_bishop_masks();  // used as bitmasks during move generation to find pseudolegal moves.
   setup_rook_masks();
   setup_queen_masks();     
   setup_king_masks();
-
-  setup_row_masks();      // Create bitboard masks for each row and column.
+  
+  setup_row_masks();     // Create bitboard masks for each row and column.
   setup_column_masks();
 }
 
@@ -190,6 +197,8 @@ extern void Init_bitboard(){
   printf("  -Loading bitboard extension...");
 
   mod_chess = rb_define_module("Chess");
+  mod_pieces = rb_define_module_under(mod_chess, "Pieces");
+  rb_define_module_function(mod_pieces, "load_piece_values", load_piece_values, 1);
 
   setup_masks();
 

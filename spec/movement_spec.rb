@@ -37,13 +37,13 @@ describe Chess::MoveGen do
 
   describe "move generation" do
 
-    # it "should generate the correct number of legal positions" do
-    #   t0 = Time.now
-    #   node_count = perft_legal(@root, @depth) # first castling moves would occur at minimum ply 7.
-    #   t1 = Time.now
-    #   puts "Legal MoveGen: #{node_count/(t1-t0)} NPS"
-    #   node_count.should == MAX_TREE[@depth]
-    # end
+    it "should generate the correct number of legal positions" do
+      t0 = Time.now
+      node_count = perft_legal(@root, @depth) # first castling moves would occur at minimum ply 7.
+      t1 = Time.now
+      puts "Legal MoveGen: #{node_count/(t1-t0)} NPS"
+      node_count.should == MAX_TREE[@depth]
+    end
 
     it "can generate pseudo-legal positions at lower computational cost" do
       t0 = Time.now

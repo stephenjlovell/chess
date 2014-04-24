@@ -74,7 +74,8 @@ module Chess
       end
 
       def see_score(position)
-        @see ||= Search::see(position, @to)
+        # @see ||= Search::see(position, @to)
+        @see ||= Search::static_exchange_evaluation(@from, @to, position.side_to_move, position.board)
       end
 
       def strategy
@@ -221,9 +222,9 @@ module Chess
         puts "uhoh"
         puts "piece: #{piece}"
         puts @captured_piece
+        position.board.print
         puts Location::SQUARE_SYMS[from] unless from.nil?
         puts Location::SQUARE_SYMS[to] unless to.nil?
-        position.board.print
         raise
       end
       end

@@ -61,8 +61,8 @@ BB bishop_attacks(BB occ, enumSq sq);
 BB rook_attacks(BB occ, enumSq sq);
 BB queen_attacks(BB occ, enumSq sq);
 
-#define build_move(id, from, to, cls, strategy, moves) do {                 \
-  strategy = rb_class_new_instance(0, NULL, cls);                           \
+#define build_move(id, from, to, cls, moves) do {                           \
+  VALUE strategy = rb_class_new_instance(0, NULL, cls);                     \
   VALUE args[4];                                                            \
   args[0] = id;                                                             \
   args[1] = INT2NUM(from);                                                  \
@@ -71,12 +71,12 @@ BB queen_attacks(BB occ, enumSq sq);
   rb_ary_push(moves, rb_class_new_instance(4, args, cls_move));             \
 } while(0);     
 
-#define build_castle(id, from, to, r_id, r_from, r_to, strategy, moves) do {        \
+#define build_castle(id, from, to, r_id, r_from, r_to, moves) do {                  \
   VALUE args[4];                                                                    \
   args[0] = r_id;                                                                   \
   args[1] = INT2NUM(r_from);                                                        \
   args[2] = INT2NUM(r_to);                                                          \
-  strategy = rb_class_new_instance(3, args, cls_castle);                            \
+  VALUE strategy = rb_class_new_instance(3, args, cls_castle);                      \
   args[0] = id;                                                                     \
   args[1] = INT2NUM(from);                                                          \
   args[2] = INT2NUM(to);                                                            \
@@ -84,10 +84,10 @@ BB queen_attacks(BB occ, enumSq sq);
   rb_ary_push(moves, rb_class_new_instance(4, args, cls_move));                     \
 } while(0);  
 
-#define build_capture(id, from, to, cls, strategy, sq_board, moves) do {      \
+#define build_capture(id, from, to, cls, sq_board, moves) do {                \
   VALUE args[4];                                                              \
   args[0] = rb_ary_entry(sq_board, to);                                       \
-  strategy = rb_class_new_instance(1, args, cls);                             \
+  VALUE strategy = rb_class_new_instance(1, args, cls);                       \
   args[0] = id;                                                               \
   args[1] = INT2NUM(from);                                                    \
   args[2] = INT2NUM(to);                                                      \
@@ -95,10 +95,10 @@ BB queen_attacks(BB occ, enumSq sq);
   rb_ary_push(moves, rb_class_new_instance(4, args, cls_move));               \
 } while(0);
 
-#define build_promotion(id, from, to, color, cls, strategy, moves) do {   \
+#define build_promotion(id, from, to, color, cls, moves) do {                       \
   VALUE args[4];                                                                    \
   args[0] = color;                                                                  \
-  strategy = rb_class_new_instance(1, args, cls);                                   \
+  VALUE strategy = rb_class_new_instance(1, args, cls);                             \
   args[0] = id;                                                                     \
   args[1] = INT2NUM(from);                                                          \
   args[2] = INT2NUM(to);                                                            \
@@ -107,11 +107,11 @@ BB queen_attacks(BB occ, enumSq sq);
 } while(0);
 
 
-#define build_enp_capture(id, from, to, cls, strategy, target, sq_board, moves) do {      \
+#define build_enp_capture(id, from, to, cls, target, sq_board, moves) do {                \
   VALUE args[4];                                                                          \
   args[0] = rb_ary_entry(sq_board, target);                                               \
   args[1] = INT2NUM(target);                                                              \
-  strategy = rb_class_new_instance(2, args, cls);                                         \
+  VALUE strategy = rb_class_new_instance(2, args, cls);                                   \
   args[0] = id;                                                                           \
   args[1] = INT2NUM(from);                                                                \
   args[2] = INT2NUM(to);                                                                  \
