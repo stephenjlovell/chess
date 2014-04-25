@@ -34,7 +34,7 @@
 void add_square(int color, int type, int sq);
 
 static void free_cBoard(BRD* board);
-static BRD* get_cBoard(VALUE self);
+extern BRD* get_cBoard(VALUE self);
 static VALUE o_alloc(VALUE klass);
 static VALUE o_initialize(VALUE self, VALUE sq_board);
 
@@ -45,6 +45,8 @@ static VALUE o_set_bitboard(VALUE self, VALUE piece_id, VALUE bitboard);
 static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square);
 static VALUE o_move_update(VALUE self, VALUE piece_id, VALUE from, VALUE to);
 
+static VALUE o_initialize_material(VALUE self, VALUE color);
+static VALUE o_get_material(VALUE self, VALUE color);
 
 extern void Init_board();
   

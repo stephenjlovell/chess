@@ -219,12 +219,12 @@ module Chess
       begin
         position.pieces.remove_square(@captured_piece, to)  # Remove enemy piece from bitboard.
       rescue
-        puts "uhoh"
         puts "piece: #{piece}"
         puts @captured_piece
-        position.board.print
         puts Location::SQUARE_SYMS[from] unless from.nil?
         puts Location::SQUARE_SYMS[to] unless to.nil?
+        position.pieces.print
+        position.board.print
         raise
       end
       end

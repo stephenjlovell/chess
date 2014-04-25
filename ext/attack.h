@@ -32,15 +32,16 @@ static VALUE mod_chess;
 static VALUE mod_position;
 static VALUE mod_search;
 
+
+BB attack_map(VALUE p_board, enumSq sq);
+
+int is_attacked_by(VALUE p_board, enumSq sq, int c);
+
+static VALUE is_in_check(VALUE p_board, VALUE self, VALUE side_to_move);
+
 BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int type, int sq);
 
-BB attack_map(enumSq sq);
-
-int is_attacked_by(enumSq sq, int c);
-
-VALUE is_in_check(VALUE self, VALUE side_to_move);
-
-VALUE static_exchange_evaluation(VALUE self, VALUE from, VALUE to, VALUE side_to_move, VALUE sq_board);
+static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, VALUE to, VALUE side_to_move, VALUE sq_board);
 
 
 

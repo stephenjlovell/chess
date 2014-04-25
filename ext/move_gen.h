@@ -120,8 +120,9 @@ BB queen_attacks(BB occ, enumSq sq);
 } while(0);
 
 
-VALUE get_non_captures(VALUE self, VALUE color, VALUE castle_rights, VALUE moves);
-VALUE get_captures(VALUE self, VALUE color, VALUE sq_board, VALUE enp_target, VALUE moves, VALUE captures);
+VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_rights, VALUE moves);
+
+VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board, VALUE enp_target, VALUE moves, VALUE promotions);
 
 VALUE get_checks(VALUE self, VALUE color, VALUE moves);
 VALUE get_check_evasions(VALUE self, VALUE color, VALUE moves);

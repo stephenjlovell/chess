@@ -50,6 +50,25 @@ def perft_legal(node, depth)  # Pseudolegal MoveGen speed test. Counts all leaf 
   return sum
 end
 
+def test_notation_conversion(file)
+  raise "test suite #{file} not found" unless File.exists?(file)
+  raise "block required" unless block_given?
+  count = 0
+  File.readlines(file).each do |line|
+    count += 1
+    # print "#{count}."
+    line = %Q{#{line}}
+    original_fen = Chess::Notation::epd_to_fen(line)
+    puts original_fen
+    pos = Chess::Notation::fen_to_position(original_fen)
+    puts pos.castle
+    new_fen = Chess::Notation::position_to_fen(pos)
+    yield(original_fen, new_fen)
+  end
+end
+
+
+
 ChessProblem = Struct.new(:id, :position, :best_moves, :avoid_moves, :ai_response, :score)
 
 def load_test_suite(file)

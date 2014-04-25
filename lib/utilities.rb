@@ -199,15 +199,19 @@ module Chess
       fen_castle
     end
 
+
     def self.epd_to_position(epd)
-      # begin
-        fen = epd.split(' ')[0..3].join(' ')
+      begin
+        fen = epd_to_fen(epd)
         fen_to_position(fen)
-      # rescue NotationFormatError => e
-      #   raise e
-      # end
+      rescue NotationFormatError => e
+        raise e
+      end
     end
 
+    def self.epd_to_fen(epd)
+      epd.split(' ')[0..3].join(' ') + ' 0 1'
+    end
 
     def self.fen_to_position(fen) # Parses a FEN string and returns an equivalent position object.
       # begin
@@ -246,11 +250,11 @@ module Chess
 
     def self.fen_to_castle(fen_castle)
       castle = 0
-      unless fen_castle[0] == '-'
-        castle |= MoveGen::C_WK if fen_castle[0] == 'K'
-        castle |= MoveGen::C_WQ if fen_castle[1] == 'Q'
-        castle |= MoveGen::C_BK if fen_castle[2] == 'k'
-        castle |= MoveGen::C_BQ if fen_castle[3] == 'q'
+      unless fen_castle == '-'
+        castle |= MoveGen::C_WK if fen_castle =~ /K/
+        castle |= MoveGen::C_WQ if fen_castle =~ /Q/
+        castle |= MoveGen::C_BK if fen_castle =~ /k/
+        castle |= MoveGen::C_BQ if fen_castle =~ /q/
       end
       castle
     end

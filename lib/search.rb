@@ -432,7 +432,7 @@ module Chess
 
 
       @node.tactical_edges.each do |move|
-        next if move.see && move.see < 0  # moves are ordered by SEE
+        # next if move.see && move.see < 0  # moves are ordered by SEE
         $quiescence_calls += 1
 
         MoveGen::make!(@node, move)

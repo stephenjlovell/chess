@@ -33,6 +33,7 @@ typedef unsigned long BB;
 typedef struct {
   BB pieces[2][6];
   BB occupied[2];
+  int material[2];
 } BRD;
 
 
@@ -57,7 +58,7 @@ typedef enum { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING } enumPiece;
 
 extern int piece_values[6]; 
 
-extern BRD *cBoard;
+// extern BRD *cBoard;
 
 extern BB uni_mask;
 extern BB empty_mask;

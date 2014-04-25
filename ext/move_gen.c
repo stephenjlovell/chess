@@ -68,10 +68,10 @@ BB queen_attacks(BB occ, enumSq sq){
 }                                                 
 
 
+VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_rights, VALUE moves){
 
-VALUE get_non_captures(VALUE self, VALUE color, VALUE castle_rights, VALUE moves){
-  assert(cBoard != NULL); // pointer BRD *cBoard is NULL. Create a PiecewiseBoard 
-  int c = SYM2COLOR(color);      // instance before generating moves.
+  BRD *cBoard = get_cBoard(p_board);
+  int c = SYM2COLOR(color);     
   int from, to;
   BB occupied = Occupied();
   BB empty = ~occupied;
@@ -107,7 +107,6 @@ VALUE get_non_captures(VALUE self, VALUE color, VALUE castle_rights, VALUE moves
   //  5. are promoted to another piece type if they reach the enemy's back rank.
 
   piece_id = INT2NUM(0x10|c);
-
   if(c){ // white to move
     single_advances = (cBoard->pieces[WHITE][PAWN]<<8) & empty & (~row_masks[7]); // promotions generated in get_captures
     double_advances = ((single_advances & row_masks[2])<<8) & empty;
@@ -173,8 +172,9 @@ VALUE get_non_captures(VALUE self, VALUE color, VALUE castle_rights, VALUE moves
 }
 // Pawn promotions are also generated during get_captures routine.
 
-VALUE get_captures(VALUE self, VALUE color, VALUE sq_board, VALUE enp_target, VALUE moves, VALUE promotions){
-  assert(cBoard != NULL); // pointer BRD *cBoard is NULL. Create a PiecewiseBoard instance before generating moves.
+VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board, VALUE enp_target, VALUE moves, VALUE promotions){
+  BRD *cBoard = get_cBoard(p_board);
+
   int c = SYM2COLOR(color); // color of side to move
   int from, to;
   BB occupied = Occupied();
@@ -317,8 +317,8 @@ extern void Init_move_gen(){
   cls_king_capture = rb_define_class_under(mod_move, "KingCapture", cls_move_strategy);
   cls_castle = rb_define_class_under(mod_move, "Castle", cls_move_strategy);
 
-  rb_define_module_function(mod_move_gen, "get_non_captures", get_non_captures, 3);
-  rb_define_module_function(mod_move_gen, "get_captures", get_captures, 5);
+  rb_define_module_function(mod_move_gen, "get_non_captures", get_non_captures, 4);
+  rb_define_module_function(mod_move_gen, "get_captures", get_captures, 6);
 
   printf("done.\n");
 }

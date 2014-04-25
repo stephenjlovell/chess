@@ -22,8 +22,9 @@
 #include "attack.h"
 
 
-BB attack_map(enumSq sq){
+BB attack_map(VALUE p_board, enumSq sq){
   BB attacks = 0;
+  BRD *cBoard = get_cBoard(p_board);
   BB occ = Occupied();
   // Pawns
   attacks |= (pawn_attack_masks[BLACK][sq] & cBoard->pieces[WHITE][PAWN]) |
@@ -43,7 +44,8 @@ BB attack_map(enumSq sq){
   return attacks;
 }
 
-int is_attacked_by(enumSq sq, int c){
+int is_attacked_by(VALUE p_board, enumSq sq, int c){
+  BRD *cBoard = get_cBoard(p_board);
   int e = c^1;  // enemy color
   BB occ = Occupied();
   // Pawns
@@ -59,9 +61,10 @@ int is_attacked_by(enumSq sq, int c){
   return 0;
 }
 
-VALUE is_in_check(VALUE self, VALUE side_to_move){
+VALUE is_in_check(VALUE self, VALUE p_board, VALUE side_to_move){
+  BRD *cBoard = get_cBoard(p_board);
   int c = SYM2COLOR(side_to_move);
-  return (is_attacked_by(furthest_forward(c, cBoard->pieces[c][KING]), c) ? Qtrue : Qfalse);
+  return (is_attacked_by(p_board, furthest_forward(c, cBoard->pieces[c][KING]), c) ? Qtrue : Qfalse);
 }
 
 
@@ -74,20 +77,22 @@ BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int
 }
 
 
-VALUE static_exchange_evaluation(VALUE self, VALUE from, VALUE to, VALUE side_to_move, VALUE sq_board){
-  assert(cBoard != NULL);
+static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, VALUE to, VALUE side_to_move, VALUE sq_board){
   to = (NUM2INT(to));
   from = (NUM2INT(from));
   int c = SYM2COLOR(side_to_move);
   int next_victim, type;
   int temp_color = c;
   int score = 0;
+
+  BRD *cBoard = get_cBoard(p_board);
+
   // get initial map of all squares directly attacking this square (does not include 'discovered'/hidden attacks)
   const BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
                          cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
   const BB r_attackers = cBoard->pieces[WHITE][ROOK]  | cBoard->pieces[BLACK][ROOK] | 
                          cBoard->pieces[WHITE][QUEEN] | cBoard->pieces[BLACK][QUEEN];
-  BB temp_map = attack_map(to);
+  BB temp_map = attack_map(p_board, to);
   BB temp_occ = Occupied();
   BB temp_pieces;
 
@@ -132,10 +137,10 @@ VALUE static_exchange_evaluation(VALUE self, VALUE from, VALUE to, VALUE side_to
 extern void Init_attack(){
   VALUE mod_chess = rb_define_module("Chess");
   VALUE cls_position = rb_define_class_under(mod_chess, "Position", rb_cObject);
-  rb_define_method(cls_position, "side_in_check?", RUBY_METHOD_FUNC(is_in_check), 1);
+  rb_define_method(cls_position, "side_in_check?", RUBY_METHOD_FUNC(is_in_check), 2);
 
   VALUE mod_search = rb_define_module_under(mod_chess, "Search");
-  rb_define_module_function(mod_search, "static_exchange_evaluation", static_exchange_evaluation, 4);
+  rb_define_module_function(mod_search, "static_exchange_evaluation", static_exchange_evaluation, 5);
 }
 
 

@@ -36,7 +36,7 @@ module Chess
 
     class Position
       attr_accessor :board, :pieces, :side_to_move, :enemy, :halfmove_clock, :castle, :enp_target, 
-                    :hash, :king_location, :material, :tropism
+                    :hash, :king_location, :tropism
 
       def initialize(board=nil, side_to_move=:w, castle=0b1111, enp_target=nil, halfmove_clock=0)
         @side_to_move, @castle, @enp_target, @halfmove_clock = side_to_move, castle, enp_target, halfmove_clock
@@ -46,29 +46,17 @@ module Chess
         @pieces = Bitboard::PiecewiseBoard.new(@board)
         # Calculate an initial Zobrist hash key for the position.
         @hash = @board.hash ^ Memory::enp_key(enp_target) ^ (@side_to_move==:w ? 1 : 0)
-        # Set initial value of material (sum of each piece value adjusted for it's location on board) for each side.
-        # material values are incrementally updated during move generation.
-        @material = { w: Evaluation::material(self, :w, Evaluation::base_material(self, :w) <= Pieces::ENDGAME_VALUE), 
-                      b: Evaluation::material(self, :b, Evaluation::base_material(self, :b) <= Pieces::ENDGAME_VALUE) }
         # Set initial king tropism bonuses (closeness of a side's non-king pieces to the enemy king) for each side.
         # King tropism bonuses are incrementally updated during move generation.
         @tropism = { w: Evaluation::king_tropism(self, :w), b: Evaluation::king_tropism(self, :w) } 
       end
 
       def own_material
-        @material[@side_to_move]
-      end
-
-      def own_material=(value)
-        @material[@side_to_move] = value
+        @pieces.get_material(@side_to_move)
       end
 
       def enemy_material
-        @material[@enemy]
-      end
-
-      def enemy_material=(value)
-        @material[@enemy] = value
+        @pieces.get_material(@enemy)
       end
 
       def own_tropism
@@ -111,11 +99,11 @@ module Chess
       end
 
       def in_check?
-        side_in_check?(@side_to_move)
+        side_in_check?(@pieces, @side_to_move)
       end
 
       def enemy_in_check?
-        side_in_check?(@enemy)
+        side_in_check?(@pieces, @enemy)
       end
 
       # Verify that the given move would not leave the current side's king in check.
@@ -154,8 +142,8 @@ module Chess
       def get_moves(depth, enhanced_sort) 
         promotions, captures, moves = [], [], []
 
-        MoveGen::get_captures(@side_to_move, @board.squares, @enp_target, captures, promotions)
-        MoveGen::get_non_captures(@side_to_move, @castle, moves)
+        MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
+        MoveGen::get_non_captures(@pieces, @side_to_move, @castle, moves)
         # At higher depths, expend additional effort on move ordering.
 
         # return promotions + if enhanced_sort
@@ -183,7 +171,7 @@ module Chess
       # be performed.
       def get_captures # returns a sorted array of all possible moves for the current player.
         promotions, captures = [], []
-        MoveGen::get_captures(@side_to_move, @pieces, @enp_target, captures, promotions)
+        MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
         # During quiesence search, sorting captures by SEE has the added benefit of enabling the pruning of bad
         # captures (those with SEE < 0). In practice, this reduced the average number of q-nodes by around half. 
         # promotions + sort_captures_by_see!(captures)

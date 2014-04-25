@@ -148,14 +148,12 @@ module Chess
     def self.evaluate(position)
       $evaluation_calls += 1 
       # ((net_material(position) + mobility(position) + net_king_tropism(position))/EVAL_GRAIN).round.to_i
-      net_material(position) + net_king_tropism(position) + mobility(position) 
+      net_material(position) + net_king_tropism(position) + net_mobility(position) 
     end
 
     # Sums up the value of all pieces in play for the given side (without any positional bonuses/penalties).
     def self.base_material(position, side)
-      0
-      # position.pieces[side].inject(0) { |total, (key, piece)| total += piece.class.value }
-    
+      position.pieces.get_material(side) - Pieces::PIECE_VALUES[:K]    
     end
 
     private
@@ -167,14 +165,8 @@ module Chess
       (position.own_material - position.enemy_material)
     end
 
-    # Return the net king tropism bonus.  Each side is awarded a bonus based on the proximity of its pieces
-    # to the enemy king.  King tropism bonuses for each side are incrementally updated during make and unmake.
-    def self.net_king_tropism(pos)
-      pos.own_tropism - pos.enemy_tropism
-    end
-
     # Award a bonus/penalty depending on which side (if any) is in check.
-    def self.mobility(position)  
+    def self.net_mobility(position)  
       if position.in_check?
         -350
       elsif position.enemy_in_check?
@@ -182,6 +174,14 @@ module Chess
       else
         0
       end
+    end
+
+
+    # Return the net king tropism bonus.  Each side is awarded a bonus based on the proximity of its pieces
+    # to the enemy king.  King tropism bonuses for each side are incrementally updated during make and unmake.
+    def self.net_king_tropism(pos)
+      # pos.own_tropism - pos.enemy_tropism
+      0
     end
 
     # Award a bonus/penalty for each piece in play based on the value of the piece and its distance 
@@ -193,15 +193,7 @@ module Chess
       #   sum += Tropism::get_bonus(piece, loc, enemy_king_location)
       # end
       # return sum
-      
-    end
-
-    def self.material(position, side, endgame=nil) # =~ 1,040 at start
-      # position.pieces[side].inject(0) do |total, (key, piece)| 
-      #   total += adjusted_value(position, piece, key, endgame)
-      # end
       0
-
     end
 
     def self.adjusted_value(position, piece, square, endgame=nil)
