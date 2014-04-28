@@ -32,12 +32,16 @@ module Chess
     PIECE_ID = { wP: 17, wN: 19, wB: 21, wR: 23, wQ: 25, wK: 27,
                  bP: 16, bN: 18, bB: 20, bR: 22, bQ: 24, bK: 26 }
 
+    ID_TO_STR = PIECE_ID.invert.each.inject({}){|h, (id, sym)| h[id] = sym.to_s; h }
+
     PIECE_TYPES = [ :P, :N, :B, :R, :Q, :K ] 
 
     PIECE_SYMBOLS = [ :wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK ]
 
     # Assign each piece a base material value approximating its relative importance.      
     PIECE_VALUES = { P: 100, N: 320, B: 333, R: 510, Q: 880, K: 100000 }
+
+    VALUES = [100, 320, 333, 510, 880, 100000]
 
     # Send the piece values to the C extension so that any changes made to PIECE_VALUES will be reflected in 
     # the extension.

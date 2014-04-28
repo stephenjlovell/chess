@@ -35,10 +35,10 @@ module Chess
     #      This is approximated by awarding a bonus for each piece in play based on the value of the piece and its distance 
     #      to the opposing king.
 
-    BASE_PST = {  # Piece Square Tables (PSTs) are used to provide a small positional bonus/penalty for controlling valuable       
+    BASE_PST = [  # Piece Square Tables (PSTs) are used to provide a small positional bonus/penalty for controlling valuable       
                   # real estate on the board. Base PSTs are implemented relative to black side to move. 
       # Pawn          
-      P: [ 0,  0,  0,  0,  0,  0,  0,  0, 
+         [ 0,  0,  0,  0,  0,  0,  0,  0, 
           -1,  1,  1,  1,  1,  1,  1, -1, 
           -2,  0,  1,  2,  2,  1,  0, -2, 
           -3, -1,  2, 10, 10,  2, -1, -3, 
@@ -47,7 +47,7 @@ module Chess
           -6, -4,  0,-20,-20,  0, -4, -6, 
            0,  0,  0,  0,  0,  0,  0,  0 ],
       # Knight
-      N: [  -8, -8, -6, -6, -6, -6, -8, -8, 
+         [  -8, -8, -6, -6, -6, -6, -8, -8, 
             -8,  0,  0,  0,  0,  0,  0, -8, 
             -6,  0,  4,  4,  4,  4,  0, -6, 
             -6,  0,  4,  8,  8,  4,  0, -6, 
@@ -56,7 +56,7 @@ module Chess
             -8,  0,  1,  2,  2,  1,  0, -8, 
            -10,-12, -6, -6, -6, -6,-12,-10 ],
       # Bishop
-      B: [ -3, -3, -3, -3, -3, -3, -3, -3, 
+         [ -3, -3, -3, -3, -3, -3, -3, -3, 
            -3,  0,  0,  0,  0,  0,  0, -3, 
            -3,  0,  2,  4,  4,  2,  0, -3, 
            -3,  0,  4,  5,  5,  4,  0, -3, 
@@ -65,7 +65,7 @@ module Chess
            -3,  2,  1,  1,  1,  1,  2, -3, 
            -3, -3,-10, -3, -3,-10, -3, -3 ],
       # Rook
-      R: [   4,  4,  4,  4,  4,  4,  4,  4,
+         [   4,  4,  4,  4,  4,  4,  4,  4,
             16, 16, 16, 16, 16, 16, 16, 16,
             -4,  0,  0,  0,  0,  0,  0, -4,
             -4,  0,  0,  0,  0,  0,  0, -4,
@@ -74,14 +74,14 @@ module Chess
             -4,  0,  0,  0,  0,  0,  0, -4,
              0,  0,  0,  2,  2,  0,  0,  0 ],
       # Queen
-      Q: [  0,  0,  0,  1,  1,  0,  0,  0, 
+         [  0,  0,  0,  1,  1,  0,  0,  0, 
             0,  0,  1,  2,  2,  1,  0,  0, 
             0,  1,  2,  2,  2,  2,  1,  0, 
             0,  1,  2,  3,  3,  2,  1,  0, 
             0,  1,  2,  3,  3,  2,  1,  0, 
             0,  1,  1,  2,  2,  1,  1,  0, 
             0,  0,  1,  1,  1,  1,  0,  0, 
-           -6, -6, -6, -6, -6, -6, -6, -6 ] }
+           -6, -6, -6, -6, -6, -6, -6, -6 ] ]
 
     KING_BASE = {
       false => [ -52, -50, -50, -50, -50, -50, -50, -52,   # In early game, encourage the king to stay on back 
@@ -115,22 +115,22 @@ module Chess
 
     # Initialize Piece Square Tables for each color, endgame status, and piece type.
     def self.create_pst
-      pst = { w: { false => {}, true => {} }, 
-              b: { false => {}, true => {} } }
-      BASE_PST.each do |type, arr|
+      pst = { w: { false => Array.new(6), true => Array.new(6) }, 
+              b: { false => Array.new(6), true => Array.new(6) } }
+      BASE_PST.each_with_index do |arr, type|
         pst[:b][false][type] = arr
         pst[:b][true][type] = arr
       end
-      pst[:b][false][:K] = KING_BASE[false]
-      pst[:b][true][:K] = KING_BASE[true]
+      pst[:b][false][5] = KING_BASE[false]
+      pst[:b][true][5] = KING_BASE[true]
 
-      BASE_PST.each do |type, arr|
+      BASE_PST.each_with_index do |arr, type|
         mirror = mirror_table(arr)
         pst[:w][false][type] = mirror
         pst[:w][true][type] = mirror   
       end
-      pst[:w][false][:K] = mirror_table(KING_BASE[false])
-      pst[:w][true][:K] = mirror_table(KING_BASE[true])
+      pst[:w][false][5] = mirror_table(KING_BASE[false])
+      pst[:w][true][5] = mirror_table(KING_BASE[true])
       return pst
     end
 
@@ -202,7 +202,7 @@ module Chess
 
     def self.pst_value(position, piece, square, endgame=nil)
       endgame = position.endgame?(position.side_to_move) if endgame.nil?
-      PST[position.side_to_move][endgame][piece][square]
+      PST[position.side_to_move][endgame][(piece>>1)&7][square]
     end
 
   end

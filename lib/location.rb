@@ -57,6 +57,10 @@ module Chess
     #    3. Simplified interface for vector addition through the :+ method. Displacement
     #       vectors are used for move generation, king saftey, and Static Exchange Evaluation.       
 
+    def self.sq_to_s(sq)
+      SQUARE_SYMS[sq].to_s
+    end
+
 
     class InvalidLocationError
     end

@@ -203,7 +203,8 @@ module Chess
     end
 
     # Associate each possible square and piece combination with its own random 64-bit key.
-    PSQ = Array.new(64) { Pieces::PIECE_ID.each_value.inject({}) { |h, id| h[id] = create_key; h } } 
+    PSQ_TABLE = Array.new(64) { Pieces::PIECE_ID.each_value.inject({}) { |h, id| h[id] = create_key; h } }
+     
     # Associate each possible en-passant target square with its own random 64-bit key.
     ENP = Array.new(64) { create_key }
 
@@ -217,7 +218,7 @@ module Chess
 
     # Return the Zobrist key corresponding to the given piece and location.
     def self.psq_key(piece_symbol, square)
-      PSQ[square][piece_symbol]
+      PSQ_TABLE[square][piece_symbol]
     end
 
 

@@ -74,6 +74,7 @@ module Chess
       end
 
       def see_score(position)
+        # puts "getting SEE score"
         # @see ||= Search::see(position, @to)
         @see ||= Search::static_exchange_evaluation(@from, @to, position.side_to_move, position.board)
       end
@@ -105,8 +106,8 @@ module Chess
       end
 
       def inspect
-        "<Chess::Move::Move <@piece:#{@piece}> <@from:#{@from}> <@to:#{@to}>" + 
-        "<@enp_target:#{@enp_target}> <@see:#{@see}> <@strategy:#{@strategy.inspect}>>"
+        "<Chess::Move::Move <@piece:#{Pieces::ID_TO_STR[@piece]}><@from:#{Location::sq_to_s(@from)}> " + 
+        "<@to:#{Location::sq_to_s(@to)}><@enp_target:#{@enp_target}><@see:#{@see}><@strategy:#{@strategy.inspect}>>"
       end
     end
 
@@ -216,17 +217,7 @@ module Chess
       def make!(position, piece, from, to)
         relocate_piece(position, piece, from, to)
         make_clock_adjustment(position)
-      begin
         position.pieces.remove_square(@captured_piece, to)  # Remove enemy piece from bitboard.
-      rescue
-        puts "piece: #{piece}"
-        puts @captured_piece
-        puts Location::SQUARE_SYMS[from] unless from.nil?
-        puts Location::SQUARE_SYMS[to] unless to.nil?
-        position.pieces.print
-        position.board.print
-        raise
-      end
       end
 
       def unmake!(position, piece, from, to)
@@ -266,7 +257,7 @@ module Chess
 
       def mvv_lva(piece)  # Most valuable victim, least valuable attacker heuristic. Used for move ordering of captures.
         # begin
-        return Pieces::PIECE_VALUES[@captured_piece] - piece
+        return Pieces::VALUES[(@captured_piece>>1)&7] - piece
         # rescue => err
         #   raise Memory::HashCollisionError
         # end
@@ -368,37 +359,52 @@ module Chess
       end
     end
 
+    WQ_ID = Pieces::PIECE_ID[:wQ]
+    BQ_ID = Pieces::PIECE_ID[:bQ]
+
     # Strategy used when a pawn moves onto the enemy back row, promoting it to a Queen.
     class PawnPromotion < MoveStrategy # Stores the existing pawn in move object and places a new Queen.
-      WQ_ID = Pieces::PIECE_ID[:wQ]
-      BQ_ID = Pieces::PIECE_ID[:bQ]
+
 
       include Irreversible
       def initialize(side_to_move)
-        @queen = side_to_move == :w ? WQ_ID : BQ_ID  # piece_id constants for queens.
+        @promoted_piece = side_to_move == :w ? WQ_ID : BQ_ID  # piece_id constants for queens.
       end
 
       def make!(position, piece, from, to)
-        relocate_piece(position, @queen, from, to) # do not add PST delta for this move, since the moved piece
-        make_clock_adjustment(position)            # is replaced by a new queen.
+        # do not add PST delta for this move, since the moved piece is replaced by a new queen.
+        make_clock_adjustment(position)
+        position.board[from] = 0
+        position.board[to] = @promoted_piece
+        position.pieces.remove_square(piece, from)
+        position.pieces.add_square(@promoted_piece, to)
       end
+
+      def unmake!(position, piece, from, to)
+        unmake_clock_adjustment(position)
+        position.board[from] = piece
+        position.board[to] = 0
+        position.pieces.add_square(piece, from)
+        position.pieces.remove_square(@promoted_piece, to)
+      end
+
 
       def print(piece, from, to)
         "#{piece} promotion #{from} to #{to}"
       end
 
       def own_material(position, piece, from, to)
-        @own_material ||= Evaluation::adjusted_value(position, @queen, to)
+        @own_material ||= Evaluation::adjusted_value(position, @promoted_piece, to)
                         - Evaluation::adjusted_value(position, piece, from)
       end
 
       def own_tropism(pos, piece, from, to)
-        @own_tropism ||= Tropism::get_bonus(@queen, to, pos.enemy_king_location) 
+        @own_tropism ||= Tropism::get_bonus(@promoted_piece, to, pos.enemy_king_location) 
                        - Tropism::get_bonus(piece, from, pos.enemy_king_location)
       end
 
       def hash(piece, from, to) # XOR out piece at from.  XOR in @queen at to.
-        Memory::psq_key(piece, from) ^ Memory::psq_key(@queen, to)
+        Memory::psq_key(piece, from) ^ Memory::psq_key(@promoted_piece, to)
       end
 
       def quiet?
@@ -407,32 +413,40 @@ module Chess
     end
 
     # Strategy used when a pawn moves onto the enemy back row by capturing another piece.
-    class PawnPromotionCapture < MoveStrategy
-      WQ_ID = Pieces::PIECE_ID[:wQ]
-      BQ_ID = Pieces::PIECE_ID[:bQ]
-      
+    class PawnPromotionCapture < MoveStrategy      
       include MakesCapture
 
       def initialize(captured_piece)  
         @captured_piece = captured_piece
-        @queen = (captured_piece & 1) == 0 ? WQ_ID : BQ_ID  # piece_id constants for queens.
+        @promoted_piece = (captured_piece & 1) == 0 ? WQ_ID : BQ_ID  # piece_id constants for queens.
       end
 
       def make!(position, piece, from, to)
-        relocate_piece(position, @queen, from, to) # do not add PST delta for this move, since the moved piece
-        make_clock_adjustment(position)            # is replaced by a new queen.
-        
-        # position.enemy_pieces.delete(to)
+        # do not add PST delta for this move, since the moved piece is replaced by a new queen.
+        make_clock_adjustment(position)
+        position.board[from] = 0
+        position.board[to] = @promoted_piece
+        position.pieces.remove_square(piece, from)
+        position.pieces.remove_square(@captured_piece, to)
+        position.pieces.add_square(@promoted_piece, to)
+      end
 
+      def unmake!(position, piece, from, to)
+        unmake_clock_adjustment(position)
+        position.board[from] = piece
+        position.board[to] = @captured_piece
+        position.pieces.add_square(piece, from)
+        position.pieces.add_square(@captured_piece, to)
+        position.pieces.remove_square(@promoted_piece, to)
       end
 
       def own_material(position, piece, from, to)
-        @own_material ||= Evaluation::adjusted_value(position, @queen, to)
+        @own_material ||= Evaluation::adjusted_value(position, @promoted_piece, to)
                         - Evaluation::adjusted_value(position, piece, from)
       end
 
       def own_tropism(pos, piece, from, to)
-        @own_tropism ||= Tropism::get_bonus(@queen, to, pos.enemy_king_location) 
+        @own_tropism ||= Tropism::get_bonus(@promoted_piece, to, pos.enemy_king_location) 
                        - Tropism::get_bonus(piece, from, pos.enemy_king_location)
       end
 
@@ -441,7 +455,7 @@ module Chess
       end
 
       def hash(piece, from, to) # XOR out piece at from. XOR out @captured_piece at to.  XOR in @queen at to.
-        Memory::psq_key(piece, from) ^ Memory::psq_key(@captured_piece, to) ^ Memory::psq_key(@queen, to)
+        Memory::psq_key(piece, from) ^ Memory::psq_key(@captured_piece, to) ^ Memory::psq_key(@promoted_piece, to)
       end
 
     end
@@ -490,7 +504,7 @@ module Chess
     end
 
     # The Factory class provides a simplified interface for instantiating Move objects, 
-    # hiding creation of strategy object instances from the client.
+    # hiding creation of strategy object instances from the client.                     
     class Factory  
       PROCS = { regular_move:           Proc.new { |*args| RegularMove.new                },
                 regular_capture:        Proc.new { |*args| RegularCapture.new(*args)      },

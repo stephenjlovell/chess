@@ -32,7 +32,6 @@ module Chess
   
   class Board
     include Enumerable
-    include Attack
     attr_accessor :squares
    
     # sets initial configuration of board, defaulting to the opening position.

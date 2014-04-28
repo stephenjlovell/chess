@@ -199,7 +199,6 @@ module Chess
       fen_castle
     end
 
-
     def self.epd_to_position(epd)
       begin
         fen = epd_to_fen(epd)
@@ -227,8 +226,6 @@ module Chess
       #   raise NotationFormatError, "could not convert fen to position: #{fen}"
       # end
     end
-
-    IS_NUMERIC = /\d/
     
     def self.fen_to_board(fen)
       id_to_sym = Pieces::PIECE_ID.invert
@@ -237,7 +234,7 @@ module Chess
       sq = 0
       fen_rows.each do |fen_row|
         fen_row.each_char do |char|
-          if char =~ IS_NUMERIC
+          if char =~ /\d/
             sq += char.to_i
           else
             board[sq] = Pieces::PIECE_ID[FEN_TO_SYM[char]]

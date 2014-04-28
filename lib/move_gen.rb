@@ -39,7 +39,7 @@ module Chess
 
     # Updates the side to move and hash key for position.
     def self.flip(position, move)
-      begin
+    begin
       if position.side_to_move == :w
         position.side_to_move, position.enemy = :b, :w
       else

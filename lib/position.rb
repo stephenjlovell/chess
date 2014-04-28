@@ -48,7 +48,8 @@ module Chess
         @hash = @board.hash ^ Memory::enp_key(enp_target) ^ (@side_to_move==:w ? 1 : 0)
         # Set initial king tropism bonuses (closeness of a side's non-king pieces to the enemy king) for each side.
         # King tropism bonuses are incrementally updated during move generation.
-        @tropism = { w: Evaluation::king_tropism(self, :w), b: Evaluation::king_tropism(self, :w) } 
+        
+        # @tropism = { w: Evaluation::king_tropism(self, :w), b: Evaluation::king_tropism(self, :w) } 
       end
 
       def own_material
@@ -108,9 +109,6 @@ module Chess
 
       # Verify that the given move would not leave the current side's king in check.
       def evades_check?(move)
-        # puts "\n"
-        # puts in_check?
-
         captured_piece = @board[move.to]
         piece, from, to = move.piece, move.from, move.to
         @pieces.relocate_piece(piece, from, to)
@@ -123,7 +121,7 @@ module Chess
           in_check = self.in_check?   
         end
         @pieces.relocate_piece(piece, from, to)
-        # puts in_check
+
         return !in_check
       end
 
@@ -175,7 +173,7 @@ module Chess
         # During quiesence search, sorting captures by SEE has the added benefit of enabling the pruning of bad
         # captures (those with SEE < 0). In practice, this reduced the average number of q-nodes by around half. 
         # promotions + sort_captures_by_see!(captures)
-        promotions + captures
+        promotions + sort_captures!(captures)
       end
       alias :tactical_edges :get_captures
 

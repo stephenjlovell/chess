@@ -31,7 +31,6 @@ def perft(node, depth)  # Legal MoveGen speed/accuracy test. Counts all leaf nod
   sum = 0
   node.get_moves(depth, true).each do |move|
     Chess::MoveGen::make!(node, move)
-    # node.board.print
     sum += perft(node, depth-1)
     Chess::MoveGen::unmake!(node, move)
   end
@@ -56,18 +55,24 @@ def test_notation_conversion(file)
   count = 0
   File.readlines(file).each do |line|
     count += 1
-    # print "#{count}."
     line = %Q{#{line}}
+
     original_fen = Chess::Notation::epd_to_fen(line)
-    puts original_fen
     pos = Chess::Notation::fen_to_position(original_fen)
-    puts pos.castle
     new_fen = Chess::Notation::position_to_fen(pos)
     yield(original_fen, new_fen)
   end
 end
 
-
+def generate_moves_for_each(file, depth)
+  raise "test suite #{file} not found" unless File.exists?(file)
+  File.readlines(file)[24..27].each_with_index do |line, i|
+    print "#{i}."
+    line = %Q{#{line}}
+    pos = Chess::Notation::epd_to_position(line)
+    perft(pos, depth)
+  end
+end
 
 ChessProblem = Struct.new(:id, :position, :best_moves, :avoid_moves, :ai_response, :score)
 
@@ -76,6 +81,7 @@ def load_test_suite(file)
   problems = []
   File.readlines(file).each do |line|
     line = %Q{#{line}}
+
     pos = Chess::Notation::epd_to_position(line)
     best_moves = best_moves_from_epd(line)
     avoid_moves = avoid_moves_from_epd(line)
@@ -148,16 +154,21 @@ def score_question(problem) # answer is considered correct if it matches any ans
 end
 
 def move_matches_pgn?(move, pgn)
+  
   return false if move.nil?
-  type, to = move.piece.class.type.to_s, move.to.to_s
+  
+  type, to = Chess::Pieces::PIECE_TYPES[(move.piece>>1)&7].to_s , Chess::Location::get_location(move.to).to_s
+  
   if pgn.length == 2
-    return pgn == to 
+    return pgn == to
   elsif pgn[-1] == "+"
     new_pgn = pgn.slice(0..-2)
     return new_pgn[0] == type && new_pgn[-2..-1] == to  # this should also test whether the correct piece is moving.
   else
     return pgn[0] == type && pgn[-2..-1] == to
   end
+
+
 end
 
 

@@ -32,11 +32,7 @@ module Chess
       end
 
       def clear
-        @table.each do |sym, locations|
-          locations.each do |to, nodecount|
-            @table[sym][to] = 0
-          end
-        end
+        @table = create_history_table
       end
 
       def [](symbol)
@@ -47,17 +43,13 @@ module Chess
       # branching factor for the program. Since the exact subtree node count is returned by each alpha-beta
       # call, this is unnecessary. Use the exact nodecount to increment the history counter.
       def store(move, nodecount)
-        @table[move.piece.symbol][move.to] += nodecount
+        @table[move.piece][move.to] += nodecount
       end
 
       private
       # Create a 12 x 64 table associating piece symbol and square with an integer history counter.
       def create_history_table
-        hsh = {}
-        Pieces::PIECE_SYMBOLS.each do |sym|
-          hsh[sym] = Array.new(64, 0)
-        end
-        return hsh
+        Pieces::PIECE_ID.values.each.inject({}) {|h, id| h[id] = Array.new(64, 0); h }
       end
 
     end

@@ -76,6 +76,14 @@ BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int
   return temp_map;
 }
 
+// The Static Exchange Evaluation (SEE) heuristic provides a way to determine if a capture 
+// is a 'winning' or 'losing' capture.
+
+// 1. When a capture results in an exchange of pieces by both sides, SEE is used to determine the 
+//    net gain/loss in material for the side initiating the exchange.
+// 2. SEE scoring of moves is used for move ordering of captures at critical nodes.
+// 3. During quiescence search, SEE is used to prune losing captures. This provides a very low-risk
+//    way of reducing the size of the q-search without impacting playing strength.
 
 static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, VALUE to, VALUE side_to_move, VALUE sq_board){
   to = (NUM2INT(to));

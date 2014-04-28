@@ -68,7 +68,7 @@ BB queen_attacks(BB occ, enumSq sq){
 }                                                 
 
 
-VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_rights, VALUE moves){
+static VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_rights, VALUE moves){
 
   BRD *cBoard = get_cBoard(p_board);
   int c = SYM2COLOR(color);     
@@ -80,23 +80,23 @@ VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_righ
 
   BB single_advances, double_advances;
 
-  // Castles
-  int castle = NUM2INT(castle_rights);
-  if(c){
-    if ((castle & C_WQ) && !(castle_queenside_intervening[c] & occupied)){
-      build_castle(0x1b, E1, C1, 0x17, A1, D1, moves)
-    }
-    if ((castle & C_WK) && !(castle_kingside_intervening[c] & occupied)){
-      build_castle(0x1b, E1, G1, 0x17, H1, F1, moves)
-    }
-  } else {
-    if ((castle & C_BQ) && !(castle_queenside_intervening[c] & occupied)){
-      build_castle(0x1a, E8, C8, 0x16, A8, D8, moves)
-    }
-    if ((castle & C_BK) && !(castle_kingside_intervening[c] & occupied)){
-      build_castle(0x1a, E8, C8, 0x16, A8, D8, moves)
-    }
-  }
+  // // Castles
+  // int castle = NUM2INT(castle_rights);
+  // if(c){
+  //   if ((castle & C_WQ) && !(castle_queenside_intervening[c] & occupied)){
+  //     build_castle(0x1b, E1, C1, 0x17, A1, D1, moves)
+  //   }
+  //   if ((castle & C_WK) && !(castle_kingside_intervening[c] & occupied)){
+  //     build_castle(0x1b, E1, G1, 0x17, H1, F1, moves)
+  //   }
+  // } else {
+  //   if ((castle & C_BQ) && !(castle_queenside_intervening[c] & occupied)){
+  //     build_castle(0x1a, E8, C8, 0x16, A8, D8, moves)
+  //   }
+  //   if ((castle & C_BK) && !(castle_kingside_intervening[c] & occupied)){
+  //     build_castle(0x1a, E8, C8, 0x16, A8, D8, moves)
+  //   }
+  // }
 
   // Pawns
   //  Pawns behave differently than other pieces. They: 
@@ -105,6 +105,8 @@ VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_righ
   //  3. can move an extra space from the starting square;
   //  4. can capture other pawns via the En-Passant Rule;
   //  5. are promoted to another piece type if they reach the enemy's back rank.
+
+  // assert(!(cBoard->occupied[1] & cBoard->occupied[0]));
 
   piece_id = INT2NUM(0x10|c);
   if(c){ // white to move
@@ -163,16 +165,33 @@ VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_righ
   }
   // Kings
   piece_id = INT2NUM(0x1a|c); // get king piece ID for color c.
-  from = furthest_forward(c, cBoard->pieces[c][KING]); 
-  for(BB t = (king_masks[from] & empty); t; clear_sq(to, t)){ // generate to squares
-    to = furthest_forward(c, t);
-    build_move(piece_id, from, to, cls_king_move, moves);
+  for(BB f = cBoard->pieces[c][KING]; f; clear_sq(from, f)){
+    from = furthest_forward(c, cBoard->pieces[c][KING]); 
+    for(BB t = (king_masks[from] & empty); t; clear_sq(to, t)){ // generate to squares
+      to = furthest_forward(c, t);
+      build_move(piece_id, from, to, cls_king_move, moves);
+    } 
   }
+
   return Qnil;
 }
+
+
+// void build_capture(int id, int from, int to, VALUE cls, VALUE sq_board, VALUE moves){                
+//   VALUE args[4], strat_args[1];                                                              
+//   strat_args[0] = rb_ary_entry(sq_board, to);                                       
+//   VALUE strategy = rb_class_new_instance(1, strat_args, cls);                       
+//   args[0] = id;                                                               
+//   args[1] = INT2NUM(from);                                                    
+//   args[2] = INT2NUM(to);                                                      
+//   args[3] = strategy;
+//   VALUE move = rb_class_new_instance(4, args, cls_move);                                                 
+//   rb_ary_push(moves, move);               
+// } 
+
 // Pawn promotions are also generated during get_captures routine.
 
-VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board, VALUE enp_target, VALUE moves, VALUE promotions){
+static VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board, VALUE enp_target, VALUE moves, VALUE promotions){
   BRD *cBoard = get_cBoard(p_board);
 
   int c = SYM2COLOR(color); // color of side to move
@@ -180,9 +199,7 @@ VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board, VALUE
   BB occupied = Occupied();
   BB enemy = Placement(c^1);
   VALUE piece_id;
-  VALUE move;
-  VALUE captured_piece;
-  VALUE strategy;
+
 
   // Pawns
   piece_id = INT2NUM(0x10|c);
@@ -210,38 +227,39 @@ VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board, VALUE
     
     promotion_advances = ((cBoard->pieces[c][PAWN]>>8) & row_masks[0]) & (~occupied); 
   }
-  // promotion captures
-  for(; promotion_captures_left; clear_sq(to, promotion_captures_left)){
-    to = furthest_forward(c, promotion_captures_left);
-    build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_promotion_capture, sq_board, promotions);
-  }
-  for(; promotion_captures_right; clear_sq(to, promotion_captures_right)){
-    to = furthest_forward(c, promotion_captures_right);
-    build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_promotion_capture, sq_board, promotions);
-  }
-  // promotion advances
-  for(; promotion_advances; clear_sq(to, promotion_advances)){
-    to = furthest_forward(c, promotion_advances);
-    build_promotion(piece_id, to+pawn_from_offsets[c][0], to, color, cls_promotion, promotions); 
-  }
-  // regular pawn attacks
-  for(; left_attacks; clear_sq(to, left_attacks)){
-    to = furthest_forward(c, left_attacks);
-    build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_regular_capture, sq_board, moves);
-  }
-  for(; right_attacks; clear_sq(to, right_attacks)){
-    to = furthest_forward(c, right_attacks);
-    build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_regular_capture, sq_board, moves);
-  }
 
-  // en-passant captures
-  if(enp_target != Qnil){
-    int target = NUM2INT(enp_target);
-    for(BB f = cBoard->pieces[c][PAWN] & (pawn_enp_masks[target]); f; clear_sq(from, f)){
-      from = furthest_forward(c, f);
-      build_enp_capture(piece_id, from, (c?(from+8):(from-8)), cls_enp_capture, target, sq_board, moves);   
-    }
-  }
+  // // promotion captures
+  // for(; promotion_captures_left; clear_sq(to, promotion_captures_left)){
+  //   to = furthest_forward(c, promotion_captures_left);
+  //   build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_promotion_capture, sq_board, promotions);
+  // }
+  // for(; promotion_captures_right; clear_sq(to, promotion_captures_right)){
+  //   to = furthest_forward(c, promotion_captures_right);
+  //   build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_promotion_capture, sq_board, promotions);
+  // }
+  // // promotion advances
+  // for(; promotion_advances; clear_sq(to, promotion_advances)){
+  //   to = furthest_forward(c, promotion_advances);
+  //   build_promotion(piece_id, to+pawn_from_offsets[c][0], to, color, cls_promotion, promotions); 
+  // }
+  // // regular pawn attacks
+  // for(; left_attacks; clear_sq(to, left_attacks)){
+  //   to = furthest_forward(c, left_attacks);
+  //   build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_regular_capture, sq_board, moves);
+  // }
+  // for(; right_attacks; clear_sq(to, right_attacks)){
+  //   to = furthest_forward(c, right_attacks);
+  //   build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_regular_capture, sq_board, moves);
+  // }
+
+  // // en-passant captures
+  // if(enp_target != Qnil){
+  //   int target = NUM2INT(enp_target);
+  //   for(BB f = cBoard->pieces[c][PAWN] & (pawn_enp_masks[target]); f; clear_sq(from, f)){
+  //     from = furthest_forward(c, f);
+  //     build_enp_capture(piece_id, from, (c?(target+8):(target-8)), cls_enp_capture, target, sq_board, moves);   
+  //   }
+  // }
 
   // Knights
   piece_id = INT2NUM(0x12|c); // get knight piece ID for color c.
@@ -282,11 +300,14 @@ VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board, VALUE
   }
   // King
   piece_id = INT2NUM(0x1a|c); // get king piece ID for color c.
-  from = furthest_forward(c, cBoard->pieces[c][KING]);
-  for(BB t = (king_masks[from] & enemy); t; clear_sq(to, t)){ // generate to squares
-    to = furthest_forward(c, t);
-    build_capture(piece_id, from, to, cls_king_capture, sq_board, moves);
+  for(BB f = cBoard->pieces[c][KING]; f; clear_sq(from, f)){
+    from = furthest_forward(c, cBoard->pieces[c][KING]);
+    for(BB t = (king_masks[from] & enemy); t; clear_sq(to, t)){ // generate to squares
+      to = furthest_forward(c, t);
+      build_capture(piece_id, from, to, cls_king_capture, sq_board, moves);
+    }
   }
+
   return Qnil;
 }
 

@@ -134,6 +134,7 @@ module Chess
     # Make an initial guess at the heuristic value of the root node. Used in MTD(f) when no estimate from a previous
     # search or from the previous ID iteration is available.
     def self.get_first_guess
+      # @node.value
       if @node.in_check?
         move, value = alpha_beta_root(PLY_VALUE)
       else
@@ -183,7 +184,6 @@ module Chess
         # Before calling alpha_beta_root, verify local bounds stay within global bounds.
         alpha = Chess::max(gamma-step, @lower_bound)
         beta = Chess::min(gamma, @upper_bound)
-        # puts "beta == alpha" if alpha == beta
 
         # puts "MT(#{depth}, #{gamma-step}, #{gamma}), @lower = #{@lower_bound}, @upper = #{@upper_bound}"
         move, guess = alpha_beta_root(depth, alpha, beta)
@@ -286,6 +286,7 @@ module Chess
     def self.alpha_beta(depth, alpha=-$INF, beta=$INF, extension=0, can_null=true)
       result, best_move = -$INF, nil
 
+      # return @node.value, 1 if depth+extension < PLY_VALUE
       return quiescence(0, alpha, beta) if depth+extension < PLY_VALUE
 
       in_check = @node.in_check?
@@ -321,10 +322,10 @@ module Chess
         end
       end
 
-      # Internal Iterative Deepening (IID)
-      if first_move.nil? && depth >= @iid_minimum
-        first_move, value = internal_iterative_deepening_alpha_beta(depth-THREE_PLY, alpha, beta, extension)
-      end
+      # # Internal Iterative Deepening (IID)
+      # if first_move.nil? && depth >= @iid_minimum
+      #   first_move, value = internal_iterative_deepening_alpha_beta(depth-THREE_PLY, alpha, beta, extension)
+      # end
 
       sum, legal_moves = 1, false
 
@@ -453,39 +454,8 @@ module Chess
       $tt.store(@node, depth, sum, result, alpha, beta, best_move)
     end
 
-    #  The Static Exchange Evaluation (SEE) heuristic provides a way to determine if a capture 
-    #  is a 'winning' or 'losing' capture.
-    #
-    #  1. When a capture results in an exchange of pieces by both sides, SEE is used to determine the 
-    #     net gain/loss in material for the side initiating the exchange.
-    #  2. SEE scoring of moves is used for move ordering of captures at critical nodes.
-    #  3. During quiescence search, SEE is used to prune losing captures. This provides a very low-risk
-    #     way of reducing the size of the q-search without impacting playing strength.
 
-    # This iterative SEE implementation uses alpha beta pruning as proposed by H.G. Muller here:
-    # http://www.talkchess.com/forum/viewtopic.php?topic_view=threads&p=310782&t=30905
-    def self.see(position, to) 
-      board = position.board
-      attackers = board.get_square_attackers(to)
-      alpha, beta, score, own_counter, enemy_counter = -$INF, $INF, 0, 0, 0
-      own, enemy = position.side_to_move, position.enemy
-      own_attackers, enemy_attackers = attackers[own].count, attackers[enemy].count
 
-      victim = board[to]
-      while true
-        score += Pieces::get_value_by_sym(victim)
-        return alpha if score <= alpha || own_counter >= own_attackers || victim.nil?  # stand pat 
-        victim = board[attackers[own][own_counter]] 
-        own_counter += 1
-        beta = score if score < beta # beta update
-
-        score -= Pieces::get_value_by_sym(victim)
-        return beta if score >= beta || enemy_counter >= enemy_attackers || victim.nil?  # stand pat
-        victim = board[attackers[enemy][enemy_counter]]  
-        enemy_counter += 1
-        alpha = score if score > alpha  # alpha update
-      end
-    end
 
     def self.reset_counters
       $main_calls, $quiescence_calls, $evaluation_calls, $memory_calls, $passes = 0, 0, 0, 0, 0
@@ -505,13 +475,19 @@ module Chess
       Chess::current_game.clock.restart
       @node, @max_depth, @aggregator, @verbose = node, max_ply*PLY_VALUE, aggregator, verbose
       @iid_minimum = Chess::max(@max_depth-THREE_PLY, FOUR_PLY)
-      # @previous_value = Chess::current_game.previous_value
       @max_side = @node.side_to_move
       
       reset_counters
       clear_memory
 
+      begin
       move, value = block_given? ? yield : iterative_deepening_mtdf_step
+      rescue
+        @node.pieces.print
+        @node.board.print
+        raise
+      end
+
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"
