@@ -76,11 +76,8 @@ module Chess
       def see_score(position)
         # puts "getting SEE score"
         # @see ||= Search::see(position, @to)
-        @see ||= Search::static_exchange_evaluation(@from, @to, position.side_to_move, position.board)
-      end
-
-      def strategy
-        @strategy.class
+        @see ||= Search::static_exchange_evaluation(position.pieces, @from, @to, position.side_to_move, position.board.squares)
+        # puts @see
       end
 
       def hash # XOR out the old en-passant key, if any.
@@ -492,6 +489,10 @@ module Chess
 
       def enemy_tropism(pos, piece, from, to) # recalculation of enemy tropism is caused by king movement.
         @enemy_tropism ||= Evaluation::king_tropism(pos, pos.enemy, to) - pos.enemy_tropism
+      end
+
+      def inspect
+        "<#{self.class} <@rook:#{@rook}> <@rook_from:#{@rook_from}> <@rook_to:#{@rook_to}>>"
       end
 
       def print(piece, from, to)

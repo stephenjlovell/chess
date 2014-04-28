@@ -147,21 +147,20 @@ module Chess
         # return promotions + if enhanced_sort
         #   enhanced_sort(captures, moves, depth)
         # else
-        #   basic_sort(captures, moves, depth)
+        #   basic_sort(captures, moves)
         # end
-        return promotions + captures + moves
+        return promotions + basic_sort(captures, moves)
       end
       alias :edges :get_moves
 
       def enhanced_sort(captures, moves, depth)
         winning_captures, losing_captures = split_captures_by_see!(captures)
         killers, non_killers = split_killers(moves, depth)
-        castles = MoveGen::get_castles(self)
-        winning_captures + killers + losing_captures + castles + non_killers
+        winning_captures + killers + losing_captures + non_killers
       end
 
-      def basic_sort(captures, moves, depth)
-        sort_captures!(captures) + MoveGen::get_castles(self) + history_sort!(moves)
+      def basic_sort(captures, moves)
+        sort_captures!(captures) + history_sort!(moves)
       end
 
       # Generate only moves that create big swings in material balance, i.e. captures and promotions. 
@@ -220,7 +219,7 @@ module Chess
       end
 
       def history_sort!(moves)
-        moves.sort! { |x,y| $history[y.piece.symbol][y.to] <=> $history[x.piece.symbol][x.to] }
+        moves.sort! { |x,y| $history[y.piece][y.to] <=> $history[x.piece][x.to] }
       end
 
     end

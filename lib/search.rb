@@ -480,13 +480,13 @@ module Chess
       reset_counters
       clear_memory
 
-      begin
+      # begin
       move, value = block_given? ? yield : iterative_deepening_mtdf_step
-      rescue
-        @node.pieces.print
-        @node.board.print
-        raise
-      end
+      # rescue
+      #   @node.pieces.print
+      #   @node.board.print
+      #   raise
+      # end
 
 
       if @verbose && !move.nil? 

@@ -32,8 +32,8 @@ static const int C_BK = 0x1;
 void setup_castle_masks(){
   castle_queenside_intervening[1] |= (sq_mask_on(B1)|sq_mask_on(C1)|sq_mask_on(D1));
   castle_kingside_intervening[1]  |= (sq_mask_on(F1)|sq_mask_on(G1));
-  castle_queenside_intervening[0] = castle_queenside_intervening[1]<<56;
-  castle_kingside_intervening[0] = castle_kingside_intervening[1]<<56;  
+  castle_queenside_intervening[0] = (castle_queenside_intervening[1]<<56);
+  castle_kingside_intervening[0] = (castle_kingside_intervening[1]<<56);  
 }
 
 BB scan_down(BB occ, enumDir dir, enumSq sq) {
@@ -69,34 +69,35 @@ BB queen_attacks(BB occ, enumSq sq){
 
 
 static VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_rights, VALUE moves){
-
   BRD *cBoard = get_cBoard(p_board);
   int c = SYM2COLOR(color);     
   int from, to;
   BB occupied = Occupied();
   BB empty = ~occupied;
   VALUE piece_id;
-  VALUE move;
 
   BB single_advances, double_advances;
 
-  // // Castles
-  // int castle = NUM2INT(castle_rights);
-  // if(c){
-  //   if ((castle & C_WQ) && !(castle_queenside_intervening[c] & occupied)){
-  //     build_castle(0x1b, E1, C1, 0x17, A1, D1, moves)
-  //   }
-  //   if ((castle & C_WK) && !(castle_kingside_intervening[c] & occupied)){
-  //     build_castle(0x1b, E1, G1, 0x17, H1, F1, moves)
-  //   }
-  // } else {
-  //   if ((castle & C_BQ) && !(castle_queenside_intervening[c] & occupied)){
-  //     build_castle(0x1a, E8, C8, 0x16, A8, D8, moves)
-  //   }
-  //   if ((castle & C_BK) && !(castle_kingside_intervening[c] & occupied)){
-  //     build_castle(0x1a, E8, C8, 0x16, A8, D8, moves)
-  //   }
-  // }
+  // Castles
+  int castle = NUM2INT(castle_rights);
+  if (castle){
+    if(c){
+      if ((castle & C_WQ) && !(castle_queenside_intervening[1] & occupied)){
+        build_castle(INT2NUM(0x1b), E1, C1, INT2NUM(0x17), A1, D1, moves)
+      }
+      if ((castle & C_WK) && !(castle_kingside_intervening[1] & occupied)){
+        build_castle(INT2NUM(0x1b), E1, G1, INT2NUM(0x17), H1, F1, moves)
+      }
+    } else {
+      if ((castle & C_BQ) && !(castle_queenside_intervening[0] & occupied)){
+        build_castle(INT2NUM(0x1a), E8, C8, INT2NUM(0x16), A8, D8, moves)
+      }
+      if ((castle & C_BK) && !(castle_kingside_intervening[0] & occupied)){
+        build_castle(INT2NUM(0x1a), E8, G8, INT2NUM(0x16), H8, F8, moves)
+      }
+    }
+  }
+
 
   // Pawns
   //  Pawns behave differently than other pieces. They: 
@@ -228,38 +229,38 @@ static VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
     promotion_advances = ((cBoard->pieces[c][PAWN]>>8) & row_masks[0]) & (~occupied); 
   }
 
-  // // promotion captures
-  // for(; promotion_captures_left; clear_sq(to, promotion_captures_left)){
-  //   to = furthest_forward(c, promotion_captures_left);
-  //   build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_promotion_capture, sq_board, promotions);
-  // }
-  // for(; promotion_captures_right; clear_sq(to, promotion_captures_right)){
-  //   to = furthest_forward(c, promotion_captures_right);
-  //   build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_promotion_capture, sq_board, promotions);
-  // }
-  // // promotion advances
-  // for(; promotion_advances; clear_sq(to, promotion_advances)){
-  //   to = furthest_forward(c, promotion_advances);
-  //   build_promotion(piece_id, to+pawn_from_offsets[c][0], to, color, cls_promotion, promotions); 
-  // }
-  // // regular pawn attacks
-  // for(; left_attacks; clear_sq(to, left_attacks)){
-  //   to = furthest_forward(c, left_attacks);
-  //   build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_regular_capture, sq_board, moves);
-  // }
-  // for(; right_attacks; clear_sq(to, right_attacks)){
-  //   to = furthest_forward(c, right_attacks);
-  //   build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_regular_capture, sq_board, moves);
-  // }
+  // promotion captures
+  for(; promotion_captures_left; clear_sq(to, promotion_captures_left)){
+    to = furthest_forward(c, promotion_captures_left);
+    build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_promotion_capture, sq_board, promotions);
+  }
+  for(; promotion_captures_right; clear_sq(to, promotion_captures_right)){
+    to = furthest_forward(c, promotion_captures_right);
+    build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_promotion_capture, sq_board, promotions);
+  }
+  // promotion advances
+  for(; promotion_advances; clear_sq(to, promotion_advances)){
+    to = furthest_forward(c, promotion_advances);
+    build_promotion(piece_id, to+pawn_from_offsets[c][0], to, color, cls_promotion, promotions); 
+  }
+  // regular pawn attacks
+  for(; left_attacks; clear_sq(to, left_attacks)){
+    to = furthest_forward(c, left_attacks);
+    build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_regular_capture, sq_board, moves);
+  }
+  for(; right_attacks; clear_sq(to, right_attacks)){
+    to = furthest_forward(c, right_attacks);
+    build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_regular_capture, sq_board, moves);
+  }
 
-  // // en-passant captures
-  // if(enp_target != Qnil){
-  //   int target = NUM2INT(enp_target);
-  //   for(BB f = cBoard->pieces[c][PAWN] & (pawn_enp_masks[target]); f; clear_sq(from, f)){
-  //     from = furthest_forward(c, f);
-  //     build_enp_capture(piece_id, from, (c?(target+8):(target-8)), cls_enp_capture, target, sq_board, moves);   
-  //   }
-  // }
+  // en-passant captures
+  if(enp_target != Qnil){
+    int target = NUM2INT(enp_target);
+    for(BB f = cBoard->pieces[c][PAWN] & (pawn_enp_masks[target]); f; clear_sq(from, f)){
+      from = furthest_forward(c, f);
+      build_enp_capture(piece_id, from, (c?(target+8):(target-8)), cls_enp_capture, target, sq_board, moves);   
+    }
+  }
 
   // Knights
   piece_id = INT2NUM(0x12|c); // get knight piece ID for color c.

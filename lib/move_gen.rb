@@ -39,18 +39,18 @@ module Chess
 
     # Updates the side to move and hash key for position.
     def self.flip(position, move)
-    begin
+    # begin
       if position.side_to_move == :w
         position.side_to_move, position.enemy = :b, :w
       else
         position.side_to_move, position.enemy = :w, :b
       end
       position.hash ^= move.hash
-    rescue
-      position.board.print
-      puts move.inspect
-      raise
-    end
+    # rescue
+    #   position.board.print
+    #   puts move.inspect
+    #   raise
+    # end
     end
 
     # Updates the side to move and hash key as if the current side forfeited a turn.  Used for the Null Move Pruning
@@ -77,14 +77,6 @@ module Chess
     BRQ_FROM = Location::SQUARES[:a8] # black rook queenside from square 
     BK_FROM  = Location::SQUARES[:e8] # black king from square 
     BRK_FROM = Location::SQUARES[:h8] # black rook kingside from square 
-    WRQ_TO   = Location::SQUARES[:d1] # white rook queenside to square 
-    WKQ_TO   = Location::SQUARES[:c1] # white king queenside to square 
-    WRK_TO   = Location::SQUARES[:f1] # white rook kingside to square 
-    WKK_TO   = Location::SQUARES[:g1] # white king kingside to square 
-    BRQ_TO   = Location::SQUARES[:d8] # black rook queenside to square 
-    BKQ_TO   = Location::SQUARES[:c8] # black king queenside to square 
-    BRK_TO   = Location::SQUARES[:f8] # black rook kingside to square 
-    BKK_TO   = Location::SQUARES[:g8] # black king kingside to square 
  
     # Bitwise operations for updating castling rights.
     WATCH = { WRQ_FROM => Proc.new { |pos| pos.castle &= ~C_WQ          }, 
@@ -97,8 +89,8 @@ module Chess
     # Whenever a king or rook moves off its initial square or is captured, update castle rights via the procedure
     # associated with that initial square.
     def self.set_castle_flag(position, move)
-      WATCH[move.from].call(position) if WATCH[move.from]
-      WATCH[move.to].call(position)   if WATCH[move.to]
+      WATCH[move.from].call(position) unless WATCH[move.from].nil?
+      WATCH[move.to].call(position)   unless WATCH[move.to].nil?
     end
 
 

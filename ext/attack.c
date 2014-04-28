@@ -68,13 +68,7 @@ VALUE is_in_check(VALUE self, VALUE p_board, VALUE side_to_move){
 }
 
 
-BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int type, int sq){
-  if(type != KNIGHT && type != KING){
-    if(type == PAWN || type == BISHOP || type == QUEEN) temp_map |= bishop_attacks(temp_occ, sq) & b_attackers;
-    if(type == ROOK || type == QUEEN) temp_map |= rook_attacks(temp_occ, sq) & r_attackers;
-  }
-  return temp_map;
-}
+
 
 // The Static Exchange Evaluation (SEE) heuristic provides a way to determine if a capture 
 // is a 'winning' or 'losing' capture.
@@ -86,14 +80,13 @@ BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int
 //    way of reducing the size of the q-search without impacting playing strength.
 
 static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, VALUE to, VALUE side_to_move, VALUE sq_board){
+  BRD *cBoard = get_cBoard(p_board);
   to = (NUM2INT(to));
   from = (NUM2INT(from));
   int c = SYM2COLOR(side_to_move);
   int next_victim, type;
   int temp_color = c;
   int score = 0;
-
-  BRD *cBoard = get_cBoard(p_board);
 
   // get initial map of all squares directly attacking this square (does not include 'discovered'/hidden attacks)
   const BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
@@ -112,8 +105,9 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
   // if the attacker was a pawn, bishop, rook, or queen, re-scan for sliding attacks after removing piece:
   temp_map = update_temp_map(temp_map, temp_occ, b_attackers, r_attackers, piece_type_at(sq_board, from), from);
 
-  int alpha = -100000;
-  int beta = 100000;
+  int alpha = -10000;
+  int beta = 10000;
+  int counter = 0;
   for(temp_map &= temp_occ; temp_map; temp_map &= temp_occ){
     for(type = PAWN; type <= KING; type++){ // loop over piece types in order of value.
       temp_pieces = cBoard->pieces[temp_color][type];
@@ -123,24 +117,40 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
 
     // iterative alpha-beta:
     if(temp_color == c){
+
       score += next_victim;
-      if(score <= alpha) return INT2NUM(alpha);
-      if(score < beta) beta = score;
-    } else {
-      score -= next_victim;
-      if(score <= beta) return INT2NUM(beta);
+
       if(score > alpha) alpha = score;
+      if(score >= beta) return INT2NUM(beta);
+
+    } else {
+
+      score -= next_victim;
+
+      if(score < beta) beta = score;
+      if(score <= alpha) return INT2NUM(alpha); 
     }
+
     next_victim = piece_values[type];
 
     temp_occ ^= (temp_pieces & -temp_pieces);  // merge the first set bit of temp_pieces into temp_occ
     temp_map = update_temp_map(temp_map, temp_occ, b_attackers, r_attackers, type, from); // Add any hidden attackers
     temp_color^=1;
+    
+    counter += 1;
+    if(counter>=20) return score;
   }
 
   return INT2NUM(score);
 }
 
+BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int type, int sq){
+  if(type != KNIGHT && type != KING){
+    if(type == PAWN || type == BISHOP || type == QUEEN) temp_map |= bishop_attacks(temp_occ, sq) & b_attackers;
+    if(type == ROOK || type == QUEEN) temp_map |= rook_attacks(temp_occ, sq) & r_attackers;
+  }
+  return temp_map;
+}
 
 extern void Init_attack(){
   VALUE mod_chess = rb_define_module("Chess");

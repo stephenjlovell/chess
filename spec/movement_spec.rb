@@ -53,7 +53,7 @@ describe Chess::MoveGen do
     # end
 
     it "can generate moves for midgame positions" do
-      generate_moves_for_each('./test_suites/wac_300.epd', 4)
+      generate_moves_for_each('./test_suites/wac_300.epd', 3)
     end
 
   end

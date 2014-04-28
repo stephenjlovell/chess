@@ -66,11 +66,11 @@ end
 
 def generate_moves_for_each(file, depth)
   raise "test suite #{file} not found" unless File.exists?(file)
-  File.readlines(file)[24..27].each_with_index do |line, i|
-    print "#{i}."
+  File.readlines(file).each_with_index do |line, i|
     line = %Q{#{line}}
     pos = Chess::Notation::epd_to_position(line)
     perft(pos, depth)
+    print "#{i+1}."
   end
 end
 
