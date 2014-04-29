@@ -77,7 +77,6 @@ module Chess
         # puts "getting SEE score"
         # @see ||= Search::see(position, @to)
         @see ||= Search::static_exchange_evaluation(position.pieces, @from, @to, position.side_to_move, position.board.squares)
-        # puts @see
       end
 
       def hash # XOR out the old en-passant key, if any.

@@ -81,6 +81,7 @@ extern BB king_masks[64];
 extern BB square_masks_on[64];
 extern BB square_masks_off[64];
 
+#define max(a,b) ((a > b) ? a : b)
 
 #define on_board(sq) (0 <= sq && sq <= 63)
 
@@ -100,6 +101,7 @@ extern BB square_masks_off[64];
 
 #define Occupied() ((cBoard->occupied[0])|(cBoard->occupied[1]))
 #define Placement(color) (cBoard->occupied[color])
+
 
 
 

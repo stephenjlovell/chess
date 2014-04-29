@@ -88,68 +88,73 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
   int temp_color = c;
   int score = 0;
 
+  int pc_list[20];
+
   // get initial map of all squares directly attacking this square (does not include 'discovered'/hidden attacks)
   const BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
                          cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
   const BB r_attackers = cBoard->pieces[WHITE][ROOK]  | cBoard->pieces[BLACK][ROOK] | 
                          cBoard->pieces[WHITE][QUEEN] | cBoard->pieces[BLACK][QUEEN];
+
   BB temp_map = attack_map(p_board, to);
   BB temp_occ = Occupied();
   BB temp_pieces;
 
-  next_victim = piece_value_at(sq_board, to);
-  score += next_victim;  // save the initial target piece to the victims list
-  temp_color^=1;
-  clear_sq(from, temp_occ);
+  // score += piece_value_at(sq_board, to);  
+  pc_list[0] = piece_value_at(sq_board, to); // save the initial target piece to the victims list
   next_victim = piece_value_at(sq_board, from);
-  // if the attacker was a pawn, bishop, rook, or queen, re-scan for sliding attacks after removing piece:
-  temp_map = update_temp_map(temp_map, temp_occ, b_attackers, r_attackers, piece_type_at(sq_board, from), from);
 
-  int alpha = -10000;
-  int beta = 10000;
-  int counter = 0;
+  clear_sq(from, temp_occ);
+  // if the attacker was a pawn, bishop, rook, or queen, re-scan for sliding attacks after removing piece:
+  type = piece_type_at(sq_board, from);
+  if(type != KNIGHT && type != KING){
+    if(type == PAWN || type == BISHOP || type == QUEEN) temp_map |= bishop_attacks(temp_occ, to) & b_attackers;
+    if(type == PAWN || type == ROOK   || type == QUEEN) temp_map |= rook_attacks(temp_occ, to) & r_attackers;
+  }
+  temp_color^=1;
+
+  int count = 1;
   for(temp_map &= temp_occ; temp_map; temp_map &= temp_occ){
     for(type = PAWN; type <= KING; type++){ // loop over piece types in order of value.
-      temp_pieces = cBoard->pieces[temp_color][type];
-      if(temp_pieces & temp_map) break; // stop as soon as a match is found.
+      temp_pieces = cBoard->pieces[temp_color][type] & temp_map;
+      if(temp_pieces) break; // stop as soon as a match is found.
     }
-    // if(type > KING) break;
+    if(type > KING) break;  
 
-    // iterative alpha-beta:
-    if(temp_color == c){
-
-      score += next_victim;
-
-      if(score > alpha) alpha = score;
-      if(score >= beta) return INT2NUM(beta);
-
-    } else {
-
-      score -= next_victim;
-
-      if(score < beta) beta = score;
-      if(score <= alpha) return INT2NUM(alpha); 
-    }
+    pc_list[count] = next_victim - pc_list[count-1];
 
     next_victim = piece_values[type];
+    if(pc_list[count++] - next_victim > 0) break;
 
     temp_occ ^= (temp_pieces & -temp_pieces);  // merge the first set bit of temp_pieces into temp_occ
-    temp_map = update_temp_map(temp_map, temp_occ, b_attackers, r_attackers, type, from); // Add any hidden attackers
+    if(type != KNIGHT && type != KING){
+      if(type == PAWN || type == BISHOP || type == QUEEN) temp_map |= bishop_attacks(temp_occ, to) & b_attackers;
+      if(type == ROOK || type == QUEEN) temp_map |= rook_attacks(temp_occ, to) & r_attackers;
+    }
     temp_color^=1;
-    
-    counter += 1;
-    if(counter>=20) return score;
   }
 
-  return INT2NUM(score);
-}
+  // if(count) printf("%d\n", count );
+  while (--count){
+    pc_list[count-1] = -max(-pc_list[count-1], pc_list[count]);
+  } 
 
-BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int type, int sq){
-  if(type != KNIGHT && type != KING){
-    if(type == PAWN || type == BISHOP || type == QUEEN) temp_map |= bishop_attacks(temp_occ, sq) & b_attackers;
-    if(type == ROOK || type == QUEEN) temp_map |= rook_attacks(temp_occ, sq) & r_attackers;
-  }
-  return temp_map;
+
+  return INT2NUM(pc_list[0]);
+
+  // int alpha = -10000;
+  // int beta = 10000;
+  //   // iterative alpha-beta:
+  //   if(score <= alpha) return INT2NUM(alpha);
+  //   if(score < beta) beta = score;
+  //   score += next_victim;
+
+  //   if(score >= beta) return INT2NUM(beta);
+  //   if(score > alpha) alpha = score;
+  //   score -= next_victim;
+  // return INT2NUM(score);
+
+
 }
 
 extern void Init_attack(){

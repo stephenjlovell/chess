@@ -150,6 +150,7 @@ module Chess
         #   basic_sort(captures, moves)
         # end
         return promotions + basic_sort(captures, moves)
+        # return promotions + sort_captures_by_see!(captures) + history_sort!(moves)
       end
       alias :edges :get_moves
 
@@ -171,6 +172,7 @@ module Chess
         MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
         # During quiesence search, sorting captures by SEE has the added benefit of enabling the pruning of bad
         # captures (those with SEE < 0). In practice, this reduced the average number of q-nodes by around half. 
+        
         # promotions + sort_captures_by_see!(captures)
         promotions + sort_captures!(captures)
       end
@@ -191,13 +193,14 @@ module Chess
       def sort_captures_by_see!(captures)
         captures.each { |m| m.see_score(self) }
         captures.sort! do |x,y|
-          if y.see > x.see
-            1
-          elsif y.see < x.see
-            -1
-          else
-            y.mvv_lva <=> x.mvv_lva  # Rely on MVV-LVA in event of tie.
-          end
+          y.see <=> x.see
+          # if y.see > x.see
+          #   1
+          # elsif y.see < x.see
+          #   -1
+          # else
+          #   y.mvv_lva <=> x.mvv_lva  # Rely on MVV-LVA in event of tie.
+          # end
         end
       end
 

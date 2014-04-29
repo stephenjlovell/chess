@@ -201,7 +201,6 @@ static VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
   BB enemy = Placement(c^1);
   VALUE piece_id;
 
-
   // Pawns
   piece_id = INT2NUM(0x10|c);
   BB left_temp, right_temp, left_attacks, right_attacks; 
@@ -311,6 +310,7 @@ static VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
 
   return Qnil;
 }
+
 
 
 extern void Init_move_gen(){
