@@ -49,8 +49,6 @@ module Chess
 
           @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
 
-          # position.own_material += @strategy.own_material(position, @piece, @from, @to)
-          # position.enemy_material += @strategy.enemy_material(position, @piece, @from, @to)
         rescue => err
           puts self.inspect
           raise
@@ -59,9 +57,6 @@ module Chess
       end
 
       def unmake!(position)
-        # position.own_material -= @strategy.own_material(position, @piece, @from, @to)
-        # position.enemy_material -= @strategy.enemy_material(position, @piece, @from, @to)
-
         @strategy.unmake!(position, @piece, @from, @to)  # delegate to the strategy class.
 
         # position.own_tropism -= @strategy.own_tropism(position, @piece, @from, @to)
@@ -130,19 +125,11 @@ module Chess
       end
 
       def inspect
-        "<#{self.class} <@own_material:#{@own_material}> <@enemy_material:#{@enemy_material}>>"
+        "<#{self.class}>"
       end
 
       def hash(piece, from, to)
         from_to_key(piece, from, to)
-      end
-
-      def own_material(position, piece, from, to)
-        @own_material ||= Evaluation::pst_value(position, piece, to)-Evaluation::pst_value(position, piece, from)
-      end
-
-      def enemy_material(position, piece, from, to)
-        @enemy_material ||= 0
       end
 
       def own_tropism(pos, piece, from, to) 
@@ -223,10 +210,6 @@ module Chess
         position.pieces.add_square(@captured_piece, to) # Replace stored enemy piece on bitboard
       end
 
-      def enemy_material(position, piece, from, to)
-        @enemy_material ||= -Evaluation::adjusted_value(position, @captured_piece, to)
-      end
-
       def enemy_tropism(pos, piece, from, to)
         @enemy_tropism ||= -Tropism::get_bonus(@captured_piece, to, pos.own_king_location) 
       end
@@ -236,8 +219,7 @@ module Chess
       end
 
       def inspect
-        "<#{self.class} <@captured_piece:#{@captured_piece}> <@own_material:#{@own_material}>" +
-        "<@enemy_material:#{@enemy_material}>>"
+        "<#{self.class} <@captured_piece:#{@captured_piece}>>"
       end
 
       # XOR out key for piece at from. XOR in the key for piece at to. XOR out key for @captured_piece at to.
@@ -318,10 +300,6 @@ module Chess
         position.pieces.add_square(@captured_piece, @enp_target) # Replace stored enemy piece on bitboard
       end
 
-      def enemy_material(position, piece, from, to)
-        @enemy_material ||= -Evaluation::adjusted_value(position, @captured_piece, @enp_target)
-      end
-
       def enemy_tropism(pos, piece, from, to)
         @enemy_tropism ||= -Tropism::get_bonus(@captured_piece, @enp_target, pos.own_king_location) 
       end
@@ -389,11 +367,6 @@ module Chess
         "#{piece} promotion #{from} to #{to}"
       end
 
-      def own_material(position, piece, from, to)
-        @own_material ||= Evaluation::adjusted_value(position, @promoted_piece, to)
-                        - Evaluation::adjusted_value(position, piece, from)
-      end
-
       def own_tropism(pos, piece, from, to)
         @own_tropism ||= Tropism::get_bonus(@promoted_piece, to, pos.enemy_king_location) 
                        - Tropism::get_bonus(piece, from, pos.enemy_king_location)
@@ -436,11 +409,6 @@ module Chess
         position.pieces.remove_square(@promoted_piece, to)
       end
 
-      def own_material(position, piece, from, to)
-        @own_material ||= Evaluation::adjusted_value(position, @promoted_piece, to)
-                        - Evaluation::adjusted_value(position, piece, from)
-      end
-
       def own_tropism(pos, piece, from, to)
         @own_tropism ||= Tropism::get_bonus(@promoted_piece, to, pos.enemy_king_location) 
                        - Tropism::get_bonus(piece, from, pos.enemy_king_location)
@@ -472,13 +440,6 @@ module Chess
       def unmake!(position, piece, from, to)
         super # call unmake! method inherited from MoveStrategy
         relocate_piece(position, @rook, @rook_to, @rook_from)
-      end
-
-      def own_material(position, piece, from, to)
-        @own_material ||= Evaluation::pst_value(position, piece, to)
-                        - Evaluation::pst_value(position, piece, from)
-                        + Evaluation::pst_value(position, @rook, @rook_to)
-                        - Evaluation::pst_value(position, @rook, @rook_from)
       end
 
       def own_tropism(pos, piece, from, to)

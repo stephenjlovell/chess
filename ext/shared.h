@@ -111,6 +111,7 @@ extern BB square_masks_off[64];
 #include "board.h"
 #include "attack.h"
 #include "move_gen.h"
+#include "eval.h"
 
 extern void Init_ruby_chess();
 

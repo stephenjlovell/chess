@@ -46,7 +46,7 @@ static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square);
 static VALUE o_move_update(VALUE self, VALUE piece_id, VALUE from, VALUE to);
 
 static VALUE o_initialize_material(VALUE self, VALUE color);
-static VALUE o_get_material(VALUE self, VALUE color);
+static VALUE o_get_base_material(VALUE self, VALUE color);
 
 extern void Init_board();
   

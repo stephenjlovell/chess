@@ -52,13 +52,13 @@ module Chess
         # @tropism = { w: Evaluation::king_tropism(self, :w), b: Evaluation::king_tropism(self, :w) } 
       end
 
-      def own_material
-        @pieces.get_material(@side_to_move)
-      end
+      # def own_material
+      #   @pieces.get_material(@side_to_move)
+      # end
 
-      def enemy_material
-        @pieces.get_material(@enemy)
-      end
+      # def enemy_material
+      #   @pieces.get_material(@enemy)
+      # end
 
       def own_tropism
         @tropism[@side_to_move]
@@ -92,11 +92,11 @@ module Chess
       end
 
       def in_endgame?
-        own_material <= Pieces::ENDGAME_VALUE
+        @pieces.endgame?(@side_to_move)
       end
 
       def endgame?(side)
-        @material[side] <= Pieces::ENDGAME_VALUE
+        @pieces.endgame?(side)
       end
 
       def in_check?

@@ -30,5 +30,6 @@ extern void Init_ruby_chess(){
   Init_board();
   Init_attack();
   Init_move_gen();
+  Init_eval();
   printf("...finished.\n\n");
 }

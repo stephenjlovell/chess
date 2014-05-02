@@ -68,57 +68,53 @@ static VALUE o_set_bitboard(VALUE self, VALUE piece_id, VALUE bitboard){
 }
 
 static VALUE o_add_square(VALUE self, VALUE piece_id, VALUE square){
+  BRD *cBoard = get_cBoard(self);
   int sq = NUM2INT(square);
   int id = NUM2INT(piece_id);
   int c = piece_color(id);
   int t = piece_type(id);
-  BRD *cBoard = get_cBoard(self);
+
   add_sq(sq, cBoard->pieces[c][t]);
   add_sq(sq, cBoard->occupied[c]);
-  // Incrementally update material total for this side.
-  cBoard->material[c] += piece_values[t]; 
-
+  cBoard->material[c] += piece_values[t]; // Incrementally update material.
   return Qnil;  
 }
 
 static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square){
+  BRD *cBoard = get_cBoard(self);
   int sq = NUM2INT(square);
   int id = NUM2INT(piece_id);
   int  c = piece_color(id);
   int  t = piece_type(id); 
 
-  BRD *cBoard = get_cBoard(self);
   clear_sq(sq, cBoard->pieces[c][t]);
   clear_sq(sq, cBoard->occupied[c]);
-  // Incrementally update material total for this side.
-  cBoard->material[c] -= piece_values[t];
-
+  cBoard->material[c] -= piece_values[t];  // Incrementally update material.
   return Qnil;  
 }
 
 static VALUE o_relocate_piece(VALUE self, VALUE piece_id, VALUE from, VALUE to){
-  int t = piece_type(NUM2INT(piece_id));
+  BRD *cBoard = get_cBoard(self);  
+  int type = piece_type(NUM2INT(piece_id));
   int c = piece_color(NUM2INT(piece_id));
-  BB delta = sq_mask_on(NUM2INT(from))|sq_mask_on(NUM2INT(to));
-  BRD *cBoard = get_cBoard(self);
-  cBoard->pieces[c][t] ^= delta;
+  int f = NUM2INT(from);
+  int t = NUM2INT(to);
+
+  BB delta = (sq_mask_on(t)|sq_mask_on(f));
+  cBoard->pieces[c][type] ^= delta;
   cBoard->occupied[c] ^= delta;
   return Qnil;
 }
 
-static VALUE o_get_material(VALUE self, VALUE color){
+static VALUE o_get_base_material(VALUE self, VALUE color){
   BRD *cBoard = get_cBoard(self);
   return INT2NUM(cBoard->material[SYM2COLOR(color)]);
 }
 
-static VALUE o_initialize_material(VALUE self, VALUE color){
+static VALUE o_in_endgame(VALUE self, VALUE color){
   BRD *cBoard = get_cBoard(self);
-  int material;
   int c = SYM2COLOR(color);
-  for(int type = 0; type < 6; type++){
-    material += pop_count(cBoard->pieces[c][type])*piece_values[type];
-  }
-  return INT2NUM(material);
+  return (cBoard->material[c] <= endgame_value) ? Qtrue : Qfalse;
 }
 
 
@@ -143,8 +139,8 @@ extern void Init_board(){
   rb_define_method(cls_board, "remove_square", RUBY_METHOD_FUNC(o_remove_square), 2);
   rb_define_method(cls_board, "relocate_piece", RUBY_METHOD_FUNC(o_relocate_piece), 3);
 
-  rb_define_method(cls_board, "initialize_material", RUBY_METHOD_FUNC(o_initialize_material), 1);
-  rb_define_method(cls_board, "get_material", RUBY_METHOD_FUNC(o_get_material), 1);
+  rb_define_method(cls_board, "get_base_material", RUBY_METHOD_FUNC(o_get_base_material), 1);
+  rb_define_method(cls_board, "endgame?", RUBY_METHOD_FUNC(o_in_endgame), 1);
 
   printf("done.\n");
 }
