@@ -148,8 +148,10 @@ module Chess
     # then divides the total eval score by EVAL_GRAIN to achieve the desired 'coarseness' of evaluation.
     def self.evaluate(pos)
       $evaluation_calls += 1 
-      # ((net_material(pos) + mobility(pos) + net_king_tropism(pos))/EVAL_GRAIN).round.to_i
-      net_material(pos.pieces, pos.side_to_move) + net_king_tropism(pos) + net_mobility(pos) 
+
+      net_placement(pos.pieces, pos.side_to_move) + net_mobility(pos) 
+      # net_material(pos.pieces, pos.side_to_move) + net_mobility(pos) 
+
     end
 
     # Sums up the value of all pieces in play for the given side (without any positional bonuses/penalties).
@@ -163,10 +165,6 @@ module Chess
     # relative to the current side to move. Material subtotals for each side are incrementally updated 
     # during make/unmake.
 
-    # def self.net_material(pos)
-    #   evaluate_material(pos.pieces, pos.side_to_move) - evaluate_material(pos.pieces, pos.enemy)
-    #   # (pos.own_material - pos.enemy_material)
-    # end
 
     # Award a bonus/penalty depending on which side (if any) is in check.
     def self.net_mobility(position)  

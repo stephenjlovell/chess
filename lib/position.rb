@@ -46,34 +46,6 @@ module Chess
         @pieces = Bitboard::PiecewiseBoard.new(@board)
         # Calculate an initial Zobrist hash key for the position.
         @hash = @board.hash ^ Memory::enp_key(enp_target) ^ (@side_to_move==:w ? 1 : 0)
-        # Set initial king tropism bonuses (closeness of a side's non-king pieces to the enemy king) for each side.
-        # King tropism bonuses are incrementally updated during move generation.
-        
-        # @tropism = { w: Evaluation::king_tropism(self, :w), b: Evaluation::king_tropism(self, :w) } 
-      end
-
-      # def own_material
-      #   @pieces.get_material(@side_to_move)
-      # end
-
-      # def enemy_material
-      #   @pieces.get_material(@enemy)
-      # end
-
-      def own_tropism
-        @tropism[@side_to_move]
-      end
-
-      def own_tropism=(value)
-        @tropism[@side_to_move] = value
-      end
-
-      def enemy_tropism
-        @tropism[@enemy]
-      end
-
-      def enemy_tropism=(value)
-        @tropism[@enemy] = value
       end
 
       def own_king_location
@@ -109,20 +81,7 @@ module Chess
 
       # Verify that the given move would not leave the current side's king in check.
       def evades_check?(move)
-        captured_piece = @board[move.to]
-        piece, from, to = move.piece, move.from, move.to
-        @pieces.relocate_piece(piece, from, to)
-
-        if captured_piece > 0
-          @pieces.remove_square(captured_piece, to)
-          in_check = self.in_check?
-          @pieces.add_square(captured_piece, to)
-        else 
-          in_check = self.in_check?   
-        end
-        @pieces.relocate_piece(piece, from, to)
-
-        return !in_check
+        move_evades_check?(@pieces, @board.squares, move.from, move.to, @side_to_move)
       end
 
       # Return a string decribing the position in Forsyth-Edwards Notation.
@@ -150,6 +109,8 @@ module Chess
         #   basic_sort(captures, moves)
         # end
         return promotions + basic_sort(captures, moves)
+        # return promotions + enhanced_sort(captures, moves, depth)
+
         # return promotions + sort_captures_by_see!(captures) + history_sort!(moves)
       end
       alias :edges :get_moves
@@ -173,8 +134,8 @@ module Chess
         # During quiesence search, sorting captures by SEE has the added benefit of enabling the pruning of bad
         # captures (those with SEE < 0). In practice, this reduced the average number of q-nodes by around half. 
         
-        # promotions + sort_captures_by_see!(captures)
-        promotions + sort_captures!(captures)
+        promotions + sort_captures_by_see!(captures)
+        # promotions + sort_captures!(captures)
       end
       alias :tactical_edges :get_captures
 

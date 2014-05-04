@@ -31,5 +31,7 @@ extern void Init_ruby_chess(){
   Init_attack();
   Init_move_gen();
   Init_eval();
+  Init_tropism();
+
   printf("...finished.\n\n");
 }

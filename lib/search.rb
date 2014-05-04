@@ -40,6 +40,8 @@ module Chess
 
     MTDF_MAX_PASSES = 50 # Used to prevent feedback loop due to rare TT interactions.
 
+    HALF_PAWN = Pieces::PIECE_VALUES[:P]/2
+
     MATE = Pieces::MATE/Evaluation::EVAL_GRAIN
 
     KING_LOSS = Pieces::KING_LOSS/Evaluation::EVAL_GRAIN
@@ -134,7 +136,6 @@ module Chess
     # Make an initial guess at the heuristic value of the root node. Used in MTD(f) when no estimate from a previous
     # search or from the previous ID iteration is available.
     def self.get_first_guess
-      # @node.value
       if @node.in_check?
         move, value = alpha_beta_root(PLY_VALUE)
       else
@@ -286,7 +287,6 @@ module Chess
     def self.alpha_beta(depth, alpha=-$INF, beta=$INF, extension=0, can_null=true)
       result, best_move = -$INF, nil
 
-      # return @node.value, 1 if depth+extension < PLY_VALUE
       return quiescence(0, alpha, beta) if depth+extension < PLY_VALUE
 
       in_check = @node.in_check?
@@ -322,10 +322,10 @@ module Chess
         end
       end
 
-      # # Internal Iterative Deepening (IID)
-      # if first_move.nil? && depth >= @iid_minimum
-      #   first_move, value = internal_iterative_deepening_alpha_beta(depth-THREE_PLY, alpha, beta, extension)
-      # end
+      # Internal Iterative Deepening (IID)
+      if first_move.nil? && depth >= @iid_minimum
+        first_move, value = internal_iterative_deepening_alpha_beta(depth-THREE_PLY, alpha, beta, extension)
+      end
 
       sum, legal_moves = 1, false
 
@@ -433,7 +433,8 @@ module Chess
 
 
       @node.tactical_edges.each do |move|
-        # next if move.see && move.see < 0  # moves are ordered by SEE
+        # next if move.see && move.see < -HALF_PAWN  # moves are ordered by SEE
+        next if move.see && move.see < 0  # moves are ordered by SEE
         $quiescence_calls += 1
 
         MoveGen::make!(@node, move)

@@ -19,35 +19,44 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
-#ifndef ATTACK
-#define ATTACK
+#ifndef EVAL
+#define EVAL
 
 #include "shared.h"
 
-#define piece_value_at(sq_board, sq) (piece_values[piece_type(rb_ary_entry(sq_board, sq))])
-#define piece_type_at(sq_board, sq) (piece_type(NUM2INT(rb_ary_entry(sq_board, sq))))
+void setup_eval_constants();
 
+extern int non_king_value;
+extern int endgame_value;
 
+static int main_pst[2][5][64];
+static int king_pst[2][2][64];
 static VALUE mod_chess;
-static VALUE mod_position;
-static VALUE mod_search;
+static VALUE mod_eval;
+
+#define in_endgame(color) (cBoard->material[color] <= endgame_value ? 1 : 0)
 
 
-BB attack_map(VALUE p_board, enumSq sq);
+extern int get_pst(BRD *cBoard, int color, int type, int sq);
+extern int get_pst_delta(BRD *cBoard, int color, int type, int from, int to);
 
-int is_attacked_by(BRD *cBoard, enumSq sq, int c);
+static VALUE evaluate_material(VALUE self, VALUE pc_board, VALUE color);
 
-static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board, 
-                               VALUE from, VALUE to, VALUE color);
+static VALUE net_material(VALUE self, VALUE pc_board, VALUE color);
+static VALUE net_placement(VALUE self, VALUE pc_board, VALUE color);
 
-BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int type, int sq);
-
-static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, VALUE to, 
-                                        VALUE side_to_move, VALUE sq_board);
-
+static int adjusted_placement(int c, BRD *cBoard);
+static int adjusted_material(int c, BRD *cBoard);
 
 
-
-extern void Init_attack();
+extern void Init_eval();
 
 #endif
+
+
+
+
+
+
+
+

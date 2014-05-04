@@ -44,8 +44,7 @@ BB attack_map(VALUE p_board, enumSq sq){
   return attacks;
 }
 
-int is_attacked_by(VALUE p_board, enumSq sq, int c){
-  BRD *cBoard = get_cBoard(p_board);
+int is_attacked_by(BRD *cBoard, enumSq sq, int c){
   int e = c^1;  // enemy color
   BB occ = Occupied();
   // Pawns
@@ -64,10 +63,46 @@ int is_attacked_by(VALUE p_board, enumSq sq, int c){
 VALUE is_in_check(VALUE self, VALUE p_board, VALUE side_to_move){
   BRD *cBoard = get_cBoard(p_board);
   int c = SYM2COLOR(side_to_move);
-  return (is_attacked_by(p_board, furthest_forward(c, cBoard->pieces[c][KING]), c) ? Qtrue : Qfalse);
+
+  // handle king loss here.
+
+  return (is_attacked_by(cBoard, furthest_forward(c, cBoard->pieces[c][KING]), c) ? Qtrue : Qfalse);
 }
 
+static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board, 
+                               VALUE from, VALUE to, VALUE color){
+  BRD *cBoard = get_cBoard(p_board);
+  int c = SYM2COLOR(color);
+  int e = c^1;
+  int f = NUM2INT(from), t = NUM2INT(to);
+  int check;
 
+  int piece = NUM2INT(rb_ary_entry(sq_board, f));  // ?
+  int captured_piece = NUM2INT(rb_ary_entry(sq_board, t));
+
+  BB own_king = cBoard->pieces[c][KING];
+  if(!own_king) return Qfalse;
+
+  BB delta = (sq_mask_on(t)|sq_mask_on(f));
+  cBoard->pieces[c][piece_type(piece)] ^= delta;
+  cBoard->occupied[c] ^= delta;
+
+  if(captured_piece){
+    clear_sq(t, cBoard->pieces[e][piece_type(captured_piece)]);
+    clear_sq(t, cBoard->occupied[e]);
+    // determine if in check
+    check = is_attacked_by(cBoard, furthest_forward(c, cBoard->pieces[c][KING]), c);
+    add_sq(t, cBoard->pieces[e][piece_type(captured_piece)]);
+    add_sq(t, cBoard->occupied[e]);
+  } else {
+    // determine if in check
+    check = is_attacked_by(cBoard, furthest_forward(c, cBoard->pieces[c][KING]), c);
+  }
+  cBoard->pieces[c][piece_type(piece)] ^= delta;
+  cBoard->occupied[c] ^= delta;
+
+  return (check ? Qfalse : Qtrue);
+}
 
 
 // The Static Exchange Evaluation (SEE) heuristic provides a way to determine if a capture 
@@ -88,7 +123,10 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
   int temp_color = c;
   int score = 0;
 
-  int pc_list[20];
+  // int pc_list[20];
+
+  int alpha = -1000000;
+  int beta = 1000000;
 
   // get initial map of all squares directly attacking this square (does not include 'discovered'/hidden attacks)
   const BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
@@ -100,8 +138,8 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
   BB temp_occ = Occupied();
   BB temp_pieces;
 
-  // score += piece_value_at(sq_board, to);  
-  pc_list[0] = piece_value_at(sq_board, to); // save the initial target piece to the victims list
+  score += piece_value_at(sq_board, to);  
+  // pc_list[0] = piece_value_at(sq_board, to); // save the initial target piece to the victims list
   next_victim = piece_value_at(sq_board, from);
 
   clear_sq(from, temp_occ);
@@ -119,12 +157,28 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
       temp_pieces = cBoard->pieces[temp_color][type] & temp_map;
       if(temp_pieces) break; // stop as soon as a match is found.
     }
-    if(type > KING) break;  
+    if(type > KING) break;
 
-    pc_list[count] = next_victim - pc_list[count-1];
+    // pc_list[count] = next_victim - pc_list[count-1];
+    // next_victim = piece_values[type];
+    // if(pc_list[count++] - next_victim > 0) break;
 
+    if(c == temp_color){    // iterative alpha-beta:
+      // if(score >= beta) return INT2NUM(beta);
+      // if(score > alpha) alpha = score;
+      // score -= next_victim;
+      if(score <= alpha) return INT2NUM(alpha);
+      if(score < beta) beta = score;
+      score += next_victim;
+    } else {
+      // if(score <= alpha) return INT2NUM(alpha);
+      // if(score < beta) beta = score;
+      // score += next_victim;
+      if(score >= beta) return INT2NUM(beta);
+      if(score > alpha) alpha = score;
+      score -= next_victim;
+    }
     next_victim = piece_values[type];
-    if(pc_list[count++] - next_victim > 0) break;
 
     temp_occ ^= (temp_pieces & -temp_pieces);  // merge the first set bit of temp_pieces into temp_occ
     if(type != KNIGHT && type != KING){
@@ -135,24 +189,14 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
   }
 
   // if(count) printf("%d\n", count );
-  while (--count){
-    pc_list[count-1] = -max(-pc_list[count-1], pc_list[count]);
-  } 
+  // while (--count){
+  //   pc_list[count-1] = -max(-pc_list[count-1], pc_list[count]);
+  // } 
+  // return INT2NUM(pc_list[0]);
 
 
-  return INT2NUM(pc_list[0]);
 
-  // int alpha = -10000;
-  // int beta = 10000;
-  //   // iterative alpha-beta:
-  //   if(score <= alpha) return INT2NUM(alpha);
-  //   if(score < beta) beta = score;
-  //   score += next_victim;
-
-  //   if(score >= beta) return INT2NUM(beta);
-  //   if(score > alpha) alpha = score;
-  //   score -= next_victim;
-  // return INT2NUM(score);
+  return INT2NUM(score);
 
 
 }
@@ -161,6 +205,7 @@ extern void Init_attack(){
   VALUE mod_chess = rb_define_module("Chess");
   VALUE cls_position = rb_define_class_under(mod_chess, "Position", rb_cObject);
   rb_define_method(cls_position, "side_in_check?", RUBY_METHOD_FUNC(is_in_check), 2);
+  rb_define_method(cls_position, "move_evades_check?", RUBY_METHOD_FUNC(move_evades_check), 5);
 
   VALUE mod_search = rb_define_module_under(mod_chess, "Search");
   rb_define_module_function(mod_search, "static_exchange_evaluation", static_exchange_evaluation, 5);

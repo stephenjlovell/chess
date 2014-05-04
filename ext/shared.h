@@ -82,13 +82,18 @@ extern BB square_masks_on[64];
 extern BB square_masks_off[64];
 
 #define max(a,b) ((a > b) ? a : b)
+#define round(x) ((x>=0) ? (int)(x+0.5) : (int)(x-0.5))
+
 
 #define on_board(sq) (0 <= sq && sq <= 63)
 
 #define row(sq) (sq >> 3)
 #define column(sq) (sq & 7)
 
+// Also called Taxicab Distance.  Returns a value between 1 (min. distance) and 14 (max. distance)
 #define manhattan_distance(from, to) ((abs(row(from)-row(to)))+(abs(column(from)-column(to))))
+#define chebyshev_distance(from, to) (max(abs(row(from)-row(to)),abs(column(from)-column(to))))
+
 
 #define SYM2COLOR(sym)    (sym == ID2SYM(rb_intern("w")) ? 1 : 0)
 #define SYM2OPPCOLOR(sym) (sym == ID2SYM(rb_intern("w")) ? 0 : 1)
@@ -112,6 +117,7 @@ extern BB square_masks_off[64];
 #include "attack.h"
 #include "move_gen.h"
 #include "eval.h"
+#include "tropism.h"
 
 extern void Init_ruby_chess();
 
