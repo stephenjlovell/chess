@@ -37,46 +37,42 @@ INITIAL = [ id[:wR], id[:wN], id[:wB], id[:wQ], id[:wK], id[:wB], id[:wN], id[:w
 # # sets up a board with some useful properties for testing.
 # SQUARES = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
 #             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
-#             [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, nil, nil, :wR, :XX, :XX ],  # 2    1
-#             [ :XX, :XX, :wP, :wP, :wP, :wP, nil, :wP, :wP, :wP, :XX, :XX ],  # 3    2
-#             [ :XX, :XX, nil, nil, :bP, nil, :wP, nil, nil, nil, :XX, :XX ],  # 4    3
-#             [ :XX, :XX, nil, nil, nil, nil, nil, nil, :bB, nil, :XX, :XX ],  # 5    4
-#             [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
-#             [ :XX, :XX, nil, nil, nil, :bP, nil, :bN, nil, nil, :XX, :XX ],  # 7    6
-#             [ :XX, :XX, :bP, :bP, nil, nil, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
-#             [ :XX, :XX, :bR, :bN, nil, :bQ, :bK, :bB, nil, :bR, :XX, :XX ],  # 9    8
+#             [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, 0, 0, :wR, :XX, :XX ],  # 2    1
+#             [ :XX, :XX, :wP, :wP, :wP, :wP, 0, :wP, :wP, :wP, :XX, :XX ],  # 3    2
+#             [ :XX, :XX, 0, 0, :bP, 0, :wP, 0, 0, 0, :XX, :XX ],  # 4    3
+#             [ :XX, :XX, 0, 0, 0, 0, 0, 0, :bB, 0, :XX, :XX ],  # 5    4
+#             [ :XX, :XX, 0, 0, 0, 0, 0, 0, 0, 0, :XX, :XX ],  # 6    5
+#             [ :XX, :XX, 0, 0, 0, :bP, 0, :bN, 0, 0, :XX, :XX ],  # 7    6
+#             [ :XX, :XX, :bP, :bP, 0, 0, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
+#             [ :XX, :XX, :bR, :bN, 0, :bQ, :bK, :bB, 0, :bR, :XX, :XX ],  # 9    8
 #             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
 #             [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
 #       # column  0    1    2    3    4    5    6    7    8    9    10   11
 #       # letter            A    B    C    D    E    F    G    H
 
 # # used for testing Static Exchange Evaluation                                 # row  board #
-# SEE_TEST = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0
-#              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1
-#              [ :XX, :XX, :wK, nil, nil, nil, :wR, nil, nil, :wB, :XX, :XX ],  # 2 1
-#              [ :XX, :XX, nil, nil, nil, :wN, nil, nil, nil, nil, :XX, :XX ],  # 3 2
-#              [ :XX, :XX, nil, nil, nil, nil, nil, :wP, nil, nil, :XX, :XX ],  # 4 3
-#              [ :XX, :XX, nil, nil, nil, nil, :bP, nil, nil, nil, :XX, :XX ],  # 5 4
-#              [ :XX, :XX, nil, nil, :bN, nil, nil, :bP, nil, nil, :XX, :XX ],  # 6 5
-#              [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 7 6
-#              [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 8 7
-#              [ :XX, :XX, :bK, nil, nil, nil, :bR, nil, nil, nil, :XX, :XX ],  # 9 8
-#              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10
-#              [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11
-#       # column  0    1    2    3    4    5    6    7    8    9    10   11
-#       # letter            A    B    C    D    E    F    G    H
+SEE_TEST =  [ id[:wK], 0,       0,      0, id[:wR],       0, 0, id[:wB],   # 2 1
+                    0, 0,       0,id[:wN],       0,       0, 0,       0, # 3 2
+                    0, 0,       0,      0,       0, id[:wP], 0,       0,  # 4 3
+                    0, 0,       0,      0, id[:bP],       0, 0,       0,   # 5 4
+                    0, 0, id[:bN],      0,       0, id[:bP], 0,       0,   # 6 5
+                    0, 0,       0,      0,       0,       0, 0,       0,  # 7 6
+                    0, 0,       0,      0,       0,       0, 0,       0,  # 8 7
+              id[:bK], 0,       0,      0, id[:bR],       0, 0,       0 ]  # 9 8
+      # column  0    1    2    3    4    5    6    7    8    9    10   11
+      # letter            A    B    C    D    E    F    G    H
 
 # # used for testing king safety methods.
 # CHECK = [ [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 0       
 #           [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 1    
-#           [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, nil, nil, :wR, :XX, :XX ],  # 2    1
-#           [ :XX, :XX, :wP, :wP, :wP, :wP, nil, nil, :wP, :wP, :XX, :XX ],  # 3    2
-#           [ :XX, :XX, nil, nil, :bP, nil, :wP, nil, nil, nil, :XX, :XX ],  # 4    3
-#           [ :XX, :XX, :wB, nil, nil, nil, nil, nil, nil, :bB, :XX, :XX ],  # 5    4
-#           [ :XX, :XX, nil, nil, nil, nil, nil, nil, nil, nil, :XX, :XX ],  # 6    5
-#           [ :XX, :XX, nil, nil, nil, :bP, nil, :bN, nil, nil, :XX, :XX ],  # 7    6
-#           [ :XX, :XX, :bP, :bP, nil, nil, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
-#           [ :XX, :XX, :bR, :bN, nil, :bQ, :bK, :bB, nil, :bR, :XX, :XX ],  # 9    8
+#           [ :XX, :XX, :wR, :wN, :wB, :wQ, :wK, 0, 0, :wR, :XX, :XX ],  # 2    1
+#           [ :XX, :XX, :wP, :wP, :wP, :wP, 0, 0, :wP, :wP, :XX, :XX ],  # 3    2
+#           [ :XX, :XX, 0, 0, :bP, 0, :wP, 0, 0, 0, :XX, :XX ],  # 4    3
+#           [ :XX, :XX, :wB, 0, 0, 0, 0, 0, 0, :bB, :XX, :XX ],  # 5    4
+#           [ :XX, :XX, 0, 0, 0, 0, 0, 0, 0, 0, :XX, :XX ],  # 6    5
+#           [ :XX, :XX, 0, 0, 0, :bP, 0, :bN, 0, 0, :XX, :XX ],  # 7    6
+#           [ :XX, :XX, :bP, :bP, 0, 0, :bP, :bP, :bP, :bP, :XX, :XX ],  # 8    7
+#           [ :XX, :XX, :bR, :bN, 0, :bQ, :bK, :bB, 0, :bR, :XX, :XX ],  # 9    8
 #           [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ],  # 10   
 #           [ :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX, :XX ] ] # 11   
 #     # column  0    1    2    3    4    5    6    7    8    9    10   11
@@ -103,7 +99,7 @@ FactoryGirl.define do
   factory :position, class: Chess::Position do
     board  { FactoryGirl.build(:board) }
 
-    initialize_with { new(board, :w, 0b1111, nil, 0) }
+    initialize_with { new(board, :w, 0b1111, 0, 0) }
 
     factory :test_position do
       board { FactoryGirl.build(:test_board) }

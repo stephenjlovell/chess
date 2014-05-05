@@ -106,12 +106,10 @@ module Chess
         # return promotions + if enhanced_sort
         #   enhanced_sort(captures, moves, depth)
         # else
-        #   basic_sort(captures, moves)
+        #   sort_captures_by_see!(captures) + history_sort!(moves)
         # end
-        return promotions + basic_sort(captures, moves)
-        # return promotions + enhanced_sort(captures, moves, depth)
 
-        # return promotions + sort_captures_by_see!(captures) + history_sort!(moves)
+        promotions + sort_captures_by_see!(captures) + history_sort!(moves)
       end
       alias :edges :get_moves
 
@@ -135,7 +133,6 @@ module Chess
         # captures (those with SEE < 0). In practice, this reduced the average number of q-nodes by around half. 
         
         promotions + sort_captures_by_see!(captures)
-        # promotions + sort_captures!(captures)
       end
       alias :tactical_edges :get_captures
 
@@ -154,14 +151,13 @@ module Chess
       def sort_captures_by_see!(captures)
         captures.each { |m| m.see_score(self) }
         captures.sort! do |x,y|
-          y.see <=> x.see
-          # if y.see > x.see
-          #   1
-          # elsif y.see < x.see
-          #   -1
-          # else
-          #   y.mvv_lva <=> x.mvv_lva  # Rely on MVV-LVA in event of tie.
-          # end
+          if y.see > x.see
+            1
+          elsif y.see < x.see
+            -1
+          else
+            y.mvv_lva <=> x.mvv_lva  # Rely on MVV-LVA in event of tie.
+          end
         end
       end
 

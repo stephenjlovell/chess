@@ -44,23 +44,18 @@ module Chess
         begin
           @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
           position.enp_target = nil
-          # position.own_tropism += @strategy.own_tropism(position, @piece, @from, @to)
-          # position.enemy_tropism += @strategy.enemy_tropism(position, @piece, @from, @to)
 
           @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
 
         rescue => err
           puts self.inspect
-          raise
-        #   raise Memory::HashCollisionError
+          raise Memory::HashCollisionError
         end 
       end
 
       def unmake!(position)
         @strategy.unmake!(position, @piece, @from, @to)  # delegate to the strategy class.
 
-        # position.own_tropism -= @strategy.own_tropism(position, @piece, @from, @to)
-        # position.enemy_tropism -= @strategy.enemy_tropism(position, @piece, @from, @to)
         position.enp_target, position.castle = @enp_target, @castle_rights
       end
 
@@ -68,10 +63,8 @@ module Chess
         @mvv_lva ||= @strategy.mvv_lva(@piece)
       end
 
-      def see_score(position)
-        # puts "getting SEE score"
-        # @see ||= Search::see(position, @to)
-        @see ||= Search::static_exchange_evaluation(position.pieces, @from, @to, position.side_to_move, position.board.squares)
+      def see_score(pos)
+        @see ||= Search::static_exchange_evaluation(pos.pieces, @from, @to, pos.side_to_move, pos.board.squares)
       end
 
       def hash # XOR out the old en-passant key, if any.
@@ -83,11 +76,10 @@ module Chess
       end
 
       def to_s
-        Location::get_location(@from).to_s + Location::get_location(@to).to_s
+        Pieces::ID_TO_STR[@piece] + Location::get_location(@from).to_s + Location::get_location(@to).to_s
       end
 
       def ==(other)
-        # may be able to replace this with single comparison
         return false if other.nil?
         @from == other.from && @to == other.to
       end

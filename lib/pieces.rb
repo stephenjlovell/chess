@@ -19,8 +19,6 @@
 # CONORTH_NECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-
-
 module Chess
   module Pieces
 

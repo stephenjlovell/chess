@@ -24,7 +24,7 @@
 
 #include "shared.h"
 
-#define piece_value_at(sq_board, sq) (piece_values[piece_type(rb_ary_entry(sq_board, sq))])
+#define piece_value_at(sq_board, sq) (piece_values[piece_type(NUM2INT(rb_ary_entry(sq_board, sq)))])
 #define piece_type_at(sq_board, sq) (piece_type(NUM2INT(rb_ary_entry(sq_board, sq))))
 
 

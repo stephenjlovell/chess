@@ -116,17 +116,12 @@ static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board,
 
 static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, VALUE to, VALUE side_to_move, VALUE sq_board){
   BRD *cBoard = get_cBoard(p_board);
-  to = (NUM2INT(to));
   from = (NUM2INT(from));
+  to = (NUM2INT(to));
   int c = SYM2COLOR(side_to_move);
   int next_victim, type;
   int temp_color = c;
   int score = 0;
-
-  // int pc_list[20];
-
-  int alpha = -1000000;
-  int beta = 1000000;
 
   // get initial map of all squares directly attacking this square (does not include 'discovered'/hidden attacks)
   const BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
@@ -136,22 +131,24 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
 
   BB temp_map = attack_map(p_board, to);
   BB temp_occ = Occupied();
+  int alpha = -1000000;
+  int beta =   1000000;
   BB temp_pieces;
 
-  score += piece_value_at(sq_board, to);  
-  // pc_list[0] = piece_value_at(sq_board, to); // save the initial target piece to the victims list
-  next_victim = piece_value_at(sq_board, from);
-
-  clear_sq(from, temp_occ);
-  // if the attacker was a pawn, bishop, rook, or queen, re-scan for sliding attacks after removing piece:
+  // before entering the main loop, perform each step once for the initial attacking piece.  This ensures that the
+  // moved piece is the first to capture.
   type = piece_type_at(sq_board, from);
-  if(type != KNIGHT && type != KING){
+  alpha = score;
+  score += piece_value_at(sq_board, to);
+
+  next_victim = piece_value_at(sq_board, from);
+  clear_sq(from, temp_occ);
+  if(type != KNIGHT && type != KING){ // if the attacker was a pawn, bishop, rook, or queen, re-scan for hidden attacks:
     if(type == PAWN || type == BISHOP || type == QUEEN) temp_map |= bishop_attacks(temp_occ, to) & b_attackers;
     if(type == PAWN || type == ROOK   || type == QUEEN) temp_map |= rook_attacks(temp_occ, to) & r_attackers;
   }
   temp_color^=1;
 
-  int count = 1;
   for(temp_map &= temp_occ; temp_map; temp_map &= temp_occ){
     for(type = PAWN; type <= KING; type++){ // loop over piece types in order of value.
       temp_pieces = cBoard->pieces[temp_color][type] & temp_map;
@@ -159,46 +156,26 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
     }
     if(type > KING) break;
 
-    // pc_list[count] = next_victim - pc_list[count-1];
-    // next_victim = piece_values[type];
-    // if(pc_list[count++] - next_victim > 0) break;
-
     if(c == temp_color){    // iterative alpha-beta:
-      // if(score >= beta) return INT2NUM(beta);
-      // if(score > alpha) alpha = score;
-      // score -= next_victim;
-      if(score <= alpha) return INT2NUM(alpha);
-      if(score < beta) beta = score;
-      score += next_victim;
-    } else {
-      // if(score <= alpha) return INT2NUM(alpha);
-      // if(score < beta) beta = score;
-      // score += next_victim;
       if(score >= beta) return INT2NUM(beta);
       if(score > alpha) alpha = score;
+      score += next_victim;
+    } else {
+      if(score <= alpha) return INT2NUM(alpha);
+      if(score < beta) beta = score;
       score -= next_victim;
     }
-    next_victim = piece_values[type];
 
+    next_victim = piece_values[type];
     temp_occ ^= (temp_pieces & -temp_pieces);  // merge the first set bit of temp_pieces into temp_occ
     if(type != KNIGHT && type != KING){
-      if(type == PAWN || type == BISHOP || type == QUEEN) temp_map |= bishop_attacks(temp_occ, to) & b_attackers;
-      if(type == ROOK || type == QUEEN) temp_map |= rook_attacks(temp_occ, to) & r_attackers;
+      if(type == PAWN || type == BISHOP || type == QUEEN) temp_map |= (bishop_attacks(temp_occ, to) & b_attackers);
+      if(type == ROOK || type == QUEEN) temp_map |= (rook_attacks(temp_occ, to) & r_attackers);
     }
     temp_color^=1;
+
   }
-
-  // if(count) printf("%d\n", count );
-  // while (--count){
-  //   pc_list[count-1] = -max(-pc_list[count-1], pc_list[count]);
-  // } 
-  // return INT2NUM(pc_list[0]);
-
-
-
   return INT2NUM(score);
-
-
 }
 
 extern void Init_attack(){

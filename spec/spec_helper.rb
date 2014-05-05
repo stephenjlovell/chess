@@ -141,7 +141,7 @@ def answer_questions(problems, depth, aggregator, verbose=false)
     else
       # print " | #{i+1}.#{prob.score > 0 ? "-" : "X" }"
       number = prob.score > 0 ? Chess::colorize(i+1,32) : Chess::colorize(i+1,31)
-      print "| #{number} "
+      print "| #{number.rjust(3," ")} "
     end
   end
 end 

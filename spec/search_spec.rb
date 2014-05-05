@@ -47,11 +47,14 @@ describe Chess::Search do
   # end
 
   # describe "static exchange evaluation" do
-  #   let(:loc) { Chess::Location::get_location_by_coordinates(5,6) }
-  #   let(:see_pos) { FactoryGirl.build(:see_position) }
+  #   # let(:loc) { Chess::Location::get_location_by_coordinates(5,6) }
+  #   let(:see_pos) { Chess::Notation::fen_to_position("5k2/7p/8/5p2/p1p2P2/Pr1RP1K1/1P5P/8 b - - 0 1") }
+
   #   it "should correctly value an exchange over a single square" do
-  #     # see_pos.board.print
-  #     @s.see(see_pos, loc).should == 100
+  #     see_pos.board.print
+  #     captures = see_pos.get_captures
+  #     captures.each { |m| puts "#{m.to_s} : #{m.see}" }
+  #     captures.collect{ |m| m.see }.should == [510, 510, 100, -410]
   #   end
   # end
 

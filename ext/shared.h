@@ -82,6 +82,7 @@ extern BB square_masks_on[64];
 extern BB square_masks_off[64];
 
 #define max(a,b) ((a > b) ? a : b)
+#define min(a,b) ((a > b) ? b : a)
 #define round(x) ((x>=0) ? (int)(x+0.5) : (int)(x-0.5))
 
 

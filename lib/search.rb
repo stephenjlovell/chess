@@ -354,11 +354,9 @@ module Chess
 
       # Extended futility pruning:
       f_margin = adjusted_depth > PLY_VALUE ? F_MARGIN_HIGH : F_MARGIN_LOW
-      f_prune = (adjusted_depth <= TWO_PLY) && !in_check && (alpha.abs < MATE) && (@node.value + f_margin <= alpha)
-      
+      f_prune = (adjusted_depth <= TWO_PLY) && !in_check && (alpha.abs < MATE) && (@node.value + f_margin <= alpha)      
 
       moves ||= @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
-
 
       moves.each do |move|
         MoveGen::make!(@node, move)
@@ -396,9 +394,7 @@ module Chess
       $history.store(move, nodecount)    # or promotion), then store the move in the Killer Moves table.
     end
 
-    
     # Quiescence Search (q-search) is called at leaf nodes when depth is less than one full ply.
-    #
 
     def self.quiescence(depth, alpha=-$INF, beta=$INF)  # quiesence nodes are not part of the principal variation.
       result, best_move, sum = -$INF, nil, 1
@@ -481,14 +477,7 @@ module Chess
       reset_counters
       clear_memory
 
-      # begin
       move, value = block_given? ? yield : iterative_deepening_mtdf_step
-      # rescue
-      #   @node.pieces.print
-      #   @node.board.print
-      #   raise
-      # end
-
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"
