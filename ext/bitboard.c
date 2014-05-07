@@ -44,7 +44,7 @@ BB square_masks_off[64] = {0};
 
 BB row_masks[8] = {0};
 BB column_masks[8] = {0};
-BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} };
+BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} }; // NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST, INVALID
 
 BB knight_masks[64] = {0};
 BB bishop_masks[64] = {0};
@@ -58,6 +58,8 @@ BB pawn_enp_masks[64] = {0};
 // single, double, left, right
 int pawn_from_offsets[2][4] = { {8, 16, 9, 7 }, {-8, -16, -7, -9 } };
 
+int directions[64][64] = { { INVALID } };
+BB intervening[64][64] = { {0} };
 
 static VALUE load_piece_values(VALUE self, VALUE piece_array){
   for(int i =0; i<6; i++) piece_values[i] = NUM2INT(rb_ary_entry(piece_array, i));
@@ -166,6 +168,26 @@ void setup_column_masks(){
   }                                           // previous column rightward.
 }
 
+void setup_directions(){
+  BB ray;
+  for(int i=0; i<64; i++){
+    for(int j=0; j<64; j++){
+      for(int dir=0; dir<8; dir++){
+        ray = ray_masks[dir][i];
+        if(sq_mask_on(j) & ray){
+          directions[i][j] = dir;
+          intervening[i][j] = ray ^ (ray_masks[dir][j] | sq_mask_on(j));
+        }
+      }
+      // printf("intervening\n");
+      // printf("%d\n", i);
+      // printf("%d\n", j);
+      
+      // rb_funcall(mod_chess, rb_intern("print_bitboard"), 1, ULONG2NUM(intervening[i][j]));
+    }
+  }
+}
+
 
 void setup_masks(){ 
   setup_square_masks();  // First set up masks used to add/remove bits by their index.
@@ -179,6 +201,7 @@ void setup_masks(){
   
   setup_row_masks();     // Create bitboard masks for each row and column.
   setup_column_masks();
+  setup_directions();
 }
 
 extern void Init_bitboard(){

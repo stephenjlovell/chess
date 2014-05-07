@@ -24,18 +24,17 @@
 
 #include "shared.h"
 
-#define piece_value_at(sq_board, sq) (piece_values[piece_type(NUM2INT(rb_ary_entry(sq_board, sq)))])
-#define piece_type_at(sq_board, sq) (piece_type(NUM2INT(rb_ary_entry(sq_board, sq))))
-
 
 static VALUE mod_chess;
 static VALUE mod_position;
 static VALUE mod_search;
 
-
-BB attack_map(VALUE p_board, enumSq sq);
+BB attack_map(BRD *cBoard, enumSq sq);
+BB color_attack_map(BRD *cBoard, enumSq sq, int c, int e);
 
 int is_attacked_by(BRD *cBoard, enumSq sq, int c);
+
+int is_pinned(BRD* cBoard, int sq, int c, int e);
 
 static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board, 
                                VALUE from, VALUE to, VALUE color);

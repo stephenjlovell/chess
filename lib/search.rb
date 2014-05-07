@@ -254,7 +254,9 @@ module Chess
         end  
       end
 
-      @node.edges(adjusted_depth, true).each do |move| 
+      in_check = @node.in_check?
+
+      @node.edges(adjusted_depth, true, in_check).each do |move| 
         next unless @node.evades_check?(move)  # no illegal moves allowed at root.
         $main_calls += 1
         
@@ -356,7 +358,7 @@ module Chess
       f_margin = adjusted_depth > PLY_VALUE ? F_MARGIN_HIGH : F_MARGIN_LOW
       f_prune = (adjusted_depth <= TWO_PLY) && !in_check && (alpha.abs < MATE) && (@node.value + f_margin <= alpha)      
 
-      moves ||= @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
+      moves ||= @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY, in_check)
 
       moves.each do |move|
         MoveGen::make!(@node, move)
@@ -402,6 +404,8 @@ module Chess
       hash_move, hash_value, hash_count = $tt.probe(@node, depth, alpha, beta)
       return hash_value, hash_count unless hash_value.nil?
 
+      in_check = @node.in_check?
+
       result = @node.value  # assume 'standing pat' lower bound
       return beta, sum if result >= beta # fail hard beta cutoff
       alpha = result if result > alpha
@@ -427,8 +431,7 @@ module Chess
         end     
       end
 
-
-      @node.tactical_edges.each do |move|
+      @node.tactical_edges(in_check).each do |move|
         # next if move.see && move.see < -HALF_PAWN  # moves are ordered by SEE
         next if move.see && move.see < 0  # moves are ordered by SEE
         $quiescence_calls += 1

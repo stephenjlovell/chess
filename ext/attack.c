@@ -22,9 +22,8 @@
 #include "attack.h"
 
 
-BB attack_map(VALUE p_board, enumSq sq){
+BB attack_map(BRD *cBoard, enumSq sq){
   BB attacks = 0;
-  BRD *cBoard = get_cBoard(p_board);
   BB occ = Occupied();
   // Pawns
   attacks |= (pawn_attack_masks[BLACK][sq] & cBoard->pieces[WHITE][PAWN]) |
@@ -41,6 +40,24 @@ BB attack_map(VALUE p_board, enumSq sq){
   attacks |= (rook_attacks(occ, sq) & r_attackers);
   // Kings
   attacks |= (king_masks[sq] & (cBoard->pieces[WHITE][KING]|cBoard->pieces[BLACK][KING]));
+  return attacks;
+}
+
+BB color_attack_map(BRD *cBoard, enumSq sq, int c, int e){
+  BB attacks = 0;
+  BB occ = Occupied();
+  // Pawns
+  attacks |= pawn_attack_masks[e][sq] & cBoard->pieces[c][PAWN];
+  // Knights
+  attacks |= knight_masks[sq] & cBoard->pieces[c][KNIGHT];
+  // Bishops and Queens
+  BB b_attackers = cBoard->pieces[c][BISHOP] | cBoard->pieces[c][QUEEN];
+  attacks |= bishop_attacks(occ, sq) & b_attackers;
+  // Rooks and Queens
+  BB r_attackers = cBoard->pieces[c][ROOK] | cBoard->pieces[c][QUEEN];
+  attacks |= rook_attacks(occ, sq) & r_attackers;
+  // Kings
+  attacks |= king_masks[sq] & cBoard->pieces[c][KING];
   return attacks;
 }
 
@@ -104,6 +121,38 @@ static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board,
   return (check ? Qfalse : Qtrue);
 }
 
+int is_pinned(BRD* cBoard, int sq, int c, int e){
+  int dir = directions[sq][furthest_forward(c, cBoard->pieces[c][KING])];
+  BB occ = Occupied();
+
+  if(dir == INVALID) return 0;
+
+  BB ray = ray_masks[dir][sq];
+  BB threat = 0, guarded_king = 0;
+  // NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST, INVALID
+  if(dir < 4){ // bishop direction
+    if(dir < 2) {
+      threat = scan_up(occ, dir, sq) & (cBoard->pieces[e][BISHOP]|cBoard->pieces[e][QUEEN]);
+      if(!threat) return 0;
+      guarded_king = scan_down(occ, dir+2, sq) & (cBoard->pieces[c][KING]);
+    } else {
+      threat = scan_down(occ, dir, sq) & (cBoard->pieces[e][BISHOP]|cBoard->pieces[e][QUEEN]);
+      if(!threat) return 0;
+      guarded_king = scan_up(occ, dir-2, sq) & (cBoard->pieces[c][KING]);
+    }
+  } else {  // rook direction
+    if(dir < 6){
+      threat = scan_up(occ, dir, sq) & (cBoard->pieces[e][ROOK]|cBoard->pieces[e][QUEEN]);
+      if(!threat) return 0;
+      guarded_king = scan_down(occ, dir+2, sq) & (cBoard->pieces[c][KING]);
+    } else {
+      threat = scan_down(occ, dir, sq) & (cBoard->pieces[e][ROOK]|cBoard->pieces[e][QUEEN]);
+      if(!threat) return 0;
+      guarded_king = scan_up(occ, dir-2, sq) & (cBoard->pieces[c][KING]);
+    }
+  }
+  return guarded_king ? 1 : 0;
+}
 
 // The Static Exchange Evaluation (SEE) heuristic provides a way to determine if a capture 
 // is a 'winning' or 'losing' capture.
@@ -129,7 +178,7 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
   const BB r_attackers = cBoard->pieces[WHITE][ROOK]  | cBoard->pieces[BLACK][ROOK] | 
                          cBoard->pieces[WHITE][QUEEN] | cBoard->pieces[BLACK][QUEEN];
 
-  BB temp_map = attack_map(p_board, to);
+  BB temp_map = attack_map(cBoard, to);
   BB temp_occ = Occupied();
   int alpha = -1000000;
   int beta =   1000000;
@@ -173,8 +222,8 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
       if(type == ROOK || type == QUEEN) temp_map |= (rook_attacks(temp_occ, to) & r_attackers);
     }
     temp_color^=1;
-
   }
+  
   return INT2NUM(score);
 }
 

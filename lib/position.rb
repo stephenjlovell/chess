@@ -96,11 +96,16 @@ module Chess
       # Moves should be ordered in descending order of expected subtree value. Better move ordering produces a greater
       # number of alpha/beta cutoffs during search, reducing the size of the actual search tree toward the minimal tree.
 
-      def get_moves(depth, enhanced_sort) 
+      def get_moves(depth, enhanced_sort, in_check) 
         promotions, captures, moves = [], [], []
 
-        MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
-        MoveGen::get_non_captures(@pieces, @side_to_move, @castle, moves)
+        # if in_check
+        #   MoveGen::get_evasions(@pieces, @side_to_move, @board.squares, @enp_target, promotions, captures, moves)
+        # else
+          MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
+          MoveGen::get_non_captures(@pieces, @side_to_move, @castle, moves)
+        # end
+
         # At higher depths, expend additional effort on move ordering.
 
         # return promotions + if enhanced_sort
@@ -126,7 +131,7 @@ module Chess
       # Generate only moves that create big swings in material balance, i.e. captures and promotions. 
       # Used during Quiescence search to seek out positions from which a stable static evaluation can 
       # be performed.
-      def get_captures # returns a sorted array of all possible moves for the current player.
+      def get_captures(in_check) # returns a sorted array of all possible moves for the current player.
         promotions, captures = [], []
         MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
         # During quiesence search, sorting captures by SEE has the added benefit of enabling the pruning of bad

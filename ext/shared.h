@@ -36,12 +36,7 @@ typedef struct {
   int material[2];
 } BRD;
 
-
-// typedef enum { NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST } enumDir;
-
-typedef enum { NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST } enumDir;
-
-
+typedef enum { NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST, INVALID } enumDir;
 
 typedef enum {  A1, B1, C1, D1, E1, F1, G1, H1, 
                 A2, B2, C2, D2, E2, F2, G2, H2, 
@@ -50,15 +45,11 @@ typedef enum {  A1, B1, C1, D1, E1, F1, G1, H1,
                 A5, B5, C5, D5, E5, F5, G5, H5, 
                 A6, B6, C6, D6, E6, F6, G6, H6, 
                 A7, B7, C7, D7, E7, F7, G7, H7, 
-                A8, B8, C8, D8, E8, F8, G8, H8, INVALID } enumSq;
+                A8, B8, C8, D8, E8, F8, G8, H8 } enumSq;
 
 typedef enum { BLACK, WHITE } enumSide;
 
 typedef enum { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING } enumPiece;
-
-extern int piece_values[6]; 
-
-// extern BRD *cBoard;
 
 extern BB uni_mask;
 extern BB empty_mask;
@@ -70,8 +61,6 @@ extern BB ray_masks[8][64];
 extern BB pawn_attack_masks[2][64];
 extern BB pawn_enp_masks[64];
 
-extern int pawn_from_offsets[2][4];
-
 extern BB knight_masks[64];
 extern BB bishop_masks[64];
 extern BB rook_masks[64];
@@ -80,6 +69,11 @@ extern BB king_masks[64];
 
 extern BB square_masks_on[64];
 extern BB square_masks_off[64];
+
+extern int pawn_from_offsets[2][4];
+extern int piece_values[6];
+extern int directions[64][64];
+
 
 #define max(a,b) ((a > b) ? a : b)
 #define min(a,b) ((a > b) ? b : a)
@@ -108,7 +102,10 @@ extern BB square_masks_off[64];
 #define Occupied() ((cBoard->occupied[0])|(cBoard->occupied[1]))
 #define Placement(color) (cBoard->occupied[color])
 
-
+#define piece_type(piece_id)  ((piece_id & 0xe) >> 1 )
+#define piece_color(piece_id)  (piece_id & 0x1)
+#define piece_value_at(sq_board, sq) (piece_values[piece_type(NUM2INT(rb_ary_entry(sq_board, sq)))])
+#define piece_type_at(sq_board, sq) (piece_type(NUM2INT(rb_ary_entry(sq_board, sq))))
 
 
 // Include child header files

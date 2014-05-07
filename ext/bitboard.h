@@ -26,6 +26,9 @@
 
 static VALUE load_piece_values(VALUE self, VALUE piece_array);
 
+extern int directions[64][64];
+extern BB intervening[64][64];
+
 void setup_square_masks();
 
 void setup_pawn_masks();
@@ -36,6 +39,7 @@ void setup_queen_masks();
 void setup_king_masks();
 void setup_row_masks();
 void setup_column_masks();
+void setup_directions();
 
 void setup_masks();
 
