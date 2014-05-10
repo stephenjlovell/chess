@@ -20,6 +20,7 @@
 #-----------------------------------------------------------------------------------
 
 require 'spec_helper'
+# require 'profile'
 
 describe Chess::Search do
 

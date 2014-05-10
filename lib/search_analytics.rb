@@ -73,9 +73,10 @@ module Chess
         tp @data
       end
 
-      def print_summary(accuracy=nil)
+      def print_summary(accuracy=nil, time=nil)
         refresh
-        "N: #{all_nodes}; E: #{all_evals}; B: #{all_branching}; Efficiency: #{accuracy/all_branching}"
+        str = time ? "#{all_nodes/time} NPS\n" : ""
+        str += "N: #{all_nodes}; E: #{all_evals}; B: #{all_branching}; Efficiency: #{accuracy/all_branching}"
       end
 
       def all_nodes

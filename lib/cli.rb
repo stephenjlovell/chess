@@ -57,7 +57,7 @@ module Chess
             game.print
           end
         elsif !help?(input)
-          puts "#{input} is not a valid color.  Please choose white (w) or black (b):  "
+          puts "Not a valid color.  Please choose white (w) or black (b):  "
         end
       end
       return Chess::current_game

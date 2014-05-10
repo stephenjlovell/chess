@@ -32,7 +32,7 @@ module Chess
     class KillerTable
       def initialize
         # Create a hash table for storing killer moves indexed by depth.
-        @table = (-10..60).each.inject({}) {|hsh, i| hsh[i] = KillerEntry.new; hsh }
+        @table = (-100..100).each.inject({}) {|hsh, i| hsh[i] = KillerEntry.new; hsh }
       end
 
       def clear

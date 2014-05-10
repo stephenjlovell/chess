@@ -36,8 +36,8 @@ module Chess
     class Move
       attr_reader :piece, :from, :to, :enp_target, :see
 
-      def initialize(piece, from, to, strategy)
-        @piece, @from, @to, @strategy = piece, from, to, strategy
+      def initialize(piece, from, to, strategy, see=nil)
+        @piece, @from, @to, @strategy, @see = piece, from, to, strategy, see
       end
 
       def make!(position)
@@ -76,7 +76,7 @@ module Chess
       end
 
       def to_s
-        Pieces::ID_TO_STR[@piece] + Location::get_location(@from).to_s + Location::get_location(@to).to_s
+        Pieces::ID_TO_STR[@piece] + Location::sq_to_s(@from) + Location::sq_to_s(@to)
       end
 
       def ==(other)
@@ -122,15 +122,6 @@ module Chess
 
       def hash(piece, from, to)
         from_to_key(piece, from, to)
-      end
-
-      def own_tropism(pos, piece, from, to) 
-        @own_tropism ||= Tropism::get_bonus(piece, to, pos.enemy_king_location) 
-                       - Tropism::get_bonus(piece, from, pos.enemy_king_location) 
-      end
-
-      def enemy_tropism(pos, piece, from, to) 
-        @enemy_tropism ||= 0
       end
 
       def relocate_piece(position, piece, from, to)
@@ -242,33 +233,8 @@ module Chess
       include Reversible
     end
 
-    class KingMove < MoveStrategy
-      include Reversible
-
-      def own_tropism(pos, piece, from, to)
-        @own_tropism ||= 0
-      end
-
-      def enemy_tropism(pos, piece, from, to)  # ideally, this should be independent of make/unmake timing.
-        @enemy_tropism ||= Evaluation::king_tropism(pos, pos.enemy, to) - pos.enemy_tropism
-      end
-    end
-
     class RegularCapture < MoveStrategy #  Stores captured piece for unmake purposes.
       include MakesCapture
-    end
-
-    class KingCapture < MoveStrategy
-      include MakesCapture
-
-      def own_tropism(pos, piece, from, to)
-        @own_tropism ||= 0
-      end
-
-      def enemy_tropism(pos, piece, from, to) # Must be called before strategy.make!
-        @enemy_tropism ||= Evaluation::king_tropism(pos, pos.enemy, to) - pos.enemy_tropism
-                         - Tropism::get_bonus(@captured_piece, to, to) 
-      end
     end
 
     class EnPassantCapture < MoveStrategy
@@ -330,9 +296,8 @@ module Chess
 
     # Strategy used when a pawn moves onto the enemy back row, promoting it to a Queen.
     class PawnPromotion < MoveStrategy # Stores the existing pawn in move object and places a new Queen.
-
-
       include Irreversible
+
       def initialize(side_to_move)
         @promoted_piece = side_to_move == :w ? WQ_ID : BQ_ID  # piece_id constants for queens.
       end
@@ -357,11 +322,6 @@ module Chess
 
       def print(piece, from, to)
         "#{piece} promotion #{from} to #{to}"
-      end
-
-      def own_tropism(pos, piece, from, to)
-        @own_tropism ||= Tropism::get_bonus(@promoted_piece, to, pos.enemy_king_location) 
-                       - Tropism::get_bonus(piece, from, pos.enemy_king_location)
       end
 
       def hash(piece, from, to) # XOR out piece at from.  XOR in @queen at to.
@@ -401,11 +361,6 @@ module Chess
         position.pieces.remove_square(@promoted_piece, to)
       end
 
-      def own_tropism(pos, piece, from, to)
-        @own_tropism ||= Tropism::get_bonus(@promoted_piece, to, pos.enemy_king_location) 
-                       - Tropism::get_bonus(piece, from, pos.enemy_king_location)
-      end
-
       def print(piece, from, to)
         "#{piece} x #{@captured_piece} promotion #{from} to #{to}"
       end
@@ -434,15 +389,6 @@ module Chess
         relocate_piece(position, @rook, @rook_to, @rook_from)
       end
 
-      def own_tropism(pos, piece, from, to)
-        @own_tropism ||= Tropism::get_bonus(@rook, @rook_to, pos.enemy_king_location) 
-                       - Tropism::get_bonus(@rook, @rook_from, pos.enemy_king_location)
-      end
-
-      def enemy_tropism(pos, piece, from, to) # recalculation of enemy tropism is caused by king movement.
-        @enemy_tropism ||= Evaluation::king_tropism(pos, pos.enemy, to) - pos.enemy_tropism
-      end
-
       def inspect
         "<#{self.class} <@rook:#{@rook}> <@rook_from:#{@rook_from}> <@rook_to:#{@rook_to}>>"
       end
@@ -462,18 +408,105 @@ module Chess
       PROCS = { regular_move:           Proc.new { |*args| RegularMove.new                },
                 regular_capture:        Proc.new { |*args| RegularCapture.new(*args)      },
                 castle:                 Proc.new { |*args| Castle.new(*args)              },
-                king_move:              Proc.new { |*args| KingMove.new                   },
-                king_capture:           Proc.new { |*args| KingCapture.new(*args)         },
                 enp_capture:            Proc.new { |*args| EnPassantCapture.new(*args)    },
                 pawn_move:              Proc.new { |*args| PawnMove.new                   },
                 enp_advance:            Proc.new { |*args| EnPassantAdvance.new           },
                 pawn_promotion:         Proc.new { |*args| PawnPromotion.new(*args)       },
                 pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args)} } 
 
+      # Factory interface
+      
+      def self.build_move(pos, from, to)
+        piece = pos.board[from]
+        type = Pieces::type(piece)
+        case type
+        when :P then build_pawn_move(pos, piece, from, to)
+        when :K then build_king_move(pos, piece, from, to)
+        else build_regular_move(pos, piece, from, to)
+        end
+      end
+
       def self.build(piece, from, to, sym, *args)  # create a Move object containing the specified strategy.
         raise "no product strategy #{sym} available for Move::MoveFactory" unless PROCS[sym]
         Move.new(piece, from, to, PROCS[sym].call(*args)) 
       end
+
+      private
+
+      def self.build_pawn_move(pos, piece, from, to)
+        from_row = pos.board.row(from)
+        to_row = pos.board.row(to)
+        if Pieces::ENEMY_BACK_ROW[pos.side_to_move] == to_row
+          build_promotion(pos, piece, from, to)
+        elsif Pieces::PAWN_START_ROW[pos.side_to_move] == from_row && 
+              pos.board.manhattan_distance(from, to) == 2
+          build(piece, from, to, :enp_advance)
+        else
+          if pos.pieces.enemy?(to, pos.side_to_move)
+            build(piece, from, to, :regular_capture, pos.board[to])
+          elsif pos.enp_target && pos.board.manhattan_distance(from, to) == 2 &&
+                pos.board.manhattan_distance(pos.enp_target, from) == 1 &&
+                pos.board.column(pos.enp_target) == pos.board.column(to)
+            build(piece, from, to, :enp_capture, pos.board[pos.enp_target], pos.enp_target)            
+          else
+            build(piece, from, to, :pawn_move)
+          end
+        end
+      end
+
+      def self.build_promotion(pos, piece, from, to)
+        if pos.pieces.enemy?(to, pos.side_to_move)
+          build(piece, from, to, :pawn_promotion_capture, pos.board[to])
+        else
+          build(piece, from, to, :pawn_promotion)
+        end
+      end
+
+      def self.build_king_move(pos, piece, from, to)
+        if(pos.board.manhattan_distance(from, to) == 2)
+          build_castle(piece, from, to)
+        else
+          build_regular_move(piece, from, to)
+        end
+      end
+
+      # Squares involved in castling:
+      WRQ_FROM = Location::SQUARES[:a1] # white rook queenside from square
+      WRQ_TO = Location::SQUARES[:d1] # white rook queenside to square
+
+      WRK_FROM = Location::SQUARES[:h1] # white rook kingside from square
+      WRK_TO = Location::SQUARES[:f1] # white rook kingside to square
+
+      BRQ_FROM = Location::SQUARES[:a8] # black rook queenside from square
+      BRQ_TO = Location::SQUARES[:d8] # black rook queenside to square
+
+      BRK_FROM = Location::SQUARES[:h8] # black rook kingside from square
+      BRK_TO = Location::SQUARES[:f8] # black rook kingside to square
+
+      def self.build_castle(pos, piece, from, to)
+        if pos.side_to_move == :w  
+          if to > from
+            build(piece, from, to, :castle, Pieces::PIECE_ID[:wR], WRK_FROM, WRK_TO)
+          else
+            build(piece, from, to, :castle, Pieces::PIECE_ID[:wR], WRQ_FROM, WRQ_TO)
+          end
+        else
+          if to > from
+            build(piece, from, to, :castle, Pieces::PIECE_ID[:bR], BRK_FROM, BRK_TO)
+          else
+            build(piece, from, to, :castle, Pieces::PIECE_ID[:bR], BRQ_FROM, BRQ_TO)
+          end
+        end
+      end
+
+      def self.build_regular_move(pos, from, to)
+        if pos.pieces.enemy?(to, pos.side_to_move)
+          build(pos, from, to, :regular_capture, pos.board[to])
+        else
+          build(pos, from, to, :regular_move)
+        end
+      end
+
     end
 
   end

@@ -72,85 +72,39 @@ module Chess
       move.to_s
     end
 
-
     # Create a move object from long algebraic chess notation (used by UCI). Examples:  e2e4, e7e5, e1g1 
     # (white short castling), e7e8q (for promotion).
     def self.str_to_move(pos, str)   
-      begin
-        from = Location::string_to_location(str[0..1])
-        to = Location::string_to_location(str[2..3])
-        raise if from.nil? || to.nil?
-      rescue
-        raise InvalidMoveError, 'invalid square coordinates given' 
-      end
-      raise InvalidMoveError, 'This square is already occupied by one of your pieces.' if pos.own_pieces[to]
-      piece, enemy = pos.own_pieces[from], pos.enemy_pieces[to]
-      raise InvalidMoveError, "no piece available at square #{from}" if piece.nil?
-      create_move(pos, piece, enemy, from, to)
+      from = str_to_sq(str[0..1])
+      to = str_to_sq(str[2..3])
+      move = test_legality(pos, from, to)
     end
 
-    # def self.create_move(pos, piece, enemy, from, to)
-    #   own_type = piece.class.type
-    #   if enemy # move is a capture, but not an en-passant capture.
-    #     if own_type == :K
-    #       return Move::Factory.build(piece, from, to, :king_capture, enemy)
-    #     elsif own_type == :P && to.r == Pieces::ENEMY_BACK_ROW[piece.color]
-    #       return Move::Factory.build(piece, from, to, :pawn_promotion_capture, enemy) # implicit pawn promotion
-    #     else
-    #       return Move::Factory.build(piece, from, to, :regular_capture, enemy)
-    #     end
-    #   else
-    #     case own_type
-    #     when :P
-    #       if from + [1,0] == to || from + [-1,0] == to
-    #         if to.r == Pieces::ENEMY_BACK_ROW[piece.color]
-    #           return Move::Factory.build(piece, from, to, :pawn_promotion) 
-    #         else
-    #           return Move::Factory.build(piece, from, to, :pawn_move)     
-    #         end
-    #       elsif from + [2,0] == to || from + [-2,0] == to
-    #         return Move::Factory.build(piece, from, to, :enp_advance)    
-    #       else
-    #         target = pos.enp_target
-    #         enemy = pos.enemy_pieces[target]
-    #         if enemy.nil? || (from + [0,1] != target && from + [0,-1] != target)
-    #           raise InvalidMoveError, 'invalid pawn move' 
-    #         else
-    #           return Move::Factory.build(piece, from, to, :enp_capture, enemy)
-    #         end    
-    #       end
-    #     when :K
-    #       if from + [0,2] == to || from + [0,-2] == to
-    #         # add checks for castling rights here.
-    #         if from + [0,-2] == to # castle queen-side
-    #           if from == MoveGen::WK_FROM
-    #             rook_from, rook_to = MoveGen::WRK_FROM, Location::get_location_by_coordinates(2,5)
-    #             rook = pos.own_pieces[rook_from]
-    #           else
-    #             rook_from, rook_to = MoveGen::BRQ_FROM, Location::get_location_by_coordinates(9,5)
-    #             rook = pos.own_pieces[rook_from]
-    #           end
-    #         else # castle king-side
-    #           if from == MoveGen::WK_FROM
-    #             rook_from, rook_to = MoveGen::WRK_FROM, Location::get_location_by_coordinates(2,7)
-    #             rook = pos.own_pieces[rook_from]
-    #           else
-    #             rook_from, rook_to = MoveGen::BRK_FROM, Location::get_location_by_coordinates(9,7)
-    #             rook = pos.own_pieces[rook_from]
-    #           end
-    #         end
+    def self.str_to_sq(str)
+      raise InvalidMoveError, 'invalid square coordinates given' unless Location::SQUARES[str.to_sym]
+      Location::SQUARES[str.to_sym]
+    end
 
-    #         raise InvalidMoveError, 'invalid castle move' if rook.nil?
-    #         return Move::Factory.build(piece, from, to, :castle, rook, rook_from, rook_to) 
-    #       else
-    #         return Move::Factory.build(piece, from, to, :king_move)
-    #       end
-    #     else
-    #       return Move::Factory.build(piece, from, to, :regular_move)
-    #     end
-    #   end
-    # end
-
+    def self.test_legality(pos, from, to)
+      piece = pos.board[from]
+      if !pos.pieces.friendly?(from, pos.side_to_move) # The from square should be occupied by a friendly piece.
+        raise InvalidMoveError, 'No piece available at that square.'
+      elsif pos.pieces.friendly?(to, pos.side_to_move) # The to square should NOT be occupied by a friendly piece.
+        raise InvalidMoveError, 'This square is already occupied by one of your pieces.'
+      # test for king move legality
+      elsif !pos.pieces.test_castle_legality(from, to, pos.side_to_move, pos.castle)
+        raise InvalidMoveError, 'Invalid castle move'
+      # The to square should match the piece movement mask for the given piece type (except in the case of castles).
+      elsif !pos.pieces.test_piece_legality(from, to, pos.side_to_move, pos.enp_target)
+        raise InvalidMoveError, "The selected piece can\'t move there"
+      else
+        move = Move::Factory.build_move(pos, from, to)
+        unless pos.evades_check?(move)  # The move should not leave the king in check.
+          raise InvalidMoveError, 'That move would leave your king in check.'
+        end
+      end
+      return move
+    end
 
     SYM_TO_FEN = { wP: 'P', wN: 'N', wB: 'B', wR: 'R', wQ: 'Q', wK: 'K',
                    bP: 'p', bN: 'n', bB: 'b', bR: 'r', bQ: 'q', bK: 'k' }

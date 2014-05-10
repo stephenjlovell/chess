@@ -61,6 +61,21 @@ int pawn_from_offsets[2][4] = { {8, 16, 9, 7 }, {-8, -16, -7, -9 } };
 int directions[64][64] = { { INVALID } };
 BB intervening[64][64] = { {0} };
 
+BB get_mask_for_type(int type, int sq){
+  switch(type){
+    case KNIGHT:
+      return knight_masks[sq];
+    case BISHOP: 
+      return bishop_masks[sq];
+    case ROOK:
+      return rook_masks[sq];
+    case QUEEN:
+      return queen_masks[sq];
+    case KING:
+      return king_masks[sq];
+  }
+}
+
 static VALUE load_piece_values(VALUE self, VALUE piece_array){
   for(int i =0; i<6; i++) piece_values[i] = NUM2INT(rb_ary_entry(piece_array, i));
   return Qnil;

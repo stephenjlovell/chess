@@ -30,9 +30,16 @@ module Chess
     PIECE_ID = { wP: 17, wN: 19, wB: 21, wR: 23, wQ: 25, wK: 27,
                  bP: 16, bN: 18, bB: 20, bR: 22, bQ: 24, bK: 26 }
 
-    ID_TO_STR = PIECE_ID.invert.each.inject({}){|h, (id, sym)| h[id] = sym.to_s; h }
+    ID_TO_SYM = PIECE_ID.invert
+
+    ID_TO_STR = ID_TO_SYM.each.inject({}){|h, (id, sym)| h[id] = sym.to_s; h }
 
     PIECE_TYPES = [ :P, :N, :B, :R, :Q, :K ] 
+
+    def self.type(piece)
+      return nil if piece == 0
+      PIECE_TYPES[((piece & 14) >> 1)]
+    end
 
     PIECE_SYMBOLS = [ :wP, :wN, :wB, :wR, :wQ, :wK, :bP, :bN, :bB, :bR, :bQ, :bK ]
 
@@ -68,29 +75,14 @@ module Chess
     PIECE_TYPE = { wP: :P, wN: :N, wB: :B, wR: :R, wQ: :Q, wK: :K,
                    bP: :P, bN: :N, bB: :B, bR: :R, bQ: :Q, bK: :K }
 
-    ENEMY_BACK_ROW = { w: 9, b: 2 }
+    ENEMY_BACK_ROW = { w: 7, b: 0 }
 
-    CAN_PROMOTE = { w: 8, b: 3 }
+    PAWN_START_ROW = { w: 1, b: 6 }
 
 
     # set up bitmask used to unpack to/from pairs sent from movegen.c
     FROM_MASK = 0b111111
 
-    def self.set_piece_sym_values
-      hsh = { wP: PIECE_VALUES[:P], wN: PIECE_VALUES[:N], wB: PIECE_VALUES[:B], 
-              wR: PIECE_VALUES[:R], wQ: PIECE_VALUES[:Q], wK: PIECE_VALUES[:K],
-              bP: PIECE_VALUES[:P], bN: PIECE_VALUES[:N], bB: PIECE_VALUES[:B], 
-              bR: PIECE_VALUES[:R], bQ: PIECE_VALUES[:Q], bK: PIECE_VALUES[:K] }
-      hsh.default = 0
-      return hsh
-    end
-
-    # This hash associates piece symbols with the value of their piece type.
-    PIECE_SYM_VALUES = set_piece_sym_values
-
-    def self.get_value_by_sym(sym)
-      PIECE_SYM_VALUES[sym]
-    end
 
 
   end

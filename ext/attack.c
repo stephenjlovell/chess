@@ -61,29 +61,27 @@ BB color_attack_map(BRD *cBoard, enumSq sq, int c, int e){
   return attacks;
 }
 
-int is_attacked_by(BRD *cBoard, enumSq sq, int c){
-  int e = c^1;  // enemy color
+int is_attacked_by(BRD *cBoard, enumSq sq, int attacker, int defender){
   BB occ = Occupied();
   // Pawns
-  if(pawn_attack_masks[c][sq] & cBoard->pieces[e][PAWN]) return 1; 
+  if(pawn_attack_masks[defender][sq] & cBoard->pieces[attacker][PAWN]) return 1; 
   // Knights
-  if(knight_masks[sq] & (cBoard->pieces[e][KNIGHT])) return 1;
+  if(knight_masks[sq] & (cBoard->pieces[attacker][KNIGHT])) return 1;
   // Bishops and Queens
-  if(bishop_attacks(occ, sq) & (cBoard->pieces[e][BISHOP]|cBoard->pieces[e][QUEEN])) return 1;
+  if(bishop_attacks(occ, sq) & (cBoard->pieces[attacker][BISHOP]|cBoard->pieces[attacker][QUEEN])) return 1;
   // Rooks and Queens
-  if(rook_attacks(occ, sq) & (cBoard->pieces[e][ROOK]|cBoard->pieces[e][QUEEN])) return 1;
+  if(rook_attacks(occ, sq) & (cBoard->pieces[attacker][ROOK]|cBoard->pieces[attacker][QUEEN])) return 1;
   // Kings
-  if(king_masks[sq] & (cBoard->pieces[e][KING])) return 1;
+  if(king_masks[sq] & (cBoard->pieces[attacker][KING])) return 1;
   return 0;
 }
 
 VALUE is_in_check(VALUE self, VALUE p_board, VALUE side_to_move){
   BRD *cBoard = get_cBoard(p_board);
   int c = SYM2COLOR(side_to_move);
-
-  // handle king loss here.
-
-  return (is_attacked_by(cBoard, furthest_forward(c, cBoard->pieces[c][KING]), c) ? Qtrue : Qfalse);
+  int e = c^1;
+  if(!cBoard->pieces[c][KING]) return Qtrue;
+  return (is_attacked_by(cBoard, furthest_forward(c, cBoard->pieces[c][KING]), e, c) ? Qtrue : Qfalse);
 }
 
 static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board, 
@@ -97,8 +95,7 @@ static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board,
   int piece = NUM2INT(rb_ary_entry(sq_board, f));  // ?
   int captured_piece = NUM2INT(rb_ary_entry(sq_board, t));
 
-  BB own_king = cBoard->pieces[c][KING];
-  if(!own_king) return Qfalse;
+  if(!cBoard->pieces[c][KING]) return Qfalse;
 
   BB delta = (sq_mask_on(t)|sq_mask_on(f));
   cBoard->pieces[c][piece_type(piece)] ^= delta;
@@ -108,12 +105,12 @@ static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board,
     clear_sq(t, cBoard->pieces[e][piece_type(captured_piece)]);
     clear_sq(t, cBoard->occupied[e]);
     // determine if in check
-    check = is_attacked_by(cBoard, furthest_forward(c, cBoard->pieces[c][KING]), c);
+    check = is_attacked_by(cBoard, furthest_forward(c, cBoard->pieces[c][KING]), e, c);
     add_sq(t, cBoard->pieces[e][piece_type(captured_piece)]);
     add_sq(t, cBoard->occupied[e]);
   } else {
     // determine if in check
-    check = is_attacked_by(cBoard, furthest_forward(c, cBoard->pieces[c][KING]), c);
+    check = is_attacked_by(cBoard, furthest_forward(c, cBoard->pieces[c][KING]), e, c);
   }
   cBoard->pieces[c][piece_type(piece)] ^= delta;
   cBoard->occupied[c] ^= delta;
@@ -123,6 +120,7 @@ static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board,
 
 int is_pinned(BRD* cBoard, int sq, int c, int e){
   int dir = directions[sq][furthest_forward(c, cBoard->pieces[c][KING])];
+  int scan_dir;
   BB occ = Occupied();
 
   if(dir == INVALID) return 0;
@@ -148,6 +146,7 @@ int is_pinned(BRD* cBoard, int sq, int c, int e){
     } else {
       threat = scan_down(occ, dir, sq) & (cBoard->pieces[e][ROOK]|cBoard->pieces[e][QUEEN]);
       if(!threat) return 0;
+      scan_dir = dir - 2;
       guarded_king = scan_up(occ, dir-2, sq) & (cBoard->pieces[c][KING]);
     }
   }
@@ -163,11 +162,7 @@ int is_pinned(BRD* cBoard, int sq, int c, int e){
 // 3. During quiescence search, SEE is used to prune losing captures. This provides a very low-risk
 //    way of reducing the size of the q-search without impacting playing strength.
 
-static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, VALUE to, VALUE side_to_move, VALUE sq_board){
-  BRD *cBoard = get_cBoard(p_board);
-  from = (NUM2INT(from));
-  to = (NUM2INT(to));
-  int c = SYM2COLOR(side_to_move);
+extern int get_see(BRD *cBoard, int from, int to, int c, VALUE sq_board){
   int next_victim, type;
   int temp_color = c;
   int score = 0;
@@ -175,8 +170,8 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
   // get initial map of all squares directly attacking this square (does not include 'discovered'/hidden attacks)
   const BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
                          cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
-  const BB r_attackers = cBoard->pieces[WHITE][ROOK]  | cBoard->pieces[BLACK][ROOK] | 
-                         cBoard->pieces[WHITE][QUEEN] | cBoard->pieces[BLACK][QUEEN];
+  const BB r_attackers = cBoard->pieces[WHITE][ROOK]   | cBoard->pieces[BLACK][ROOK] | 
+                         cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
 
   BB temp_map = attack_map(cBoard, to);
   BB temp_occ = Occupied();
@@ -206,11 +201,11 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
     if(type > KING) break;
 
     if(c == temp_color){    // iterative alpha-beta:
-      if(score >= beta) return INT2NUM(beta);
+      if(score >= beta) return beta;
       if(score > alpha) alpha = score;
       score += next_victim;
     } else {
-      if(score <= alpha) return INT2NUM(alpha);
+      if(score <= alpha) return alpha;
       if(score < beta) beta = score;
       score -= next_victim;
     }
@@ -224,7 +219,11 @@ static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, V
     temp_color^=1;
   }
   
-  return INT2NUM(score);
+  return score;
+}
+
+static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, VALUE to, VALUE side_to_move, VALUE sq_board){
+  return INT2NUM(get_see(get_cBoard(p_board), NUM2INT(from), NUM2INT(to), SYM2COLOR(side_to_move), sq_board));
 }
 
 extern void Init_attack(){

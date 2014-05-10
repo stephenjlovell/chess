@@ -37,122 +37,13 @@ module Chess
     #      This is approximated by awarding a bonus for each piece in play based on the value of the piece and its distance 
     #      to the opposing king.
 
-    # BASE_PST = [  # Piece Square Tables (PSTs) are used to provide a small positional bonus/penalty for controlling valuable       
-    #               # real estate on the board. Base PSTs are implemented relative to black side to move. 
-    #   # Pawn          
-    #      [ 0,  0,  0,  0,  0,  0,  0,  0, 
-    #       -1,  1,  1,  1,  1,  1,  1, -1, 
-    #       -2,  0,  1,  2,  2,  1,  0, -2, 
-    #       -3, -1,  2, 10, 10,  2, -1, -3, 
-    #       -4, -2,  4, 14, 14,  4, -2, -4, 
-    #       -5, -3,  0,  9,  9,  0, -3, -5, 
-    #       -6, -4,  0,-20,-20,  0, -4, -6, 
-    #        0,  0,  0,  0,  0,  0,  0,  0 ],
-    #   # Knight
-    #      [  -8, -8, -6, -6, -6, -6, -8, -8, 
-    #         -8,  0,  0,  0,  0,  0,  0, -8, 
-    #         -6,  0,  4,  4,  4,  4,  0, -6, 
-    #         -6,  0,  4,  8,  8,  4,  0, -6, 
-    #         -6,  0,  4,  8,  8,  4,  0, -6, 
-    #         -6,  0,  4,  4,  4,  4,  0, -6, 
-    #         -8,  0,  1,  2,  2,  1,  0, -8, 
-    #        -10,-12, -6, -6, -6, -6,-12,-10 ],
-    #   # Bishop
-    #      [ -3, -3, -3, -3, -3, -3, -3, -3, 
-    #        -3,  0,  0,  0,  0,  0,  0, -3, 
-    #        -3,  0,  2,  4,  4,  2,  0, -3, 
-    #        -3,  0,  4,  5,  5,  4,  0, -3, 
-    #        -3,  0,  4,  5,  5,  4,  0, -3, 
-    #        -3,  1,  2,  4,  4,  2,  1, -3, 
-    #        -3,  2,  1,  1,  1,  1,  2, -3, 
-    #        -3, -3,-10, -3, -3,-10, -3, -3 ],
-    #   # Rook
-    #      [   4,  4,  4,  4,  4,  4,  4,  4,
-    #         16, 16, 16, 16, 16, 16, 16, 16,
-    #         -4,  0,  0,  0,  0,  0,  0, -4,
-    #         -4,  0,  0,  0,  0,  0,  0, -4,
-    #         -4,  0,  0,  0,  0,  0,  0, -4,
-    #         -4,  0,  0,  0,  0,  0,  0, -4,
-    #         -4,  0,  0,  0,  0,  0,  0, -4,
-    #          0,  0,  0,  2,  2,  0,  0,  0 ],
-    #   # Queen
-    #      [  0,  0,  0,  1,  1,  0,  0,  0, 
-    #         0,  0,  1,  2,  2,  1,  0,  0, 
-    #         0,  1,  2,  2,  2,  2,  1,  0, 
-    #         0,  1,  2,  3,  3,  2,  1,  0, 
-    #         0,  1,  2,  3,  3,  2,  1,  0, 
-    #         0,  1,  1,  2,  2,  1,  1,  0, 
-    #         0,  0,  1,  1,  1,  1,  0,  0, 
-    #        -6, -6, -6, -6, -6, -6, -6, -6 ] ]
-
-    # KING_BASE = {
-    #   false => [ -52, -50, -50, -50, -50, -50, -50, -52,   # In early game, encourage the king to stay on back 
-    #              -50, -48, -48, -48, -48, -48, -48, -50,   # row defended by friendly pieces.
-    #              -48, -46, -46, -46, -46, -46, -46, -48,
-    #              -46, -44, -44, -44, -44, -44, -44, -46,
-    #              -44, -42, -42, -42, -42, -42, -42, -44,
-    #              -42, -40, -40, -40, -40, -40, -40, -42,
-    #              -16, -15, -20, -20, -20, -20, -15, -16,
-    #                0,  20,  30, -30,   0, -20,  30,  20 ],
-
-    #    true => [-30,-20,-10,  0,  0,-10,-20,-30,     # In end game (when few friendly pieces are available
-    #             -20,-10,  0, 10, 10,  0,-10,-20,     # to protect king), the king should move toward the center
-    #             -10,  0, 10, 20, 20, 10,  0,-10,     # and avoid getting trapped in corners.
-    #               0, 10, 20, 30, 30, 20, 10,  0,
-    #               0, 10, 20, 30, 30, 20, 10,  0,
-    #             -10,  0, 10, 20, 20, 10,  0,-10,
-    #             -20,-10,  0, 10, 10,  0,-10,-20,
-    #             -30,-20,-10,  0,  0,-10,-20,-30 ] }
-
-    
-    # MIRROR = [ 56, 57, 58, 59, 60, 61, 62, 63,  # Used to create a mirror image of the base PST
-    #            48, 49, 50, 51, 52, 53, 54, 55,  # during initialization.
-    #            40, 41, 42, 43, 44, 45, 46, 47,
-    #            32, 33, 34, 35, 36, 37, 38, 39,
-    #            24, 25, 26, 27, 28, 29, 30, 31,
-    #            16, 17, 18, 19, 20, 21, 22, 23,
-    #             8,  9, 10, 11, 12, 13, 14, 15,
-    #             0,  1,  2,  3,  4,  5,  6,  7 ]
-
-
-    # # Initialize Piece Square Tables for each color, endgame status, and piece type.
-    # def self.create_pst
-    #   pst = { w: { false => Array.new(6), true => Array.new(6) }, 
-    #           b: { false => Array.new(6), true => Array.new(6) } }
-    #   BASE_PST.each_with_index do |arr, type|
-    #     pst[:b][false][type] = arr
-    #     pst[:b][true][type] = arr
-    #   end
-    #   pst[:b][false][5] = KING_BASE[false]
-    #   pst[:b][true][5] = KING_BASE[true]
-
-    #   BASE_PST.each_with_index do |arr, type|
-    #     mirror = mirror_table(arr)
-    #     pst[:w][false][type] = mirror
-    #     pst[:w][true][type] = mirror   
-    #   end
-    #   pst[:w][false][5] = mirror_table(KING_BASE[false])
-    #   pst[:w][true][5] = mirror_table(KING_BASE[true])
-    #   return pst
-    # end
-
-    # reverse the rows in the base PST 
-    # def self.mirror_table(arr)
-    #   64.times.map { |i| arr[MIRROR[i]] }
-    # end
-
-    # PST = create_pst
-
     EVAL_GRAIN = 1
 
     # The main evaluation method.  Calls methods for calculation of each evaluation component,
     # then divides the total eval score by EVAL_GRAIN to achieve the desired 'coarseness' of evaluation.
-    def self.evaluate(pos)
+    def self.evaluate(pos, in_check)
       $evaluation_calls += 1 
-
-      net_placement(pos.pieces, pos.side_to_move) + net_mobility(pos) 
-      # net_material(pos.pieces, pos.side_to_move) + net_mobility(pos) 
-
+      net_placement(pos.pieces, pos.side_to_move) + net_safety(pos, in_check) 
     end
 
     # Sums up the value of all pieces in play for the given side (without any positional bonuses/penalties).
@@ -168,8 +59,9 @@ module Chess
 
 
     # Award a bonus/penalty depending on which side (if any) is in check.
-    def self.net_mobility(position)  
-      if position.in_check?
+    def self.net_safety(position, in_check)
+      in_check ||= position.in_check?  
+      if in_check
         -350
       elsif position.enemy_in_check?
         350

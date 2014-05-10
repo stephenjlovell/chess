@@ -40,6 +40,30 @@ module Chess
         end 
       end
 
+      def sq_mask(sq)
+        1 << sq
+      end
+
+      def occupied_squares
+        get_occupancy(:w)|get_occupancy(:b)
+      end
+
+      def empty?(sq)
+        occupied_squares & sq_mask(sq)  == 0
+      end
+
+      def occupied?(sq)
+        occupied_squares & sq_mask(sq) > 0
+      end
+
+      def friendly?(sq, side_to_move)
+        get_occupancy(side_to_move) & sq_mask(sq) > 0
+      end
+
+      def enemy?(sq, side_to_move)
+        get_occupancy(FLIP_COLOR[side_to_move]) & sq_mask(sq) > 0
+      end
+
       private
 
       def setup(sboard)

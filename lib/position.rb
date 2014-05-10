@@ -59,8 +59,8 @@ module Chess
       # Perform a static evaluation of the current position to asses its heuristic value to the current side.
       # This method should only be called from positions that are relatively 'quiescent', i.e. where big swings in
       # material balance are not likely.
-      def value
-        Evaluation::evaluate(self)
+      def value(in_check = nil)
+        Evaluation::evaluate(self, in_check)
       end
 
       def in_endgame?
@@ -99,29 +99,30 @@ module Chess
       def get_moves(depth, enhanced_sort, in_check) 
         promotions, captures, moves = [], [], []
 
-        # if in_check
-        #   MoveGen::get_evasions(@pieces, @side_to_move, @board.squares, @enp_target, promotions, captures, moves)
-        # else
+        if in_check
+          MoveGen::get_evasions(@pieces, @side_to_move, @board.squares, @enp_target, promotions, captures, moves)
+        else
           MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
           MoveGen::get_non_captures(@pieces, @side_to_move, @castle, moves)
-        # end
+        end
 
         # At higher depths, expend additional effort on move ordering.
 
-        # return promotions + if enhanced_sort
-        #   enhanced_sort(captures, moves, depth)
-        # else
-        #   sort_captures_by_see!(captures) + history_sort!(moves)
-        # end
+        if enhanced_sort
+          enhanced_sort(promotions, captures, moves, depth)
+        else
+          promotions + sort_captures_by_see!(captures) + history_sort!(moves)
+        end
 
-        promotions + sort_captures_by_see!(captures) + history_sort!(moves)
+        # promotions + sort_captures_by_see!(captures) + history_sort!(moves)
+        # enhanced_sort(promotions, captures, moves, depth)
       end
       alias :edges :get_moves
 
-      def enhanced_sort(captures, moves, depth)
+      def enhanced_sort(promotions, captures, moves, depth)
         winning_captures, losing_captures = split_captures_by_see!(captures)
         killers, non_killers = split_killers(moves, depth)
-        winning_captures + killers + losing_captures + non_killers
+        promotions + winning_captures + killers + losing_captures + non_killers
       end
 
       def basic_sort(captures, moves)
@@ -131,13 +132,18 @@ module Chess
       # Generate only moves that create big swings in material balance, i.e. captures and promotions. 
       # Used during Quiescence search to seek out positions from which a stable static evaluation can 
       # be performed.
-      def get_captures(in_check) # returns a sorted array of all possible moves for the current player.
-        promotions, captures = [], []
-        MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
+      def get_captures(evade_check) 
         # During quiesence search, sorting captures by SEE has the added benefit of enabling the pruning of bad
         # captures (those with SEE < 0). In practice, this reduced the average number of q-nodes by around half. 
-        
-        promotions + sort_captures_by_see!(captures)
+        promotions, captures = [], []
+        if evade_check
+          moves = []
+          MoveGen::get_evasions(@pieces, @side_to_move, @board.squares, @enp_target, promotions, captures, moves)
+          promotions + sort_captures_by_see!(captures) + history_sort!(moves)
+        else
+          MoveGen::get_winning_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
+          promotions + sort_winning_captures_by_see!(captures)
+        end
       end
       alias :tactical_edges :get_captures
 
@@ -166,9 +172,17 @@ module Chess
         end
       end
 
-      def sort_captures!(captures)
-        captures.sort! { |x,y| y.mvv_lva <=> x.mvv_lva } # Z-A
-      end
+      def sort_winning_captures_by_see!(captures)
+        captures.sort! do |x,y|
+          if y.see > x.see
+            1
+          elsif y.see < x.see
+            -1
+          else
+            y.mvv_lva <=> x.mvv_lva  # Rely on MVV-LVA in event of tie.
+          end
+        end
+      end      
 
       def split_killers(moves, depth)
         k = $killer[depth]

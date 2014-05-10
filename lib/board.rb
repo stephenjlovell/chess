@@ -67,6 +67,24 @@ module Chess
       @squares[square] = value
     end
 
+    def row(sq)
+      sq & 7
+    end
+
+    def column(sq)
+      sq >> 3
+    end
+
+    # Also called Taxicab Distance.  Returns a value between 1 (min. distance) and 14 (max. distance)
+    def manhattan_distance(from, to)
+      (row(from)-row(to)).abs + (column(from)-column(to)).abs
+    end # distance between 1 and 14
+
+    # Returns a value between 1 (min. distance) and 7 (max. distance)
+    def self.chebyshev_distance(from, to)
+      Chess::max((to.r - from.r).abs, (to.c - from.c).abs)
+    end
+
     # Provide an initial hash for position object by merging (via XOR) the hash keys for each # piece/square.
     def hash
       each_with_index.inject(0) {|h, (id, i)| h ^= (id==0 ? 0 : Memory::psq_key(id, i)); h }
@@ -78,7 +96,7 @@ module Chess
                  
     def print  # prints out a visual representation of the chessboard to the console.
       i = 8
-      piece_codes = Pieces::PIECE_ID.invert
+      piece_codes = Pieces::ID_TO_SYM
       puts (headings = "    A   B   C   D   E   F   G   H")
       puts (divider =  "  " + ("-" * 33))
       @squares.each_slice(8).to_a.reverse.each do |row|

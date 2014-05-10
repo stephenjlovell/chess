@@ -32,7 +32,7 @@ static VALUE mod_search;
 BB attack_map(BRD *cBoard, enumSq sq);
 BB color_attack_map(BRD *cBoard, enumSq sq, int c, int e);
 
-int is_attacked_by(BRD *cBoard, enumSq sq, int c);
+int is_attacked_by(BRD *cBoard, enumSq sq, int attacker, int defender);
 
 int is_pinned(BRD* cBoard, int sq, int c, int e);
 
@@ -40,6 +40,8 @@ static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board,
                                VALUE from, VALUE to, VALUE color);
 
 BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int type, int sq);
+
+extern int get_see(BRD *cBoard, int from, int to, int c, VALUE sq_board);
 
 static VALUE static_exchange_evaluation(VALUE self, VALUE p_board, VALUE from, VALUE to, 
                                         VALUE side_to_move, VALUE sq_board);
