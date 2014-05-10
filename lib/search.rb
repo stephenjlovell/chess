@@ -25,16 +25,16 @@ require './lib/evaluation.rb'
 module Chess
   module Search # this module defines tree traversal algorithms for move selection.
 
-    PLY_VALUE = 2  # Multiplier representing the depth value of 1 ply.  
+    PLY_VALUE = 1  # Multiplier representing the depth value of 1 ply.  
                    # Used for fractional depth extensions / reductions.
 
     TWO_PLY = 2*PLY_VALUE
     THREE_PLY = 3*PLY_VALUE
     FOUR_PLY = 4*PLY_VALUE
 
-    EXT_CHECK = 1  # Used to extend search by a fraction of a ply when side to move is in check.
+    EXT_CHECK = PLY_VALUE  # Used to extend search by a fraction of a ply when side to move is in check.
 
-    EXT_MAX = TWO_PLY # Maximum number of check extensions permitted.
+    EXT_MAX = THREE_PLY # Maximum number of check extensions permitted.
 
     MTD_STEP_SIZE = 1 # Initial value used by MTD(f)-Step to adjust bounds and window size.
 
@@ -258,6 +258,9 @@ module Chess
 
       @node.edges(adjusted_depth, true, in_check).each do |move| 
         next unless @node.evades_check?(move)  # no illegal moves allowed at root.
+
+        # next if move == hash_move
+
         $main_calls += 1
         
         MoveGen::make!(@node, move)
@@ -362,7 +365,8 @@ module Chess
 
       moves.each do |move|
 
-        puts move.to_s if move == first_move
+        # next if move == first_move
+
         MoveGen::make!(@node, move)
         if f_prune && legal_moves && move.quiet? && !@node.in_check? # When f_prune flag is set,
           MoveGen::unmake!(@node, move) # prune moves that don't alter material balance or give check.
@@ -370,6 +374,10 @@ module Chess
         end
         value, count = alpha_beta(depth-PLY_VALUE, -beta, -alpha, extension)
         MoveGen::unmake!(@node, move)
+
+        # if move == first_move
+        #   puts count
+        # end
 
         $main_calls += 1
         result = Chess::max(-value, result)
@@ -437,8 +445,10 @@ module Chess
 
       @node.tactical_edges(in_check).each do |move|
         # next if move.see && move.see < -HALF_PAWN  # moves are ordered by SEE
-        # next if !in_check && move.see && move.see < 0  # moves are ordered by SEE
+        next if !in_check && move.see && move.see < 0  # moves are ordered by SEE
         $quiescence_calls += 1
+
+        # next if move == hash_move
 
         MoveGen::make!(@node, move)
         value, count = quiescence(depth-PLY_VALUE, -beta, -alpha, check_counter)
@@ -446,7 +456,7 @@ module Chess
 
         result = Chess::max(-value, result)
         sum += count
-        legal_moves = true # unless result <= KING_LOSS  # when in check, only legal evasions are generated.
+        legal_moves = true  unless result <= KING_LOSS  # when in check, only legal evasions are generated.
 
         if result > alpha
           alpha = result

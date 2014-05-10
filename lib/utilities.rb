@@ -91,11 +91,11 @@ module Chess
         raise InvalidMoveError, 'No piece available at that square.'
       elsif pos.pieces.friendly?(to, pos.side_to_move) # The to square should NOT be occupied by a friendly piece.
         raise InvalidMoveError, 'This square is already occupied by one of your pieces.'
-      # test for king move legality
-      elsif !pos.pieces.test_castle_legality(from, to, pos.side_to_move, pos.castle)
-        raise InvalidMoveError, 'Invalid castle move'
-      # The to square should match the piece movement mask for the given piece type (except in the case of castles).
-      elsif !pos.pieces.test_piece_legality(from, to, pos.side_to_move, pos.enp_target)
+      # # test for king move legality
+      # elsif !pos.pieces.test_castle_legality(from, to, pos.side_to_move, pos.castle)
+      #   raise InvalidMoveError, 'Invalid castle move'
+      # # The to square should match the piece movement mask for the given piece type (except in the case of castles).
+      elsif !pos.pieces.test_piece_legality(pos.piecfrom, to, pos.side_to_move, pos.enp_target)
         raise InvalidMoveError, "The selected piece can\'t move there"
       else
         move = Move::Factory.build_move(pos, from, to)

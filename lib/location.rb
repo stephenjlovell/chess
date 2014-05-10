@@ -103,26 +103,6 @@ module Chess
     LOCATIONS = 64.times.map {|sq| Location.new(sq) }
 
 
-    # def self.get_location_by_symbol(sym)
-    #   LOCATIONS[SQUARES[sym]]
-    # end
-
-    # def self.get_location(square)
-    #   LOCATIONS[square]
-    # end
-
-    # def self.get_location_by_mask(mask)
-    #   LOCATIONS[Bitboard::lsb(mask)-1]
-    # end
-
-    # # Return the location object corresponding to the given string (i.e. "a1").
-    # def self.string_to_location(str)
-    #   location = LOCATIONS[SQUARES[str.to_sym]]
-    #   if location.nil?
-    #     raise Notation::NotationFormatError, "No valid Chess::Location::Location object for string '#{str}'"
-    #   end
-    # end
-
   end
 end
 

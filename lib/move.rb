@@ -193,10 +193,6 @@ module Chess
         position.pieces.add_square(@captured_piece, to) # Replace stored enemy piece on bitboard
       end
 
-      def enemy_tropism(pos, piece, from, to)
-        @enemy_tropism ||= -Tropism::get_bonus(@captured_piece, to, pos.own_king_location) 
-      end
-
       def print(piece, from, to)
         "#{piece} x #{@captured_piece} #{from} to #{to}"
       end
@@ -256,10 +252,6 @@ module Chess
         unmake_clock_adjustment(position)
         position.board[@enp_target] = @captured_piece
         position.pieces.add_square(@captured_piece, @enp_target) # Replace stored enemy piece on bitboard
-      end
-
-      def enemy_tropism(pos, piece, from, to)
-        @enemy_tropism ||= -Tropism::get_bonus(@captured_piece, @enp_target, pos.own_king_location) 
       end
 
       def hash(piece, from, to)
@@ -413,7 +405,8 @@ module Chess
                 enp_advance:            Proc.new { |*args| EnPassantAdvance.new           },
                 pawn_promotion:         Proc.new { |*args| PawnPromotion.new(*args)       },
                 pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args)} } 
-
+      private_constant :PROCS
+      
       # Factory interface
       
       def self.build_move(pos, from, to)
