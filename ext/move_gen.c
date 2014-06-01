@@ -423,13 +423,13 @@ static VALUE get_winning_captures(VALUE self, VALUE p_board, VALUE color, VALUE 
     to = furthest_forward(c, left_attacks);
     from = to+pawn_from_offsets[c][2];
     see = get_see(cBoard, from, to, c, sq_board);
-    if(see >= 0) build_capture_with_see(piece_id, from, to, cls_regular_capture, sq_board, moves, see);
+    build_capture_with_see(piece_id, from, to, cls_regular_capture, sq_board, moves, see);
   }
   for(; right_attacks; clear_sq(to, right_attacks)){
     to = furthest_forward(c, right_attacks);
     from = to+pawn_from_offsets[c][3];
     see = get_see(cBoard, from, to, c, sq_board);
-    if(see >= 0) build_capture_with_see(piece_id, from, to, cls_regular_capture, sq_board, moves, see);
+    build_capture_with_see(piece_id, from, to, cls_regular_capture, sq_board, moves, see);
   }
   // en-passant captures
   if(enp_target != Qnil){
@@ -438,7 +438,7 @@ static VALUE get_winning_captures(VALUE self, VALUE p_board, VALUE color, VALUE 
       from = furthest_forward(c, f);
       to = c ? (target+8) : (target-8);
       see = get_see(cBoard, from, to, c, sq_board);
-      if(see >= 0) build_enp_capture_with_see(piece_id, from, to, cls_enp_capture, target, sq_board, moves, see);   
+      build_enp_capture_with_see(piece_id, from, to, cls_enp_capture, target, sq_board, moves, see);   
     }
   }
 

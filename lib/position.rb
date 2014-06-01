@@ -143,6 +143,8 @@ module Chess
         else
           MoveGen::get_winning_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
           promotions + sort_winning_captures_by_see!(captures)
+          # MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
+          # promotions + sort_captures_by_see!(captures)
         end
       end
       alias :tactical_edges :get_captures

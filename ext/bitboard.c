@@ -61,6 +61,7 @@ int pawn_from_offsets[2][4] = { {8, 16, 9, 7 }, {-8, -16, -7, -9 } };
 int directions[64][64] = { { INVALID } };
 BB intervening[64][64] = { {0} };
 
+// Remove method and add logic to legality testing.
 BB get_mask_for_type(int type, int sq){
   switch(type){
     case KNIGHT:
@@ -73,6 +74,8 @@ BB get_mask_for_type(int type, int sq){
       return queen_masks[sq];
     case KING:
       return king_masks[sq];
+    default:
+      return (BB) 0;
   }
 }
 

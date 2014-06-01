@@ -144,10 +144,10 @@ module Chess
       return value
     end
 
-    # MTD(f) starts with an initial guess on the 'true' heuristic value of the minimax tree.  It makes a series 
+    # MTD(f) starts with an initial guess of the heuristic value of the minimax tree.  It makes a series 
     # of 'zero-window' calls to alpha-beta that establish upper and lower bounds on the heuristic value.
-    # Each subsequent pass causes the bounds to converge on the true minimax value. When the window between 
-    # the bounds reaches size zero, the search is complete and the true value is returned.
+    # Each subsequent pass causes the bounds to converge on the true minimax value. When the bounds converge, 
+    # the search is complete and the true value is returned.
 
     def self.mtdf(guess=nil, depth=nil) 
       guess ||= (@previous_value || get_first_guess)
@@ -167,7 +167,7 @@ module Chess
       return best_move, best
     end
 
-    # MTD(f)-Step modifies the MTD(f) algorithm to dynamically increase/decrease the 
+    # MTD(f)-Step modifies the MTD(f) algorithm to dynamically increase/decrease the step size. 
 
     def self.mtdf_step(guess=nil, depth=nil) # MTD(f) with 'convergence accelerator'.
       guess ||= (@previous_value || get_first_guess)
@@ -407,11 +407,11 @@ module Chess
       # check_counter -= 1 if in_check
 
     
-      if !in_check
+      # if !in_check
         result = @node.value(in_check)  
         return beta, sum if result >= beta # fail hard beta cutoff
         alpha = result if result > alpha   # use 'standing pat' lower bound only when not in check
-      end
+      # end
 
       # Before generating moves, try the move provided by the TT if any. If this move causes a beta cutoff,
       # this will save the effort that would have been spent on move generation.

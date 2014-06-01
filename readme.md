@@ -1,7 +1,7 @@
 
 ## RubyChess
 
-A Chess AI written in Ruby! 
+A Chess AI written in Ruby and C.
 
 
 

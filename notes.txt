@@ -53,18 +53,13 @@ To Do ----
 
   Create readme
 
-  
-
-
 
 Possible Enhancements to Add ----
-
 
   -Extend search on 'winning' promotions
 
   -At root, TT entries could be used for more accurate move ordering. Entry value would be used if available, 
-   otherwise q-search could be used to establish an initial entry.  This would reduce branching factor and might improve strength,
-   revealing beneficial lines that might otherwise have been cut off.
+   otherwise q-search could be used to establish an initial entry.  This would reduce branching factor and might improve strength by revealing beneficial lines that might otherwise have been cut off.
 
 
 

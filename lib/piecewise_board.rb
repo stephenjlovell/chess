@@ -57,11 +57,11 @@ module Chess
       end
 
       def friendly?(sq, side_to_move)
-        get_occupancy(side_to_move) & sq_mask(sq) > 0
+        (get_occupancy(side_to_move) & sq_mask(sq)) > 0
       end
 
       def enemy?(sq, side_to_move)
-        get_occupancy(FLIP_COLOR[side_to_move]) & sq_mask(sq) > 0
+        (get_occupancy(FLIP_COLOR[side_to_move]) & sq_mask(sq)) > 0
       end
 
       private

@@ -117,20 +117,24 @@ static VALUE o_in_endgame(VALUE self, VALUE color){
   return (cBoard->material[c] <= endgame_value) ? Qtrue : Qfalse;
 }
 
-static VALUE o_test_legality(VALUE self, VALUE from, VALUE to, VALUE side_to_move, VALUE enp_target){
+static VALUE o_test_legality(VALUE self, VALUE f, VALUE t, VALUE side_to_move, VALUE enp_target, VALUE castle){
   BRD *cBoard = get_cBoard(self);
   int c = SYM2COLOR(side_to_move);
   int e = c^1;
-  from = NUM2INT(from);
-  to = NUM2INT(to);
+  int from, to;
+  from = NUM2INT(f);
+  to = NUM2INT(t);
 
   BB empty = ~Occupied();
   BB friendly = cBoard->occupied[c];
   BB enemy = cBoard->occupied[e];
 
+  printf("%d\n", from);
   int moved_type = piece_type(from);
+  printf("%d\n", moved_type);
 
   if(moved_type == PAWN){
+    printf("pawn\n");
     if(pawn_attack_masks[c][from] & sq_mask_on(to) & enemy) return Qtrue;
     BB single_advances, double_advances;
     if(c){
@@ -151,6 +155,7 @@ static VALUE o_test_legality(VALUE self, VALUE from, VALUE to, VALUE side_to_mov
       }
     }
   } else {
+    printf("%lu\n",get_mask_for_type(moved_type, from)& sq_mask_on(to) & (~friendly));
     return ((get_mask_for_type(moved_type, from) & sq_mask_on(to) & (~friendly)) ? Qtrue : Qfalse);
   }
   return Qfalse;
@@ -198,8 +203,7 @@ extern void Init_board(){
   rb_define_method(cls_board, "get_occupancy", RUBY_METHOD_FUNC(o_get_occupancy), 1);
   rb_define_method(cls_board, "set_bitboard", RUBY_METHOD_FUNC(o_set_bitboard), 2);
 
-  rb_define_method(cls_board, "test_piece_legality", RUBY_METHOD_FUNC(o_test_legality), 4);
-  rb_define_method(cls_board, "test_castle_legality", RUBY_METHOD_FUNC(o_test_castle_legality), 4);
+  rb_define_method(cls_board, "test_piece_legality", RUBY_METHOD_FUNC(o_test_legality), 5);
 
   rb_define_method(cls_board, "add_square", RUBY_METHOD_FUNC(o_add_square), 2);
   rb_define_method(cls_board, "remove_square", RUBY_METHOD_FUNC(o_remove_square), 2);
