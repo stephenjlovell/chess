@@ -48,7 +48,6 @@ describe Chess::Search do
   # end
 
   # describe "static exchange evaluation" do
-  #   # let(:loc) { Chess::Location::get_location_by_coordinates(5,6) }
   #   let(:see_pos) { Chess::Notation::fen_to_position("5k2/7p/8/5p2/p1p2P2/Pr1RP1K1/1P5P/8 b - - 0 1") }
 
   #   it "should correctly value an exchange over a single square" do

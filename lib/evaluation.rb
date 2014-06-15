@@ -60,14 +60,16 @@ module Chess
 
     # Award a bonus/penalty depending on which side (if any) is in check.
     def self.net_safety(position, in_check)
-      in_check ||= position.in_check?  
-      if in_check
-        -350
-      elsif position.enemy_in_check?
-        350
-      else
-        0
-      end
+      # in_check ||= position.in_check?  
+      # if in_check
+      #   -350
+      # elsif position.enemy_in_check?
+      #   350
+      # else
+      #   0
+      # end
+      0
+      # position.enemy_in_check? ? 90 : 0
     end
 
 

@@ -131,45 +131,45 @@ static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_t
 
   int moved_type = piece_type(piece);
 
-  if(moved_type == PAWN){
-    if(pawn_attack_masks[c][from] & sq_mask_on(to) & enemy) return Qtrue;
-    BB single_advances, double_advances;
-    if(c){
-      single_advances = (cBoard->pieces[WHITE][PAWN]<<8) & empty; 
-      double_advances = ((single_advances & row_masks[2])<<8) & empty;
-    } else {
-      single_advances = (cBoard->pieces[BLACK][PAWN]>>8) & empty;  
-      double_advances = ((single_advances & row_masks[5])>>8) & empty;
-    }
-    if((single_advances & sq_mask_on(to)) && manhattan_distance(from, to) == 1
-        && column(from) == column(to)) return Qtrue;
-    if((double_advances & sq_mask_on(to)) && manhattan_distance(from, to) == 2
-        && column(from) == column(to)) return Qtrue;
-    if(enp_target != Qnil){
-      enp_target = NUM2INT(enp_target);
-      if(pawn_enp_masks[from] & sq_mask_on(enp_target)){
-        if(pawn_attack_masks[c][from] & sq_mask_on(to) & empty) return Qtrue;
-      }
-    }
-  } else if(moved_type == KING){
-    if(king_masks[from] & sq_mask_on(to) & (~friendly)) return Qtrue;  // Move is pseudo-legal.
-    castle = NUM2INT(castle);
-    if (castle){
+  switch(moved_type){
+    case PAWN:
+      if(pawn_attack_masks[c][from] & sq_mask_on(to) & enemy) return Qtrue;
+      BB single_advances, double_advances;
       if(c){
-        if ((castle & C_WQ) && !(castle_queenside_intervening[1] & occ) && from == E1 && to == C1) return Qtrue;
-        if(((castle & C_WK) && !(castle_kingside_intervening[1] & occ)) && from == E1 && to == G1) return Qtrue;
+        single_advances = (cBoard->pieces[WHITE][PAWN]<<8) & empty; 
+        double_advances = ((single_advances & row_masks[2])<<8) & empty;
       } else {
-        if ((castle & C_BQ) && !(castle_queenside_intervening[0] & occ) && from == E8 && to == C8) return Qtrue;
-        if ((castle & C_BK) && !(castle_kingside_intervening[0] & occ) && from == E8 && to == G8) return Qtrue;
+        single_advances = (cBoard->pieces[BLACK][PAWN]>>8) & empty;  
+        double_advances = ((single_advances & row_masks[5])>>8) & empty;
       }
-    }
-  } else {
-    return ((get_mask_for_type(moved_type, from) & sq_mask_on(to) & (~friendly)) ? Qtrue : Qfalse);
+      if((single_advances & sq_mask_on(to)) && manhattan_distance(from, to) == 1
+          && column(from) == column(to)) return Qtrue;
+      if((double_advances & sq_mask_on(to)) && manhattan_distance(from, to) == 2
+          && column(from) == column(to)) return Qtrue;
+      if(enp_target != Qnil){
+        enp_target = NUM2INT(enp_target);
+        if(pawn_enp_masks[from] & sq_mask_on(enp_target)){
+          if(pawn_attack_masks[c][from] & sq_mask_on(to) & empty) return Qtrue;
+        }
+      }
+    case KING:
+      if(king_masks[from] & sq_mask_on(to) & (~friendly)) return Qtrue;  // Move is pseudo-legal.
+      castle = NUM2INT(castle);
+      if (castle){
+        if(c){
+          if ((castle & C_WQ) && !(castle_queenside_intervening[1] & occ) && from == E1 && to == C1) return Qtrue;
+          if(((castle & C_WK) && !(castle_kingside_intervening[1] & occ)) && from == E1 && to == G1) return Qtrue;
+        } else {
+          if ((castle & C_BQ) && !(castle_queenside_intervening[0] & occ) && from == E8 && to == C8) return Qtrue;
+          if ((castle & C_BK) && !(castle_kingside_intervening[0] & occ) && from == E8 && to == G8) return Qtrue;
+        }
+      }
+    default:
+      return ((get_mask_for_type(moved_type, from) & sq_mask_on(to) & (~friendly)) ? Qtrue : Qfalse);
   }
 
   return Qfalse;
 }
-
 
 
 extern void Init_board(){
@@ -177,6 +177,7 @@ extern void Init_board(){
 
   VALUE mod_chess = rb_define_module("Chess");
   VALUE mod_bitboard = rb_define_module_under(mod_chess, "Bitboard");
+  VALUE mod_notation = rb_define_module_under(mod_chess, "Notation");
   VALUE cls_board = rb_define_class_under(mod_bitboard, "PiecewiseBoard", rb_cObject);
   
   rb_define_alloc_func(cls_board, o_alloc);

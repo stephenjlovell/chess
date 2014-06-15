@@ -102,7 +102,6 @@ module Chess
 
     LOCATIONS = 64.times.map {|sq| Location.new(sq) }
 
-
     # def self.get_location_by_symbol(sym)
     #   LOCATIONS[SQUARES[sym]]
     # end

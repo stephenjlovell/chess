@@ -139,9 +139,9 @@ def answer_questions(problems, depth, aggregator, verbose=false)
       puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves} AI Answer: #{prob.ai_response}"
       puts "Running score: #{correct}/#{total} (#{(correct+0.0)/total*100}%)"
     else
-      # print " | #{i+1}.#{prob.score > 0 ? "-" : "X" }"
-      number = prob.score > 0 ? Chess::colorize(i+1,32) : Chess::colorize(i+1,31)
-      print "| #{number.rjust(3," ")} "
+      number = (i+1).to_s.rjust(3," ")
+      number = prob.score > 0 ? Chess::colorize(number,32) : Chess::colorize(number,31)
+      print "| #{number} "
     end
   end
 end 
@@ -157,7 +157,7 @@ def move_matches_pgn?(move, pgn)
   
   return false if move.nil?
   
-  type, to = Chess::Pieces::PIECE_TYPES[(move.piece>>1)&7].to_s , Chess::Location::get_location(move.to).to_s
+  type, to = Chess::Pieces::PIECE_TYPES[(move.piece>>1)&7].to_s , Chess::Location::sq_to_s(move.to)
   
   if pgn.length == 2
     return pgn == to
