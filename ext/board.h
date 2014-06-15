@@ -42,8 +42,7 @@ static VALUE o_set_bitboard(VALUE self, VALUE piece_id, VALUE bitboard);
 static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square);
 static VALUE o_move_update(VALUE self, VALUE piece_id, VALUE from, VALUE to);
 
-static VALUE o_test_legality(VALUE self, VALUE from, VALUE to, VALUE side_to_move, VALUE enp_target, VALUE castle);
-static VALUE o_test_castle_legality(VALUE self, VALUE from, VALUE to,  VALUE color, VALUE castle);
+static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_to_move, VALUE enp_target, VALUE castle);
 
 static VALUE o_initialize_material(VALUE self, VALUE color);
 static VALUE o_get_base_material(VALUE self, VALUE color);

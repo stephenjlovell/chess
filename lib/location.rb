@@ -107,9 +107,9 @@ module Chess
     #   LOCATIONS[SQUARES[sym]]
     # end
 
-    # def self.get_location(square)
-    #   LOCATIONS[square]
-    # end
+    def self.get_location(square)
+      LOCATIONS[square]
+    end
 
     # def self.get_location_by_mask(mask)
     #   LOCATIONS[Bitboard::lsb(mask)-1]

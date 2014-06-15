@@ -117,24 +117,21 @@ static VALUE o_in_endgame(VALUE self, VALUE color){
   return (cBoard->material[c] <= endgame_value) ? Qtrue : Qfalse;
 }
 
-static VALUE o_test_legality(VALUE self, VALUE f, VALUE t, VALUE side_to_move, VALUE enp_target, VALUE castle){
+static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_to_move, VALUE enp_target, VALUE castle){
   BRD *cBoard = get_cBoard(self);
   int c = SYM2COLOR(side_to_move);
   int e = c^1;
-  int from, to;
-  from = NUM2INT(f);
-  to = NUM2INT(t);
-
-  BB empty = ~Occupied();
+  int from = NUM2INT(f);
+  int to = NUM2INT(t);
+  int piece = NUM2INT(p);
+  BB occ = Occupied();
+  BB empty = ~occ;
   BB friendly = cBoard->occupied[c];
   BB enemy = cBoard->occupied[e];
 
-  printf("%d\n", from);
-  int moved_type = piece_type(from);
-  printf("%d\n", moved_type);
+  int moved_type = piece_type(piece);
 
   if(moved_type == PAWN){
-    printf("pawn\n");
     if(pawn_attack_masks[c][from] & sq_mask_on(to) & enemy) return Qtrue;
     BB single_advances, double_advances;
     if(c){
@@ -154,33 +151,22 @@ static VALUE o_test_legality(VALUE self, VALUE f, VALUE t, VALUE side_to_move, V
         if(pawn_attack_masks[c][from] & sq_mask_on(to) & empty) return Qtrue;
       }
     }
+  } else if(moved_type == KING){
+    if(king_masks[from] & sq_mask_on(to) & (~friendly)) return Qtrue;  // Move is pseudo-legal.
+    castle = NUM2INT(castle);
+    if (castle){
+      if(c){
+        if ((castle & C_WQ) && !(castle_queenside_intervening[1] & occ) && from == E1 && to == C1) return Qtrue;
+        if(((castle & C_WK) && !(castle_kingside_intervening[1] & occ)) && from == E1 && to == G1) return Qtrue;
+      } else {
+        if ((castle & C_BQ) && !(castle_queenside_intervening[0] & occ) && from == E8 && to == C8) return Qtrue;
+        if ((castle & C_BK) && !(castle_kingside_intervening[0] & occ) && from == E8 && to == G8) return Qtrue;
+      }
+    }
   } else {
-    printf("%lu\n",get_mask_for_type(moved_type, from)& sq_mask_on(to) & (~friendly));
     return ((get_mask_for_type(moved_type, from) & sq_mask_on(to) & (~friendly)) ? Qtrue : Qfalse);
   }
-  return Qfalse;
-}
 
-static VALUE o_test_castle_legality(VALUE self, VALUE from, VALUE to,  VALUE color, VALUE castle){
-  BRD *cBoard = get_cBoard(self);
-  BB occ = Occupied();
-  int c = SYM2COLOR(color);
-  from = NUM2INT(from);
-  to = NUM2INT(to);
-  castle = NUM2INT(castle);
-
-  if(!(sq_mask_on(from) & cBoard->pieces[c][KING])) return Qtrue;
-  if(king_masks[from] & sq_mask_on(to)) return Qtrue;
-
-  if (castle){
-    if(c){
-      if ((castle & C_WQ) && !(castle_queenside_intervening[1] & occ) && from == E1 && to == C1) return Qtrue;
-      if(((castle & C_WK) && !(castle_kingside_intervening[1] & occ)) && from == E1 && to == G1) return Qtrue;
-    } else {
-      if ((castle & C_BQ) && !(castle_queenside_intervening[0] & occ) && from == E8 && to == C8) return Qtrue;
-      if ((castle & C_BK) && !(castle_kingside_intervening[0] & occ) && from == E8 && to == G8) return Qtrue;
-    }
-  }
   return Qfalse;
 }
 
@@ -203,7 +189,7 @@ extern void Init_board(){
   rb_define_method(cls_board, "get_occupancy", RUBY_METHOD_FUNC(o_get_occupancy), 1);
   rb_define_method(cls_board, "set_bitboard", RUBY_METHOD_FUNC(o_set_bitboard), 2);
 
-  rb_define_method(cls_board, "test_piece_legality", RUBY_METHOD_FUNC(o_test_legality), 5);
+  rb_define_method(cls_board, "test_piece_legality", RUBY_METHOD_FUNC(o_test_legality), 6);
 
   rb_define_method(cls_board, "add_square", RUBY_METHOD_FUNC(o_add_square), 2);
   rb_define_method(cls_board, "remove_square", RUBY_METHOD_FUNC(o_remove_square), 2);

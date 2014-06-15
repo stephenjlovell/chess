@@ -175,17 +175,14 @@ module Chess # top-level application namespace.
       move, value = Search::select_move(@position) 
       if move.nil?
         @winner = @opponent
-        return nil
       else
         save_move(@position, move)
         MoveGen::make!(@position, move) 
         if @position.in_check? && Search::select_move(@position,1)[0].nil?
           @winner = @ai_player  # if opponent is in check after AI move, do a 1-play search to determine if AI has won.
-          return nil
-        else
-          end_turn
         end
       end
+      end_turn
     end
 
     private

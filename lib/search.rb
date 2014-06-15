@@ -362,7 +362,7 @@ module Chess
 
       moves.each do |move|
 
-        puts move.to_s if move == first_move
+        # puts move.to_s if move == first_move
         MoveGen::make!(@node, move)
         if f_prune && legal_moves && move.quiet? && !@node.in_check? # When f_prune flag is set,
           MoveGen::unmake!(@node, move) # prune moves that don't alter material balance or give check.

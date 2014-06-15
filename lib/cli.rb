@@ -98,8 +98,8 @@ module Chess
              { command: 'undo', description: 'undoes the most recent full move (undoing the most recent action for each side).' },
              { command: 'redo', description: 'replays the next full move.  Only available if move(s) have been undone.' },
              { command: 'print history', description: 'prints a list of the moves made by each player.' }, 
-             { command: 'print history details', description: 'prints the move list, along with the position in FEN format.' },
-             { command: 'load <FEN>', description: 'loads the chess position specified by <FEN> in FEN format.' },
+             { command: 'print history details', description: 'prints the move list, along with the position in FEN notation.' },
+             { command: 'load <FEN>', description: 'loads the chess position specified by <FEN> in FEN notation.' },
              { command: 'fen', description: 'prints out the current position in FEN notation' } ]
 
     def self.help?(input)  # prints out a help menu and a table listing valid commands. 
@@ -148,14 +148,16 @@ module Chess
     end
 
     def self.winner
-      return false if Chess::current_game.winner.nil?
-      if Chess::current_game.winner == Chess::current_game.opponent
-        puts "\nCheckmate! You win!! \n\n"
-      else
-        puts "\nYour forces are defeated! I for one welcome our new robot overlords... \n\n"
+      unless Chess::current_game.winner.nil?
+        Chess::current_game.print_history_details
+        if Chess::current_game.winner == Chess::current_game.opponent
+          puts "\nCheckmate! You win!! \n\n"
+        else
+          puts "\nYour forces are defeated! I for one welcome our new robot overlords... \n\n"
+        end
+        true
       end
-      Chess::current_game.print_history_details
-      true
+      false
     end
 
   end

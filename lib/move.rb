@@ -140,7 +140,7 @@ module Chess
       end
     end
 
-    # The Halmove Rule requires that all moves other than pawn moves and captures increment the halfmove clock.
+    # The Halfmove Rule requires that all moves other than pawn moves and captures increment the halfmove clock.
     module Reversible 
       def make_clock_adjustment(position)
         position.halfmove_clock += 1
@@ -403,7 +403,10 @@ module Chess
     end
 
     # The Factory class provides a simplified interface for instantiating Move objects, 
-    # hiding creation of strategy object instances from the client.                     
+    # hiding creation of strategy object instances from the client.
+    #
+    #   1.  The build() method creates a move object using the strategy specified by the client.
+    #   2.  The build_move() method chooses the correct strategy to use, and returns the appropriate move object.               
     class Factory  
       PROCS = { regular_move:           Proc.new { |*args| RegularMove.new                },
                 regular_capture:        Proc.new { |*args| RegularCapture.new(*args)      },
@@ -464,9 +467,9 @@ module Chess
 
       def self.build_king_move(pos, piece, from, to)
         if(pos.board.manhattan_distance(from, to) == 2)
-          build_castle(piece, from, to)
+          build_castle(pos, piece, from, to)
         else
-          build_regular_move(piece, from, to)
+          build_regular_move(pos, piece, from, to)
         end
       end
 
@@ -499,11 +502,11 @@ module Chess
         end
       end
 
-      def self.build_regular_move(pos, from, to)
+      def self.build_regular_move(pos, piece, from, to)
         if pos.pieces.enemy?(to, pos.side_to_move)
-          build(pos, from, to, :regular_capture, pos.board[to])
+          build(piece, from, to, :regular_capture, pos.board[to])
         else
-          build(pos, from, to, :regular_move)
+          build(piece, from, to, :regular_move)
         end
       end
 

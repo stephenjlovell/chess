@@ -68,11 +68,11 @@ module Chess
     end
 
     def row(sq)
-      sq & 7
+      sq >> 3
     end
 
     def column(sq)
-      sq >> 3
+      sq & 7
     end
 
     # Also called Taxicab Distance.  Returns a value between 1 (min. distance) and 14 (max. distance)
