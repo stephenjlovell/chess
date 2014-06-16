@@ -29,7 +29,7 @@ $print_count = 0
 def perft(node, depth)  # Legal MoveGen speed/accuracy test. Counts all leaf nodes at depth.
   return 1 if depth == 0
   sum = 0
-  node.get_moves(depth, true).each do |move|
+  node.get_moves(depth).each do |move|
     Chess::MoveGen::make!(node, move)
     sum += perft(node, depth-1)
     Chess::MoveGen::unmake!(node, move)
@@ -40,10 +40,22 @@ end
 def perft_legal(node, depth)  # Pseudolegal MoveGen speed test. Counts all leaf nodes at depth.
   return 1 if depth == 0
   sum = 0
-  node.get_moves(depth, true).each do |move|
+  node.get_moves(depth).each do |move|
     next unless node.evades_check?(move)
     Chess::MoveGen::make!(node, move) 
     sum += perft_legal(node, depth-1)
+    Chess::MoveGen::unmake!(node, move)
+  end
+  return sum
+end
+
+def perft_evasion(node, depth)  # Pseudolegal MoveGen speed test. Counts all leaf nodes at depth.
+  return 1 if depth == 0
+  sum = 0
+  node.get_moves(depth, false, node.in_check?).each do |move|
+    next unless node.evades_check?(move)
+    Chess::MoveGen::make!(node, move) 
+    sum += perft_evasion(node, depth-1)
     Chess::MoveGen::unmake!(node, move)
   end
   return sum
@@ -70,6 +82,16 @@ def generate_moves_for_each(file, depth)
     line = %Q{#{line}}
     pos = Chess::Notation::epd_to_position(line)
     perft(pos, depth)
+    print "#{i+1}."
+  end
+end
+
+def test_evasions_for_each(file, depth)
+  raise "test suite #{file} not found" unless File.exists?(file)
+  File.readlines(file).each_with_index do |line, i|
+    line = %Q{#{line}}
+    pos = Chess::Notation::epd_to_position(line)
+    perft_legal(pos, depth).should == perft_evasion(pos, depth)
     print "#{i+1}."
   end
 end

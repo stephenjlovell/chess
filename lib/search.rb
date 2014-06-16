@@ -213,7 +213,6 @@ module Chess
         end
 
       end
-      # puts "final value: #{best}"
 
       return best_move, best
     end
@@ -229,7 +228,6 @@ module Chess
       extension += EXT_CHECK if in_check && extension < EXT_MAX
       adjusted_depth = depth + (extension/PLY_VALUE)*PLY_VALUE # Number of ply remaining until q-search
       
-
       # Try the hash move separately first.  If hash move causes a beta cutoff, this saves the effort that would 
       # normally be expended on move generation and sorting.
 
@@ -258,8 +256,6 @@ module Chess
 
       @node.edges(adjusted_depth, true, in_check).each do |move| 
         next unless @node.evades_check?(move)  # no illegal moves allowed at root.
-
-        # next if move == hash_move
 
         $main_calls += 1
         
@@ -365,9 +361,6 @@ module Chess
 
       moves.each do |move|
 
-        # puts move.to_s if move == first_move
-        # next if move == first_move
-
         MoveGen::make!(@node, move)
         if f_prune && legal_moves && move.quiet? && !@node.in_check? # When f_prune flag is set,
           MoveGen::unmake!(@node, move) # prune moves that don't alter material balance or give check.
@@ -375,10 +368,6 @@ module Chess
         end
         value, count = alpha_beta(depth-PLY_VALUE, -beta, -alpha, extension)
         MoveGen::unmake!(@node, move)
-
-        # if move == first_move
-        #   puts count
-        # end
 
         $main_calls += 1
         result = Chess::max(-value, result)
@@ -415,12 +404,11 @@ module Chess
       # evade_check = in_check && check_counter >= 0
       # check_counter -= 1 if in_check
 
-    
-      # if !in_check
+      unless in_check
         result = @node.value(in_check)  
         return beta, sum if result >= beta # fail hard beta cutoff
         alpha = result if result > alpha   # use 'standing pat' lower bound only when not in check
-      # end
+      end
 
       # Before generating moves, try the move provided by the TT if any. If this move causes a beta cutoff,
       # this will save the effort that would have been spent on move generation.
@@ -433,7 +421,7 @@ module Chess
 
         result = Chess::max(-value, result)
         sum += count
-        legal_moves = true # Hash moves are pre-checked for legality during TT probe.
+        legal_moves = true unless result <= KING_LOSS # Hash moves are pre-checked for legality during TT probe.
 
         if result > alpha
           alpha = result
@@ -445,11 +433,9 @@ module Chess
       end
 
       @node.tactical_edges(in_check).each do |move|
-        # next if move.see && move.see < -HALF_PAWN  # moves are ordered by SEE
-        next if !in_check && move.see && move.see < 0  # moves are ordered by SEE
-        $quiescence_calls += 1
 
-        # next if move == hash_move
+        next if !in_check && move.see && move.see < 0
+        $quiescence_calls += 1
 
         MoveGen::make!(@node, move)
         value, count = quiescence(depth-PLY_VALUE, -beta, -alpha, check_counter)
@@ -468,9 +454,8 @@ module Chess
         end        
       end
 
-      if in_check && !legal_moves  # if no legal moves available, it's either a draw or checkmate.
-        result = in_check ? ((@i_depth - depth/PLY_VALUE) - MATE) : 0 # mate in 1 is more valuable than mate in 2
-      end
+      # if no legal moves available, it's either a draw or checkmate.
+      result = (@i_depth - depth/PLY_VALUE) - MATE if in_check && !legal_moves 
 
       $tt.store(@node, depth, sum, result, alpha, beta, best_move)
     end

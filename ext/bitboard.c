@@ -61,23 +61,6 @@ int pawn_from_offsets[2][4] = { {8, 16, 9, 7 }, {-8, -16, -7, -9 } };
 int directions[64][64] = { { INVALID } };
 BB intervening[64][64] = { {0} };
 
-// Remove method and add logic to legality testing.
-BB get_mask_for_type(int type, int sq){
-  switch(type){
-    case KNIGHT:
-      return knight_masks[sq];
-    case BISHOP: 
-      return bishop_masks[sq];
-    case ROOK:
-      return rook_masks[sq];
-    case QUEEN:
-      return queen_masks[sq];
-    case KING:
-      return king_masks[sq];
-    default:
-      return (BB) 0;
-  }
-}
 
 static VALUE load_piece_values(VALUE self, VALUE piece_array){
   for(int i =0; i<6; i++) piece_values[i] = NUM2INT(rb_ary_entry(piece_array, i));
@@ -183,7 +166,7 @@ void setup_column_masks(){
   for(int i=0; i<8; i++) column_masks[0] |= (column_masks[0]<<8);  // set the first column
   for(int i=1; i<8; i++){
     column_masks[i] = (column_masks[i-1]<<1);  // create the remaining columns by transposing the 
-  }                                           // previous column rightward.
+  }                                            // previous column rightward.
 }
 
 void setup_directions(){
@@ -197,11 +180,6 @@ void setup_directions(){
           intervening[i][j] = ray ^ (ray_masks[dir][j] | sq_mask_on(j));
         }
       }
-      // printf("intervening\n");
-      // printf("%d\n", i);
-      // printf("%d\n", j);
-      
-      // rb_funcall(mod_chess, rb_intern("print_bitboard"), 1, ULONG2NUM(intervening[i][j]));
     }
   }
 }

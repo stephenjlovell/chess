@@ -117,6 +117,7 @@ static VALUE o_in_endgame(VALUE self, VALUE color){
   return (cBoard->material[c] <= endgame_value) ? Qtrue : Qfalse;
 }
 
+// This method is used to check the legality of human moves prior to making the move.
 static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_to_move, VALUE enp_target, VALUE castle){
   BRD *cBoard = get_cBoard(self);
   int c = SYM2COLOR(side_to_move);
@@ -128,6 +129,7 @@ static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_t
   BB empty = ~occ;
   BB friendly = cBoard->occupied[c];
   BB enemy = cBoard->occupied[e];
+  BB piece_mask = 0;
 
   int moved_type = piece_type(piece);
 
@@ -165,7 +167,17 @@ static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_t
         }
       }
     default:
-      return ((get_mask_for_type(moved_type, from) & sq_mask_on(to) & (~friendly)) ? Qtrue : Qfalse);
+      switch(moved_type){
+      case KNIGHT:
+        piece_mask = knight_masks[from];
+      case BISHOP: 
+        piece_mask = bishop_masks[from];
+      case ROOK:
+        piece_mask = rook_masks[from];
+      case QUEEN:
+        piece_mask = queen_masks[from];
+      }
+      return (piece_mask & sq_mask_on(to) & (~friendly)) ? Qtrue : Qfalse;
   }
 
   return Qfalse;

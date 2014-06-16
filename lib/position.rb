@@ -96,7 +96,7 @@ module Chess
       # Moves should be ordered in descending order of expected subtree value. Better move ordering produces a greater
       # number of alpha/beta cutoffs during search, reducing the size of the actual search tree toward the minimal tree.
 
-      def get_moves(depth, enhanced_sort, in_check) 
+      def get_moves(depth, enhanced_sort=false, in_check=false) 
         promotions, captures, moves = [], [], []
 
         if in_check
@@ -108,13 +108,13 @@ module Chess
 
         # At higher depths, expend additional effort on move ordering.
 
-        if enhanced_sort
-          enhanced_sort(promotions, captures, moves, depth)
-        else
-          promotions + sort_captures_by_see!(captures) + history_sort!(moves)
-        end
+        # if enhanced_sort
+        #   enhanced_sort(promotions, captures, moves, depth)
+        # else
+        #   promotions + sort_captures_by_see!(captures) + history_sort!(moves)
+        # end
 
-        # promotions + sort_captures_by_see!(captures) + history_sort!(moves)
+        promotions + sort_captures_by_see!(captures) + history_sort!(moves)
         # enhanced_sort(promotions, captures, moves, depth)
       end
       alias :edges :get_moves
@@ -143,9 +143,9 @@ module Chess
         else
           MoveGen::get_winning_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
           promotions + sort_winning_captures_by_see!(captures)
-          # MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
-          # promotions + sort_captures_by_see!(captures)
         end
+        # MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
+        # promotions + sort_captures_by_see!(captures)
       end
       alias :tactical_edges :get_captures
 

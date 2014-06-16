@@ -118,59 +118,52 @@ static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board,
   return (check ? Qfalse : Qtrue);
 }
 
+// 1. Find the displacement vector between the piece at sq and its own king and determine if it
+//    lies along a valid ray attack.  If the vector is a valid ray attack:
+// 2. Scan toward the king to see if there are any other pieces blocking this route to the king.
+// 3. Scan in the opposite direction to see detect any potential threats along this ray.
 int is_pinned(BRD* cBoard, int sq, int c, int e){
-  int dir = directions[sq][furthest_forward(c, cBoard->pieces[c][KING])];
-  int scan_dir;
   BB occ = Occupied();
-
-  if(dir == INVALID) return 0;
-
-  BB ray = ray_masks[dir][sq];
   BB threat = 0, guarded_king = 0;
-  // NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST, INVALID
-  if(dir < 4){ // bishop direction
-    if(dir < 2) {
-      threat = scan_up(occ, dir, sq) & (cBoard->pieces[e][BISHOP]|cBoard->pieces[e][QUEEN]);
-      if(!threat) return 0;
-      guarded_king = scan_down(occ, dir+2, sq) & (cBoard->pieces[c][KING]);
-    } else {
-      threat = scan_down(occ, dir, sq) & (cBoard->pieces[e][BISHOP]|cBoard->pieces[e][QUEEN]);
-      if(!threat) return 0;
-      guarded_king = scan_up(occ, dir-2, sq) & (cBoard->pieces[c][KING]);
-    }
-  } else {  // rook direction
-    if(dir < 6){
-      threat = scan_up(occ, dir, sq) & (cBoard->pieces[e][ROOK]|cBoard->pieces[e][QUEEN]);
-      if(!threat) return 0;
-      guarded_king = scan_down(occ, dir+2, sq) & (cBoard->pieces[c][KING]);
-    } else {
-      threat = scan_down(occ, dir, sq) & (cBoard->pieces[e][ROOK]|cBoard->pieces[e][QUEEN]);
-      if(!threat) return 0;
-      scan_dir = dir - 2;
-      guarded_king = scan_up(occ, dir-2, sq) & (cBoard->pieces[c][KING]);
-    }
+  int dir = directions[sq][furthest_forward(c, cBoard->pieces[c][KING])];
+  switch(dir){    // NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST, INVALID
+    case NW:
+    case NE:
+      threat = scan_down(occ, dir+2, sq) & (cBoard->pieces[e][BISHOP]|cBoard->pieces[e][QUEEN]);
+      guarded_king = scan_up(occ, dir, sq) & (cBoard->pieces[c][KING]);
+    case SE: 
+    case SW:
+      threat = scan_up(occ, dir-2, sq) & (cBoard->pieces[e][BISHOP]|cBoard->pieces[e][QUEEN]);
+      guarded_king = scan_down(occ, dir, sq) & (cBoard->pieces[c][KING]);
+    case NORTH:
+    case EAST:
+      threat = scan_down(occ, dir+2, sq) & (cBoard->pieces[e][ROOK]|cBoard->pieces[e][QUEEN]);
+      guarded_king = scan_up(occ, dir, sq) & (cBoard->pieces[c][KING]);
+    case SOUTH: 
+    case WEST:
+      threat = scan_up(occ, dir-2, sq) & (cBoard->pieces[e][ROOK]|cBoard->pieces[e][QUEEN]);
+      guarded_king = scan_down(occ, dir, sq) & (cBoard->pieces[c][KING]);
+    case INVALID:
+      return 0;
   }
-  return guarded_king ? 1 : 0;
+  return threat & guarded_king;
 }
 
 // The Static Exchange Evaluation (SEE) heuristic provides a way to determine if a capture 
 // is a 'winning' or 'losing' capture.
-
 // 1. When a capture results in an exchange of pieces by both sides, SEE is used to determine the 
 //    net gain/loss in material for the side initiating the exchange.
 // 2. SEE scoring of moves is used for move ordering of captures at critical nodes.
 // 3. During quiescence search, SEE is used to prune losing captures. This provides a very low-risk
 //    way of reducing the size of the q-search without impacting playing strength.
-
 extern int get_see(BRD *cBoard, int from, int to, int c, VALUE sq_board){
   int next_victim, type;
   int temp_color = c;
   int score = 0;
-
   // get initial map of all squares directly attacking this square (does not include 'discovered'/hidden attacks)
   const BB b_attackers = cBoard->pieces[WHITE][BISHOP] | cBoard->pieces[BLACK][BISHOP] | 
                          cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
-  const BB r_attackers = cBoard->pieces[WHITE][ROOK]   | cBoard->pieces[BLACK][ROOK] | 
+  const BB r_attackers = cBoard->pieces[WHITE][ROOK]   | cBoard->pieces[BLACK][ROOK]   | 
                          cBoard->pieces[WHITE][QUEEN]  | cBoard->pieces[BLACK][QUEEN];
 
   BB temp_map = attack_map(cBoard, to);

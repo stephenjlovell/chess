@@ -45,6 +45,8 @@ Search benchmarking (Win at Chess test suite):
 
 Current Issues ----
 
+  check evasion move generator not always creating the correct number of moves
+
 To Do ----
 
   Create separate move generator for giving check.

@@ -423,13 +423,13 @@ static VALUE get_winning_captures(VALUE self, VALUE p_board, VALUE color, VALUE 
     to = furthest_forward(c, left_attacks);
     from = to+pawn_from_offsets[c][2];
     see = get_see(cBoard, from, to, c, sq_board);
-    build_capture_with_see(piece_id, from, to, cls_regular_capture, sq_board, moves, see);
+    if(see >= 0) build_capture_with_see(piece_id, from, to, cls_regular_capture, sq_board, moves, see);
   }
   for(; right_attacks; clear_sq(to, right_attacks)){
     to = furthest_forward(c, right_attacks);
     from = to+pawn_from_offsets[c][3];
     see = get_see(cBoard, from, to, c, sq_board);
-    build_capture_with_see(piece_id, from, to, cls_regular_capture, sq_board, moves, see);
+    if(see >= 0) build_capture_with_see(piece_id, from, to, cls_regular_capture, sq_board, moves, see);
   }
   // en-passant captures
   if(enp_target != Qnil){
@@ -438,10 +438,9 @@ static VALUE get_winning_captures(VALUE self, VALUE p_board, VALUE color, VALUE 
       from = furthest_forward(c, f);
       to = c ? (target+8) : (target-8);
       see = get_see(cBoard, from, to, c, sq_board);
-      build_enp_capture_with_see(piece_id, from, to, cls_enp_capture, target, sq_board, moves, see);   
+      if(see >= 0) build_enp_capture_with_see(piece_id, from, to, cls_enp_capture, target, sq_board, moves, see);   
     }
   }
-
   // Knights
   piece_id = INT2NUM(0x12|c); // get knight piece ID for color c.
   for(BB f = cBoard->pieces[c][KNIGHT]; f; clear_sq(from, f)){
@@ -494,7 +493,6 @@ static VALUE get_winning_captures(VALUE self, VALUE p_board, VALUE color, VALUE 
   }
   return Qnil;
 }
-
 
 static VALUE get_evasions(VALUE self, VALUE p_board, VALUE color, VALUE sq_board, VALUE enp_target,
                           VALUE promotions, VALUE captures, VALUE moves){
@@ -673,6 +671,7 @@ static VALUE get_evasions(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
       }
     } 
   }
+  // If there's more than one attacking piece, the only way out is to move the king.
   // King
   piece_id = INT2NUM(0x1a|c); // get king piece ID for color c.
   for(BB t = (king_masks[king_sq] & enemy); t; clear_sq(to, t)){ // generate to squares

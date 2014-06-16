@@ -29,8 +29,6 @@ static VALUE load_piece_values(VALUE self, VALUE piece_array);
 extern int directions[64][64];
 extern BB intervening[64][64];
 
-extern BB get_mask_for_type(int type, int sq);
-
 void setup_square_masks();
 
 void setup_pawn_masks();
