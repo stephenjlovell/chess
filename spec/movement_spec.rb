@@ -36,14 +36,15 @@ describe Chess::MoveGen do
   describe "move generation" do
 
     describe "evasion generator" do
-      it "should generate the correct number of legal positions" do
-        t0 = Time.now
-        node_count = perft_evasion(@root, @depth) # first castling moves would occur at minimum ply 7.
-        t1 = Time.now
-        puts "Legal MoveGen w/ Evasion: #{node_count/(t1-t0)} NPS"
-        puts "Node count: #{node_count}"
-        node_count.should == MAX_TREE[@depth]
-      end
+      
+    #   it "should generate the correct number of legal positions" do
+    #     t0 = Time.now
+    #     node_count = perft_evasion(@root, @depth) # first castling moves would occur at minimum ply 7.
+    #     t1 = Time.now
+    #     puts "Legal MoveGen w/ Evasion: #{node_count/(t1-t0)} NPS"
+    #     puts "Node count: #{node_count}"
+    #     node_count.should == MAX_TREE[@depth]
+    #   end
       
       it "can generate evasions for midgame positions" do
         test_evasions_for_each('./test_suites/wac_75.epd', 3)

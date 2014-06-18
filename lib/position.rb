@@ -103,18 +103,18 @@ module Chess
           MoveGen::get_evasions(@pieces, @side_to_move, @board.squares, @enp_target, promotions, captures, moves)
         else
           MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
-          MoveGen::get_non_captures(@pieces, @side_to_move, @castle, moves)
+          MoveGen::get_non_captures(@pieces, @side_to_move, @castle, moves, in_check)
         end
 
         # At higher depths, expend additional effort on move ordering.
 
-        # if enhanced_sort
-        #   enhanced_sort(promotions, captures, moves, depth)
-        # else
-        #   promotions + sort_captures_by_see!(captures) + history_sort!(moves)
-        # end
+        if enhanced_sort
+          enhanced_sort(promotions, captures, moves, depth)
+        else
+          promotions + sort_captures_by_see!(captures) + history_sort!(moves)
+        end
 
-        promotions + sort_captures_by_see!(captures) + history_sort!(moves)
+        # promotions + sort_captures_by_see!(captures) + history_sort!(moves)
         # enhanced_sort(promotions, captures, moves, depth)
       end
       alias :edges :get_moves

@@ -24,104 +24,6 @@
 int non_king_value;
 int endgame_value;
 
-void setup_eval_constants(){
-  non_king_value = piece_values[PAWN]*8 + piece_values[KNIGHT]*2 + piece_values[BISHOP]*2 +
-                   piece_values[ROOK]*2 + piece_values[QUEEN];
-  endgame_value =  piece_values[KING]   - (non_king_value/4);
-}
-
-// Only base material is incrementally updated.
-
-static VALUE net_material(VALUE self, VALUE pc_board, VALUE color){
-  BRD *cBoard = get_cBoard(pc_board);  
-  int c = SYM2COLOR(color);
-  int e = c^1;
-  int sq, placement = 0;
-  BB b;
-  return INT2NUM(adjusted_material(c, cBoard)-adjusted_material(e, cBoard));
-}
-
-static VALUE net_placement(VALUE self, VALUE pc_board, VALUE color){
-  BRD *cBoard = get_cBoard(pc_board);  
-  int c = SYM2COLOR(color);
-  int e = c^1;
-  int sq, placement = 0;
-  BB b;
-  return INT2NUM(adjusted_placement(c, cBoard)-adjusted_placement(e, cBoard));
-}
-
-static int adjusted_placement(int c, BRD *cBoard){
-  int sq, placement = 0;
-  BB b, enemy_king_b = cBoard->pieces[c^1][KING];
-
-  if(enemy_king_b){
-    int enemy_king_sq = lsb(enemy_king_b);
-    for(int type = PAWN; type < QUEEN; type++){
-      for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
-        sq = furthest_forward(c, b);
-        placement += (main_pst[c][type][sq] + tropism_bonus[sq][enemy_king_sq][type]);
-      }
-    }
-    for(b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
-      sq = furthest_forward(c, b);
-      placement += king_pst[c][in_endgame(c)][sq];
-    }
-  } else {
-    for(int type = PAWN; type < QUEEN; type++){
-      for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
-        sq = furthest_forward(c, b);
-        placement += main_pst[c][type][sq];
-      }
-    }
-    for(b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
-      sq = furthest_forward(c, b);
-      placement += king_pst[c][in_endgame(c)][sq];
-    }
-  }
-  return cBoard->material[c] + placement;
-}
-
-
-
-static int adjusted_material(int c, BRD *cBoard){
-  int sq, placement = 0;
-  BB b;
-
-  for(int type = PAWN; type < QUEEN; type++){
-    for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
-      sq = furthest_forward(c, b);
-      placement += main_pst[c][type][sq];
-    }
-  }
-  for(b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
-    sq = furthest_forward(c, b);
-    placement += king_pst[c][in_endgame(c)][sq];
-  }
-  return cBoard->material[c] + placement;
-}
-
-
-static VALUE evaluate_material(VALUE self, VALUE pc_board, VALUE color){
-  BRD *cBoard = get_cBoard(pc_board);  
-  int c = SYM2COLOR(color);
-  int sq, placement = 0;
-  BB b;
-
-  for(int type = PAWN; type < QUEEN; type++){
-    b = cBoard->pieces[c][type];
-    for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
-      sq = furthest_forward(c, b);
-      placement += main_pst[c][type][sq];
-    }
-  }
-  for(b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
-    sq = furthest_forward(c, b);
-    placement += king_pst[c][in_endgame(c)][sq];
-  }
-  return INT2NUM(cBoard->material[c] + placement);
-}
-
-
 static int main_pst[2][5][64] = {
   { // Black
     // Pawn
@@ -258,6 +160,102 @@ static int king_pst[2][2][64] = {
     -30,-20,-10,  0,  0,-10,-20,-30 }
   }
 };
+
+void setup_eval_constants(){
+  non_king_value = piece_values[PAWN]*8 + piece_values[KNIGHT]*2 + piece_values[BISHOP]*2 +
+                   piece_values[ROOK]*2 + piece_values[QUEEN];
+  endgame_value =  piece_values[KING]   - (non_king_value/4);
+}
+
+// Only base material is incrementally updated.
+
+static VALUE net_material(VALUE self, VALUE pc_board, VALUE color){
+  BRD *cBoard = get_cBoard(pc_board);  
+  int c = SYM2COLOR(color);
+  int e = c^1;
+  int sq, placement = 0;
+  BB b;
+  return INT2NUM(adjusted_material(c, cBoard)-adjusted_material(e, cBoard));
+}
+
+static VALUE net_placement(VALUE self, VALUE pc_board, VALUE color){
+  BRD *cBoard = get_cBoard(pc_board);  
+  int c = SYM2COLOR(color);
+  int e = c^1;
+  int sq, placement = 0;
+  BB b;
+  return INT2NUM(adjusted_placement(c, cBoard)-adjusted_placement(e, cBoard));
+}
+
+static int adjusted_placement(int c, BRD *cBoard){
+  int sq, placement = 0;
+  BB b, enemy_king_b = cBoard->pieces[c^1][KING];
+
+  if(enemy_king_b){
+    int enemy_king_sq = lsb(enemy_king_b);
+    for(int type = PAWN; type < QUEEN; type++){
+      for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
+        sq = furthest_forward(c, b);
+        placement += (main_pst[c][type][sq] + tropism_bonus[sq][enemy_king_sq][type]);
+      }
+    }
+    for(b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
+      sq = furthest_forward(c, b);
+      placement += king_pst[c][in_endgame(c)][sq];
+    }
+  } else {
+    for(int type = PAWN; type < QUEEN; type++){
+      for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
+        sq = furthest_forward(c, b);
+        placement += main_pst[c][type][sq];
+      }
+    }
+    for(b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
+      sq = furthest_forward(c, b);
+      placement += king_pst[c][in_endgame(c)][sq];
+    }
+  }
+  return cBoard->material[c] + placement;
+}
+
+
+static int adjusted_material(int c, BRD *cBoard){
+  int sq, placement = 0;
+  BB b;
+
+  for(int type = PAWN; type < QUEEN; type++){
+    for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
+      sq = furthest_forward(c, b);
+      placement += main_pst[c][type][sq];
+    }
+  }
+  for(b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
+    sq = furthest_forward(c, b);
+    placement += king_pst[c][in_endgame(c)][sq];
+  }
+  return cBoard->material[c] + placement;
+}
+
+
+static VALUE evaluate_material(VALUE self, VALUE pc_board, VALUE color){
+  BRD *cBoard = get_cBoard(pc_board);  
+  int c = SYM2COLOR(color);
+  int sq, placement = 0;
+  BB b;
+
+  for(int type = PAWN; type < QUEEN; type++){
+    b = cBoard->pieces[c][type];
+    for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
+      sq = furthest_forward(c, b);
+      placement += main_pst[c][type][sq];
+    }
+  }
+  for(b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
+    sq = furthest_forward(c, b);
+    placement += king_pst[c][in_endgame(c)][sq];
+  }
+  return INT2NUM(cBoard->material[c] + placement);
+}
 
 extern void Init_eval(){
   printf("  -Loading eval extension...");

@@ -52,8 +52,9 @@ end
 def perft_evasion(node, depth)  # Pseudolegal MoveGen speed test. Counts all leaf nodes at depth.
   return 1 if depth == 0
   sum = 0
-  node.get_moves(depth, false, node.in_check?).each do |move|
-    next unless node.evades_check?(move)
+  in_check = node.in_check?
+  node.get_moves(depth, false, in_check).each do |move|
+    next if !in_check && !node.evades_check?(move)
     Chess::MoveGen::make!(node, move) 
     sum += perft_evasion(node, depth-1)
     Chess::MoveGen::unmake!(node, move)

@@ -27,7 +27,7 @@
 #define lsb(bitboard) (__builtin_ctzl(bitboard))
 #define msb(bitboard) (63-__builtin_clzl(bitboard))
 #define furthest_forward(color, bitboard) (color ? msb(bitboard) : lsb(bitboard))
-#define pop_count(bitboard) (__builtin_popcount(bitboard))
+#define pop_count(bitboard) (__builtin_popcountl(bitboard))
 
 
 static VALUE object_lsb(VALUE rb_self, VALUE bitboard);

@@ -43,7 +43,7 @@ module Chess
     # then divides the total eval score by EVAL_GRAIN to achieve the desired 'coarseness' of evaluation.
     def self.evaluate(pos, in_check)
       $evaluation_calls += 1 
-      net_placement(pos.pieces, pos.side_to_move) + net_safety(pos, in_check) 
+      net_placement(pos.pieces, pos.side_to_move)
     end
 
     # Sums up the value of all pieces in play for the given side (without any positional bonuses/penalties).
@@ -56,21 +56,6 @@ module Chess
     # Returns the net value of all pieces in play (adjusted by their location on board)
     # relative to the current side to move. Material subtotals for each side are incrementally updated 
     # during make/unmake.
-
-
-    # Award a bonus/penalty depending on which side (if any) is in check.
-    def self.net_safety(position, in_check)
-      # in_check ||= position.in_check?  
-      # if in_check
-      #   -350
-      # elsif position.enemy_in_check?
-      #   350
-      # else
-      #   0
-      # end
-      0
-      # position.enemy_in_check? ? 90 : 0
-    end
 
 
     # Return the net king tropism bonus.  Each side is awarded a bonus based on the proximity of its pieces

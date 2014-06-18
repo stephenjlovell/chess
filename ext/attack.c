@@ -125,26 +125,29 @@ static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board,
 int is_pinned(BRD* cBoard, int sq, int c, int e){
   BB occ = Occupied();
   BB threat = 0, guarded_king = 0;
-  int dir = directions[sq][furthest_forward(c, cBoard->pieces[c][KING])];
+  int dir = directions[sq][furthest_forward(c, cBoard->pieces[c][KING])]; //get direction toward king
   switch(dir){    // NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST, INVALID
     case NW:
     case NE:
       threat = scan_down(occ, dir+2, sq) & (cBoard->pieces[e][BISHOP]|cBoard->pieces[e][QUEEN]);
       guarded_king = scan_up(occ, dir, sq) & (cBoard->pieces[c][KING]);
+      break;
     case SE: 
     case SW:
       threat = scan_up(occ, dir-2, sq) & (cBoard->pieces[e][BISHOP]|cBoard->pieces[e][QUEEN]);
       guarded_king = scan_down(occ, dir, sq) & (cBoard->pieces[c][KING]);
+      break;
     case NORTH:
     case EAST:
       threat = scan_down(occ, dir+2, sq) & (cBoard->pieces[e][ROOK]|cBoard->pieces[e][QUEEN]);
       guarded_king = scan_up(occ, dir, sq) & (cBoard->pieces[c][KING]);
+      break;
     case SOUTH: 
     case WEST:
       threat = scan_up(occ, dir-2, sq) & (cBoard->pieces[e][ROOK]|cBoard->pieces[e][QUEEN]);
       guarded_king = scan_down(occ, dir, sq) & (cBoard->pieces[c][KING]);
-    case INVALID:
-      return 0;
+      break;
+    case INVALID: return 0; break;
   }
   return threat & guarded_king;
 }

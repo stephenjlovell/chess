@@ -424,7 +424,9 @@ module Chess
 
       def self.build(piece, from, to, sym, *args)  # create a Move object containing the specified strategy.
         raise "no product strategy #{sym} available for Move::MoveFactory" unless PROCS[sym]
-        Move.new(piece, from, to, PROCS[sym].call(*args)) 
+        move = Move.new(piece, from, to, PROCS[sym].call(*args)) 
+        puts move.inspect
+        move
       end
 
       private

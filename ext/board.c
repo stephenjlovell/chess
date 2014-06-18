@@ -154,6 +154,7 @@ static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_t
           if(pawn_attack_masks[c][from] & sq_mask_on(to) & empty) return Qtrue;
         }
       }
+      break;
     case KING:
       if(king_masks[from] & sq_mask_on(to) & (~friendly)) return Qtrue;  // Move is pseudo-legal.
       castle = NUM2INT(castle);
@@ -166,20 +167,18 @@ static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_t
           if ((castle & C_BK) && !(castle_kingside_intervening[0] & occ) && from == E8 && to == G8) return Qtrue;
         }
       }
+      break;
     default:
       switch(moved_type){
-      case KNIGHT:
-        piece_mask = knight_masks[from];
-      case BISHOP: 
-        piece_mask = bishop_masks[from];
-      case ROOK:
-        piece_mask = rook_masks[from];
-      case QUEEN:
-        piece_mask = queen_masks[from];
+        case KNIGHT: piece_mask = knight_masks[from]; break;
+        case BISHOP: piece_mask = bishop_masks[from]; break;
+        case ROOK: piece_mask = rook_masks[from]; break;
+        case QUEEN: piece_mask = queen_masks[from]; break;
       }
+      printf("%lu\n", piece_mask);
       return (piece_mask & sq_mask_on(to) & (~friendly)) ? Qtrue : Qfalse;
+      break;
   }
-
   return Qfalse;
 }
 

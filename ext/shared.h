@@ -36,7 +36,7 @@ typedef struct {
   int material[2];
 } BRD;
 
-typedef enum { NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST, INVALID } enumDir;
+typedef enum { NW=0, NE=1, SE=2, SW=3, NORTH=4, EAST=5, SOUTH=6, WEST=7, INVALID=8 } enumDir;
 
 typedef enum {  A1, B1, C1, D1, E1, F1, G1, H1, 
                 A2, B2, C2, D2, E2, F2, G2, H2, 
@@ -106,7 +106,6 @@ extern int directions[64][64];
 #define piece_color(piece_id)  (piece_id & 0x1)
 #define piece_value_at(sq_board, sq) (piece_values[piece_type(NUM2INT(rb_ary_entry(sq_board, sq)))])
 #define piece_type_at(sq_board, sq) (piece_type(NUM2INT(rb_ary_entry(sq_board, sq))))
-
 
 // Include child header files
 #include "bitboard.h"

@@ -78,7 +78,7 @@ static void build_capture(VALUE id, int from, int to, VALUE cls, VALUE sq_board,
 static void build_promotion(VALUE id, int from, int to, VALUE color, VALUE cls, VALUE moves);
 static void build_enp_capture(VALUE id, int from, int to, VALUE cls, int target, VALUE sq_board, VALUE moves);
 
-static VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_rights, VALUE moves);
+static VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_rights, VALUE moves, VALUE in_check);
 
 static VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board, 
                           VALUE enp_target, VALUE moves, VALUE promotions);

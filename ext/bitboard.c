@@ -58,8 +58,8 @@ BB pawn_enp_masks[64] = {0};
 // single, double, left, right
 int pawn_from_offsets[2][4] = { {8, 16, 9, 7 }, {-8, -16, -7, -9 } };
 
-int directions[64][64] = { { INVALID } };
-BB intervening[64][64] = { {0} };
+int directions[64][64];
+BB intervening[64][64];
 
 
 static VALUE load_piece_values(VALUE self, VALUE piece_array){
@@ -103,6 +103,8 @@ void setup_knight_masks(){
       sq = i + knight_offsets[j];
       if (on_board(sq) && manhattan_distance(sq, i) == 3) knight_masks[i] |= sq_mask_on(sq);
     }
+    // printf("%d\n", i);
+    // rb_funcall(mod_chess, rb_intern("print_bitboard"),1, ULONG2NUM(knight_masks[i]));
   }
 }
 
@@ -173,12 +175,17 @@ void setup_directions(){
   BB ray;
   for(int i=0; i<64; i++){
     for(int j=0; j<64; j++){
+      directions[i][j] = INVALID;  // initialize array.
+    }
+  }
+  for(int i=0; i<64; i++){
+    for(int j=0; j<64; j++){
       for(int dir=0; dir<8; dir++){
         ray = ray_masks[dir][i];
         if(sq_mask_on(j) & ray){
           directions[i][j] = dir;
           intervening[i][j] = ray ^ (ray_masks[dir][j] | sq_mask_on(j));
-        }
+        } 
       }
     }
   }

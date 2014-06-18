@@ -25,14 +25,14 @@ require './lib/evaluation.rb'
 module Chess
   module Search # this module defines tree traversal algorithms for move selection.
 
-    PLY_VALUE = 1  # Multiplier representing the depth value of 1 ply.  
+    PLY_VALUE = 2  # Multiplier representing the depth value of 1 ply.  
                    # Used for fractional depth extensions / reductions.
 
     TWO_PLY = 2*PLY_VALUE
     THREE_PLY = 3*PLY_VALUE
     FOUR_PLY = 4*PLY_VALUE
 
-    EXT_CHECK = PLY_VALUE  # Used to extend search by a fraction of a ply when side to move is in check.
+    EXT_CHECK = 1  # Used to extend search by a fraction of a ply when side to move is in check.
 
     EXT_MAX = THREE_PLY # Maximum number of check extensions permitted.
 

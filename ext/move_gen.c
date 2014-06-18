@@ -142,9 +142,10 @@ static void build_enp_capture_with_see(VALUE id, int from, int to, VALUE cls, in
   rb_ary_push(moves, rb_class_new_instance(5, args, cls_move));                           
 }
 
-static VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_rights, VALUE moves){
+static VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE castle_rights, VALUE moves, VALUE in_check){
   BRD *cBoard = get_cBoard(p_board);
-  int c = SYM2COLOR(color);     
+  int c = SYM2COLOR(color);
+  int e = c^1;     
   int from, to;
   BB occupied = Occupied();
   BB empty = ~occupied;
@@ -154,19 +155,23 @@ static VALUE get_non_captures(VALUE self, VALUE p_board, VALUE color, VALUE cast
 
   // Castles
   int castle = NUM2INT(castle_rights);
-  if (castle){
+  if (castle && in_check == Qfalse){
     if(c){
-      if ((castle & C_WQ) && !(castle_queenside_intervening[1] & occupied)){
+      if ((castle & C_WQ) && !(castle_queenside_intervening[1] & occupied)
+        && !is_attacked_by(cBoard, D1, e, c) && !is_attacked_by(cBoard, C1, e, c)){
         build_castle(INT2NUM(0x1b), E1, C1, INT2NUM(0x17), A1, D1, moves);
       }
-      if ((castle & C_WK) && !(castle_kingside_intervening[1] & occupied)){
+      if ((castle & C_WK) && !(castle_kingside_intervening[1] & occupied)
+        && !is_attacked_by(cBoard, F1, e, c) && !is_attacked_by(cBoard, G1, e, c)){
         build_castle(INT2NUM(0x1b), E1, G1, INT2NUM(0x17), H1, F1, moves);
       }
     } else {
-      if ((castle & C_BQ) && !(castle_queenside_intervening[0] & occupied)){
+      if ((castle & C_BQ) && !(castle_queenside_intervening[0] & occupied)
+        && !is_attacked_by(cBoard, D8, e, c) && !is_attacked_by(cBoard, C8, e, c)){
         build_castle(INT2NUM(0x1a), E8, C8, INT2NUM(0x16), A8, D8, moves);
       }
-      if ((castle & C_BK) && !(castle_kingside_intervening[0] & occupied)){
+      if ((castle & C_BK) && !(castle_kingside_intervening[0] & occupied)
+        && !is_attacked_by(cBoard, F8, e, c) && !is_attacked_by(cBoard, G8, e, c)){
         build_castle(INT2NUM(0x1a), E8, G8, INT2NUM(0x16), H8, F8, moves);
       }
     }
@@ -499,7 +504,8 @@ static VALUE get_evasions(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
   BRD *cBoard = get_cBoard(p_board);
   int c = SYM2COLOR(color);
   int e = c^1;
-  int threat_sq_1, threat_sq_2, threat_dir_1, threat_dir_2, piece_id;
+  int threat_sq_1, threat_sq_2, piece_id;
+  int threat_dir_1 = INVALID, threat_dir_2 = INVALID;
   int from, to;
   BB occ = Occupied();
   BB empty = ~occ;
@@ -510,24 +516,34 @@ static VALUE get_evasions(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
 
   int king_sq = furthest_forward(c, cBoard->pieces[c][KING]);
   BB threats = color_attack_map(cBoard, king_sq, e, c); // find any enemy pieces that attack the king.
+  // printf("%s\n","threats:" );
+  // rb_funcall(mod_chess, rb_intern("print_bitboard"),1, ULONG2NUM(threats));
 
   int threat_count = pop_count(threats);
+
 
   // Get direction of the attacker(s) and any intervening squares between the attacker and the king.
   if(threat_count == 1){
     threat_sq_1 = lsb(threats);
-    threat_dir_1 = directions[king_sq][threat_sq_1];
-    // allow capturing of enemy king to detect illegal checking move by king capture.
-    defense_map |= cBoard->pieces[e][KING];   
-    defense_map |= intervening[king_sq][threat_sq_1] | threats;
-  } else {
+    if(piece_type_at(sq_board, threat_sq_1) != PAWN) threat_dir_1 = directions[threat_sq_1][king_sq];  
+    defense_map |= intervening[threat_sq_1][king_sq] | threats;
+    // // allow capturing of enemy king to detect illegal checking move by king capture.
+    defense_map |= cBoard->pieces[e][KING]; 
+  } else {  
+    // printf("%d\n", threat_count);
+    // printf("%s\n","double threat" );
+    // printf("%d\n",threat_dir_2 );  
     threat_sq_1 = lsb(threats);
-    threat_dir_1 = directions[king_sq][threat_sq_1];
+    if(piece_type_at(sq_board, threat_sq_1) != PAWN) threat_dir_1 = directions[threat_sq_1][king_sq];
     threat_sq_2 = msb(threats);
-    threat_dir_2 = directions[king_sq][threat_sq_2];
-    // allow capturing of enemy king to detect illegal checking move by king capture.
+    if(piece_type_at(sq_board, threat_sq_2) != PAWN) threat_dir_2 = directions[threat_sq_2][king_sq];
+    // // allow capturing of enemy king to detect illegal checking move by king capture.
     defense_map |= cBoard->pieces[e][KING];
   }
+
+  // printf("%d\n",threat_dir_1 );
+  // printf("%s\n","defense_map:" );
+  // rb_funcall(mod_chess, rb_intern("print_bitboard"),1, ULONG2NUM(defense_map));
 
   if(threat_count == 1){ // Attempt to capture or block the attack with any piece if there's only one attacker.
     // Pawns
@@ -536,12 +552,21 @@ static VALUE get_evasions(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
     BB left_temp, right_temp, left_attacks, right_attacks; 
     BB promotion_captures_left, promotion_captures_right, promotion_advances;
 
+  // if(c){ // white to move
+  //   single_advances = (cBoard->pieces[WHITE][PAWN]<<8) & empty & (~row_masks[7]); // promotions generated in get_captures
+  //   double_advances = ((single_advances & row_masks[2])<<8) & empty;
+  // } else { // black to move
+  //   single_advances = (cBoard->pieces[BLACK][PAWN]>>8) & empty & (~row_masks[0]);  
+  //   double_advances = ((single_advances & row_masks[5])>>8) & empty;
+  // }
+
     if(c){ // white to move
-      single_advances = (cBoard->pieces[WHITE][PAWN]<<8) & empty & (~row_masks[7]) & defense_map;
+      single_advances = (cBoard->pieces[WHITE][PAWN]<<8) & empty & (~row_masks[7]);
       double_advances = ((single_advances & row_masks[2])<<8) & empty & defense_map;
+      single_advances = single_advances & defense_map;
       promotion_advances = ((cBoard->pieces[c][PAWN]<<8) & row_masks[7]) & empty & defense_map;
       
-      left_temp = ((cBoard->pieces[c][PAWN] & (~column_masks[0]))<<7) & enemy & defense_map;
+      left_temp = ((cBoard->pieces[WHITE][PAWN] & (~column_masks[0]))<<7) & enemy & defense_map;
       left_attacks =  left_temp & (~row_masks[7]);
       promotion_captures_left = left_temp & (row_masks[7]);
       
@@ -549,18 +574,20 @@ static VALUE get_evasions(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
       right_attacks = right_temp & (~row_masks[7]);
       promotion_captures_right = right_temp & (row_masks[7]);
     } else { // black to move
-      single_advances = (cBoard->pieces[BLACK][PAWN]>>8) & empty & (~row_masks[0]) & defense_map; 
+      single_advances = (cBoard->pieces[BLACK][PAWN]>>8) & empty & (~row_masks[0]); 
       double_advances = ((single_advances & row_masks[5])>>8) & empty & defense_map;
-      promotion_advances = ((cBoard->pieces[c][PAWN]>>8) & row_masks[0]) & empty & defense_map; 
+      single_advances = single_advances & defense_map;
+      promotion_advances = ((cBoard->pieces[BLACK][PAWN]>>8) & row_masks[0]) & empty & defense_map; 
 
-      left_temp = ((cBoard->pieces[c][PAWN] & (~column_masks[0]))>>9) & enemy & defense_map;
+      left_temp = ((cBoard->pieces[BLACK][PAWN] & (~column_masks[0]))>>9) & enemy & defense_map;
       left_attacks =  left_temp & (~row_masks[0]);
       promotion_captures_left = left_temp & (row_masks[0]);
 
-      right_temp = ((cBoard->pieces[c][PAWN] & (~column_masks[7]))>>7) & enemy & defense_map;
+      right_temp = ((cBoard->pieces[BLACK][PAWN] & (~column_masks[7]))>>7) & enemy & defense_map;
       right_attacks = right_temp & (~row_masks[0]);
       promotion_captures_right = right_temp & (row_masks[0]);
     }
+
     // double advances
     for(; double_advances; clear_sq(to, double_advances)){
       to = furthest_forward(c, double_advances);
@@ -676,11 +703,17 @@ static VALUE get_evasions(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
   piece_id = INT2NUM(0x1a|c); // get king piece ID for color c.
   for(BB t = (king_masks[king_sq] & enemy); t; clear_sq(to, t)){ // generate to squares
     to = furthest_forward(c, t);
-    if(!is_attacked_by(cBoard, to, e, c)) build_capture(piece_id, king_sq, to, cls_regular_capture, sq_board, captures);
+    if(!is_attacked_by(cBoard, to, e, c) && (threat_dir_1 != directions[king_sq][to])
+       && (threat_dir_1 != directions[king_sq][to]))
+      build_capture(piece_id, king_sq, to, cls_regular_capture, sq_board, captures);
   }
+  // also need to prevent king from retreating along the enemy line of attack.
+
   for(BB t = (king_masks[king_sq] & empty); t; clear_sq(to, t)){ // generate to squares
     to = furthest_forward(c, t);
-    if(!is_attacked_by(cBoard, to, e, c)) build_move(piece_id, king_sq, to, cls_regular_move, moves);
+    if(!is_attacked_by(cBoard, to, e, c) && (threat_dir_1 != directions[king_sq][to])
+       && (threat_dir_1 != directions[king_sq][to]))
+      build_move(piece_id, king_sq, to, cls_regular_move, moves);
   }
 
   return Qnil;
@@ -718,7 +751,7 @@ extern void Init_move_gen(){
 
   cls_castle = rb_define_class_under(mod_move, "Castle", cls_move_strategy);
 
-  rb_define_module_function(mod_move_gen, "get_non_captures", get_non_captures, 4);
+  rb_define_module_function(mod_move_gen, "get_non_captures", get_non_captures, 5);
   rb_define_module_function(mod_move_gen, "get_captures", get_captures, 6);
   rb_define_module_function(mod_move_gen, "get_winning_captures", get_winning_captures, 6);
   rb_define_module_function(mod_move_gen, "get_evasions", get_evasions, 7);

@@ -32,7 +32,7 @@ Search benchmarking (Win at Chess test suite):
     4.0505759433333335 seconds/search at depth 6
     N: 41090377; E: 36098846; B: 3.736847072831139; Efficiency: 10.882614641186391
 
-  5/6/14 After debugging bitboard-based SEE and adding separate move generator for check evasions
+  5/6/14 After debugging bitboard-based SEE and adding separate move generator for check evasions:
 
     Total AI score: 116/300 (38.666666666666664%)
     0.13200174666666667 seconds/search at depth 4
@@ -41,6 +41,21 @@ Search benchmarking (Win at Chess test suite):
     Total AI score: 120/300 (40.0%)
     1.5352190433333335 seconds/search at depth 6
     N: 17664038; E: 16447948; B: 2.7453770576053116; Efficiency: 14.569947646787172
+
+
+  6/18/14 After debugging new check evasion generator and adding check evasions in q-search:
+
+    Total AI score: 151/300 (50.33333333333333%)
+    0.09957187666666666 seconds/search at depth 4
+    43446.30376388407 NPS
+    N: 1297809; E: 1102378; B: 2.725878243308102; Efficiency: 18.4649969076569
+
+    Total AI score: 183/300 (61.0%)
+    1.28480314 seconds/search at depth 6
+    35598.44454718046 NPS
+    N: 13721098; E: 11554007; B: 2.886366420591334; Efficiency: 21.13383788171387
+
+
 
 
 Current Issues ----
