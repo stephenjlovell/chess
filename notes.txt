@@ -56,13 +56,17 @@ Search benchmarking (Win at Chess test suite):
     N: 13721098; E: 11554007; B: 2.886366420591334; Efficiency: 21.13383788171387
 
 
-
-
 Current Issues ----
 
-  check evasion move generator not always creating the correct number of moves
+  legality checking still allows 'jumping' of pieces during sliding moves.
 
 To Do ----
+
+  Use is_pinned to replace pos.evades_check?(move).  For kings, test if from square is attacked by enemy.  For all other pieces, check if the piece is pinned.
+
+  Generate pseudo-legal moves, but use new evades_check? routine to determine legality before making move.
+  
+  Avoid using pinned pieces in SEE and move generation.  Create routine that generates a mask of pinned pieces for color.
 
   Create separate move generator for giving check.
 

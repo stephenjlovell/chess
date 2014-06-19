@@ -28,6 +28,7 @@ void setup_eval_constants();
 
 extern int non_king_value;
 extern int endgame_value;
+extern int mate_value;
 
 static int main_pst[2][5][64];
 static int king_pst[2][2][64];

@@ -23,6 +23,7 @@
 
 int non_king_value;
 int endgame_value;
+int mate_value;
 
 static int main_pst[2][5][64] = {
   { // Black
@@ -165,6 +166,7 @@ void setup_eval_constants(){
   non_king_value = piece_values[PAWN]*8 + piece_values[KNIGHT]*2 + piece_values[BISHOP]*2 +
                    piece_values[ROOK]*2 + piece_values[QUEEN];
   endgame_value =  piece_values[KING]   - (non_king_value/4);
+  mate_value = non_king_value + piece_values[KING];
 }
 
 // Only base material is incrementally updated.
@@ -192,6 +194,7 @@ static int adjusted_placement(int c, BRD *cBoard){
   BB b, enemy_king_b = cBoard->pieces[c^1][KING];
 
   if(enemy_king_b){
+
     int enemy_king_sq = lsb(enemy_king_b);
     for(int type = PAWN; type < QUEEN; type++){
       for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
@@ -204,6 +207,7 @@ static int adjusted_placement(int c, BRD *cBoard){
       placement += king_pst[c][in_endgame(c)][sq];
     }
   } else {
+
     for(int type = PAWN; type < QUEEN; type++){
       for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
         sq = furthest_forward(c, b);

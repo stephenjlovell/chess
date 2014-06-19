@@ -46,7 +46,8 @@ module Chess
 
     KING_LOSS = Pieces::KING_LOSS/Evaluation::EVAL_GRAIN
     
-    F_MARGIN_HIGH = Pieces::PIECE_VALUES[:R]/Evaluation::EVAL_GRAIN    
+    F_MARGIN_HIGH = Pieces::PIECE_VALUES[:Q]/Evaluation::EVAL_GRAIN   
+    F_MARGIN_MID = Pieces::PIECE_VALUES[:R]/Evaluation::EVAL_GRAIN    
     F_MARGIN_LOW  = Pieces::PIECE_VALUES[:N]/Evaluation::EVAL_GRAIN
 
     # Calls the MTD(f)-Step algorithm from within an iterative deepening framework.
@@ -334,7 +335,6 @@ module Chess
       # this will save the effort that would have been spent on move generation.
       unless first_move.nil?
         $main_calls += 1
-
         MoveGen::make!(@node, first_move)
         value, count = alpha_beta(depth-PLY_VALUE, -beta, -alpha, extension)
         MoveGen::unmake!(@node, first_move)
@@ -354,8 +354,9 @@ module Chess
       end
 
       # Extended futility pruning:
-      f_margin = adjusted_depth > PLY_VALUE ? F_MARGIN_HIGH : F_MARGIN_LOW
-      f_prune = (adjusted_depth <= TWO_PLY) && !in_check && (alpha.abs < MATE) && (@node.value + f_margin <= alpha)      
+      f_margin = adjusted_depth > PLY_VALUE ? F_MARGIN_MID : F_MARGIN_LOW    
+      # f_margin = adjusted_depth > PLY_VALUE ? F_MARGIN_HIGH : F_MARGIN_MID    
+      f_prune = (adjusted_depth <= TWO_PLY) && !in_check && (@node.value + f_margin <= alpha)
 
       moves ||= @node.edges(adjusted_depth, adjusted_depth >= THREE_PLY, in_check)
 
@@ -432,12 +433,19 @@ module Chess
         end     
       end
 
-      @node.tactical_edges(in_check).each do |move|
+      # Futility Pruning.  In q-search, futility pruning is sometimes called "delta pruning".
+      # f_prune = !in_check && (result + F_MARGIN_LOW) <= alpha
+      f_prune = !in_check && (result + F_MARGIN_HIGH) <= alpha
 
-        next if !in_check && move.see && move.see < 0
+      @node.tactical_edges(in_check).each do |move|
         $quiescence_calls += 1
 
         MoveGen::make!(@node, move)
+        if f_prune && !move.promotion? && !@node.in_check? # Only prune moves that arent promotions
+        # if f_prune && legal_moves && !move.promotion? && !@node.in_check? # Only prune moves that arent promotions
+          MoveGen::unmake!(@node, move)                                   # and that do not give check.
+          next
+        end
         value, count = quiescence(depth-PLY_VALUE, -beta, -alpha, check_counter)
         MoveGen::unmake!(@node, move)
 
@@ -454,7 +462,6 @@ module Chess
         end        
       end
 
-      # if no legal moves available, it's either a draw or checkmate.
       result = (@i_depth - depth/PLY_VALUE) - MATE if in_check && !legal_moves 
 
       $tt.store(@node, depth, sum, result, alpha, beta, best_move)

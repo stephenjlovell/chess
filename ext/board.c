@@ -129,7 +129,7 @@ static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_t
   BB empty = ~occ;
   BB friendly = cBoard->occupied[c];
   BB enemy = cBoard->occupied[e];
-  BB piece_mask = 0;
+  BB move_mask = 0;
 
   int moved_type = piece_type(piece);
 
@@ -170,13 +170,12 @@ static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_t
       break;
     default:
       switch(moved_type){
-        case KNIGHT: piece_mask = knight_masks[from]; break;
-        case BISHOP: piece_mask = bishop_masks[from]; break;
-        case ROOK: piece_mask = rook_masks[from]; break;
-        case QUEEN: piece_mask = queen_masks[from]; break;
+        case KNIGHT: move_mask = knight_masks[from]; break;
+        case BISHOP: move_mask = bishop_attacks(occ, from); break;
+        case ROOK: move_mask = rook_attacks(occ, from); break;
+        case QUEEN: move_mask = queen_attacks(occ, from); break;
       }
-      printf("%lu\n", piece_mask);
-      return (piece_mask & sq_mask_on(to) & (~friendly)) ? Qtrue : Qfalse;
+      return (move_mask & sq_mask_on(to) & (~friendly)) ? Qtrue : Qfalse;
       break;
   }
   return Qfalse;

@@ -34,23 +34,23 @@ module Chess
     #  3. Sequences of Move objects are stored by the MoveHistory class, allowing the human player to undo/redo moves at will.
     
     class Move
-      attr_reader :piece, :from, :to, :enp_target, :see
+      attr_reader :piece, :from, :to, :strategy, :enp_target, :see
 
       def initialize(piece, from, to, strategy, see=nil)
         @piece, @from, @to, @strategy, @see = piece, from, to, strategy, see
       end
 
       def make!(position)
-        begin
+        # begin
           @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
           position.enp_target = nil
 
           @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
 
-        rescue => err
-          puts self.inspect
-          raise Memory::HashCollisionError
-        end 
+        # rescue => err
+        #   puts self.inspect
+        #   raise Memory::HashCollisionError
+        # end 
       end
 
       def unmake!(position)
@@ -86,6 +86,10 @@ module Chess
 
       def quiet?
         @strategy.quiet?
+      end
+
+      def promotion?
+        @strategy.promotion?
       end
 
       def inspect
@@ -137,6 +141,10 @@ module Chess
 
       def quiet?
         true
+      end
+
+      def promotion?
+        false
       end
     end
 
@@ -323,6 +331,10 @@ module Chess
       def quiet?
         false
       end
+
+      def promotion?
+        true
+      end
     end
 
     # Strategy used when a pawn moves onto the enemy back row by capturing another piece.
@@ -359,6 +371,10 @@ module Chess
 
       def hash(piece, from, to) # XOR out piece at from. XOR out @captured_piece at to.  XOR in @queen at to.
         Memory::psq_key(piece, from) ^ Memory::psq_key(@captured_piece, to) ^ Memory::psq_key(@promoted_piece, to)
+      end
+
+      def promotion?
+        true
       end
 
     end
@@ -399,15 +415,15 @@ module Chess
     #
     #   1.  The build() method creates a move object using the strategy specified by the client.
     #   2.  The build_move() method chooses the correct strategy to use, and returns the appropriate move object.               
-    class Factory  
-      PROCS = { regular_move:           Proc.new { |*args| RegularMove.new                },
-                regular_capture:        Proc.new { |*args| RegularCapture.new(*args)      },
-                castle:                 Proc.new { |*args| Castle.new(*args)              },
-                enp_capture:            Proc.new { |*args| EnPassantCapture.new(*args)    },
-                pawn_move:              Proc.new { |*args| PawnMove.new                   },
+    class Factory                                                                             # Args:
+      PROCS = { regular_move:           Proc.new { |*args| RegularMove.new                },  
+                regular_capture:        Proc.new { |*args| RegularCapture.new(*args)      },  # captured_piece
+                castle:                 Proc.new { |*args| Castle.new(*args)              },  # rook, rook_from, rook_to
+                enp_capture:            Proc.new { |*args| EnPassantCapture.new(*args)    },  # captured_piece, enp_target
+                pawn_move:              Proc.new { |*args| PawnMove.new                   },  
                 enp_advance:            Proc.new { |*args| EnPassantAdvance.new           },
-                pawn_promotion:         Proc.new { |*args| PawnPromotion.new(*args)       },
-                pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args)} } 
+                pawn_promotion:         Proc.new { |*args| PawnPromotion.new(*args)       },  # side_to_move
+                pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args)} } # captured_piece
       private_constant :PROCS
       
       # Factory interface
@@ -426,17 +442,16 @@ module Chess
         raise "no product strategy #{sym} available for Move::MoveFactory" unless PROCS[sym]
         move = Move.new(piece, from, to, PROCS[sym].call(*args)) 
         puts move.inspect
+        puts move.strategy.class
         move
       end
 
       private
 
       def self.build_pawn_move(pos, piece, from, to)
-        from_row = pos.board.row(from)
-        to_row = pos.board.row(to)
-        if Pieces::ENEMY_BACK_ROW[pos.side_to_move] == to_row
+        if Pieces::ENEMY_BACK_ROW[pos.side_to_move] == pos.board.row(to)
           build_promotion(pos, piece, from, to)
-        elsif Pieces::PAWN_START_ROW[pos.side_to_move] == from_row && 
+        elsif Pieces::PAWN_START_ROW[pos.side_to_move] == pos.board.row(from) && 
               pos.board.manhattan_distance(from, to) == 2
           build(piece, from, to, :enp_advance)
         else
@@ -461,7 +476,7 @@ module Chess
       end
 
       def self.build_king_move(pos, piece, from, to)
-        if(pos.board.manhattan_distance(from, to) == 2)
+        if pos.board.manhattan_distance(from, to) == 2 && pos.board.row(to) == pos.board.row(from)
           build_castle(pos, piece, from, to)
         else
           build_regular_move(pos, piece, from, to)
