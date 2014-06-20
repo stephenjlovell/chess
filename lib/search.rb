@@ -223,12 +223,12 @@ module Chess
       depth ||= @max_depth
       sum, result, best_move, legal_moves = 1, -$INF, nil, false
 
-      hash_move = $tt.get_hash_move(@node) # At root, use TT for move ordering only.
-
       in_check = @node.in_check?
       extension += EXT_CHECK if in_check && extension < EXT_MAX
       adjusted_depth = depth + (extension/PLY_VALUE)*PLY_VALUE # Number of ply remaining until q-search
       
+      hash_move = $tt.get_hash_move(@node, in_check) # At root, use TT for move ordering only.
+
       # Try the hash move separately first.  If hash move causes a beta cutoff, this saves the effort that would 
       # normally be expended on move generation and sorting.
 
@@ -246,17 +246,16 @@ module Chess
           alpha = result
           best_move = hash_move
           if result >= beta
-            store_cutoff(hash_move, adjusted_depth, count)
+            store_cutoff(hash_move, adjusted_depth, count, in_check)
             $tt.store(@node, adjusted_depth, sum, result, alpha, beta, hash_move)
             return hash_move, result
           end
         end  
       end
 
-      in_check = @node.in_check?
 
       @node.edges(adjusted_depth, true, in_check).each do |move| 
-        next unless @node.evades_check?(move)  # no illegal moves allowed at root.
+        next unless @node.evades_check?(move, in_check)  # no illegal moves allowed at root.
 
         $main_calls += 1
         
@@ -271,7 +270,7 @@ module Chess
           alpha = result
           best_move = move
           if result >= beta
-            store_cutoff(move, adjusted_depth, count)
+            store_cutoff(move, adjusted_depth, count, in_check)
             break
           end
         end  
@@ -295,7 +294,7 @@ module Chess
       extension += EXT_CHECK if in_check && extension < EXT_MAX
       adjusted_depth = depth + (extension/PLY_VALUE)*PLY_VALUE # Number of ply remaining until q-search
 
-      first_move, hash_value, hash_count = $tt.probe(@node, adjusted_depth, alpha, beta)
+      first_move, hash_value, hash_count = $tt.probe(@node, adjusted_depth, alpha, beta, in_check)
       return hash_value, hash_count unless hash_value.nil?
 
       # # Enhanced Transposition Cutoffs
@@ -347,7 +346,7 @@ module Chess
           alpha = result
           best_move = first_move
           if result >= beta
-            store_cutoff(first_move, adjusted_depth, count)
+            store_cutoff(first_move, adjusted_depth, count, in_check)
             return $tt.store(@node, adjusted_depth, sum, result, alpha, beta, first_move)
           end
         end  
@@ -379,7 +378,7 @@ module Chess
           alpha = result
           best_move = move
           if result >= beta
-            store_cutoff(move, adjusted_depth, count)
+            store_cutoff(move, adjusted_depth, count, in_check)
             break
           end
         end  
@@ -398,12 +397,14 @@ module Chess
       result, best_move, sum = -$INF, nil, 1
       legal_moves = false
 
-      hash_move, hash_value, hash_count = $tt.probe(@node, depth, alpha, beta)
-      return hash_value, hash_count unless hash_value.nil?
-
       in_check = @node.in_check?
       # evade_check = in_check && check_counter >= 0
       # check_counter -= 1 if in_check
+
+      hash_move, hash_value, hash_count = $tt.probe(@node, depth, alpha, beta, in_check)
+      return hash_value, hash_count unless hash_value.nil?
+
+
 
       unless in_check
         result = @node.value(in_check)  
@@ -467,8 +468,8 @@ module Chess
       $tt.store(@node, depth, sum, result, alpha, beta, best_move)
     end
 
-    def self.store_cutoff(move, depth, nodecount)
-      $killer.store(@node, move, depth)  # If the move that caused the cutoff is a 'quiet' move (i.e. not a capture 
+    def self.store_cutoff(move, depth, nodecount, in_check)
+      $killer.store(@node, move, depth, in_check)  # If the move that caused the cutoff is a 'quiet' move (i.e. not a capture 
       $history.store(move, nodecount)    # or promotion), then store the move in the Killer Moves table.
     end
 

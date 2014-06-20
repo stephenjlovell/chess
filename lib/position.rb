@@ -80,8 +80,9 @@ module Chess
       end
 
       # Verify that the given move would not leave the current side's king in check.
-      def evades_check?(move)
-        move_evades_check?(@pieces, @board.squares, move.from, move.to, @side_to_move)
+      def evades_check?(move, in_check) # while in check, only legal evasions are generated.
+        in_check || move_evades_check?(@pieces, @board.squares, move.from, move.to, @side_to_move)
+        # in_check || legal_move?(@pieces, move.piece, move.from, move.to, @side_to_move)
       end
 
       # Return a string decribing the position in Forsyth-Edwards Notation.

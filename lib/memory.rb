@@ -78,13 +78,13 @@ module Chess
 
       # Probe the TT for saved search results.  If a valid entry is found, push the stored best move into
       # first_moves array. If stored result would cause cutoff of local search, return the stored result.
-      def probe(node, depth, alpha, beta)
+      def probe(node, depth, alpha, beta, in_check)
         if ok?(node)
           $memory_calls += 1
           e = get(node)
           lower, upper = e.lower, e.upper
 
-          move = !e.move.nil? && node.evades_check?(e.move) ? e.move : nil
+          move = !e.move.nil? && node.evades_check?(e.move, in_check) ? e.move : nil
 
           if lower.depth >= depth && lower.bound >= beta
             return move, lower.bound, lower.count
@@ -140,10 +140,10 @@ module Chess
       end
 
       # If an entry is available for node, return the best move stored from the previous search.
-      def get_hash_move(node)
+      def get_hash_move(node, in_check)
         if ok?(node)
           e = get(node)  # if hash move is illegal, don't use it:
-          return e.move unless e.move.nil? || !node.evades_check?(e.move)
+          return e.move unless e.move.nil? || !node.evades_check?(e.move, in_check)
         end
         nil
       end

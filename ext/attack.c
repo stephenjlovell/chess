@@ -84,8 +84,7 @@ VALUE is_in_check(VALUE self, VALUE p_board, VALUE side_to_move){
   return (is_attacked_by(cBoard, furthest_forward(c, cBoard->pieces[c][KING]), e, c) ? Qtrue : Qfalse);
 }
 
-static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board, 
-                               VALUE from, VALUE to, VALUE color){
+static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board, VALUE from, VALUE to, VALUE color){
   BRD *cBoard = get_cBoard(p_board);
   int c = SYM2COLOR(color);
   int e = c^1;
@@ -117,6 +116,19 @@ static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board,
 
   return (check ? Qfalse : Qtrue);
 }
+
+
+static VALUE is_pseudolegal_move_legal(VALUE self, VALUE p_board, VALUE piece, VALUE f, VALUE t, VALUE color){
+  int c = SYM2COLOR(color);
+  int e = c^1;
+  BRD *cBoard = get_cBoard(p_board);
+  if(piece_type(NUM2INT(piece)) == KING){ // determine if the to square is attacked by an enemy piece.
+    return is_attacked_by(cBoard, NUM2INT(t), e, c) ? Qfalse : Qtrue;
+  } else { // determine if the piece being moved is pinned on the king and can't move without putting king at risk.
+    return is_pinned(cBoard, NUM2INT(f), c, e) ? Qfalse : Qtrue;
+  }
+}
+
 
 // 1. Find the displacement vector between the piece at sq and its own king and determine if it
 //    lies along a valid ray attack.  If the vector is a valid ray attack:
@@ -227,21 +239,11 @@ extern void Init_attack(){
   VALUE cls_position = rb_define_class_under(mod_chess, "Position", rb_cObject);
   rb_define_method(cls_position, "side_in_check?", RUBY_METHOD_FUNC(is_in_check), 2);
   rb_define_method(cls_position, "move_evades_check?", RUBY_METHOD_FUNC(move_evades_check), 5);
+  rb_define_method(cls_position, "legal_move?", RUBY_METHOD_FUNC(is_pseudolegal_move_legal), 5);
 
   VALUE mod_search = rb_define_module_under(mod_chess, "Search");
   rb_define_module_function(mod_search, "static_exchange_evaluation", static_exchange_evaluation, 5);
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 

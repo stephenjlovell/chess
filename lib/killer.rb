@@ -46,11 +46,11 @@ module Chess
 
       # Store a potential killer move, ensuring that each of the three slots contains a different move.
       # Moves are added and replaced in first-in, first-out order.
-      def store(pos, move, depth)
+      def store(pos, move, depth, in_check)
         if move.quiet?
           e = @table[depth]
           unless move == e.first  # If the new move is already at the top of the list, no update needed.
-            if pos.evades_check?(move) # only store legal moves in killer table.
+            if pos.evades_check?(move, in_check) # only store legal moves in killer table.
               if move == e.second
                 e.second = e.first
                 e.first = move
