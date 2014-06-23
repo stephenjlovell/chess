@@ -34,9 +34,11 @@ BB color_attack_map(BRD *cBoard, enumSq sq, int c, int e);
 
 int is_attacked_by(BRD *cBoard, enumSq sq, int attacker, int defender);
 
-int is_pinned(BRD* cBoard, int sq, int c, int e);
+BB is_pinned(BRD* cBoard, int sq, int c, int e);
 
 static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board, VALUE from, VALUE to, VALUE color);
+
+static VALUE move_gives_check(VALUE self, VALUE p_board, VALUE sq_board, VALUE from, VALUE to, VALUE color);
 
 BB update_temp_map(BB temp_map, BB temp_occ, BB b_attackers, BB r_attackers, int type, int sq);
 

@@ -117,15 +117,56 @@ static VALUE move_evades_check(VALUE self, VALUE p_board, VALUE sq_board, VALUE 
   return (check ? Qfalse : Qtrue);
 }
 
+static VALUE move_gives_check(VALUE self, VALUE p_board, VALUE sq_board, VALUE from, VALUE to, VALUE color){
+  BRD *cBoard = get_cBoard(p_board);
+  int c = SYM2COLOR(color);
+  int e = c^1;
+  int f = NUM2INT(from), t = NUM2INT(to);
+  int check;
+
+  int piece = NUM2INT(rb_ary_entry(sq_board, f));  // ?
+  int captured_piece = NUM2INT(rb_ary_entry(sq_board, t));
+
+  if(!cBoard->pieces[e][KING]) return Qtrue;
+
+  // does not take into account promotions.
+
+  BB delta = (sq_mask_on(t)|sq_mask_on(f));
+  cBoard->pieces[c][piece_type(piece)] ^= delta;
+  cBoard->occupied[c] ^= delta;
+
+  if(captured_piece){
+    clear_sq(t, cBoard->pieces[e][piece_type(captured_piece)]);
+    clear_sq(t, cBoard->occupied[e]);
+    // determine if in check
+    check = is_attacked_by(cBoard, furthest_forward(e, cBoard->pieces[e][KING]), c, e);
+    add_sq(t, cBoard->pieces[e][piece_type(captured_piece)]);
+    add_sq(t, cBoard->occupied[e]);
+  } else {
+    // determine if in check
+    check = is_attacked_by(cBoard, furthest_forward(e, cBoard->pieces[e][KING]), c, e);
+  }
+  cBoard->pieces[c][piece_type(piece)] ^= delta;
+  cBoard->occupied[c] ^= delta;
+
+  return (check ? Qtrue : Qfalse);
+}
+
+
 
 static VALUE is_pseudolegal_move_legal(VALUE self, VALUE p_board, VALUE piece, VALUE f, VALUE t, VALUE color){
   int c = SYM2COLOR(color);
   int e = c^1;
   BRD *cBoard = get_cBoard(p_board);
   if(piece_type(NUM2INT(piece)) == KING){ // determine if the to square is attacked by an enemy piece.
+
+    // also need to check for castle legality
     return is_attacked_by(cBoard, NUM2INT(t), e, c) ? Qfalse : Qtrue;
+
   } else { // determine if the piece being moved is pinned on the king and can't move without putting king at risk.
-    return is_pinned(cBoard, NUM2INT(f), c, e) ? Qfalse : Qtrue;
+    
+    BB pinned = is_pinned(cBoard, NUM2INT(f), c, e);
+    return pinned && (~pinned & sq_mask_on(NUM2INT(t))) ? Qfalse : Qtrue;
   }
 }
 
@@ -134,7 +175,7 @@ static VALUE is_pseudolegal_move_legal(VALUE self, VALUE p_board, VALUE piece, V
 //    lies along a valid ray attack.  If the vector is a valid ray attack:
 // 2. Scan toward the king to see if there are any other pieces blocking this route to the king.
 // 3. Scan in the opposite direction to see detect any potential threats along this ray.
-int is_pinned(BRD* cBoard, int sq, int c, int e){
+BB is_pinned(BRD* cBoard, int sq, int c, int e){
   BB occ = Occupied();
   BB threat = 0, guarded_king = 0;
   int dir = directions[sq][furthest_forward(c, cBoard->pieces[c][KING])]; //get direction toward king
@@ -239,6 +280,7 @@ extern void Init_attack(){
   VALUE cls_position = rb_define_class_under(mod_chess, "Position", rb_cObject);
   rb_define_method(cls_position, "side_in_check?", RUBY_METHOD_FUNC(is_in_check), 2);
   rb_define_method(cls_position, "move_evades_check?", RUBY_METHOD_FUNC(move_evades_check), 5);
+  rb_define_method(cls_position, "move_gives_check?", RUBY_METHOD_FUNC(move_gives_check), 5);
   rb_define_method(cls_position, "legal_move?", RUBY_METHOD_FUNC(is_pseudolegal_move_legal), 5);
 
   VALUE mod_search = rb_define_module_under(mod_chess, "Search");

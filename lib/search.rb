@@ -264,7 +264,8 @@ module Chess
         MoveGen::unmake!(@node, move)
         result = Chess::max(-value, result)
         sum += count
-        legal_moves = true unless result <= KING_LOSS
+
+        legal_moves = true
 
         if result > alpha
           alpha = result
@@ -340,7 +341,7 @@ module Chess
 
         result = Chess::max(-value, result)
         sum += count
-        legal_moves = true unless result <= KING_LOSS
+        legal_moves = true
 
         if result > alpha
           alpha = result
@@ -354,25 +355,23 @@ module Chess
 
       # Extended futility pruning:
       f_margin = adjusted_depth > PLY_VALUE ? F_MARGIN_MID : F_MARGIN_LOW    
-      # f_margin = adjusted_depth > PLY_VALUE ? F_MARGIN_HIGH : F_MARGIN_MID    
       f_prune = (adjusted_depth <= TWO_PLY) && !in_check && (@node.value + f_margin <= alpha)
 
       moves ||= @node.edges(adjusted_depth, adjusted_depth >= THREE_PLY, in_check)
 
       moves.each do |move|
+        # Prune any illegal moves.  
+        # If futility pruning flag is set, also prune moves that don't alter material balance or give check.
+        next if !@node.evades_check?(move, in_check) || (f_prune && legal_moves && move.quiet? && !@node.gives_check?(move))
 
         MoveGen::make!(@node, move)
-        if f_prune && legal_moves && move.quiet? && !@node.in_check? # When f_prune flag is set,
-          MoveGen::unmake!(@node, move) # prune moves that don't alter material balance or give check.
-          next
-        end
         value, count = alpha_beta(depth-PLY_VALUE, -beta, -alpha, extension)
         MoveGen::unmake!(@node, move)
 
         $main_calls += 1
         result = Chess::max(-value, result)
         sum += count
-        legal_moves = true unless result <= KING_LOSS
+        legal_moves = true
 
         if result > alpha
           alpha = result
@@ -404,8 +403,6 @@ module Chess
       hash_move, hash_value, hash_count = $tt.probe(@node, depth, alpha, beta, in_check)
       return hash_value, hash_count unless hash_value.nil?
 
-
-
       unless in_check
         result = @node.value(in_check)  
         return beta, sum if result >= beta # fail hard beta cutoff
@@ -423,7 +420,7 @@ module Chess
 
         result = Chess::max(-value, result)
         sum += count
-        legal_moves = true unless result <= KING_LOSS # Hash moves are pre-checked for legality during TT probe.
+        legal_moves = true # Hash moves are pre-checked for legality during TT probe.
 
         if result > alpha
           alpha = result
@@ -441,18 +438,15 @@ module Chess
       @node.tactical_edges(in_check).each do |move|
         $quiescence_calls += 1
 
+        next if !@node.evades_check?(move, in_check) || (f_prune && !move.promotion? && !@node.gives_check?(move))
+
         MoveGen::make!(@node, move)
-        if f_prune && !move.promotion? && !@node.in_check? # Only prune moves that arent promotions
-        # if f_prune && legal_moves && !move.promotion? && !@node.in_check? # Only prune moves that arent promotions
-          MoveGen::unmake!(@node, move)                                   # and that do not give check.
-          next
-        end
         value, count = quiescence(depth-PLY_VALUE, -beta, -alpha, check_counter)
         MoveGen::unmake!(@node, move)
 
         result = Chess::max(-value, result)
         sum += count
-        legal_moves = true  unless result <= KING_LOSS  # when in check, only legal evasions are generated.
+        legal_moves = true
 
         if result > alpha
           alpha = result

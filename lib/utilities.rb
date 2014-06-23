@@ -87,7 +87,9 @@ module Chess
 
     def self.test_legality(pos, from, to)
       piece = pos.board[from]
-      if !pos.pieces.friendly?(from, pos.side_to_move) # The from square should be occupied by a friendly piece.
+      if !Chess::current_game.position.evades_check?(move)
+        raise InvalidMoveError, "That move would leave your king in check."
+      elsif !pos.pieces.friendly?(from, pos.side_to_move) # The from square should be occupied by a friendly piece.
         raise InvalidMoveError, 'No piece available at that square.'
       elsif pos.pieces.friendly?(to, pos.side_to_move) # The to square should NOT be occupied by a friendly piece.
         raise InvalidMoveError, 'This square is already occupied by one of your pieces.'

@@ -56,21 +56,27 @@ Search benchmarking (Win at Chess test suite):
     N: 13721098; E: 11554007; B: 2.886366420591334; Efficiency: 21.13383788171387
 
 
+  6/23/14 After replacing king capture for illegal move detection:
+
+    Total AI score: 153/300 (51.0%)
+    0.09075997333333334 seconds/search at depth 4
+    47224.194865342986 NPS
+    N: 1285820; E: 1042786; B: 2.677582689727886; Efficiency: 19.04703081464235
+
+    Total AI score: 191/300 (63.66666666666667%)
+    1.0978841966666666 seconds/search at depth 6
+    40776.480314822766 NPS
+    N: 13430356; E: 10772648; B: 2.8464059896574074; Efficiency: 22.36738782099372
+
+
 Current Issues ----
 
-  legality checking still allows 'jumping' of pieces during sliding moves.
 
 To Do ----
 
-  Use is_pinned to replace pos.evades_check?(move).  For kings, test if from square is attacked by enemy.  For all other pieces, check if the piece is pinned.
-
-  Generate pseudo-legal moves, but use new evades_check? routine to determine legality before making move.
-  
   Avoid using pinned pieces in SEE and move generation.  Create routine that generates a mask of pinned pieces for color.
 
   Create separate move generator for giving check.
-
-  Refactor utilities
 
   Create readme
 
