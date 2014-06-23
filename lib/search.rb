@@ -392,13 +392,11 @@ module Chess
 
     # Quiescence Search (q-search) is called at leaf nodes when depth is less than one full ply.
 
-    def self.quiescence(depth, alpha=-$INF, beta=$INF, check_counter=5)  # quiesence nodes are not part of the principal variation.
+    def self.quiescence(depth, alpha=-$INF, beta=$INF)  # quiesence nodes are not part of the principal variation.
       result, best_move, sum = -$INF, nil, 1
       legal_moves = false
 
       in_check = @node.in_check?
-      # evade_check = in_check && check_counter >= 0
-      # check_counter -= 1 if in_check
 
       hash_move, hash_value, hash_count = $tt.probe(@node, depth, alpha, beta, in_check)
       return hash_value, hash_count unless hash_value.nil?
@@ -415,7 +413,7 @@ module Chess
         $quiescence_calls += 1
 
         MoveGen::make!(@node, hash_move)
-        value, count = quiescence(depth-PLY_VALUE, -beta, -alpha, check_counter)
+        value, count = quiescence(depth-PLY_VALUE, -beta, -alpha)
         MoveGen::unmake!(@node, hash_move)
 
         result = Chess::max(-value, result)
@@ -432,7 +430,6 @@ module Chess
       end
 
       # Futility Pruning.  In q-search, futility pruning is sometimes called "delta pruning".
-      # f_prune = !in_check && (result + F_MARGIN_LOW) <= alpha
       f_prune = !in_check && (result + F_MARGIN_HIGH) <= alpha
 
       @node.tactical_edges(in_check).each do |move|
@@ -441,7 +438,7 @@ module Chess
         next if !@node.evades_check?(move, in_check) || (f_prune && !move.promotion? && !@node.gives_check?(move))
 
         MoveGen::make!(@node, move)
-        value, count = quiescence(depth-PLY_VALUE, -beta, -alpha, check_counter)
+        value, count = quiescence(depth-PLY_VALUE, -beta, -alpha)
         MoveGen::unmake!(@node, move)
 
         result = Chess::max(-value, result)
