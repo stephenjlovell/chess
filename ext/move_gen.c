@@ -78,18 +78,60 @@ static void build_castle(VALUE id, int from, int to, VALUE r_id, int r_from, int
   args[3] = strategy;
   args[4] = Qnil;                                                                  
   rb_ary_push(moves, rb_class_new_instance(5, args, cls_move));                     
-}   
+}
 
-static void build_promotion(VALUE id, int from, int to, VALUE color, VALUE cls, VALUE moves){                       
+
+// promoted_piece, captured_piece 
+static void build_promotions(VALUE id, int from, int to, VALUE color, VALUE cls, VALUE promotions){                       
   VALUE args[5];                                                                    
-  args[0] = color;                                                                  
-  VALUE strategy = rb_class_new_instance(1, args, cls);                             
+  VALUE strategy;
+  int c = SYM2COLOR(color);
+
+  args[0] = INT2NUM(24|c);                                                               
+  strategy = rb_class_new_instance(1, args, cls);                             
   args[0] = id;                                                                     
   args[1] = INT2NUM(from);                                                          
   args[2] = INT2NUM(to);                                                           
   args[3] = strategy;                                                               
   args[4] = Qnil;   
-  rb_ary_push(moves, rb_class_new_instance(5, args, cls_move));                     
+  rb_ary_push(promotions, rb_class_new_instance(5, args, cls_move));    
+
+  args[0] = INT2NUM(18|c);                        
+  strategy = rb_class_new_instance(1, args, cls);                             
+  args[0] = id;                                                                     
+  args[1] = INT2NUM(from);                                                          
+  args[2] = INT2NUM(to);                                                           
+  args[3] = strategy;                                                               
+  args[4] = Qnil;   
+  rb_ary_push(promotions, rb_class_new_instance(5, args, cls_move));     
+
+}
+
+static void build_promotion_captures(VALUE id, int from, int to, VALUE color, VALUE cls, VALUE sq_board, VALUE promotions){                
+  VALUE args[5];
+  VALUE strategy;
+  int c = SYM2COLOR(color);
+
+  args[0] = INT2NUM(24|c);                                                         
+  args[1] = rb_ary_entry(sq_board, to);                                       
+  strategy = rb_class_new_instance(2, args, cls);                       
+  args[0] = id;                                                               
+  args[1] = INT2NUM(from);                                                    
+  args[2] = INT2NUM(to);                                                      
+  args[3] = strategy;
+  args[4] = Qnil;                                                    
+  rb_ary_push(promotions, rb_class_new_instance(5, args, cls_move));   
+
+  args[0] = INT2NUM(18|c);                                                         
+  args[1] = rb_ary_entry(sq_board, to);                                       
+  strategy = rb_class_new_instance(2, args, cls);                       
+  args[0] = id;                                                               
+  args[1] = INT2NUM(from);                                                    
+  args[2] = INT2NUM(to);                                                      
+  args[3] = strategy;
+  args[4] = Qnil;                                                    
+  rb_ary_push(promotions, rb_class_new_instance(5, args, cls_move));               
+
 }
 
 static void build_capture(VALUE id, int from, int to, VALUE cls, VALUE sq_board, VALUE moves){                
@@ -293,16 +335,18 @@ static VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
   // promotion captures
   for(; promotion_captures_left; clear_sq(to, promotion_captures_left)){
     to = furthest_forward(c, promotion_captures_left);
-    build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_promotion_capture, sq_board, promotions);
+    // build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_promotion_capture, sq_board, promotions);
+    build_promotion_captures(piece_id, to+pawn_from_offsets[c][2], to, color, cls_promotion_capture, sq_board, promotions);
   }
   for(; promotion_captures_right; clear_sq(to, promotion_captures_right)){
     to = furthest_forward(c, promotion_captures_right);
-    build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_promotion_capture, sq_board, promotions);
+    // build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_promotion_capture, sq_board, promotions);
+    build_promotion_captures(piece_id, to+pawn_from_offsets[c][3], to, color, cls_promotion_capture, sq_board, promotions);
   }
   // promotion advances
   for(; promotion_advances; clear_sq(to, promotion_advances)){
     to = furthest_forward(c, promotion_advances);
-    build_promotion(piece_id, to+pawn_from_offsets[c][0], to, color, cls_promotion, promotions); 
+    build_promotions(piece_id, to+pawn_from_offsets[c][0], to, color, cls_promotion, promotions); 
   }
   // regular pawn attacks
   for(; left_attacks; clear_sq(to, left_attacks)){
@@ -412,16 +456,18 @@ static VALUE get_winning_captures(VALUE self, VALUE p_board, VALUE color, VALUE 
   // promotion captures
   for(; promotion_captures_left; clear_sq(to, promotion_captures_left)){
     to = furthest_forward(c, promotion_captures_left);
-    build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_promotion_capture, sq_board, promotions);
+    // build_capture(piece_id, to+pawn_from_offsets[c][2], to, cls_promotion_capture, sq_board, promotions);
+    build_promotion_captures(piece_id, to+pawn_from_offsets[c][2], to, color, cls_promotion_capture, sq_board, promotions);
   }
   for(; promotion_captures_right; clear_sq(to, promotion_captures_right)){
     to = furthest_forward(c, promotion_captures_right);
-    build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_promotion_capture, sq_board, promotions);
+    // build_capture(piece_id, to+pawn_from_offsets[c][3], to, cls_promotion_capture, sq_board, promotions);
+    build_promotion_captures(piece_id, to+pawn_from_offsets[c][3], to, color, cls_promotion_capture, sq_board, promotions);
   }
   // promotion advances
   for(; promotion_advances; clear_sq(to, promotion_advances)){
     to = furthest_forward(c, promotion_advances);
-    build_promotion(piece_id, to+pawn_from_offsets[c][0], to, color, cls_promotion, promotions); 
+    build_promotions(piece_id, to+pawn_from_offsets[c][0], to, color, cls_promotion, promotions); 
   }
   // regular pawn attacks
   for(; left_attacks; clear_sq(to, left_attacks)){
@@ -604,18 +650,20 @@ static VALUE get_evasions(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
     for(; promotion_captures_left; clear_sq(to, promotion_captures_left)){
       to = furthest_forward(c, promotion_captures_left);
       from = to+pawn_from_offsets[c][2];
-      if(!is_pinned(cBoard, from, c, e)) build_capture(piece_id, from, to, cls_promotion_capture, sq_board, promotions);
+      if(!is_pinned(cBoard, from, c, e)) 
+        build_promotion_captures(piece_id, from, to, color, cls_promotion_capture, sq_board, promotions);
     }
     for(; promotion_captures_right; clear_sq(to, promotion_captures_right)){
       to = furthest_forward(c, promotion_captures_right);
       from = to+pawn_from_offsets[c][3];
-      if(!is_pinned(cBoard, from, c, e)) build_capture(piece_id, from, to, cls_promotion_capture, sq_board, promotions);
+      if(!is_pinned(cBoard, from, c, e)) 
+        build_promotion_captures(piece_id, from, to, color, cls_promotion_capture, sq_board, promotions);
     }
     // promotion advances
     for(; promotion_advances; clear_sq(to, promotion_advances)){
       to = furthest_forward(c, promotion_advances);
       from = to+pawn_from_offsets[c][0];
-      if(!is_pinned(cBoard, from, c, e)) build_promotion(piece_id, from, to, color, cls_promotion, promotions); 
+      if(!is_pinned(cBoard, from, c, e)) build_promotions(piece_id, from, to, color, cls_promotion, promotions); 
     }
     // regular pawn attacks
     for(; left_attacks; clear_sq(to, left_attacks)){

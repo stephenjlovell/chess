@@ -171,14 +171,6 @@ void setup_eval_constants(){
 
 // Only base material is incrementally updated.
 
-static VALUE net_material(VALUE self, VALUE pc_board, VALUE color){
-  BRD *cBoard = get_cBoard(pc_board);  
-  int c = SYM2COLOR(color);
-  int e = c^1;
-  int sq, placement = 0;
-  BB b;
-  return INT2NUM(adjusted_material(c, cBoard)-adjusted_material(e, cBoard));
-}
 
 static VALUE net_placement(VALUE self, VALUE pc_board, VALUE color){
   BRD *cBoard = get_cBoard(pc_board);  
@@ -191,37 +183,89 @@ static VALUE net_placement(VALUE self, VALUE pc_board, VALUE color){
 
 static int adjusted_placement(int c, BRD *cBoard){
   int sq, placement = 0;
-  BB b, enemy_king_b = cBoard->pieces[c^1][KING];
-
-  if(enemy_king_b){
-
-    int enemy_king_sq = lsb(enemy_king_b);
-    for(int type = PAWN; type < QUEEN; type++){
-      for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
-        sq = furthest_forward(c, b);
-        placement += (main_pst[c][type][sq] + tropism_bonus[sq][enemy_king_sq][type]);
-      }
-    }
-    for(b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
+  int e = c^1;
+  BB b;
+  int enemy_king_sq = furthest_forward(e, cBoard->pieces[e][KING]);
+  
+  for(int type = PAWN; type < KING; type++){
+    for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
       sq = furthest_forward(c, b);
-      placement += king_pst[c][in_endgame(c)][sq];
-    }
-  } else {
-
-    for(int type = PAWN; type < QUEEN; type++){
-      for(b = cBoard->pieces[c][type]; b; clear_sq(sq, b)){
-        sq = furthest_forward(c, b);
-        placement += main_pst[c][type][sq];
-      }
-    }
-    for(b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
-      sq = furthest_forward(c, b);
-      placement += king_pst[c][in_endgame(c)][sq];
+      placement += (main_pst[c][type][sq] + tropism_bonus[sq][enemy_king_sq][type]);
     }
   }
-  return cBoard->material[c] + placement;
+  for(b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
+    sq = furthest_forward(c, b);
+    placement += king_pst[c][in_endgame(c)][sq];
+  }
+
+  return cBoard->material[c] + placement + mobility(c, e, cBoard);
 }
 
+static int mobility(int c, int e, BRD *cBoard){
+  BB friendly = Placement(c);
+  BB available = ~friendly;
+  BB enemy = Placement(e);
+  BB occ = friendly|enemy;
+  BB empty = ~occ;
+  int sq;
+  int mobility=0, unguarded=0;
+
+  // pawn mobility
+  BB single_advances, double_advances, left_temp, right_temp;
+  if(c){ // white to move
+    single_advances = (cBoard->pieces[WHITE][PAWN]<<8) & empty; // promotions generated in get_captures
+    double_advances = ((single_advances & row_masks[2])<<8) & empty;
+    left_temp = ((cBoard->pieces[c][PAWN] & (~column_masks[0]))<<7) & enemy;
+    right_temp = ((cBoard->pieces[c][PAWN] & (~column_masks[7]))<<9) & enemy;
+    unguarded = ~((((cBoard->pieces[e][PAWN]&~column_masks[0])>>9)|((cBoard->pieces[e][PAWN]&~column_masks[7])>>7)) & empty);
+  } else { // black to move
+    single_advances = (cBoard->pieces[BLACK][PAWN]>>8) & empty;  
+    double_advances = ((single_advances & row_masks[5])>>8) & empty;
+    left_temp = ((cBoard->pieces[c][PAWN] & (~column_masks[0]))>>9) & enemy;
+    right_temp = ((cBoard->pieces[c][PAWN] & (~column_masks[7]))>>7) & enemy;
+    unguarded = ~((((cBoard->pieces[e][PAWN]&~column_masks[0])<<7)|((cBoard->pieces[e][PAWN]&~column_masks[7])<<9)) & empty);
+  }
+  mobility += pop_count((single_advances|double_advances) & unguarded) 
+            + pop_count(left_temp & unguarded) + pop_count(right_temp & unguarded);
+  // knight mobility
+  for(BB b = cBoard->pieces[c][KNIGHT]; b; clear_sq(sq, b)){
+    sq = furthest_forward(c, b);
+    mobility += pop_count(knight_masks[sq] & available & unguarded);
+  }
+  // bishop mobility
+  for(BB b = cBoard->pieces[c][BISHOP]; b; clear_sq(sq, b)){
+    sq = furthest_forward(c, b);
+    mobility += pop_count(bishop_attacks(occ, sq) & available & unguarded);
+  }
+  // rook mobility
+  for(BB b = cBoard->pieces[c][ROOK]; b; clear_sq(sq, b)){
+    sq = furthest_forward(c, b);
+    mobility += pop_count(rook_attacks(occ, sq) & available & unguarded);
+  }
+  // queen mobility
+  for(BB b = cBoard->pieces[c][QUEEN]; b; clear_sq(sq, b)){
+    sq = furthest_forward(c, b);
+    mobility += pop_count(queen_attacks(occ, sq) & available & unguarded);
+  }
+  // king mobility
+  for(BB b = cBoard->pieces[c][KING]; b; clear_sq(sq, b)){
+    sq = furthest_forward(c, b);
+    mobility = pop_count(king_masks[sq] & available & unguarded);
+  }
+  return mobility<<1;
+}
+
+
+
+
+static VALUE net_material(VALUE self, VALUE pc_board, VALUE color){
+  BRD *cBoard = get_cBoard(pc_board);  
+  int c = SYM2COLOR(color);
+  int e = c^1;
+  int sq, placement = 0;
+  BB b;
+  return INT2NUM(adjusted_material(c, cBoard)-adjusted_material(e, cBoard));
+}
 
 static int adjusted_material(int c, BRD *cBoard){
   int sq, placement = 0;

@@ -63,11 +63,22 @@ Search benchmarking (Win at Chess test suite):
     47224.194865342986 NPS
     N: 1285820; E: 1042786; B: 2.677582689727886; Efficiency: 19.04703081464235
 
-    Total AI score: 191/300 (63.66666666666667%)
-    1.0978841966666666 seconds/search at depth 6
-    40776.480314822766 NPS
-    N: 13430356; E: 10772648; B: 2.8464059896574074; Efficiency: 22.36738782099372
+    Total AI score: 192/300 (64.0%)
+    1.0958400433333333 seconds/search at depth 6
+    40914.404986472284 NPS
+    N: 13450693; E: 10786303; B: 2.8449238840475606; Efficiency: 22.49620819694664
 
+  
+
+    Total AI score: 157/300 (52.33333333333333%)
+    0.08998390666666667 seconds/search at depth 4
+    47208.51565605879 NPS
+    N: 1274402; E: 1015252; B: 2.5676322092083987; Efficiency: 20.38194300011048
+
+    Total AI score: 187/300 (62.33333333333333%)
+    1.1243537133333332 seconds/search at depth 6
+    39463.74064242429 NPS
+    N: 13311361; E: 10527791; B: 2.7850868856837394; Efficiency: 22.38110906117404
 
 Current Issues ----
 
@@ -82,6 +93,11 @@ To Do ----
 
 
 Possible Enhancements to Add ----
+
+  Evaluation features:
+  -Mobility
+  -Pawn Structure 
+
 
   -Extend search on 'winning' promotions
 

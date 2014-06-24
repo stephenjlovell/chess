@@ -221,11 +221,7 @@ module Chess
       end
 
       def mvv_lva(piece)  # Most valuable victim, least valuable attacker heuristic. Used for move ordering of captures.
-        # begin
         return Pieces::VALUES[(@captured_piece>>1)&7] - piece
-        # rescue => err
-        #   raise Memory::HashCollisionError
-        # end
       end
 
       def quiet?
@@ -298,8 +294,8 @@ module Chess
     class PawnPromotion < MoveStrategy # Stores the existing pawn in move object and places a new Queen.
       include Irreversible
 
-      def initialize(side_to_move)
-        @promoted_piece = side_to_move == :w ? WQ_ID : BQ_ID  # piece_id constants for queens.
+      def initialize(promoted_piece)
+        @promoted_piece = promoted_piece
       end
 
       def make!(position, piece, from, to)
@@ -341,13 +337,11 @@ module Chess
     class PawnPromotionCapture < MoveStrategy      
       include MakesCapture
 
-      def initialize(captured_piece)  
-        @captured_piece = captured_piece
-        @promoted_piece = (captured_piece & 1) == 0 ? WQ_ID : BQ_ID  # piece_id constants for queens.
+      def initialize(promoted_piece, captured_piece)  
+        @promoted_piece, @captured_piece = promoted_piece, captured_piece
       end
 
-      def make!(position, piece, from, to)
-        # do not add PST delta for this move, since the moved piece is replaced by a new queen.
+      def make!(position, piece, from, to)# do not add PST delta for this move, since the moved piece is replaced by a new queen.
         make_clock_adjustment(position)
         position.board[from] = 0
         position.board[to] = @promoted_piece
@@ -422,8 +416,8 @@ module Chess
                 enp_capture:            Proc.new { |*args| EnPassantCapture.new(*args)    },  # captured_piece, enp_target
                 pawn_move:              Proc.new { |*args| PawnMove.new                   },  
                 enp_advance:            Proc.new { |*args| EnPassantAdvance.new           },
-                pawn_promotion:         Proc.new { |*args| PawnPromotion.new(*args)       },  # side_to_move
-                pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args)} } # captured_piece
+                pawn_promotion:         Proc.new { |*args| PawnPromotion.new(*args)       },  # promoted_piece
+                pawn_promotion_capture: Proc.new { |*args| PawnPromotionCapture.new(*args)} } # promoted_piece, captured_piece
       private_constant :PROCS
       
       # Factory interface
@@ -468,10 +462,11 @@ module Chess
       end
 
       def self.build_promotion(pos, piece, from, to)
+        promoted_piece = pos.side_to_move == :w ? WQ_ID : BQ_ID 
         if pos.pieces.enemy?(to, pos.side_to_move)
-          build(piece, from, to, :pawn_promotion_capture, pos.board[to])
+          build(piece, from, to, :pawn_promotion_capture, promoted_piece, pos.board[to])
         else
-          build(piece, from, to, :pawn_promotion)
+          build(piece, from, to, :pawn_promotion, promoted_piece)
         end
       end
 
