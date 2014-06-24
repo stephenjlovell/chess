@@ -446,7 +446,7 @@ module Chess
         if Pieces::ENEMY_BACK_ROW[pos.side_to_move] == pos.board.row(to)
           build_promotion(pos, piece, from, to)
         elsif Pieces::PAWN_START_ROW[pos.side_to_move] == pos.board.row(from) && 
-              pos.board.manhattan_distance(from, to) == 2
+              pos.board.manhattan_distance(from, to) == 2 && pos.board.column(from) == pos.board.column(to)
           build(piece, from, to, :enp_advance)
         else
           if pos.pieces.enemy?(to, pos.side_to_move)

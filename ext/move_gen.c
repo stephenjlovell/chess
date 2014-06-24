@@ -598,14 +598,6 @@ static VALUE get_evasions(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
     BB left_temp, right_temp, left_attacks, right_attacks; 
     BB promotion_captures_left, promotion_captures_right, promotion_advances;
 
-  // if(c){ // white to move
-  //   single_advances = (cBoard->pieces[WHITE][PAWN]<<8) & empty & (~row_masks[7]); // promotions generated in get_captures
-  //   double_advances = ((single_advances & row_masks[2])<<8) & empty;
-  // } else { // black to move
-  //   single_advances = (cBoard->pieces[BLACK][PAWN]>>8) & empty & (~row_masks[0]);  
-  //   double_advances = ((single_advances & row_masks[5])>>8) & empty;
-  // }
-
     if(c){ // white to move
       single_advances = (cBoard->pieces[WHITE][PAWN]<<8) & empty & (~row_masks[7]);
       double_advances = ((single_advances & row_masks[2])<<8) & empty & defense_map;
@@ -747,7 +739,6 @@ static VALUE get_evasions(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
     } 
   }
   // If there's more than one attacking piece, the only way out is to move the king.
-  // King
   piece_id = INT2NUM(0x1a|c); // get king piece ID for color c.
   for(BB t = (king_masks[king_sq] & enemy); t; clear_sq(to, t)){ // generate to squares
     to = furthest_forward(c, t);

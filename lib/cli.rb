@@ -132,14 +132,13 @@ module Chess
     def self.load(input)
       begin
         pos = Notation::fen_to_position(input)
+        Chess::new_game(pos.enemy)
+        Chess::current_game.position = pos
+        Chess::current_game.print
       rescue Notation::NotationFormatError => e
         puts e.message
-        puts e.backtrace
         return nil
       end
-      Chess::new_game(pos.enemy)
-      Chess::current_game.position = pos
-      Chess::current_game.print
     end
 
     def self.winner

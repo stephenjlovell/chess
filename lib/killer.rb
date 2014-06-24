@@ -50,7 +50,7 @@ module Chess
         if move.quiet?
           e = @table[depth]
           unless move == e.first  # If the new move is already at the top of the list, no update needed.
-            if pos.evades_check?(move, in_check) # only store legal moves in killer table.
+            if pos.avoids_check?(move, in_check) # only store legal moves in killer table.
               if move == e.second
                 e.second = e.first
                 e.first = move

@@ -255,7 +255,7 @@ module Chess
 
 
       @node.edges(adjusted_depth, true, in_check).each do |move| 
-        next unless @node.evades_check?(move, in_check)  # no illegal moves allowed at root.
+        next unless @node.avoids_check?(move, in_check)  # no illegal moves allowed at root.
 
         $main_calls += 1
         
@@ -362,7 +362,7 @@ module Chess
       moves.each do |move|
         # Prune any illegal moves.  
         # If futility pruning flag is set, also prune moves that don't alter material balance or give check.
-        next if !@node.evades_check?(move, in_check) || (f_prune && legal_moves && move.quiet? && !@node.gives_check?(move))
+        next if !@node.avoids_check?(move, in_check) || (f_prune && legal_moves && move.quiet? && !@node.gives_check?(move))
 
         MoveGen::make!(@node, move)
         value, count = alpha_beta(depth-PLY_VALUE, -beta, -alpha, extension)
@@ -435,7 +435,7 @@ module Chess
       @node.tactical_edges(in_check).each do |move|
         $quiescence_calls += 1
 
-        next if !@node.evades_check?(move, in_check) || (f_prune && !move.promotion? && !@node.gives_check?(move))
+        next if !@node.avoids_check?(move, in_check) || (f_prune && !move.promotion? && !@node.gives_check?(move))
 
         MoveGen::make!(@node, move)
         value, count = quiescence(depth-PLY_VALUE, -beta, -alpha)

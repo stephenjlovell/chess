@@ -189,8 +189,8 @@ module Chess # top-level application namespace.
 
     def end_turn
       self.print
-      Chess::print_bitboard(@position.pieces.get_occupancy(:w))
-      Chess::print_bitboard(@position.pieces.get_occupancy(:b))
+      # Chess::print_bitboard(@position.pieces.get_occupancy(:w))
+      # Chess::print_bitboard(@position.pieces.get_occupancy(:b))
       @clock.restart
     end
   end

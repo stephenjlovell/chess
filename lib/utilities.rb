@@ -87,9 +87,7 @@ module Chess
 
     def self.test_legality(pos, from, to)
       piece = pos.board[from]
-      if !Chess::current_game.position.evades_check?(move)
-        raise InvalidMoveError, "That move would leave your king in check."
-      elsif !pos.pieces.friendly?(from, pos.side_to_move) # The from square should be occupied by a friendly piece.
+      if !pos.pieces.friendly?(from, pos.side_to_move) # The from square should be occupied by a friendly piece.
         raise InvalidMoveError, 'No piece available at that square.'
       elsif pos.pieces.friendly?(to, pos.side_to_move) # The to square should NOT be occupied by a friendly piece.
         raise InvalidMoveError, 'This square is already occupied by one of your pieces.'
@@ -97,7 +95,7 @@ module Chess
         raise InvalidMoveError, "The selected piece can\'t move there"
       else
         move = Move::Factory.build_move(pos, from, to)
-        unless pos.evades_check?(move)  # The move should not leave the king in check.
+        unless pos.legal?(move)  # The move should not leave the king in check.
           raise InvalidMoveError, 'That move would leave your king in check.'
         end
       end
@@ -165,7 +163,7 @@ module Chess
     end
 
     def self.fen_to_position(fen) # Parses a FEN string and returns an equivalent position object.
-      # begin
+      begin
         fields = fen.split(' ') # break the FEN string into its constituent fields
         board = fen_to_board(fields[0])
         side_to_move = fields[1].to_sym
@@ -174,9 +172,9 @@ module Chess
         halfmove_clock = fields[4] ? fields[4].to_i : 0
         position = Position.new(board, side_to_move, castle, enp_target, halfmove_clock)
         return position
-      # rescue
-      #   raise NotationFormatError, "could not convert fen to position: #{fen}"
-      # end
+      rescue
+        raise NotationFormatError, "could not convert fen to position: \n#{fen}"
+      end
     end
     
     def self.fen_to_board(fen)

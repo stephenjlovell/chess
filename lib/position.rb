@@ -78,11 +78,14 @@ module Chess
       def enemy_in_check?
         side_in_check?(@pieces, @enemy)
       end
+      
+      def avoids_check?(move, in_check) # while in check, only legal evasions are generated.
+        in_check || move_avoids_check?(@pieces, move.piece, move.from, move.to, @side_to_move)
+      end
 
-      # Verify that the given move would not leave the current side's king in check.
-      def evades_check?(move, in_check) # while in check, only legal evasions are generated.
-        # in_check || move_evades_check?(@pieces, @board.squares, move.from, move.to, @side_to_move)
-        in_check || legal_move?(@pieces, move.piece, move.from, move.to, @side_to_move)
+      # Verify that the move is legal and does not leave the current side's king in check.
+      def legal?(move)
+        move_is_legal?(@pieces, @board.squares, move.from, move.to, @side_to_move)
       end
 
       def gives_check?(move)

@@ -255,9 +255,6 @@ static int mobility(int c, int e, BRD *cBoard){
   return mobility<<1;
 }
 
-
-
-
 static VALUE net_material(VALUE self, VALUE pc_board, VALUE color){
   BRD *cBoard = get_cBoard(pc_board);  
   int c = SYM2COLOR(color);

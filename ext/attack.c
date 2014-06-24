@@ -279,9 +279,9 @@ extern void Init_attack(){
   VALUE mod_chess = rb_define_module("Chess");
   VALUE cls_position = rb_define_class_under(mod_chess, "Position", rb_cObject);
   rb_define_method(cls_position, "side_in_check?", RUBY_METHOD_FUNC(is_in_check), 2);
-  rb_define_method(cls_position, "move_evades_check?", RUBY_METHOD_FUNC(move_evades_check), 5);
+  rb_define_method(cls_position, "move_is_legal?", RUBY_METHOD_FUNC(move_evades_check), 5);
   rb_define_method(cls_position, "move_gives_check?", RUBY_METHOD_FUNC(move_gives_check), 5);
-  rb_define_method(cls_position, "legal_move?", RUBY_METHOD_FUNC(is_pseudolegal_move_legal), 5);
+  rb_define_method(cls_position, "move_avoids_check?", RUBY_METHOD_FUNC(is_pseudolegal_move_legal), 5);
 
   VALUE mod_search = rb_define_module_under(mod_chess, "Search");
   rb_define_module_function(mod_search, "static_exchange_evaluation", static_exchange_evaluation, 5);
