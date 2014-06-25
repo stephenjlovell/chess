@@ -89,7 +89,7 @@ module Chess
       end
 
       def gives_check?(move)
-        move_gives_check?(@pieces, @board.squares, move.from, move.to, @side_to_move)
+        move_gives_check?(@pieces, @board.squares, move.from, move.to, @side_to_move, move.promoted_piece)
       end
 
       # Return a string decribing the position in Forsyth-Edwards Notation.
@@ -118,11 +118,17 @@ module Chess
 
         if enhanced_sort
           enhanced_sort(promotions, captures, moves, depth)
+          # puts self.to_s
+          # @board.print
+          # captures.each {|c| puts "#{c}: #{c.see}" }
         else
           promotions + sort_captures_by_see!(captures) + history_sort!(moves)
         end
 
+        # promotions + sort_captures_by_mvvla!(captures) + history_sort!(moves)
+
         # promotions + sort_captures_by_see!(captures) + history_sort!(moves)
+        
         # enhanced_sort(promotions, captures, moves, depth)
       end
       alias :edges :get_moves
@@ -152,10 +158,15 @@ module Chess
           MoveGen::get_winning_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
           promotions + sort_winning_captures_by_see!(captures)
         end
-        # MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
-        # promotions + sort_captures_by_see!(captures)
+
       end
       alias :tactical_edges :get_captures
+
+      def get_all_captures
+        promotions, captures = [], []
+        MoveGen::get_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
+        promotions + sort_captures_by_see!(captures)
+      end
 
       def split_captures_by_see!(captures)
         winning, losing = [], []
@@ -167,6 +178,10 @@ module Chess
           end
         end
         return winning, losing
+      end
+
+      def sort_captures_by_mvvla!(captures)
+        captures.sort! {|x,y| y.mvv_lva <=> x.mvv_lva }
       end
 
       def sort_captures_by_see!(captures)

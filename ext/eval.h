@@ -46,7 +46,7 @@ static VALUE evaluate_material(VALUE self, VALUE pc_board, VALUE color);
 static VALUE net_material(VALUE self, VALUE pc_board, VALUE color);
 static VALUE net_placement(VALUE self, VALUE pc_board, VALUE color);
 
-static int adjusted_placement(int c, BRD *cBoard);
+static int adjusted_placement(int c, int e, BRD *cBoard);
 static int adjusted_material(int c, BRD *cBoard);
 
 static int mobility(int c, int e, BRD *cBoard);

@@ -76,7 +76,7 @@ module Chess
       end
 
       def to_s
-        Pieces::ID_TO_STR[@piece] + Location::sq_to_s(@from) + Location::sq_to_s(@to)
+        "#{Pieces::ID_TO_STR[@piece]} #{Location::sq_to_s(@from)} #{Location::sq_to_s(@to)}"
       end
 
       def ==(other)
@@ -92,6 +92,10 @@ module Chess
         @strategy.promotion?
       end
 
+      def promoted_piece
+        @strategy.promoted_piece
+      end
+
       def inspect
         "<Chess::Move::Move <@piece:#{Pieces::ID_TO_STR[@piece]}><@from:#{Location::sq_to_s(@from)}> " + 
         "<@to:#{Location::sq_to_s(@to)}><@enp_target:#{@enp_target}><@see:#{@see}><@strategy:#{@strategy.inspect}>>"
@@ -103,6 +107,8 @@ module Chess
     # the strategy class will include the MakesCapture module.
 
     class MoveStrategy  
+      attr_reader :promoted_piece
+
       def initialize
       end
 

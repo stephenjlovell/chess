@@ -68,17 +68,29 @@ Search benchmarking (Win at Chess test suite):
     40914.404986472284 NPS
     N: 13450693; E: 10786303; B: 2.8449238840475606; Efficiency: 22.49620819694664
 
-  
+  6/24/14 Using list-based SEE
 
-    Total AI score: 157/300 (52.33333333333333%)
-    0.08998390666666667 seconds/search at depth 4
-    47208.51565605879 NPS
-    N: 1274402; E: 1015252; B: 2.5676322092083987; Efficiency: 20.38194300011048
+    Total AI score: 155/300 (51.66666666666667%)
+    0.08782717666666667 seconds/search at depth 4
+    45529.33938101847 NPS
+    N: 1199614; E: 961856; B: 2.596050596006821; Efficiency: 19.902026079976647
 
-    Total AI score: 187/300 (62.33333333333333%)
-    1.1243537133333332 seconds/search at depth 6
-    39463.74064242429 NPS
-    N: 13311361; E: 10527791; B: 2.7850868856837394; Efficiency: 22.38110906117404
+    Total AI score: 189/300 (63.0%)
+    1.08711347 seconds/search at depth 6
+    38462.829459743516 NPS
+    N: 12544038; E: 9930262; B: 2.803167653559109; Efficiency: 22.474574405141464
+
+  After debugging mobility eval:
+
+    Total AI score: 154/300 (51.33333333333333%)
+    0.08773904666666667 seconds/search at depth 4
+    45119.89606755852 NPS
+    N: 1187633; E: 952453; B: 2.59744649176565; Efficiency: 19.762999351889935
+
+    Total AI score: 193/300 (64.33333333333333%)
+    1.0722237533333334 seconds/search at depth 6
+    38426.04668280588 NPS
+    N: 12360396; E: 9759936; B: 2.794409189261938; Efficiency: 23.022159238720906
 
 Current Issues ----
 
