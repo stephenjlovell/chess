@@ -360,7 +360,7 @@ static VALUE get_captures(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
   // en-passant captures
   if(enp_target != Qnil){
     int target = NUM2INT(enp_target);
-    for(BB f = cBoard->pieces[c][PAWN] & (pawn_enp_masks[target]); f; clear_sq(from, f)){
+    for(BB f = cBoard->pieces[c][PAWN] & (pawn_side_masks[target]); f; clear_sq(from, f)){
       from = furthest_forward(c, f);
       build_enp_capture(piece_id, from, (c?(target+8):(target-8)), cls_enp_capture, target, sq_board, moves);   
     }
@@ -485,7 +485,7 @@ static VALUE get_winning_captures(VALUE self, VALUE p_board, VALUE color, VALUE 
   // en-passant captures
   if(enp_target != Qnil){
     int target = NUM2INT(enp_target);
-    for(BB f = cBoard->pieces[c][PAWN] & (pawn_enp_masks[target]); f; clear_sq(from, f)){
+    for(BB f = cBoard->pieces[c][PAWN] & (pawn_side_masks[target]); f; clear_sq(from, f)){
       from = furthest_forward(c, f);
       to = c ? (target+8) : (target-8);
       see = get_see(cBoard, from, to, c, sq_board);
@@ -671,7 +671,7 @@ static VALUE get_evasions(VALUE self, VALUE p_board, VALUE color, VALUE sq_board
     // en-passant captures
     if(enp_target != Qnil){
       int target = NUM2INT(enp_target);
-      for(BB f = cBoard->pieces[c][PAWN] & (pawn_enp_masks[target]); f; clear_sq(from, f)){
+      for(BB f = cBoard->pieces[c][PAWN] & (pawn_side_masks[target]); f; clear_sq(from, f)){
         from = furthest_forward(c, f);
         to = c ? (target+8) : (target-8);
         if(!is_pinned(cBoard, from, c, e)) build_enp_capture(piece_id, from, to, cls_enp_capture, target, sq_board, captures);   

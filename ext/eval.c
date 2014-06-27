@@ -25,6 +25,36 @@ int non_king_value;
 int endgame_value;
 int mate_value;
 
+// const int passed_pawn_bonus[2][8] = { { 0, 32, 16, 8, 4,  2,  1, 0 },   
+//                                       { 0,  1,  2, 4, 8, 16, 32, 0 } };
+
+const int passed_pawn_bonus[2][8] = { { 0, 49, 28, 16, 9,  5,  3,  0 },   
+                                      { 0,  3,  5, 9, 16, 16, 28, 49 } };
+
+// const int passed_pawn_bonus[2][8] = { { 0, 64, 36, 16,  8,  4,  2, 0 },   
+//                                       { 0,  2,  4,  8, 16, 36, 64, 0 } };
+
+// const int passed_pawn_bonus[2][8] = { { 0, 82, 47, 27, 15, 9, 5, 0 },
+//                                       { 0, 5, 9, 15, 27, 47, 82, 0 } };
+
+// const int passed_pawn_bonus[2][8] = { { 0, 96, 48, 24,  12,  6,  3, 0 },   
+//                                       { 0,  3,  6,  12, 24, 48, 96, 0 } };
+
+
+
+
+
+const int promote_row[2][2] = { {1, 2}, {6, 5} };
+
+
+const int isolated_pawn_penalty = -5;
+const int double_pawn_penalty   = -10;
+
+const int pawn_duo_bonus        = 3;
+
+// const int passed_pawn_bonus[2][8] = { { 0, 0, 0, 0, 0, 0, 0, 0 }, 
+//                                       { 0, 0, 0, 0, 0, 0, 0, 0 } };
+
 static int main_pst[2][5][64] = {
   { // Black
     // Pawn
@@ -121,6 +151,17 @@ static int main_pst[2][5][64] = {
   }
 };
 
+const int mirror[64] = 
+   { 56, 57, 58, 59, 60, 61, 62, 63, // Used to create a mirror image of the base PST
+     48, 49, 50, 51, 52, 53, 54, 55, // during initialization.
+     40, 41, 42, 43, 44, 45, 46, 47,
+     32, 33, 34, 35, 36, 37, 38, 39,
+     24, 25, 26, 27, 28, 29, 30, 31,
+     16, 17, 18, 19, 20, 21, 22, 23,
+      8,  9, 10, 11, 12, 13, 14, 15,
+      0,  1,  2,  3,  4,  5,  6,  7 };
+
+
 static int king_pst[2][2][64] = { 
  { // Black // False
   { -52,-50,-50,-50,-50,-50,-50,-52,   // In early game, encourage the king to stay on back 
@@ -195,7 +236,10 @@ static int adjusted_placement(int c, int e, BRD *cBoard){
     sq = furthest_forward(c, b);
     placement += king_pst[c][in_endgame(c)][sq];
   }
-  return cBoard->material[c] + placement + mobility(c, e, cBoard);
+
+  // return cBoard->material[c] + placement + mobility(c, e, cBoard);
+  return cBoard->material[c] + placement + mobility(c, e, cBoard) + pawn_structure(c, e, cBoard);
+
 }
 
 // Counts the total possible moves for the given side, not including any target squares defended by enemy pawns.
@@ -208,7 +252,6 @@ static int mobility(int c, int e, BRD *cBoard){
   BB unguarded;
   int sq;
   int mobility=0;
-
 
   // pawn mobility
   BB single_advances, double_advances, left_temp, right_temp;
@@ -253,9 +296,90 @@ static int mobility(int c, int e, BRD *cBoard){
     sq = furthest_forward(c, b);
     mobility += pop_count(king_masks[sq] & available & unguarded);
   }
-  // if(mobility > 40 ) { printf("%d", mobility); printf("  "); }
+
   return mobility;
 }
+
+// PAWN EVALUATION
+// 
+// Good structures:
+//   -Passed pawns - Bonus for pawns unblocked by an enemy pawn on the same or adjacent file. May eventually get promoted.
+//   -cramping pawns - pawns should be rewarded for limiting enemy mobility. Accounted for in mobility evaluation.
+//   -Pawn duos - Pawns side by side to another friendly pawn receive a small bonus
+
+// Neutral/good structures:
+//   -Pawn chains should go toward the enemy king.
+//   -Pawn pairs - group of pawns on same rank and adjacent file.
+
+// Bad structures:
+//   -Backward pawns - cannot advance without being killed, and subject to attack on its square.
+//   -Isolated pawns - Penalty for any pawn without friendly pawns on adjacent files.  
+//   -Double/tripled pawns - Penalty for having multiple pawns on the same file.
+static int pawn_structure(int c, int e, BRD *cBoard){
+  int structure = 0;
+  // int passed = 0, isolated = 0, doubled = 0;
+  int sq;
+  // int start_row = c ? 1 : 6;
+
+
+  BB own_pawns = cBoard->pieces[c][PAWN];
+  BB enemy_pawns = cBoard->pieces[e][PAWN];
+
+  for(BB b = own_pawns; b; clear_sq(sq, b)){
+    sq = furthest_forward(c, b);
+    
+    // // passed pawns
+    // if(!(pawn_passed_masks[c][sq] & enemy_pawns)) {
+    //   if(row(sq) != promote_row || !is_attacked_by(cBoard, (c ? sq+8 : sq-8), c^1, c)){
+    //     structure += passed_pawn_bonus[c][row(sq)];           
+    //   }
+    // }
+
+    // passed pawns
+    if(!(pawn_passed_masks[c][sq] & enemy_pawns)) {
+      structure += passed_pawn_bonus[c][row(sq)];        
+      if(row(sq) == promote_row[c][0]){
+        if(!is_attacked_by(cBoard, (c ? sq+8 : sq-8), c^1, c)){
+          structure += passed_pawn_bonus[c][row(sq)];  // double the value of the bonus if promotion square is undefended.          
+        }
+      } else if(row(sq) == promote_row[c][1]) {
+        if(!is_attacked_by(cBoard, (c ? sq+8 : sq-8), c^1, c) && !is_attacked_by(cBoard, (c ? sq+16 : sq-16), c^1, c)){
+          structure += passed_pawn_bonus[c][row(sq)];  // double the value of the bonus if promotion square is undefended.
+        }
+      }
+    }
+
+
+    // isolated pawns
+    if(!(pawn_isolated_masks[sq] & own_pawns)) structure += isolated_pawn_penalty;
+
+    // pawn duos - only count pawn duos not on the starting row.
+    // if((pawn_side_masks[sq] & own_pawns) && (row(sq) != start_row)) structure += pawn_duo_bonus;
+    if(pawn_side_masks[sq] & own_pawns) structure += pawn_duo_bonus;
+
+  }
+  int column_count;
+  for(int i=0; i<8; i++){
+    // doubled/tripled pawns
+    column_count = pop_count(column_masks[i] & own_pawns);
+    if (column_count > 1){
+      structure += (double_pawn_penalty<<(column_count-2));
+    }
+  }
+  // printf("\ncolor: ");
+  // printf("%d\n", c);
+  // printf("passed: ");
+  // printf("%d\n", passed);
+  // printf("isolated: ");
+  // printf("%d\n", isolated);
+  // printf("doubled: ");
+  // printf("%d\n", doubled);
+
+  // structure = passed + isolated + doubled;
+  return structure;
+}
+
+
 
 static VALUE net_material(VALUE self, VALUE pc_board, VALUE color){
   BRD *cBoard = get_cBoard(pc_board);  

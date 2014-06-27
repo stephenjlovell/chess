@@ -53,7 +53,9 @@ BB queen_masks[64] = {0};
 BB king_masks[64] = {0};
 
 BB pawn_attack_masks[2][64] = { {0}, {0} };
-BB pawn_enp_masks[64] = {0};
+BB pawn_side_masks[64] = {0};
+BB pawn_passed_masks[2][64] = { {0}, {0} };
+BB pawn_isolated_masks[64] = {0};
 
 // single, double, left, right
 int pawn_from_offsets[2][4] = { {8, 16, 9, 7 }, {-8, -16, -7, -9 } };
@@ -78,8 +80,8 @@ void setup_pawn_masks(){
   int sq;
   for(int i=0; i<64; i++){
     if(row(i)==3 || row(i)==4){
-      if (column(i)!=7) pawn_enp_masks[i] |= sq_mask_on(i+1);
-      if (column(i)!=0) pawn_enp_masks[i] |= sq_mask_on(i-1);
+      if (column(i)!=7) pawn_side_masks[i] |= sq_mask_on(i+1);
+      if (column(i)!=0) pawn_side_masks[i] |= sq_mask_on(i-1);
     }
     if (i < 56){
       for(int j=0; j<2; j++){
@@ -191,6 +193,55 @@ void setup_directions(){
   }
 }
 
+void setup_pawn_structure_masks(){
+  for(int i=0; i<64; i++){  // initialize arrays
+    pawn_passed_masks[WHITE][i] = 0;
+    pawn_passed_masks[BLACK][i] = 0;
+    pawn_isolated_masks[i] = 0;
+  }
+
+  int sq = 0, col = 0;
+  BB center = 0;
+  for(int i=0; i<64; i++){
+    col = column(i);
+    // isolated pawn masks
+    pawn_isolated_masks[i] = (king_masks[i] & ~column_masks[col]);   
+    
+    sq = i+8;
+    while(sq < 64){
+      pawn_passed_masks[WHITE][i] |= sq_mask_on(sq); // center row
+      sq += 8;
+    }
+    sq = i-8;
+    while(sq > 0){
+      pawn_passed_masks[BLACK][i] |= sq_mask_on(sq); // center row
+      sq -= 8;
+    }
+    center = pawn_passed_masks[WHITE][i];
+    if(col != 0) pawn_passed_masks[WHITE][i] |= (center >> 1);  // queenside row
+    if(col != 7) pawn_passed_masks[WHITE][i] |= (center << 1);  // kingside row
+    center = pawn_passed_masks[BLACK][i];
+    if(col != 0) pawn_passed_masks[BLACK][i] |= (center >> 1);  // queenside row
+    if(col != 7) pawn_passed_masks[BLACK][i] |= (center << 1);  // kingside row
+  }
+
+  // for(int c = 0; c<2; c++){
+  //   for(int i=0; i<64; i++){
+  //     printf("side: ");
+  //     printf("%d\n", c);
+  //     printf("square: ");
+  //     printf("%d\n", i);
+  //     rb_funcall(mod_chess, rb_intern("print_bitboard"),1, ULONG2NUM(pawn_passed_masks[c][i]));
+  //   }
+  // }
+  // for(int i=0; i<64; i++){
+  //   printf("isolated square: ");
+  //   printf("%d\n", i);
+  //   rb_funcall(mod_chess, rb_intern("print_bitboard"),1, ULONG2NUM(pawn_isolated_masks[i]));
+  // }
+
+}
+
 
 void setup_masks(){ 
   setup_square_masks();  // First set up masks used to add/remove bits by their index.
@@ -205,6 +256,8 @@ void setup_masks(){
   setup_row_masks();     // Create bitboard masks for each row and column.
   setup_column_masks();
   setup_directions();
+
+  setup_pawn_structure_masks();
 }
 
 extern void Init_bitboard(){

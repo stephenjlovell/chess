@@ -42,7 +42,9 @@ module Chess
     # The main evaluation method.  Calls methods for calculation of each evaluation component,
     # then divides the total eval score by EVAL_GRAIN to achieve the desired 'coarseness' of evaluation.
     def self.evaluate(pos, in_check)
-      $evaluation_calls += 1 
+      $evaluation_calls += 1
+      # puts "\n"
+      # pos.board.print
       net_placement(pos.pieces, pos.side_to_move)
     end
 

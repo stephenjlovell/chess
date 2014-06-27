@@ -29,6 +29,10 @@ static VALUE load_piece_values(VALUE self, VALUE piece_array);
 extern int directions[64][64];
 extern BB intervening[64][64];
 
+extern BB pawn_passed_masks[2][64];
+extern BB pawn_isolated_masks[64];
+extern BB pawn_side_masks[64];
+
 void setup_square_masks();
 
 void setup_pawn_masks();
@@ -42,6 +46,9 @@ void setup_column_masks();
 void setup_directions();
 
 void setup_masks();
+void setup_pawn_structure_masks();
+
+
 
 extern void Init_bitboard();
 

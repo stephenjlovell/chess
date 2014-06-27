@@ -50,6 +50,7 @@ static int adjusted_placement(int c, int e, BRD *cBoard);
 static int adjusted_material(int c, BRD *cBoard);
 
 static int mobility(int c, int e, BRD *cBoard);
+static int pawn_structure(int c, int e, BRD *cBoard);
 
 extern void Init_eval();
 

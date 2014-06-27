@@ -59,7 +59,7 @@ extern BB column_masks[8];
 extern BB ray_masks[8][64];
 
 extern BB pawn_attack_masks[2][64];
-extern BB pawn_enp_masks[64];
+extern BB pawn_side_masks[64];
 
 extern BB knight_masks[64];
 extern BB bishop_masks[64];

@@ -92,6 +92,18 @@ Search benchmarking (Win at Chess test suite):
     38426.04668280588 NPS
     N: 12360396; E: 9759936; B: 2.794409189261938; Efficiency: 23.022159238720906
 
+  6/26/14 After adding/tuning pawn structure evaluation:
+
+    Total AI score: 157/300 (52.33333333333333%)
+    0.08476663666666667 seconds/search at depth 4
+    46198.915288644814 NPS
+    N: 1174838; E: 943921; B: 2.592055922237782; Efficiency: 20.189893622415656
+
+    Total AI score: 193/300 (64.33333333333333%)
+    1.0438978633333333 seconds/search at depth 6
+    38834.9423418528 NPS
+    N: 12161914; E: 9607276; B: 2.8020829110455785; Efficiency: 22.95911126674256
+
 Current Issues ----
 
 

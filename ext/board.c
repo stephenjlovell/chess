@@ -150,7 +150,7 @@ static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_t
           && column(from) == column(to)) return Qtrue;
       if(enp_target != Qnil){
         enp_target = NUM2INT(enp_target);
-        if(pawn_enp_masks[from] & sq_mask_on(enp_target)){
+        if(pawn_side_masks[from] & sq_mask_on(enp_target)){
           if(pawn_attack_masks[c][from] & sq_mask_on(to) & empty) return Qtrue;
         }
       }
