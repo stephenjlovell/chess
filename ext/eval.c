@@ -25,24 +25,8 @@ int non_king_value;
 int endgame_value;
 int mate_value;
 
-// const int passed_pawn_bonus[2][8] = { { 0, 32, 16, 8, 4,  2,  1, 0 },   
-//                                       { 0,  1,  2, 4, 8, 16, 32, 0 } };
-
 const int passed_pawn_bonus[2][8] = { { 0, 49, 28, 16, 9,  5,  3,  0 },   
                                       { 0,  3,  5, 9, 16, 16, 28, 49 } };
-
-// const int passed_pawn_bonus[2][8] = { { 0, 64, 36, 16,  8,  4,  2, 0 },   
-//                                       { 0,  2,  4,  8, 16, 36, 64, 0 } };
-
-// const int passed_pawn_bonus[2][8] = { { 0, 82, 47, 27, 15, 9, 5, 0 },
-//                                       { 0, 5, 9, 15, 27, 47, 82, 0 } };
-
-// const int passed_pawn_bonus[2][8] = { { 0, 96, 48, 24,  12,  6,  3, 0 },   
-//                                       { 0,  3,  6,  12, 24, 48, 96, 0 } };
-
-
-
-
 
 const int promote_row[2][2] = { {1, 2}, {6, 5} };
 
@@ -296,7 +280,6 @@ static int mobility(int c, int e, BRD *cBoard){
     sq = furthest_forward(c, b);
     mobility += pop_count(king_masks[sq] & available & unguarded);
   }
-
   return mobility;
 }
 
@@ -317,24 +300,12 @@ static int mobility(int c, int e, BRD *cBoard){
 //   -Double/tripled pawns - Penalty for having multiple pawns on the same file.
 static int pawn_structure(int c, int e, BRD *cBoard){
   int structure = 0;
-  // int passed = 0, isolated = 0, doubled = 0;
   int sq;
-  // int start_row = c ? 1 : 6;
-
-
   BB own_pawns = cBoard->pieces[c][PAWN];
   BB enemy_pawns = cBoard->pieces[e][PAWN];
 
   for(BB b = own_pawns; b; clear_sq(sq, b)){
     sq = furthest_forward(c, b);
-    
-    // // passed pawns
-    // if(!(pawn_passed_masks[c][sq] & enemy_pawns)) {
-    //   if(row(sq) != promote_row || !is_attacked_by(cBoard, (c ? sq+8 : sq-8), c^1, c)){
-    //     structure += passed_pawn_bonus[c][row(sq)];           
-    //   }
-    // }
-
     // passed pawns
     if(!(pawn_passed_masks[c][sq] & enemy_pawns)) {
       structure += passed_pawn_bonus[c][row(sq)];        
@@ -348,15 +319,10 @@ static int pawn_structure(int c, int e, BRD *cBoard){
         }
       }
     }
-
-
     // isolated pawns
     if(!(pawn_isolated_masks[sq] & own_pawns)) structure += isolated_pawn_penalty;
-
-    // pawn duos - only count pawn duos not on the starting row.
-    // if((pawn_side_masks[sq] & own_pawns) && (row(sq) != start_row)) structure += pawn_duo_bonus;
+    // pawn duos 
     if(pawn_side_masks[sq] & own_pawns) structure += pawn_duo_bonus;
-
   }
   int column_count;
   for(int i=0; i<8; i++){
@@ -366,16 +332,6 @@ static int pawn_structure(int c, int e, BRD *cBoard){
       structure += (double_pawn_penalty<<(column_count-2));
     }
   }
-  // printf("\ncolor: ");
-  // printf("%d\n", c);
-  // printf("passed: ");
-  // printf("%d\n", passed);
-  // printf("isolated: ");
-  // printf("%d\n", isolated);
-  // printf("doubled: ");
-  // printf("%d\n", doubled);
-
-  // structure = passed + isolated + doubled;
   return structure;
 }
 

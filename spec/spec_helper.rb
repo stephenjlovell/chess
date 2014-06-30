@@ -151,6 +151,9 @@ end
 
 def answer_questions(problems, depth, aggregator, verbose=false)
   correct, total = 0, 0
+  
+  # debug  # uncomment this line to dump full stack trace to './trace.txt'. Execution will slow significantly.
+
   problems.each_with_index do |prob, i|
     move, value = Chess::Search::select_move(prob.position, depth, aggregator, verbose)
     prob.ai_response = move
@@ -190,10 +193,20 @@ def move_matches_pgn?(move, pgn)
   else
     return pgn[0] == type && pgn[-2..-1] == to
   end
-
-
 end
 
+
+def debug
+  $enable_tracing = false
+  $trace_out = open('trace.txt', 'w')
+
+  set_trace_func proc { |event, file, line, id, binding, classname|
+    if $enable_tracing && event == 'call'
+      $trace_out.puts "#{file}:#{line} #{classname}##{id}"
+    end
+  }
+  $enable_tracing = true
+end
 
 
 
