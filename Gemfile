@@ -24,6 +24,7 @@ source 'https://rubygems.org'
 ruby '2.1.0'
 
 gem 'table_print'
+gem 'ruby-prof'
 # gem 'google_hash', '0.8.0'   # requires Google Sparsehash library - run brew install google-sparsehash first.
 
 group :test do

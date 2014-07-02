@@ -135,8 +135,8 @@ module Chess # top-level application namespace.
       @position.board.print
     end
 
-    def score(enemy_color)
-      (1040 - (Evaluation::base_material(@position, enemy_color)/100)).abs
+    def score(enemy)
+      40 - Evaluation::base_material(@position, enemy)/100
     end
 
     def undo_move  # Delegate to the MoveHistory class.

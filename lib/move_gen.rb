@@ -38,16 +38,20 @@ module Chess
     end
 
     # Updates the side to move and hash key for position.
-    def self.flip(position, move)
+    def self.flip(pos, move)
     # begin
-      if position.side_to_move == :w
-        position.side_to_move, position.enemy = :b, :w
+      if pos.side_to_move == :w
+        # pos.side_to_move, pos.enemy = :b, :w
+        pos.side_to_move = :b
+        pos.enemy = :w
       else
-        position.side_to_move, position.enemy = :w, :b
+        # pos.side_to_move, pos.enemy = :w, :b
+        pos.side_to_move = :w
+        pos.enemy = :b
       end
-      position.hash ^= move.hash
+      pos.hash ^= move.hash
     # rescue
-    #   position.board.print
+    #   pos.board.print
     #   puts move.inspect
     #   raise
     # end

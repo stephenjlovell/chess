@@ -21,6 +21,7 @@
 
 require './initialize.rb'
 require 'factory_girl'
+require 'ruby-prof'
 RSpec.configure { |config| config.include FactoryGirl::Syntax::Methods }
 require 'factories.rb'
 
@@ -154,23 +155,33 @@ def answer_questions(problems, depth, aggregator, verbose=false)
   
   # debug  # uncomment this line to dump full stack trace to './trace.txt'. Execution will slow significantly.
 
-  problems.each_with_index do |prob, i|
-    move, value = Chess::Search::select_move(prob.position, depth, aggregator, verbose)
-    prob.ai_response = move
-    prob.score = score_question(prob)
-    correct += prob.score
-    total += 1
-    if verbose
-      puts prob.id
-      puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves} AI Answer: #{prob.ai_response}"
-      puts "Running score: #{correct}/#{total} (#{(correct+0.0)/total*100}%)"
-    else
-      number = (i+1).to_s.rjust(3," ")
-      number = prob.score > 0 ? Chess::colorize(number,32) : Chess::colorize(number,31)
-      print "| #{number} "
+  # profile do
+    problems.each_with_index do |prob, i|
+      begin
+        move, value = Chess::Search::select_move(prob.position, depth, aggregator, verbose)
+      rescue SystemStackError
+        count_objects
+        raise
+      end
+      prob.ai_response = move
+      prob.score = score_question(prob)
+      correct += prob.score
+      total += 1
+      if verbose
+        puts prob.id
+        puts "Best: #{prob.best_moves} Avoid: #{prob.avoid_moves} AI Answer: #{prob.ai_response}"
+        puts "Running score: #{correct}/#{total} (#{(correct+0.0)/total*100}%)"
+      else
+        number = (i+1).to_s.rjust(3," ")
+        number = prob.score > 0 ? Chess::colorize(number,32) : Chess::colorize(number,31)
+        print "| #{number} "
+      end
     end
-  end
+  # end
+
 end 
+
+
 
 def score_question(problem) # answer is considered correct if it matches any answer in
                             # best_moves, and does not match any answer in avoid_moves.
@@ -198,7 +209,7 @@ end
 
 def debug
   $enable_tracing = false
-  $trace_out = open('trace.txt', 'w')
+  $trace_out = open('./prof/trace.txt', 'w')
 
   set_trace_func proc { |event, file, line, id, binding, classname|
     if $enable_tracing && event == 'call'
@@ -207,6 +218,29 @@ def debug
   }
   $enable_tracing = true
 end
+
+def count_objects
+  hsh = {}
+  ObjectSpace.each_object { |obj| hsh[obj.class].nil? ? hsh[obj.class] = 1 : hsh[obj.class] += 1 }
+  hsh.sort_by { |key, value| -value }.each { |cls, count| puts "#{count}    #{cls}" }
+end
+
+
+def profile
+  RubyProf.start
+  
+  yield
+
+  data = RubyProf.stop
+  # data.eliminate_methods!([/Array#Each/])
+  html = open('./prof/prof.html', 'w')
+  text = open('./prof/prof.txt', 'w')
+  # Print a flat profile to text
+  RubyProf::FlatPrinter.new(data).print(text)
+  # Print HTML report
+  RubyProf::CallStackPrinter.new(data).print(html, min_percent: 2)
+end
+
 
 
 

@@ -1,3 +1,4 @@
+./prof/*
 ./ext/Makefile
 ./ext/*.o
 ./ext/*.bundle

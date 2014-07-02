@@ -51,15 +51,15 @@ describe Chess::Position do
   describe "move generation" do
     describe "generates a valid move list" do
       it "for all moves" do
-        @position.edges(nil, false).each do |m| 
+        @position.get_moves(nil, false).each do |m| 
           m.should respond_to :make!
           m.should respond_to :unmake!
         end
       end
       it "for capture moves" do
-        tactical_edges = @position.tactical_edges
-        tactical_edges.count.should == 4
-        tactical_edges.each do |m|
+        get_captures = @position.get_captures
+        get_captures.count.should == 4
+        get_captures.each do |m|
           m.should respond_to :make!
           m.should respond_to :unmake!
         end

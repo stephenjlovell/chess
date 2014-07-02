@@ -125,22 +125,11 @@ module Chess
           promotions + sort_captures_by_see!(captures) + history_sort!(moves)
         end
 
-        # promotions + sort_captures_by_mvvla!(captures) + history_sort!(moves)
+        # promotions + sort_captures_by_mvv_lva!(captures) + history_sort!(moves)
 
         # promotions + sort_captures_by_see!(captures) + history_sort!(moves)
         
         # enhanced_sort(promotions, captures, moves, depth)
-      end
-      alias :edges :get_moves
-
-      def enhanced_sort(promotions, captures, moves, depth)
-        winning_captures, losing_captures = split_captures_by_see!(captures)
-        killers, non_killers = split_killers(moves, depth)
-        promotions + winning_captures + killers + losing_captures + non_killers
-      end
-
-      def basic_sort(captures, moves)
-        sort_captures!(captures) + history_sort!(moves)
       end
 
       # Generate only moves that create big swings in material balance, i.e. captures and promotions. 
@@ -158,9 +147,7 @@ module Chess
           MoveGen::get_winning_captures(@pieces, @side_to_move, @board.squares, @enp_target, captures, promotions)
           promotions + sort_winning_captures_by_see!(captures)
         end
-
       end
-      alias :tactical_edges :get_captures
 
       def get_all_captures
         promotions, captures = [], []
@@ -168,62 +155,47 @@ module Chess
         promotions + sort_captures_by_see!(captures)
       end
 
-      def split_captures_by_see!(captures)
-        winning, losing = [], []
-        sort_captures_by_see!(captures).each do |m|
-          if m.see >= 0
-            winning << m
-          else
-            losing << m
-          end
-        end
-        return winning, losing
-      end
-
-      def sort_captures_by_mvvla!(captures)
-        captures.sort! {|x,y| y.mvv_lva <=> x.mvv_lva }
+      def sort_captures_by_mvv_lva!(captures)
+        captures.sort_by! { |c| -c.mvv_lva }
       end
 
       def sort_captures_by_see!(captures)
-        captures.each { |m| m.see_score(self) }
-        captures.sort! do |x,y|
-          if y.see > x.see
-            1
-          elsif y.see < x.see
-            -1
-          else
-            y.mvv_lva <=> x.mvv_lva  # Rely on MVV-LVA in event of tie.
-          end
-        end
+        captures.sort_by! { |c| -((c.see_score(self)<<5) + c.mvv_lva) }
       end
 
       def sort_winning_captures_by_see!(captures)
-        captures.sort! do |x,y|
-          if y.see > x.see
-            1
-          elsif y.see < x.see
-            -1
-          else
-            y.mvv_lva <=> x.mvv_lva  # Rely on MVV-LVA in event of tie.
-          end
-        end
-      end      
+        captures.sort_by! { |c| -((c.see<<5) + c.mvv_lva) }
+      end     
+
+      def history_sort!(moves)
+        moves.sort_by! { |m| -$history[m.piece][m.to] }
+      end 
+
+
+      def enhanced_sort(promotions, captures, moves, depth)
+        winning_captures, losing_captures = split_captures_by_see!(captures)
+        killers, non_killers = split_killers(moves, depth)
+        promotions + winning_captures + killers + losing_captures + non_killers
+      end
+
 
       def split_killers(moves, depth)
         k = $killer[depth]
         killers, non_killers = [], []
-        moves.each do |m| 
-          if m == k.first || m == k.second || m == k.third
-            killers << m
-          else
-            non_killers << m 
-          end
-        end
+        moves.each { |m| (m==k.first || m==k.second || m==k.third) ? killers << m : non_killers << m }
         return killers, history_sort!(non_killers)
+        # moves.inject([[],[]]) { |a, m| (m==k.first||m==k.second||m==k.third) ? a[0] << m : a[1] << m; a }
       end
 
-      def history_sort!(moves)
-        moves.sort! { |x,y| $history[y.piece][y.to] <=> $history[x.piece][x.to] }
+
+
+
+
+      def split_captures_by_see!(captures)
+        winning, losing = [], []
+        sort_captures_by_see!(captures).each { |m| m.see >= 0 ? winning << m : losing << m }
+        return winning, losing
+        # sort_captures_by_see!(captures).inject([[],[]]) { |a, m| m.see >= 0 ? a[0] << m : a[1] << m; a }
       end
 
     end

@@ -140,7 +140,7 @@ module Chess
       if @node.in_check?
         move, value = alpha_beta_root(PLY_VALUE)
       else
-        value, count = quiescence(0)
+        value, count = quiescence(0,0)
       end
       return value
     end
@@ -236,7 +236,7 @@ module Chess
         $main_calls += 1
         
         MoveGen::make!(@node, hash_move)
-        value, count = alpha_beta(depth-PLY_VALUE, -beta, -alpha, extension)
+        value, count = alpha_beta(depth-PLY_VALUE, 1, -beta, -alpha, extension)
         MoveGen::unmake!(@node, hash_move)
         result = Chess::max(-value, result)
         sum += count
@@ -254,13 +254,13 @@ module Chess
       end
 
 
-      @node.edges(adjusted_depth, true, in_check).each do |move| 
+      @node.get_moves(adjusted_depth, true, in_check).each do |move| 
         next unless @node.avoids_check?(move, in_check)  # no illegal moves allowed at root.
 
         $main_calls += 1
         
         MoveGen::make!(@node, move)
-        value, count = alpha_beta(depth-PLY_VALUE, -beta, -alpha, extension)
+        value, count = alpha_beta(depth-PLY_VALUE, 1, -beta, -alpha, extension)
         MoveGen::unmake!(@node, move)
         result = Chess::max(-value, result)
         sum += count
@@ -286,10 +286,16 @@ module Chess
       return best_move, result
     end
 
-    def self.alpha_beta(depth, alpha=-$INF, beta=$INF, extension=0, can_null=true)
+    def self.alpha_beta(depth, draft, alpha=-$INF, beta=$INF, extension=0, can_null=true)
       result, best_move = -$INF, nil
 
-      return quiescence(0, alpha, beta) if depth+extension < PLY_VALUE
+      return quiescence(0, draft, alpha, beta) if depth+extension < PLY_VALUE
+
+      if @node.halfmove_clock >= 100
+        # puts draft, @node.halfmove_clock
+        # @node.board.print
+        return 0, 1
+      end
 
       in_check = @node.in_check?
       extension += EXT_CHECK if in_check && extension < EXT_MAX
@@ -300,7 +306,7 @@ module Chess
 
       # # Enhanced Transposition Cutoffs
       # if adjusted_depth > TWO_PLY
-      #   moves = @node.edges(adjusted_depth, adjusted_depth >= FOUR_PLY)
+      #   moves = @node.get_moves(adjusted_depth, adjusted_depth >= FOUR_PLY)
       #   is_max = @node.side_to_move == @max_side
       #   moves.each do |move|
       #     value, count = $tt.etc_key_probe(@node.hash^move.hash, adjusted_depth, -beta, -alpha, is_max)
@@ -313,7 +319,7 @@ module Chess
         enp, reduction = @node.enp_target, TWO_PLY
         MoveGen::flip_null(@node, enp)
         @node.enp_target = nil
-        value, count = alpha_beta(depth-PLY_VALUE-reduction, -beta, -beta+1, extension, false)
+        value, count = alpha_beta(depth-PLY_VALUE-reduction, draft+1, -beta, -beta+1, extension, false)
         value *= -1       
         MoveGen::flip_null(@node, enp)
         @node.enp_target = enp
@@ -336,7 +342,7 @@ module Chess
       unless first_move.nil?
         $main_calls += 1
         MoveGen::make!(@node, first_move)
-        value, count = alpha_beta(depth-PLY_VALUE, -beta, -alpha, extension)
+        value, count = alpha_beta(depth-PLY_VALUE, draft+1, -beta, -alpha, extension)
         MoveGen::unmake!(@node, first_move)
 
         result = Chess::max(-value, result)
@@ -357,7 +363,7 @@ module Chess
       f_margin = adjusted_depth > PLY_VALUE ? F_MARGIN_MID : F_MARGIN_LOW    
       f_prune = (adjusted_depth <= TWO_PLY) && !in_check && (@node.value + f_margin <= alpha)
 
-      moves ||= @node.edges(adjusted_depth, adjusted_depth >= THREE_PLY, in_check)
+      moves ||= @node.get_moves(adjusted_depth, adjusted_depth >= THREE_PLY, in_check)
 
       moves.each do |move|
         # Prune any illegal moves.  
@@ -365,7 +371,7 @@ module Chess
         next if !@node.avoids_check?(move, in_check) || (f_prune && legal_moves && move.quiet? && !@node.gives_check?(move))
 
         MoveGen::make!(@node, move)
-        value, count = alpha_beta(depth-PLY_VALUE, -beta, -alpha, extension)
+        value, count = alpha_beta(depth-PLY_VALUE, draft+1, -beta, -alpha, extension)
         MoveGen::unmake!(@node, move)
 
         $main_calls += 1
@@ -392,7 +398,13 @@ module Chess
 
     # Quiescence Search (q-search) is called at leaf nodes when depth is less than one full ply.
 
-    def self.quiescence(depth, alpha=-$INF, beta=$INF)  # quiesence nodes are not part of the principal variation.
+    def self.quiescence(depth, draft, alpha=-$INF, beta=$INF)  # quiesence nodes are not part of the principal variation.
+      if @node.halfmove_clock >= 100
+        # puts draft, @node.halfmove_clock
+        # @node.board.print
+        return 0, 1
+      end
+
       result, best_move, sum = -$INF, nil, 1
       legal_moves = false
 
@@ -413,7 +425,7 @@ module Chess
         $quiescence_calls += 1
 
         MoveGen::make!(@node, hash_move)
-        value, count = quiescence(depth-PLY_VALUE, -beta, -alpha)
+        value, count = quiescence(depth-PLY_VALUE, draft+1, -beta, -alpha)
         MoveGen::unmake!(@node, hash_move)
 
         result = Chess::max(-value, result)
@@ -432,13 +444,13 @@ module Chess
       # Futility Pruning.  In q-search, futility pruning is sometimes called "delta pruning".
       f_prune = !in_check && (result + F_MARGIN_HIGH) <= alpha
 
-      @node.tactical_edges(in_check).each do |move|
+      @node.get_captures(in_check).each do |move|
         $quiescence_calls += 1
 
         next if !@node.avoids_check?(move, in_check) || (f_prune && !move.promotion? && !@node.gives_check?(move))
 
         MoveGen::make!(@node, move)
-        value, count = quiescence(depth-PLY_VALUE, -beta, -alpha)
+        value, count = quiescence(depth-PLY_VALUE, draft+1, -beta, -alpha)
         MoveGen::unmake!(@node, move)
 
         result = Chess::max(-value, result)
@@ -473,6 +485,7 @@ module Chess
                  # outweigh benefit of additional entries.
       $killer.clear
       $history.clear
+      GC.start
     end
 
     # Module interface
@@ -486,7 +499,8 @@ module Chess
       reset_counters
       clear_memory
 
-      move, value = block_given? ? yield : iterative_deepening_mtdf_step
+      move, value = block_given? ? yield : iterative_deepening_alpha_beta
+
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"

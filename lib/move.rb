@@ -60,7 +60,8 @@ module Chess
       end
 
       def mvv_lva
-        @mvv_lva ||= @strategy.mvv_lva(@piece)
+        # @mvv_lva ||= @strategy.mvv_lva(@piece)
+        @strategy.mvv_lva(@piece)
       end
 
       def see_score(pos)
@@ -227,7 +228,7 @@ module Chess
       end
 
       def mvv_lva(piece)  # Most valuable victim, least valuable attacker heuristic. Used for move ordering of captures.
-        return Pieces::VALUES[(@captured_piece>>1)&7] - piece
+        return Pieces::VALUES[(@captured_piece&14)>>1] - piece
       end
 
       def quiet?
