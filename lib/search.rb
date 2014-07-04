@@ -50,28 +50,6 @@ module Chess
     F_MARGIN_MID = Pieces::PIECE_VALUES[:R]/Evaluation::EVAL_GRAIN    
     F_MARGIN_LOW  = Pieces::PIECE_VALUES[:N]/Evaluation::EVAL_GRAIN
 
-    # Calls the MTD(f)-Step algorithm from within an iterative deepening framework.
-    def self.iterative_deepening_mtdf_step(max_depth=nil)
-      max_depth ||= @max_depth
-      iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
-        mtdf_step(guess, d)
-      end
-    end
-    # Calls the MTD(f) algorithm from within an iterative deepening framework.
-    def self.iterative_deepening_mtdf(max_depth=nil)
-      max_depth ||= @max_depth
-      iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
-        mtdf(guess, d)
-      end
-    end
-    # Calls the Alpha Beta With Memory algorithm from within an iterative deepening framework.
-    def self.iterative_deepening_alpha_beta(max_depth=nil)
-      max_depth ||= @max_depth
-      iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
-        alpha_beta_root(d, -$INF, $INF)
-      end
-    end
-
     #  Iterative Deepening (ID) repeatedly calls the main search algorithm at increasing maximum depth.
     #     
     #  1. Provides a way to inexpensively gain information early in the search that can be re-used to make 
@@ -115,14 +93,6 @@ module Chess
       return best_move, value
     end
 
-    # Calls the Alpha Beta With Memory algorithm from within an ID framework, with the specified bounds.
-    def self.internal_iterative_deepening_alpha_beta(max_depth=nil, alpha=-$INF, beta=$INF, extension=0)
-      max_depth ||= @max_depth
-      internal_iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
-        alpha_beta_root(d, alpha, beta, extension)
-      end
-    end
-
     # At interior nodes, when a best move is not available from the TT, Internal Iterative Deepening (IID) can
     # be called at reduced search depth to get a reasonable guess at the best move to try first.
     def self.internal_iterative_deepening(depth)
@@ -134,14 +104,52 @@ module Chess
       return best_move, value
     end
 
+
+    # Calls the Alpha Beta With Memory algorithm from within an ID framework, with the specified bounds.
+    def self.internal_iterative_deepening_alpha_beta(max_depth=nil, alpha=-$INF, beta=$INF, extension=0)
+      max_depth ||= @max_depth
+      internal_iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
+        alpha_beta_root(d, alpha, beta, extension)
+      end
+    end
+
+    # Calls the MTD(f)-Step algorithm from within an iterative deepening framework.
+    def self.iterative_deepening_mtdf_step(max_depth=nil)
+      max_depth ||= @max_depth
+      iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
+        mtdf_step(guess, d)
+      end
+    end
+    # Calls the MTD(f) algorithm from within an iterative deepening framework.
+    def self.iterative_deepening_mtdf(max_depth=nil)
+      max_depth ||= @max_depth
+      iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
+        mtdf(guess, d)
+      end
+    end
+    # Calls the Alpha Beta With Memory algorithm from within an iterative deepening framework.
+    def self.iterative_deepening_alpha_beta(max_depth=nil)
+      max_depth ||= @max_depth
+      iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
+        alpha_beta_root(d, -$INF, $INF)
+      end
+    end
+
+    # Calls Aspiration Search from within an iterative deepening framework
+    def self.iterative_deepening_aspiration(max_depth=nil)
+      max_depth ||= @max_depth
+      @lower, @upper, = -$INF, $INF
+      iterative_deepening(max_depth/PLY_VALUE) do |guess, d|
+        aspiration(guess, d)
+      end
+    end
+
+
     # Make an initial guess at the heuristic value of the root node. Used in MTD(f) when no estimate from a previous
     # search or from the previous ID iteration is available.
     def self.get_first_guess
-      if @node.in_check?
-        move, value = alpha_beta_root(PLY_VALUE)
-      else
-        value, count = quiescence(0,0)
-      end
+      move, value = alpha_beta_root(PLY_VALUE)
+      # move, value = internal_iterative_deepening_alpha_beta(PLY_VALUE*2)
       return value
     end
 
@@ -151,7 +159,7 @@ module Chess
     # the search is complete and the true value is returned.
 
     def self.mtdf(guess=nil, depth=nil) 
-      guess ||= (@previous_value || get_first_guess)
+      guess ||= get_first_guess
       depth ||= @max_depth
       best, @lower_bound, @upper_bound, mtdf_passes = -$INF, -$INF, $INF, 0
 
@@ -159,7 +167,7 @@ module Chess
         $passes += 1
         mtdf_passes += 1
 
-        gamma = guess == @lower_bound ? guess+1 : guess
+        gamma = (guess == @lower_bound) ? guess+1 : guess
         move, guess = alpha_beta_root(depth, gamma-1, gamma)
         best_move, best = move, guess unless move.nil?
 
@@ -171,7 +179,7 @@ module Chess
     # MTD(f)-Step modifies the MTD(f) algorithm to dynamically increase/decrease the step size. 
 
     def self.mtdf_step(guess=nil, depth=nil) # MTD(f) with 'convergence accelerator'.
-      guess ||= (@previous_value || get_first_guess)
+      guess ||= get_first_guess
       depth ||= @max_depth
       mtdf_passes, best, @lower_bound, @upper_bound, step = 0, -$INF, -$INF, $INF, MTD_STEP_SIZE
       stepped_up, stepped_down = false, false
@@ -187,7 +195,6 @@ module Chess
         alpha = Chess::max(gamma-step, @lower_bound)
         beta = Chess::min(gamma, @upper_bound)
 
-        # puts "MT(#{depth}, #{gamma-step}, #{gamma}), @lower = #{@lower_bound}, @upper = #{@upper_bound}"
         move, guess = alpha_beta_root(depth, alpha, beta)
         # move, guess = alpha_beta_root(depth, gamma-step, gamma)
         best_move, best = move, guess unless move.nil?
@@ -216,6 +223,36 @@ module Chess
       end
 
       return best_move, best
+    end
+
+    # Aspiration search starts with an initial guess of the heuristic value of the tree.  Unlike MTD(f), aspiration search uses
+    # a small non-zero window around the initial guess.  If the initial guess fails high or low, the bound in that direction is 
+    # increased/decreased.
+    ASP_SIZE = 33
+    ASP_DEPTH = FOUR_PLY  # minimum depth at which to stop using full-width search
+
+    def self.aspiration(guess=nil, depth=nil)
+      gamma = ASP_SIZE
+      while true
+        $passes += 1
+        best_move, value = alpha_beta_root(depth, @lower, @upper) # call main search algo.        
+        
+        if @lower < value && value < @upper
+          if depth > ASP_DEPTH
+            @lower, @upper = value-gamma, value+gamma  # adjust initial bounds for next depth.
+          end
+          return best_move, value
+        else
+          if value >= @upper # fail high
+            @upper += gamma
+          elsif value <= @lower # fail low
+            @lower -= gamma
+          end
+          gamma *= 2 # increase the step size
+        end
+      
+      end
+
     end
 
 
@@ -290,12 +327,6 @@ module Chess
       result, best_move = -$INF, nil
 
       return quiescence(0, draft, alpha, beta) if depth+extension < PLY_VALUE
-
-      if @node.halfmove_clock >= 100
-        # puts draft, @node.halfmove_clock
-        # @node.board.print
-        return 0, 1
-      end
 
       in_check = @node.in_check?
       extension += EXT_CHECK if in_check && extension < EXT_MAX
@@ -399,16 +430,19 @@ module Chess
     # Quiescence Search (q-search) is called at leaf nodes when depth is less than one full ply.
 
     def self.quiescence(depth, draft, alpha=-$INF, beta=$INF)  # quiesence nodes are not part of the principal variation.
-      if @node.halfmove_clock >= 100
-        # puts draft, @node.halfmove_clock
-        # @node.board.print
-        return 0, 1
-      end
 
       result, best_move, sum = -$INF, nil, 1
       legal_moves = false
 
       in_check = @node.in_check?
+
+      if @node.halfmove_clock >= 100
+        if in_check && @node.get_captures(in_check).count == 0
+          return ((@i_depth - depth/PLY_VALUE) - MATE), 1  # Checkmate takes precedence over the Halfmove Rule.
+        else
+          return 0, 1  # Game is a draw by the Halfmove Rule.
+        end
+      end
 
       hash_move, hash_value, hash_count = $tt.probe(@node, depth, alpha, beta, in_check)
       return hash_value, hash_count unless hash_value.nil?
@@ -462,13 +496,15 @@ module Chess
           best_move = move
           if result >= beta
             return $tt.store(@node, depth, sum, result, alpha, beta, best_move)
+            # return result, sum
           end
         end        
       end
 
-      result = (@i_depth - depth/PLY_VALUE) - MATE if in_check && !legal_moves 
+      result = (draft - MATE) if in_check && !legal_moves 
 
       $tt.store(@node, depth, sum, result, alpha, beta, best_move)
+      # return result, sum
     end
 
     def self.store_cutoff(move, depth, nodecount, in_check)
@@ -481,9 +517,8 @@ module Chess
     end
 
     def self.clear_memory
-      $tt.clear  # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
-                 # outweigh benefit of additional entries.
-      $killer.clear
+      $tt.clear      # clear the transposition table.  At TT sizes above 500k, lookup times begin to 
+      $killer.clear  # outweigh benefit of additional entries.
       $history.clear
       GC.start
     end

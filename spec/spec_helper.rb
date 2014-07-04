@@ -148,6 +148,7 @@ def take_test(problems, depth, verbose=false)
   puts "\nTotal AI score: #{total_right}/#{count} (#{accuracy}%)"
   puts "#{time/count} seconds/search at depth #{depth}"
   puts aggregator.print_summary(accuracy, time)
+  return total_right
 end
 
 def answer_questions(problems, depth, aggregator, verbose=false)

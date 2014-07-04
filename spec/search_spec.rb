@@ -20,7 +20,6 @@
 #-----------------------------------------------------------------------------------
 
 require 'spec_helper'
-# require 'profile'
 
 describe Chess::Search do
 
@@ -72,6 +71,12 @@ describe Chess::Search do
     it "should be able to take standardized tests" do
       take_test(problems, @depth, false)
     end
+
+    # it "should search more accurately at depth d+1" do 
+    #   scores = (1..@depth).map { |d| take_test(problems, d, false) }
+    #   scores.each_with_index { |s, i| puts "depth: #{i+1} total score: #{s}" }
+    #   scores[1..-1].each_with_index { |s, i| s[i].should >= s[i-1] }
+    # end
   end
 
 end

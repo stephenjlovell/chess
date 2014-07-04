@@ -311,11 +311,12 @@ static int pawn_structure(int c, int e, BRD *cBoard){
       structure += passed_pawn_bonus[c][row(sq)];        
       if(row(sq) == promote_row[c][0]){
         if(!is_attacked_by(cBoard, (c ? sq+8 : sq-8), c^1, c)){
-          structure += passed_pawn_bonus[c][row(sq)];  // double the value of the bonus if promotion square is undefended.          
+          structure += passed_pawn_bonus[c][row(sq)];  // double the value of the bonus if path to promotion is undefended.          
         }
       } else if(row(sq) == promote_row[c][1]) {
-        if(!is_attacked_by(cBoard, (c ? sq+8 : sq-8), c^1, c) && !is_attacked_by(cBoard, (c ? sq+16 : sq-16), c^1, c)){
-          structure += passed_pawn_bonus[c][row(sq)];  // double the value of the bonus if promotion square is undefended.
+        if(!is_attacked_by(cBoard, (c ? sq+8 : sq-8), c^1, c) && 
+           !is_attacked_by(cBoard, (c ? sq+16 : sq-16), c^1, c)){
+          structure += passed_pawn_bonus[c][row(sq)];  // double the value of the bonus if path to promotion is undefended.
         }
       }
     }
