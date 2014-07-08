@@ -65,6 +65,21 @@ Play full games of Chess against the AI!
 
 -----------------------------------------------------------
 
+## Evaluation Features
+
+Evaluation in RubyChess is symmetric: values for each heuristic are calculated for both sides, and a net score is returned for the current side to move.
+
+- Piece-Square Tables - Small bunuses/penalties are applied based on the type of piece and its location on the board.  Squares close to the center of the board are generally given larger bonuses, emphasizing control of the board.
+- King Tropism - A bonus is given for each piece based on its closeness to the enemy king.  The bonus is scaled by the value of the piece, causing the AI to press its attack with stronger pieces and prevent its opponent from getting too close to its king.
+- Piece Mobility - Each piece is awarded a bonus based on how many squares it can move to from its current location, not counting squares guarded by enemy pawns.  This makes the AI prefer to position its sliding pieces where they can control the largest amount of space on the board.
+- Pawn Structure - The value of a pawn is partly dependent on where the other pawns are.  Pawn values are adjusted by looking for several structures considered in chess to be particularly strong/weak.
+    - Passed pawns - If there are no enemy pawns available to block a pawn's advance, it is considered 'passed' and is more likely to eventually get promoted.  A bonus is awarded for each passed pawn based on how close it is to promotion.
+    - Isolated pawns - Pawns that are separated from other friendly pawns are vulnerable to capture and may need to be guarded by more valuable pieces, limiting that side's ability to attack.  A small penalty is given for each isolated pawn.  This causes the AI to keep its pawns supporting one another and to break up the opponent's pawn lines where possible.
+    - Pawn duos - Pawns that are side by side to one another create an interlocking wall of defended squares.  A small bonus is given to each pawn that has at least one other pawn directly to its left or right.
+    - Doubled/Tripled pawns - Having multiple pawns on the same file (column) limits their ability to advance, as they can easily be blocked by a single enemy piece and cannot defend one another.  A penalty is given for each additional pawn when there is more than one pawn on a single file.
+
+-----------------------------------------------------------
+
 ## Search Stack Features
 
 - Iterative Deepening - The search is repeatedly called at increasing maximum depth, allowing information from shallower searches to improve the move ordering and reduce the cost of the deeper searches. 
@@ -95,21 +110,6 @@ Before searching each subtree, moves are ordered based on several heuristics.  T
 - Non-Capture Moves
     - Killer Heuristic - AI maintains a list of moves that have most recently caused beta cutoffs, indexed by depth.
     - History Heuristic - When a move causes a beta cutoff, a history table is incremented by the size of the subtree cutoff. Moves that have caused the largest cutoffs are tried first.
-
------------------------------------------------------------
-
-## Evaluation Features
-
-Evaluation in RubyChess is symmetric: values for each heuristic are calculated for both sides, and a net score is returned for the current side to move.
-
-- Piece-Square Tables - Small bunuses/penalties are applied based on the type of piece and its location on the board.  Squares close to the center of the board are generally given larger bonuses, emphasizing control of the board.
-- King Tropism - A bonus is given for each piece based on its closeness to the enemy king.  The bonus is scaled by the value of the piece, causing the AI to press its attack with stronger pieces and prevent its opponent from getting too close to its king.
-- Piece Mobility - Each piece is awarded a bonus based on how many squares it can move to from its current location, not counting squares guarded by enemy pawns.  This makes the AI prefer to position its sliding pieces where they can control the largest amount of space on the board.
-- Pawn Structure - The value of a pawn is partly dependent on where the other pawns are.  Pawn values are adjusted by looking for several structures considered in chess to be particularly strong/weak.
-    - Passed pawns - If there are no enemy pawns available to block a pawn's advance, it is considered 'passed' and is more likely to eventually get promoted.  A bonus is awarded for each passed pawn based on how close it is to promotion.
-    - Isolated pawns - Pawns that are separated from other friendly pawns are vulnerable to capture and may need to be guarded by more valuable pieces, limiting that side's ability to attack.  A small penalty is given for each isolated pawn.  This causes the AI to keep its pawns supporting one another and to break up the opponent's pawn lines where possible.
-    - Pawn duos - Pawns that are side by side to one another create an interlocking wall of defended squares.  A small bonus is given to each pawn that has at least one other pawn directly to its left or right.
-    - Doubled/Tripled pawns - Having multiple pawns on the same file (column) limits their ability to advance, as they can easily be blocked by a single enemy piece and cannot defend one another.  A penalty is given for each additional pawn when there is more than one pawn on a single file.
 
 -----------------------------------------------------------
 
