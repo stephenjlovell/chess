@@ -67,11 +67,11 @@ Play full games of Chess against the AI!
 
 ## Evaluation Features
 
-Evaluation in RubyChess is symmetric: values for each heuristic are calculated for both sides, and a net score is returned for the current side to move.
+Evaluation in RubyChess is symmetric: values for each heuristic are calculated for both sides, and a net score is returned for the current side to move.  RubyChess uses the following evaluation heuristics, in order of typical weight:
 
-1. Material Balance - This sums the value of each piece in play, and is the largest evaluation term.
-- Piece-Square Tables - Small bunuses/penalties are applied based on the type of piece and its location on the board.  Squares close to the center of the board are generally given larger bonuses, emphasizing control of the board.
+1. Material Balance - This simply sums the value of each piece in play.
 - King Tropism - A bonus is given for each piece based on its closeness to the enemy king.  The bonus is scaled by the value of the piece, causing the AI to press its attack with stronger pieces and prevent its opponent from getting too close to its king.
+- Piece-Square Tables - Small bunuses/penalties are applied based on the type of piece and its location on the board. Squares close to the center of the board are generally given larger bonuses, emphasizing control of the board.
 - Piece Mobility - Each piece is awarded a bonus based on how many squares it can move to from its current location, not counting squares guarded by enemy pawns.  This makes the AI prefer to position its sliding pieces where they can control the largest amount of space on the board.
 - Pawn Structure - The value of a pawn is partly dependent on where the other pawns are.  Pawn values are adjusted by looking for several structures considered in chess to be particularly strong/weak.
     - Passed pawns - If there are no enemy pawns available to block a pawn's advance, it is considered 'passed' and is more likely to eventually get promoted.  A bonus is awarded for each passed pawn based on how close it is to promotion.
