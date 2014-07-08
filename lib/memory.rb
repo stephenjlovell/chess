@@ -59,17 +59,9 @@ module Chess
       alias :size :length
       alias :count :length
 
-      def ok?(node)
-        key_ok?(node.hash) 
-      end
-
       # Compare the full key to the key saved in the TT entry to avoid possible type 2 (indexing) hash collisions.
       def key_ok?(h)
         @table.has_key?(h) && @table[h].key == h
-      end
-
-      def get(node)
-        @table[node.hash]
       end
 
       def [](h)
@@ -79,10 +71,11 @@ module Chess
       # Probe the TT for saved search results.  If a valid entry is found, push the stored best move into
       # first_moves array. If stored result would cause cutoff of local search, return the stored result.
       def probe(node, depth, alpha, beta, in_check)
-        if ok?(node)
+        if key_ok?(node.hash)
           $memory_calls += 1
-          e = get(node)
-          lower, upper = e.lower, e.upper
+          e = @table[node.hash]
+          lower = e.lower
+          upper = e.upper
 
           move = !e.move.nil? && node.avoids_check?(e.move, in_check) ? e.move : nil
 
@@ -97,52 +90,10 @@ module Chess
         return nil, nil, nil  # sentinel indicating stored bounds were not sufficient to cause immediate cutoff.
       end
 
-      # Special probing method for use with Enhanced Transposition Cutoffs (ETC).  Used to probe for child positions
-      # found via a make/unmake of each move.
-      def etc_probe(node, depth, alpha, beta, is_max)
-        if ok?(node)
-          $memory_calls += 1
-          e = get(node)
-          lower, upper = e.lower, e.upper
-
-          if is_max
-            if lower.depth >= depth && lower.bound >= beta
-              return lower.bound, lower.count
-            end
-          else
-            if upper.depth >= depth && upper.bound <= alpha
-              return upper.bound, upper.count
-            end
-          end
-        end
-        return nil, nil  # sentinel indicating stored bounds were not sufficient to cause an immediate cutoff.
-      end
-
-      # Special probing method for use with Enhanced Transposition Cutoffs (ETC).  Used to probe for child positions
-      # without doing a full make/unmake cycle.
-      def etc_key_probe(key, depth, alpha, beta, is_max)
-        if key_ok?(key)
-          $memory_calls += 1
-          e = @table[key]
-          lower, upper = e.lower, e.upper
-
-          if is_max
-            if lower.depth >= depth && lower.bound >= beta
-              return lower.bound, lower.count
-            end
-          else
-            if upper.depth >= depth && upper.bound <= alpha
-              return upper.bound, upper.count
-            end
-          end
-        end
-        return nil, nil
-      end
-
       # If an entry is available for node, return the best move stored from the previous search.
       def get_hash_move(node, in_check)
-        if ok?(node)
-          e = get(node)  # if hash move is illegal, don't use it:
+        if key_ok?(node.hash)
+          e = @table[node.hash]  # if hash move is illegal, don't use it:
           return e.move unless e.move.nil? || !node.avoids_check?(e.move, in_check)
         end
         nil
@@ -154,22 +105,26 @@ module Chess
         h = node.hash
         if @table.has_key?(h)
           e = @table[h]
-          lower, upper = e.lower, e.upper
-          
+          lower = e.lower
+          upper = e.upper
           if count >= lower.count
             e.move = move
+            upper.depth = depth
+            upper.count = count
             if result <= alpha
-              upper.depth, upper.count, upper.bound = depth, count, result
+              upper.bound = result
             else
-              upper.depth, upper.count, upper.bound = depth, count, beta
+              upper.bound = beta
             end
           end
           if count >= upper.count
             e.move = move
+            lower.depth = depth
+            lower.count = count
             if result >= beta
-              lower.depth, lower.count, lower.bound = depth, count, result
+              lower.bound = result
             else
-              lower.depth, lower.count, lower.bound = depth, count, alpha
+              lower.bound = alpha
             end
           end
         else 
@@ -180,13 +135,12 @@ module Chess
         return result, count
       end
 
-    end # end TranspostionTable class
+    end
 
     # When using 64-bit hash keys, Type I (hash collision) errors are extremely rare (once in 10,000+ searches 
     # at depth 6), but could theoretically still happen. These are particularly difficult to detect and can corrupt the
     # position / board representation when moves are made that are invalid for the current position.  If an error occurs
     # resulting from corruption of the internal board state, a HashCollisionError is raised.
-
     class HashCollisionError < StandardError 
     end
     
@@ -194,7 +148,7 @@ module Chess
     # Zobrist Hashing
     #
     # These module helper methods implement Zobrist Hashing.  Each possible square and piece combination
-    # is assigned a unique 64-bit integer key at startup.  A hash key for a given chess position can then be
+    # is assigned a unique 64-bit integer key at startup.  A unique hash key for a given chess position can be
     # generated by merging (via XOR) the keys for each piece/square combination, and merging in keys representing
     # the side to move, castling rights, and any en-passant target square.
 
@@ -208,7 +162,8 @@ module Chess
     # Associate each possible en-passant target square with its own random 64-bit key.
     ENP = Array.new(64) { create_key }
 
-    SIDE = 1  # Integer key representing a change in side-to-move. Used during make/unmake to update 
+    SIDE = create_key
+    # SIDE = 1  # Integer key representing a change in side-to-move. Used during make/unmake to update 
               # hash key of node.
 
     # Return the Zobrist key for the given en-passant target.

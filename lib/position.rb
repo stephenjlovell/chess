@@ -101,9 +101,8 @@ module Chess
         "<Chess::Position <@board:#{@board.inspect}> <@pieces:#{@pieces.inspect}> <@side_to_move:#{@side_to_move}>>"
       end
 
-      # Moves should be ordered in descending order of expected subtree value. Better move ordering produces a greater
+      # Moves are ordered based on expected subtree value. Better move ordering produces a greater
       # number of alpha/beta cutoffs during search, reducing the size of the actual search tree toward the minimal tree.
-
       def get_moves(depth, enhanced_sort=false, in_check=false) 
         promotions, captures, moves = [], [], []
 
@@ -114,22 +113,11 @@ module Chess
           MoveGen::get_non_captures(@pieces, @side_to_move, @castle, moves, in_check)
         end
 
-        # At higher depths, expend additional effort on move ordering.
-
-        if enhanced_sort
+        if enhanced_sort  # At higher depths, expend additional effort on move ordering.
           enhanced_sort(promotions, captures, moves, depth)
-          # puts self.to_s
-          # @board.print
-          # captures.each {|c| puts "#{c}: #{c.see}" }
         else
           promotions + sort_captures_by_see!(captures) + history_sort!(moves)
         end
-
-        # promotions + sort_captures_by_mvv_lva!(captures) + history_sort!(moves)
-
-        # promotions + sort_captures_by_see!(captures) + history_sort!(moves)
-        
-        # enhanced_sort(promotions, captures, moves, depth)
       end
 
       # Generate only moves that create big swings in material balance, i.e. captures and promotions. 
@@ -155,12 +143,18 @@ module Chess
         promotions + sort_captures_by_see!(captures)
       end
 
+      def enhanced_sort(promotions, captures, moves, depth)
+        winning_captures, losing_captures = split_captures_by_see!(captures)
+        killers, non_killers = split_killers(moves, depth)
+        promotions + winning_captures + killers + losing_captures + non_killers
+      end
+
       def sort_captures_by_mvv_lva!(captures)
         captures.sort_by! { |c| -c.mvv_lva }
       end
 
       def sort_captures_by_see!(captures)
-        captures.sort_by! { |c| -((c.see_score(self)<<5) + c.mvv_lva) }
+        captures.sort_by! { |c| -((c.see_score(self)<<5) + c.mvv_lva) }  # In the event of a tie, use MVV-LVA.
       end
 
       def sort_winning_captures_by_see!(captures)
@@ -171,14 +165,6 @@ module Chess
         moves.sort_by! { |m| -$history[m.piece][m.to] }
       end 
 
-
-      def enhanced_sort(promotions, captures, moves, depth)
-        winning_captures, losing_captures = split_captures_by_see!(captures)
-        killers, non_killers = split_killers(moves, depth)
-        promotions + winning_captures + killers + losing_captures + non_killers
-      end
-
-
       def split_killers(moves, depth)
         k = $killer[depth]
         killers, non_killers = [], []
@@ -186,10 +172,6 @@ module Chess
         return killers, history_sort!(non_killers)
         # moves.inject([[],[]]) { |a, m| (m==k.first||m==k.second||m==k.third) ? a[0] << m : a[1] << m; a }
       end
-
-
-
-
 
       def split_captures_by_see!(captures)
         winning, losing = [], []

@@ -39,33 +39,27 @@ module Chess
 
     # Updates the side to move and hash key for position.
     def self.flip(pos, move)
-    # begin
       if pos.side_to_move == :w
-        # pos.side_to_move, pos.enemy = :b, :w
         pos.side_to_move = :b
         pos.enemy = :w
       else
-        # pos.side_to_move, pos.enemy = :w, :b
         pos.side_to_move = :w
         pos.enemy = :b
       end
       pos.hash ^= move.hash
-    # rescue
-    #   pos.board.print
-    #   puts move.inspect
-    #   raise
-    # end
     end
 
     # Updates the side to move and hash key as if the current side forfeited a turn.  Used for the Null Move Pruning
     # heuristic during Search.
-    def self.flip_null(position, enp_target)
-      if position.side_to_move == :w
-        position.side_to_move, position.enemy = :b, :w
+    def self.flip_null(pos, enp_target)
+      if pos.side_to_move == :w
+        pos.side_to_move = :b
+        pos.enemy = :w
       else
-        position.side_to_move, position.enemy = :w, :b
+        pos.side_to_move = :w
+        pos.enemy = :b
       end
-      position.hash ^= Memory::SIDE ^ Memory::enp_key(enp_target)
+      pos.hash ^= Memory::SIDE ^ Memory::enp_key(enp_target)
     end
 
     # Castling rights:

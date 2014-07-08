@@ -221,9 +221,7 @@ static int adjusted_placement(int c, int e, BRD *cBoard){
     placement += king_pst[c][in_endgame(c)][sq];
   }
 
-  // return cBoard->material[c] + placement + mobility(c, e, cBoard);
   return cBoard->material[c] + placement + mobility(c, e, cBoard) + pawn_structure(c, e, cBoard);
-
 }
 
 // Counts the total possible moves for the given side, not including any target squares defended by enemy pawns.

@@ -290,7 +290,6 @@ module Chess
         end  
       end
 
-
       @node.get_moves(adjusted_depth, true, in_check).each do |move| 
         next unless @node.avoids_check?(move, in_check)  # no illegal moves allowed at root.
 
@@ -334,16 +333,6 @@ module Chess
 
       first_move, hash_value, hash_count = $tt.probe(@node, adjusted_depth, alpha, beta, in_check)
       return hash_value, hash_count unless hash_value.nil?
-
-      # # Enhanced Transposition Cutoffs
-      # if adjusted_depth > TWO_PLY
-      #   moves = @node.get_moves(adjusted_depth, adjusted_depth >= FOUR_PLY)
-      #   is_max = @node.side_to_move == @max_side
-      #   moves.each do |move|
-      #     value, count = $tt.etc_key_probe(@node.hash^move.hash, adjusted_depth, -beta, -alpha, is_max)
-      #     return -value, count unless value.nil?
-      #   end
-      # end
 
       # Null Move Pruning
       if !in_check && can_null && adjusted_depth > TWO_PLY && !@node.in_endgame? && @node.value >= beta
@@ -535,7 +524,6 @@ module Chess
       clear_memory
 
       move, value = block_given? ? yield : iterative_deepening_alpha_beta
-
 
       if @verbose && !move.nil? 
         puts "Move chosen: #{move.print}, Score: #{value}, TT size: #{$tt.size}"

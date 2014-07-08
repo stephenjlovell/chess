@@ -29,7 +29,7 @@ module Chess
     #  1. Useage of Move objects follows the Memento pattern.  The position object acts as the 'originator', generating Move
     #     instances for available legal moves.  The MoveGen module acts as 'caretaker', making and rolling back changes
     #     to the originator supplied by the 'memento' (the Move instance).
-    #  2. The move object caches incremental changes to the position's material balance, king safety, and hash key, reducing
+    #  2. The move object caches incremental changes to the position's hash key, reducing
     #     overhead when the move is unmade during Search.
     #  3. Sequences of Move objects are stored by the MoveHistory class, allowing the human player to undo/redo moves at will.
     

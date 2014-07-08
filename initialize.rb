@@ -22,16 +22,9 @@
 require 'table_print'
 # require 'google_hash'
 
-
-
 Dir['./lib/*.rb'].each { |f| require f }  # require all 
 
-
-
 puts "Chess library loaded. \n\n"
-
-
-
 
 def play
   Chess::CLI::play
