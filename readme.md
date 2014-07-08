@@ -1,7 +1,8 @@
 
 # RubyChess
 
-A Chess AI and CLI written in Ruby and C!  Compile with GCC or LLVM.
+A Chess AI and CLI written in Ruby and C!  
+Compile with GCC or LLVM.
 
 -----------------------------------------------------------
 
@@ -93,7 +94,7 @@ Evaluation in RubyChess is symmetric: values for each heuristic are calculated f
 - Aspiration Search - Starts out as a basic 'full-width' alpha-beta search.  Once an accurate guess is established, further searching is done within a narrow window centered on the expected value.  If a value lands outside one of the bounds, the search is repeated with that bound increased/decreased.
 
 ### Minimax refinements
-- Alpha-Beta Pruning - Bounds on how well each side can expect to do are passed down the call stack and updated as more information is gathered. This allows the engine to prune subtrees that are are unlikely to occur due each side avoiding undesirable outcomes.
+- Alpha-Beta Pruning - Bounds on how well each side can expect to do are passed down the call stack and updated as more information is gathered. This allows the engine to prune subtrees that are are unlikely to occur due both players avoiding undesirable outcomes.
 - Quiescence Search - Extends the main search by generating only moves that cause large swings in the score (such as captures and promotions).  This allows the search to eventually find 'quiet' nodes for which a reliable hueristic evaluation can be performed.
 - Adaptive Null-Move (NM) Pruning - Performs a shallow search to determine the value to the current side of simply skipping a turn. Since there is almost always some move that will improve the position for the current side, If the NM search value exceeds beta, we can safely cut off the search and return the NM value. Not used when in check or during the endgame (when this assumption is less likely to hold). 
 - Futility Pruning - At shallow depths, when a node appears unlikely to exceed alpha, 'quiet' nodes can be safely pruned.
@@ -110,7 +111,7 @@ Before searching each subtree, moves are ordered based on several heuristics.  T
     - Most Valuable Victim, Least Valuable Attacker - When expected material gain/loss is the same, the AI will prefer to attack the enemy's most valuable available piece with its least valuable available piece.
 - Non-Capture Moves
     - Killer Heuristic - AI maintains a list of moves that have most recently caused beta cutoffs, indexed by depth.
-    - History Heuristic - When a move causes a beta cutoff, a history table is incremented by the size of the subtree cutoff. Moves that have caused the largest cutoffs are tried first.
+    - History Heuristic - When a move causes a beta cutoff, a history table is incremented by the size of the subtree cutoff. Moves that have cut off the most nodes are tried first.
 
 -----------------------------------------------------------
 

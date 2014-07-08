@@ -61,7 +61,6 @@ module Chess
     #     on the 'exact' minimax value.
     #  3. The result from the previous ID iteration can be returned when a time limit is reached, allowing the search
     #     to be cut off cleanly without risk of serious tactical blunders.
-
     def self.iterative_deepening(depth)
       best_move, guess, value = nil, nil, -$INF
       search_records = [] if @verbose
@@ -157,7 +156,6 @@ module Chess
     # of 'zero-window' calls to alpha-beta that establish upper and lower bounds on the heuristic value.
     # Each subsequent pass causes the bounds to converge on the true minimax value. When the bounds converge, 
     # the search is complete and the true value is returned.
-
     def self.mtdf(guess=nil, depth=nil) 
       guess ||= get_first_guess
       depth ||= @max_depth
@@ -177,7 +175,6 @@ module Chess
     end
 
     # MTD(f)-Step modifies the MTD(f) algorithm to dynamically increase/decrease the step size. 
-
     def self.mtdf_step(guess=nil, depth=nil) # MTD(f) with 'convergence accelerator'.
       guess ||= get_first_guess
       depth ||= @max_depth
@@ -225,12 +222,12 @@ module Chess
       return best_move, best
     end
 
+    ASP_SIZE = 33
+    ASP_DEPTH = FOUR_PLY  # minimum depth at which to stop using full-width search
+    
     # Aspiration search starts with an initial guess of the heuristic value of the tree.  Unlike MTD(f), aspiration search uses
     # a small non-zero window around the initial guess.  If the initial guess fails high or low, the bound in that direction is 
     # increased/decreased.
-    ASP_SIZE = 33
-    ASP_DEPTH = FOUR_PLY  # minimum depth at which to stop using full-width search
-
     def self.aspiration(guess=nil, depth=nil)
       gamma = ASP_SIZE
       while true

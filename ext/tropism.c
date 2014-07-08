@@ -28,7 +28,6 @@ void setup_bonus_table(){
   float bonus;
   for (int f = 0; f < 64; f++){
     for (int t = 0; t < 64; t++){
-      // if(f == 0 && t < 8) printf("%f\n", chebyshev_distance_ratio(f, t));
       for (int type = PAWN; type < KING; type++){
         // bonus = piece_values[type] * base_bonus_ratio * manhattan_distance_ratio(f, t);
         bonus = piece_values[type] * base_bonus_ratio * chebyshev_distance_ratio(f, t);
@@ -38,10 +37,10 @@ void setup_bonus_table(){
   }
 }
 
+// Returns 1 (maximum bonus) at minimum distance, and 0 (no bonus) at max distance.
 float chebyshev_distance_ratio(int from, int to){
   return (-chebyshev_distance(from, to)/6.0) + (7.0/6.0);
 }
-
 // Returns 1 (maximum bonus) at minimum distance, and 0 (no bonus) at max distance.
 float manhattan_distance_ratio(int from, int to){
   return (-manhattan_distance(from, to)/13.0) + (14.0/13.0);

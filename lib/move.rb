@@ -41,16 +41,10 @@ module Chess
       end
 
       def make!(position)
-        # begin
-          @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
-          position.enp_target = nil
+        @enp_target, @castle_rights = position.enp_target, position.castle   # save old values for make/unmake
+        position.enp_target = nil
 
-          @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
-
-        # rescue => err
-        #   puts self.inspect
-        #   raise Memory::HashCollisionError
-        # end 
+        @strategy.make!(position, @piece, @from, @to)  # delegate to the strategy class.
       end
 
       def unmake!(position)
@@ -60,7 +54,6 @@ module Chess
       end
 
       def mvv_lva
-        # @mvv_lva ||= @strategy.mvv_lva(@piece)
         @strategy.mvv_lva(@piece)
       end
 
@@ -106,7 +99,6 @@ module Chess
     # The MoveStrategy class provides a generic template and shared behavior for each move strategy. Concrete strategy 
     # classes include either the Reversible or Irreversible module.  If the concrete strategy class captures an enemy piece, 
     # the strategy class will include the MakesCapture module.
-
     class MoveStrategy  
       attr_reader :promoted_piece
 

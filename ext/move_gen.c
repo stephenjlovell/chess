@@ -27,33 +27,7 @@ BB castle_kingside_intervening[2] = {0};
 const int C_WQ = 0x8;
 const int C_WK = 0x4;
 const int C_BQ = 0x2;
-const int C_BK = 0x1;
-
-// BB scan_down(BB occ, enumDir dir, enumSq sq){
-//   BB ray = ray_masks[dir][sq];
-//   BB blockers = (ray & occ);
-//   if(blockers) ray ^= (ray_masks[dir][msb(blockers)]);
-//   return ray;
-// }
-
-// BB scan_up(BB occ, enumDir dir, enumSq sq){
-//   BB ray = ray_masks[dir][sq];
-//   BB blockers = (ray & occ);
-//   if(blockers) ray ^= (ray_masks[dir][lsb(blockers)]);
-//   return ray;
-// }
-
-// BB rook_attacks(BB occ, enumSq sq){
-//   return scan_up(occ, NORTH, sq)|scan_up(occ, EAST, sq)|scan_down(occ, SOUTH, sq)|scan_down(occ, WEST, sq);
-// } 
-
-// BB bishop_attacks(BB occ, enumSq sq){
-//   return scan_up(occ, NW, sq)|scan_up(occ, NE, sq)|scan_down(occ, SE, sq)|scan_down(occ, SW, sq);
-// }
-
-// BB queen_attacks(BB occ, enumSq sq){
-//   return (bishop_attacks(occ, sq) | rook_attacks(occ, sq));
-// }                                                 
+const int C_BK = 0x1;                                            
 
 static void build_move(VALUE id, int from, int to, VALUE cls, VALUE moves){                           
   VALUE strategy = rb_class_new_instance(0, NULL, cls);                     

@@ -21,15 +21,11 @@
  
 module Chess
 
-  # The Board class stores a 'square-centric' 12 x 12 board representation containing a symbol for each chess piece
-  # currently in play, along with 'out-of-bounds' markers (:XX) and empty squares (nil).
-
-  # The board is used to test legality of possible moves, determine what pieces can attack and defend a given square, 
-  # and check for king safety. To prevent repeatedly scanning the board for available pieces during move generation,
-  # separate piece-lists by color are stored in the Position object and indexed by piece location.
-
-  # Both the piece-lists and board object are incrementally updated as moves are made and unmade during Search.
-  
+  # The Board class stores a 'square-centric' 8x8 board representation containing an integer id 
+  # for each piece in play.  A separate bitboard-based 'piece centric' board representation is stored in the
+  # PiecewiseBoard class. The Board class is used to quickly determine the occupancy of a square without having 
+  # to loop through each bitboard. Both the PiecewiseBoard and Board objects are incrementally updated as moves 
+  # are made and unmade during Search.
   class Board
     include Enumerable
     attr_accessor :squares

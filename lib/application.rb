@@ -19,7 +19,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-
 module Chess # top-level application namespace.
 
   def self.current_game  # Application-level helper method.  Ensures that there is always an
@@ -189,8 +188,6 @@ module Chess # top-level application namespace.
 
     def end_turn
       self.print
-      # Chess::print_bitboard(@position.pieces.get_occupancy(:w))
-      # Chess::print_bitboard(@position.pieces.get_occupancy(:b))
       @clock.restart
     end
   end

@@ -79,12 +79,6 @@ module Chess
 
     PAWN_START_ROW = { w: 1, b: 6 }
 
-
-    # set up bitmask used to unpack to/from pairs sent from movegen.c
-    FROM_MASK = 0b111111
-
-
-
   end
 end
 

@@ -21,7 +21,6 @@
 
 module Chess
   module MoveGen
-
     # The MoveGen module handles the incremental update of the game state by making and unmaking moves, 
     # and by updating the hash key, side to move, and castle rights for the position.  Each make! operation is 
     # reversible via unmake!
@@ -90,8 +89,6 @@ module Chess
       WATCH[move.from].call(position) unless WATCH[move.from].nil?
       WATCH[move.to].call(position)   unless WATCH[move.to].nil?
     end
-
-
 
   end
 end

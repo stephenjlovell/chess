@@ -21,7 +21,6 @@
 
 #include "attack.h"
 
-
 BB attack_map(BRD *cBoard, enumSq sq){
   BB attacks = 0;
   BB occ = Occupied();
@@ -180,13 +179,7 @@ extern int get_see(BRD *cBoard, int from, int to, int c, VALUE sq_board){
 }
 
 
-// The Static Exchange Evaluation (SEE) heuristic provides a way to determine if a capture 
-// is a 'winning' or 'losing' capture.
-// 1. When a capture results in an exchange of pieces by both sides, SEE is used to determine the 
-//    net gain/loss in material for the side initiating the exchange.
-// 2. SEE scoring of moves is used for move ordering of captures at critical nodes.
-// 3. During quiescence search, SEE is used to prune losing captures. This provides a very low-risk
-//    way of reducing the size of the q-search without impacting playing strength.
+// Alpha-beta variant of SEE algorithm.
 extern int get_see_ab(BRD *cBoard, int from, int to, int c, VALUE sq_board){
   int next_victim, type, last_type;
   int temp_color = c^1;
@@ -266,10 +259,6 @@ extern int get_see_ab(BRD *cBoard, int from, int to, int c, VALUE sq_board){
   // printf("%d\n", score);
   return score;
 }
-
-// extern int get_see(BRD *cBoard, int from, int to, int c, VALUE sq_board){
-//   return get_see_list(cBoard, from, to, c, sq_board);
-// }
 
 // Ruby interface
 

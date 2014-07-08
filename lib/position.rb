@@ -32,7 +32,7 @@ module Chess
     #     factor of 3-4 compared to the 'copy/make' approach. 
     #  2. Some heuristics needed during Evaluation can be stored in the position object and incrementally
     #     updated during make/unmake, eliminating the need to loop over the piece lists to recalculate these
-    #     heuristics for each evaluation call. Material balance and king tropism bonus are updated in this way.
+    #     heuristics for each evaluation call. Material balance and hash key are updated in this way.
 
     class Position
       attr_accessor :board, :pieces, :side_to_move, :enemy, :halfmove_clock, :castle, :enp_target, 
@@ -170,14 +170,12 @@ module Chess
         killers, non_killers = [], []
         moves.each { |m| (m==k.first || m==k.second || m==k.third) ? killers << m : non_killers << m }
         return killers, history_sort!(non_killers)
-        # moves.inject([[],[]]) { |a, m| (m==k.first||m==k.second||m==k.third) ? a[0] << m : a[1] << m; a }
       end
 
       def split_captures_by_see!(captures)
         winning, losing = [], []
         sort_captures_by_see!(captures).each { |m| m.see >= 0 ? winning << m : losing << m }
         return winning, losing
-        # sort_captures_by_see!(captures).inject([[],[]]) { |a, m| m.see >= 0 ? a[0] << m : a[1] << m; a }
       end
 
     end

@@ -19,7 +19,6 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
-// #include "shared.h"
 #include "bitboard.h"
 
 static VALUE mod_chess;
@@ -44,8 +43,8 @@ BB square_masks_off[64] = {0};
 
 BB row_masks[8] = {0};
 BB column_masks[8] = {0};
-BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} }; // NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST, INVALID
-
+BB ray_masks[8][64] = { {0},{0},{0},{0},{0},{0},{0},{0} }; 
+                      // NW, NE, SE, SW, NORTH, EAST, SOUTH, WEST, INVALID
 BB knight_masks[64] = {0};
 BB bishop_masks[64] = {0};
 BB rook_masks[64] = {0};
@@ -57,8 +56,8 @@ BB pawn_side_masks[64] = {0};
 BB pawn_passed_masks[2][64] = { {0}, {0} };
 BB pawn_isolated_masks[64] = {0};
 
-// single, double, left, right
 int pawn_from_offsets[2][4] = { {8, 16, 9, 7 }, {-8, -16, -7, -9 } };
+                              // single, double, left, right
 
 int directions[64][64];
 BB intervening[64][64];
@@ -105,8 +104,6 @@ void setup_knight_masks(){
       sq = i + knight_offsets[j];
       if (on_board(sq) && manhattan_distance(sq, i) == 3) knight_masks[i] |= sq_mask_on(sq);
     }
-    // printf("%d\n", i);
-    // rb_funcall(mod_chess, rb_intern("print_bitboard"),1, ULONG2NUM(knight_masks[i]));
   }
 }
 
@@ -204,7 +201,7 @@ void setup_pawn_structure_masks(){
   BB center = 0;
   for(int i=0; i<64; i++){
     col = column(i);
-    // isolated pawn masks
+
     pawn_isolated_masks[i] = (king_masks[i] & ~column_masks[col]);   
     
     sq = i+8;
@@ -224,22 +221,6 @@ void setup_pawn_structure_masks(){
     if(col != 0) pawn_passed_masks[BLACK][i] |= (center >> 1);  // queenside row
     if(col != 7) pawn_passed_masks[BLACK][i] |= (center << 1);  // kingside row
   }
-
-  // for(int c = 0; c<2; c++){
-  //   for(int i=0; i<64; i++){
-  //     printf("side: ");
-  //     printf("%d\n", c);
-  //     printf("square: ");
-  //     printf("%d\n", i);
-  //     rb_funcall(mod_chess, rb_intern("print_bitboard"),1, ULONG2NUM(pawn_passed_masks[c][i]));
-  //   }
-  // }
-  // for(int i=0; i<64; i++){
-  //   printf("isolated square: ");
-  //   printf("%d\n", i);
-  //   rb_funcall(mod_chess, rb_intern("print_bitboard"),1, ULONG2NUM(pawn_isolated_masks[i]));
-  // }
-
 }
 
 

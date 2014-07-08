@@ -19,7 +19,6 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //-----------------------------------------------------------------------------------
 
-// #include "shared.h"
 #include "bitwise_math.h"
 
 
@@ -59,8 +58,7 @@ extern void Init_bitwise_math(){
 
   VALUE mod_chess = rb_define_module("Chess");
   VALUE mod_bitboard = rb_define_module_under(mod_chess, "Bitboard");
-
-  // set up module helper functions
+  // Make bitwise operations accessible from Ruby:
   rb_define_module_function(mod_bitboard, "lsb", object_lsb, 1);
   rb_define_module_function(mod_bitboard, "msb", object_msb, 1);
   rb_define_module_function(mod_bitboard, "pop_count", object_pop_count, 1);

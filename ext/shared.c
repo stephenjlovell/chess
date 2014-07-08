@@ -21,7 +21,6 @@
 
 #include "shared.h"
 
-
 extern void Init_ruby_chess(){
   printf("Loading native extension:\n");
 

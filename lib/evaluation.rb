@@ -19,23 +19,18 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-# require './ext/ruby_chess'
-
 module Chess
   module Evaluation
 
     # This module contains methods used to assess the heuristic value of a chess position.
     # RubyChess uses a very simplistic, low-cost evaluation function.  The evaluation score is based on 
-    # three factors:
-            
-    #   1. Material balance - Sums the value of all pieces in play for each side.  A small bonus/penalty is applied
-    #      based on the location of the piece.  Material balance is by far the largest component of the overall evaluation
-    #      score.
-    #   2. Mobility - If a side is in check, that side is in serious danger and must respond to the threat.
-    #      A bonus/penalty equivalent to 3.5 pawns is applied depending on which side is in check.
-    #   3. King safety - The AI attempts to maximize the danger to the enemy king, and minimize the danger to its own king.
-    #      This is approximated by awarding a bonus for each piece in play based on the value of the piece and its distance 
-    #      to the opposing king.
+    # the following factors:
+    # 
+    # 1. Material Balance - This simply sums the value of each piece in play.
+    # 2. King Tropism - A bonus is given for each piece based on its closeness to the enemy king.
+    # 3. Piece-Square Tables - Small bunuses/penalties are applied based on piece type/location.
+    # 4. Piece Mobility - Each piece is awarded a bonus based on how many squares it can move to. 
+    # 5. Pawn Structure - Adjusts pawn values are by looking for several pawn structure patterns.
 
     EVAL_GRAIN = 1
 
@@ -43,8 +38,6 @@ module Chess
     # then divides the total eval score by EVAL_GRAIN to achieve the desired 'coarseness' of evaluation.
     def self.evaluate(pos, in_check)
       $evaluation_calls += 1
-      # puts "\n"
-      # pos.board.print
       net_placement(pos.pieces, pos.side_to_move)
     end
 
@@ -52,34 +45,6 @@ module Chess
     def self.base_material(pos, side)
       pos.pieces.get_base_material(side) - Pieces::PIECE_VALUES[:K]    
     end
-
-    private
-
-    # Returns the net value of all pieces in play (adjusted by their location on board)
-    # relative to the current side to move. Material subtotals for each side are incrementally updated 
-    # during make/unmake.
-
-
-    # Return the net king tropism bonus.  Each side is awarded a bonus based on the proximity of its pieces
-    # to the enemy king.  King tropism bonuses for each side are incrementally updated during make and unmake.
-    def self.net_king_tropism(pos)
-      # pos.own_tropism - pos.enemy_tropism
-      0
-    end
-
-    # Award a bonus/penalty for each piece in play based on the value of the piece and its distance 
-    # to the opposing king.
-
-
-    # def self.adjusted_value(position, piece, square, endgame=nil)
-    #   Pieces::PIECE_VALUES[piece] + pst_value(position, piece, square, endgame)
-    # end    
-
-    # def self.pst_value(position, piece, square, endgame=nil)
-    #   endgame = position.endgame?(position.side_to_move) if endgame.nil?
-    #   PST[position.side_to_move][endgame][(piece>>1)&7][square]
-    # end
-
   end
 end 
 

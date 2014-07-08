@@ -21,6 +21,10 @@
 
 #include "board.h"
 
+// This module Ruby object wrapper for the BRD struct, providing methods for accessing 
+// and updating the struct from within Ruby.
+
+// destructor
 void free_cBoard(BRD *b){
   ruby_xfree(b);
 }
@@ -31,10 +35,12 @@ extern BRD* get_cBoard(VALUE self){
   return b;
 }
 
-static VALUE o_alloc(VALUE klass){
+// associates the underlying BRD struct with a constructor and destructor.
+static VALUE o_alloc(VALUE klass){  
   return Data_Wrap_Struct(klass, 0, free_cBoard, ruby_xmalloc(sizeof(BRD)));
 }
 
+// Initialize a new Chess::PiecewiseBoard instance
 static VALUE o_initialize(VALUE self, VALUE sq_board){
   BRD blank_board = { { {0}, {0} }, {0} };
   BRD *cBoard = get_cBoard(self);
@@ -48,25 +54,26 @@ static VALUE o_setup(VALUE self, VALUE sq_board){
   return Qnil;
 }
 
+// Return the bitboard corresponding to the given piece id.
 static VALUE o_get_bitboard(VALUE self, VALUE piece_id){
   int id = NUM2INT(piece_id);
   return ULONG2NUM(get_cBoard(self)->pieces[piece_color(id)][piece_type(id)]);    
 }
-
+// Return the location of the king for the given color
 static VALUE o_get_king_square(VALUE self, VALUE color_sym){
   return INT2NUM(lsb(get_cBoard(self)->pieces[SYM2COLOR(color_sym)][KING]));
 }
-
+// Return the bitboard showing which squares are currently occupied by the given color.
 static VALUE o_get_occupancy(VALUE self, VALUE color_sym){
   return ULONG2NUM(get_cBoard(self)->occupied[SYM2COLOR(color_sym)]);
 }
-
+// Set the value of the bitboard corresponding to the given piece id.
 static VALUE o_set_bitboard(VALUE self, VALUE piece_id, VALUE bitboard){
   int id = NUM2INT(piece_id);
   get_cBoard(self)->pieces[piece_color(id)][piece_type(id)] = NUM2ULONG(bitboard);
   return bitboard;
 }
-
+// Adds a piece at the specified square to the BRD struct.  Used to add a piece into play.
 static VALUE o_add_square(VALUE self, VALUE piece_id, VALUE square){
   BRD *cBoard = get_cBoard(self);
   int sq = NUM2INT(square);
@@ -79,7 +86,7 @@ static VALUE o_add_square(VALUE self, VALUE piece_id, VALUE square){
   cBoard->material[c] += piece_values[t]; // Incrementally update material.
   return Qnil;  
 }
-
+// Removes a piece at the specified square from the BRD struct.  Used to remove a piece from play.
 static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square){
   BRD *cBoard = get_cBoard(self);
   int sq = NUM2INT(square);
@@ -92,7 +99,7 @@ static VALUE o_remove_square(VALUE self, VALUE piece_id, VALUE square){
   cBoard->material[c] -= piece_values[t];  // Incrementally update material.
   return Qnil;  
 }
-
+// Shifts the stored location of a piece from one square to another.
 static VALUE o_relocate_piece(VALUE self, VALUE piece_id, VALUE from, VALUE to){
   BRD *cBoard = get_cBoard(self);  
   int type = piece_type(NUM2INT(piece_id));
@@ -117,7 +124,7 @@ static VALUE o_in_endgame(VALUE self, VALUE color){
   return (cBoard->material[c] <= endgame_value) ? Qtrue : Qfalse;
 }
 
-// This method is used to check the legality of human moves prior to making the move.
+// This method is used by the CLI to check the legality of human moves prior to making the move.
 static VALUE o_test_legality(VALUE self, VALUE p, VALUE f, VALUE t, VALUE side_to_move, VALUE enp_target, VALUE castle){
   BRD *cBoard = get_cBoard(self);
   int c = SYM2COLOR(side_to_move);

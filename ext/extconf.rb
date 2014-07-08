@@ -23,9 +23,6 @@ require 'mkmf'
 
 RbConfig::MAKEFILE_CONFIG['CC'] = ENV['CC'] if ENV['CC']
 
-
-
-# ['ruby_chess', 'bitwise_math', 'board', 'move_gen']
 target = 'ruby_chess'
 
 dir_config(target)

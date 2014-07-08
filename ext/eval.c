@@ -36,9 +36,6 @@ const int double_pawn_penalty   = -10;
 
 const int pawn_duo_bonus        = 3;
 
-// const int passed_pawn_bonus[2][8] = { { 0, 0, 0, 0, 0, 0, 0, 0 }, 
-//                                       { 0, 0, 0, 0, 0, 0, 0, 0 } };
-
 static int main_pst[2][5][64] = {
   { // Black
     // Pawn
@@ -194,7 +191,6 @@ void setup_eval_constants(){
   mate_value = non_king_value + piece_values[KING];
 }
 
-// Only base material is incrementally updated.
 
 
 static VALUE net_placement(VALUE self, VALUE pc_board, VALUE color){
@@ -220,7 +216,7 @@ static int adjusted_placement(int c, int e, BRD *cBoard){
     sq = furthest_forward(c, b);
     placement += king_pst[c][in_endgame(c)][sq];
   }
-
+  // Base material is incrementally updated as moves are made/unmade.
   return cBoard->material[c] + placement + mobility(c, e, cBoard) + pawn_structure(c, e, cBoard);
 }
 
@@ -284,16 +280,11 @@ static int mobility(int c, int e, BRD *cBoard){
 // PAWN EVALUATION
 // 
 // Good structures:
-//   -Passed pawns - Bonus for pawns unblocked by an enemy pawn on the same or adjacent file. May eventually get promoted.
-//   -cramping pawns - pawns should be rewarded for limiting enemy mobility. Accounted for in mobility evaluation.
+//   -Passed pawns - Bonus for pawns unblocked by an enemy pawn on the same or adjacent file. 
+//                   May eventually get promoted.
 //   -Pawn duos - Pawns side by side to another friendly pawn receive a small bonus
-
-// Neutral/good structures:
-//   -Pawn chains should go toward the enemy king.
-//   -Pawn pairs - group of pawns on same rank and adjacent file.
-
+// 
 // Bad structures:
-//   -Backward pawns - cannot advance without being killed, and subject to attack on its square.
 //   -Isolated pawns - Penalty for any pawn without friendly pawns on adjacent files.  
 //   -Double/tripled pawns - Penalty for having multiple pawns on the same file.
 static int pawn_structure(int c, int e, BRD *cBoard){
