@@ -67,19 +67,19 @@ Play full games of Chess against the AI!
 
 ## Search Stack Features
 
-- Iterative Deepening 
-- Dual-Entry Transposition Tables
+- Iterative Deepening - The search is repeatedly called at increasing maximum depth, allowing information from shallower searches to improve the move ordering and reduce the cost of the deeper searches. 
+- Dual-Entry Transposition Tables - Nodes are hashed and bounds on their true value are stored for later use.
 - Modular search framework - Easily pass in search driver algorithms for testing.
 
 ### Available Search Drivers
-- MTD(f)
-- MTD(f)-Step
-- Aspiration Search
+- MTD(f) - Uses a series of quick 'zero-window' searches to step from an initial guess toward the minimax value
+- MTD(f)-Step - Dynamically increases the step size in order to close in on the minimax value with fewer MTD(f) passes
+- Aspiration Search - Starts out as a basic 'full-width' alpha-beta search.  Once an accurate guess is established, further searching is done within a narrow window around the expected value.  If a value lands outside one of the bounds, the search is repeated with that bound increased/decreased.
 
 ### Minimax refinements
-- Alpha-Beta Pruning
-- Adaptive Null-Move Pruning
-- Futility Pruning
+- Alpha-Beta Pruning - Bounds on how well each side can expect to do are passed down the call stack and updated as more information is gathered. This allows the engine to prune subtrees that are are unlikely to occur due each side avoiding undesirable outcomes.
+- Adaptive Null-Move (NM) Pruning - Perform a shallow search to determine the value to the current side of simply skipping a turn. Except while in check or during the endgame, there is almost always some move that will improve the position for the current side. If the NM search value exceeds beta, we can safely cut off the search and return the NM value.
+- Futility Pruning - At shallow depths, when a node appears unlikely to exceed alpha, 'quiet' nodes can be safely pruned.
 - Quiescence Search - Extends the main search by generating only moves that cause large swings in the score (such as captures and promotions).  This allows the search to eventually find 'quiet' positions for which a reliable hueristic evaluation can be performed.
 
 ### Move Ordering
@@ -122,12 +122,9 @@ Evaluation in RubyChess is symmetric: values for each heuristic are calculated f
 
 ## Performance Benchmarks
 
-Run the search spec using RSpec:
+Run performance benchmarks against several popular test suites using RSpec:
 
     rspec spec/search_spec.rb
-
-    2014-07-08 14:01:43 -0400
-    |   1 |   2 |   3 |   4 |   5 |   6 |   7 |   8 |   9 |  10 |  11 |  12 |  13 |  14 |  15 |  16 |  17 |  18 |  19 |  20 |  21 |  22 |  23 |  24 |  25 |  26 |  27 |  28 |  29 |  30 |  31 |  32 |  33 |  34 |  35 |  36 |  37 |  38 |  39 |  40 |  41 |  42 |  43 |  44 |  45 |  46 |  47 |  48 |  49 |  50 |  51 |  52 |  53 |  54 |  55 |  56 |  57 |  58 |  59 |  60 |  61 |  62 |  63 |  64 |  65 |  66 |  67 |  68 |  69 |  70 |  71 |  72 |  73 |  74 |  75 |  76 |  77 |  78 |  79 |  80 |  81 |  82 |  83 |  84 |  85 |  86 |  87 |  88 |  89 |  90 |  91 |  92 |  93 |  94 |  95 |  96 |  97 |  98 |  99 | 100 | 101 | 102 | 103 | 104 | 105 | 106 | 107 | 108 | 109 | 110 | 111 | 112 | 113 | 114 | 115 | 116 | 117 | 118 | 119 | 120 | 121 | 122 | 123 | 124 | 125 | 126 | 127 | 128 | 129 | 130 | 131 | 132 | 133 | 134 | 135 | 136 | 137 | 138 | 139 | 140 | 141 | 142 | 143 | 144 | 145 | 146 | 147 | 148 | 149 | 150 | 151 | 152 | 153 | 154 | 155 | 156 | 157 | 158 | 159 | 160 | 161 | 162 | 163 | 164 | 165 | 166 | 167 | 168 | 169 | 170 | 171 | 172 | 173 | 174 | 175 | 176 | 177 | 178 | 179 | 180 | 181 | 182 | 183 | 184 | 185 | 186 | 187 | 188 | 189 | 190 | 191 | 192 | 193 | 194 | 195 | 196 | 197 | 198 | 199 | 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 209 | 210 | 211 | 212 | 213 | 214 | 215 | 216 | 217 | 218 | 219 | 220 | 221 | 222 | 223 | 224 | 225 | 226 | 227 | 228 | 229 | 230 | 231 | 232 | 233 | 234 | 235 | 236 | 237 | 238 | 239 | 240 | 241 | 242 | 243 | 244 | 245 | 246 | 247 | 248 | 249 | 250 | 251 | 252 | 253 | 254 | 255 | 256 | 257 | 258 | 259 | 260 | 261 | 262 | 263 | 264 | 265 | 266 | 267 | 268 | 269 | 270 | 271 | 272 | 273 | 274 | 275 | 276 | 277 | 278 | 279 | 280 | 281 | 282 | 283 | 284 | 285 | 286 | 287 | 288 | 289 | 290 | 291 | 292 | 293 | 294 | 295 | 296 | 297 | 298 | 299 | 300 
 
     ------ Aggregate Search Performance -------
 
@@ -146,7 +143,6 @@ Run the search spec using RSpec:
     N: 13156966; E: 10412070; B: 2.9592430071283213; Efficiency: 25.344319415248275
 
 
-
 Recent performance testing against Win At Chess (WAC) suite at various maximum depths:
 
     Total AI score: 171/300 (56.99999999999999%)
@@ -158,12 +154,6 @@ Recent performance testing against Win At Chess (WAC) suite at various maximum d
     1.0238726833333334 seconds/search at depth 6
     42826.4054510293 NPS
     N: 13154636; E: 10409996; B: 2.959282297528506; Efficiency: 25.343982918641288
-
-    Total AI score: 251/300 (83.66666666666667%)
-    2.9667398433333334 seconds/search at depth 7
-    42949.2990270095 NPS
-    N: 38225819; E: 29405041; B: 3.022920247497581; Efficiency: 27.67743103243534
-    2014-07-02 13:54:12 -0400
 
     Total AI score: 263/300 (87.66666666666667%)
     7.771986543333334 seconds/search at depth 8
