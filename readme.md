@@ -122,7 +122,9 @@ Evaluation in RubyChess is symmetric: values for each heuristic are calculated f
 
 ## Performance Benchmarks
 
-Run performance benchmarks against several popular test suites using RSpec:
+RubyChess currently scores 263/300 on Win At Chess (WAC) for an 8-ply (7.7 second) fixed-depth search.
+
+You can run performance benchmarks against several popular test suites using RSpec:
 
     rspec spec/search_spec.rb
 
