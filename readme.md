@@ -69,6 +69,7 @@ Play full games of Chess against the AI!
 
 Evaluation in RubyChess is symmetric: values for each heuristic are calculated for both sides, and a net score is returned for the current side to move.
 
+1. Material Balance - This sums the value of each piece in play, and is the largest evaluation term.
 - Piece-Square Tables - Small bunuses/penalties are applied based on the type of piece and its location on the board.  Squares close to the center of the board are generally given larger bonuses, emphasizing control of the board.
 - King Tropism - A bonus is given for each piece based on its closeness to the enemy king.  The bonus is scaled by the value of the piece, causing the AI to press its attack with stronger pieces and prevent its opponent from getting too close to its king.
 - Piece Mobility - Each piece is awarded a bonus based on how many squares it can move to from its current location, not counting squares guarded by enemy pawns.  This makes the AI prefer to position its sliding pieces where they can control the largest amount of space on the board.
