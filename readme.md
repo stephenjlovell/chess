@@ -72,9 +72,9 @@ Play full games of Chess against the AI!
 - Modular search framework - Easily pass in search driver algorithms for testing.
 
 ### Available Search Drivers
-- MTD(f) - Uses a series of quick 'zero-window' searches to step from an initial guess toward the minimax value
+- MTD(f) - Uses a series of quick 'zero-window' alpha-beta searches to step from an initial guess toward the minimax value
 - MTD(f)-Step - Dynamically increases the step size in order to close in on the minimax value with fewer MTD(f) passes
-- Aspiration Search - Starts out as a basic 'full-width' alpha-beta search.  Once an accurate guess is established, further searching is done within a narrow window around the expected value.  If a value lands outside one of the bounds, the search is repeated with that bound increased/decreased.
+- Aspiration Search - Starts out as a basic 'full-width' alpha-beta search.  Once an accurate guess is established, further searching is done within a narrow window centered on the expected value.  If a value lands outside one of the bounds, the search is repeated with that bound increased/decreased.
 
 ### Minimax refinements
 - Alpha-Beta Pruning - Bounds on how well each side can expect to do are passed down the call stack and updated as more information is gathered. This allows the engine to prune subtrees that are are unlikely to occur due each side avoiding undesirable outcomes.
